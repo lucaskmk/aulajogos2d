@@ -1,0 +1,252 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+public class InfoFase
+{
+    public Vector3 inicio;
+    public int largura;
+    public int altura;
+    public List<float> inversores = new List<float>(); // posições x das linhas 'X'
+}
+
+// Lê o mapa de texto de uma fase (veja Fases.cs) e cria todos os objetos na cena.
+public static class ConstrutorDeFase
+{
+    // tentativa = quantas vezes o jogador já morreu nesta fase (escolhe a versão do mapa)
+    public static InfoFase Construir(Fase fase, Transform raiz, int tentativa)
+    {
+        string[] mapa = AplicarMudancas(fase, tentativa);
+        int altura = mapa.Length;
+        int largura = 0;
+        foreach (string linha in mapa) largura = Mathf.Max(largura, linha.Length);
+
+        var info = new InfoFase { largura = largura, altura = altura, inicio = new Vector3(1f, 2f, 0f) };
+
+        char Celula(int x, int linha)
+        {
+            if (linha < 0 || linha >= altura || x < 0 || x >= mapa[linha].Length) return ' ';
+            return mapa[linha][x];
+        }
+        Vector3 Posicao(int x, int linha) => new Vector3(x, altura - 1 - linha, 0f);
+        bool PareceChao(char c) => c == '#' || c == 'C' || c == 'F'; // falso e o que cai são IGUAIS ao chão de verdade
+        string SpriteDoChao(int x, int linha) => PareceChao(Celula(x, linha - 1)) ? "chao" : "chao_topo";
+
+        // Todo o chão firme vira UM colisor só (CompositeCollider2D).
+        // Isso evita o jogador "enganchar" nas emendas entre os blocos.
+        var chaoSolido = new GameObject("ChaoSolido");
+        chaoSolido.transform.SetParent(raiz, false);
+        var corpoChao = chaoSolido.AddComponent<Rigidbody2D>();
+        corpoChao.bodyType = RigidbodyType2D.Static;
+        var composto = chaoSolido.AddComponent<CompositeCollider2D>();
+        composto.geometryType = CompositeCollider2D.GeometryType.Polygons;
+        composto.generationType = CompositeCollider2D.GenerationType.Manual;
+
+        var celulasQueCaem = new HashSet<Vector2Int>();
+        var celulasQueFogem = new HashSet<Vector2Int>();
+        var placas = new List<Vector3>();
+        var fujonas = new List<BandeiraFujona>();
+        Vector3? destinoDaFujona = null;
+
+        for (int linha = 0; linha < altura; linha++)
+        {
+            for (int x = 0; x < mapa[linha].Length; x++)
+            {
+                char c = mapa[linha][x];
+                Vector3 pos = Posicao(x, linha);
+                Vector3 chaoDaCelula = pos + Vector3.down * 0.5f;
+
+                switch (c)
+                {
+                    case '#': BlocoSolido(chaoSolido.transform, pos, SpriteDoChao(x, linha)); break;
+                    case 'B': BlocoSolido(chaoSolido.transform, pos, "tijolo"); break;
+                    case 'F': Visual("ChaoFalso", raiz, pos, SpriteDoChao(x, linha), 0); break;
+                    case 'C': celulasQueCaem.Add(new Vector2Int(x, linha)); break;
+                    case 'P': info.inicio = pos; break;
+                    case '?': Criar<BlocoSurpresa>("BlocoMoeda", raiz, pos); break;
+                    case 'K': Criar<BlocoSurpresa>("BlocoPegadinha", raiz, pos).soltaInimigo = true; break;
+                    case 'I': Criar<BlocoInvisivel>("BlocoInvisivel", raiz, pos); break;
+                    case '^': Criar<Espinho>("Espinho", raiz, pos); break;
+                    case 'h': Criar<EspinhoEscondido>("EspinhoEscondido", raiz, pos); break;
+                    case 'v': Criar<EspinhoQueCai>("EspinhoQueCai", raiz, pos); break;
+                    case 'E': Criar<Inimigo>("Inimigo", raiz, pos); break;
+                    case 'S': Criar<Mola>("Mola", raiz, pos); break;
+                    case 'T': Criar<Esmagador>("Esmagador", raiz, pos); break;
+                    case '<': Criar<Serra>("SerraTraseira", raiz, pos).direcao = 1; break;
+                    case '>': Criar<Serra>("SerraDianteira", raiz, pos).direcao = -1; break;
+                    case 'G': Criar<Bandeira>("Bandeira", raiz, chaoDaCelula); break;
+                    case 'R': fujonas.Add(Criar<BandeiraFujona>("BandeiraFujona", raiz, chaoDaCelula)); break;
+                    case '*': destinoDaFujona = chaoDaCelula; break;
+                    case 'Z': Criar<BandeiraFalsa>("BandeiraFalsa", raiz, chaoDaCelula); break;
+                    case 'o': Criar<NuvemAssassina>("NuvemAssassina", raiz, pos + Vector3.right * 0.5f); break;
+                    case 'i': placas.Add(pos); break;
+                    case '$': Criar<Moeda>("Moeda", raiz, pos); break;
+                    case 'm': Criar<MoedaAssassina>("MoedaAssassina", raiz, pos); break;
+                    case 'e': Criar<Inimigo>("InimigoDisfarcado", raiz, pos).espinhoso = true; break;
+                    case 'M': celulasQueFogem.Add(new Vector2Int(x, linha)); break;
+                    case 'W': Criar<BandeiraVolta>("BandeiraVolta", raiz, chaoDaCelula); break;
+                    case 'X': info.inversores.Add(x); break;
+                }
+            }
+        }
+
+        // Chão que cai: blocos 'C' encostados uns nos outros caem TODOS juntos.
+        foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasQueCaem))
+        {
+            var objeto = new GameObject("ChaoQueCai");
+            objeto.transform.SetParent(raiz, false);
+            var chaoQueCai = objeto.AddComponent<ChaoQueCai>();
+            foreach (Vector2Int celula in grupo)
+                chaoQueCai.AdicionarBloco(Posicao(celula.x, celula.y), FabricaDeSprites.Pegar(SpriteDoChao(celula.x, celula.y)));
+        }
+
+        // Bloco que foge: blocos 'M' encostados fogem juntos.
+        foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasQueFogem))
+        {
+            var objeto = new GameObject("BlocoQueFoge");
+            objeto.transform.SetParent(raiz, false);
+            var blocoQueFoge = objeto.AddComponent<BlocoQueFoge>();
+            foreach (Vector2Int celula in grupo)
+                blocoQueFoge.AdicionarBloco(Posicao(celula.x, celula.y));
+        }
+
+        foreach (BandeiraFujona fujona in fujonas)
+            if (destinoDaFujona.HasValue) fujona.destino = destinoDaFujona.Value;
+
+        // Placas: textos na ordem da esquerda para a direita.
+        placas.Sort((a, b) => a.x.CompareTo(b.x));
+        for (int i = 0; i < placas.Count; i++)
+        {
+            var placa = Criar<Placa>("Placa", raiz, placas[i]);
+            placa.texto = fase.placas != null && i < fase.placas.Length ? fase.placas[i] : "...";
+        }
+
+        // Paredes invisíveis nas bordas da fase.
+        ParedeInvisivel(chaoSolido.transform, new Vector3(-1f, altura / 2f, 0f), altura * 3);
+        ParedeInvisivel(chaoSolido.transform, new Vector3(largura, altura / 2f, 0f), altura * 3);
+        composto.GenerateGeometry();
+
+        Decorar(raiz, mapa, largura, altura, fase.nome.GetHashCode());
+        return info;
+    }
+
+    // ------------------------------------------------------------------ ajudantes
+
+    // Devolve o mapa da fase já com as trocas da tentativa atual (veja "MUDANÇAS" em Fases.cs).
+    static string[] AplicarMudancas(Fase fase, int tentativa)
+    {
+        if (fase.mudancas == null || fase.mudancas.Length == 0 || tentativa <= 0) return fase.mapa;
+
+        string[] trocas = fase.mudancas[(tentativa - 1) % fase.mudancas.Length];
+        var linhas = new char[fase.mapa.Length][];
+        int largura = 0;
+        foreach (string linha in fase.mapa) largura = Mathf.Max(largura, linha.Length);
+        for (int i = 0; i < fase.mapa.Length; i++) linhas[i] = fase.mapa[i].PadRight(largura).ToCharArray();
+
+        foreach (string troca in trocas)
+        {
+            string[] partes = troca.Split(',');
+            int x = int.Parse(partes[0]);
+            int linha = int.Parse(partes[1]);
+            char c = partes[2][0] == '.' ? ' ' : partes[2][0];
+            if (linha >= 0 && linha < linhas.Length && x >= 0 && x < largura) linhas[linha][x] = c;
+            else Debug.LogWarning($"Mudança fora do mapa na fase \"{fase.nome}\": {troca}");
+        }
+
+        var resultado = new string[linhas.Length];
+        for (int i = 0; i < linhas.Length; i++) resultado[i] = new string(linhas[i]).TrimEnd();
+        return resultado;
+    }
+
+    public static T Criar<T>(string nome, Transform pai, Vector3 posicao) where T : Component
+    {
+        var objeto = new GameObject(nome);
+        objeto.transform.SetParent(pai, false);
+        objeto.transform.position = posicao;
+        return objeto.AddComponent<T>();
+    }
+
+    public static GameObject Visual(string nome, Transform pai, Vector3 posicao, string sprite, int ordem)
+    {
+        var objeto = new GameObject(nome);
+        objeto.transform.SetParent(pai, false);
+        objeto.transform.position = posicao;
+        var visual = objeto.AddComponent<SpriteRenderer>();
+        visual.sprite = FabricaDeSprites.Pegar(sprite);
+        visual.sortingOrder = ordem;
+        return objeto;
+    }
+
+    static void BlocoSolido(Transform chao, Vector3 posicao, string sprite)
+    {
+        var bloco = Visual("Bloco", chao, posicao, sprite, 0);
+        var colisor = bloco.AddComponent<BoxCollider2D>();
+        colisor.size = Vector2.one;
+        colisor.compositeOperation = Collider2D.CompositeOperation.Merge;
+    }
+
+    static void ParedeInvisivel(Transform chao, Vector3 posicao, float altura)
+    {
+        var parede = new GameObject("ParedeInvisivel");
+        parede.transform.SetParent(chao, false);
+        parede.transform.position = posicao;
+        var colisor = parede.AddComponent<BoxCollider2D>();
+        colisor.size = new Vector2(1f, altura);
+        colisor.compositeOperation = Collider2D.CompositeOperation.Merge;
+    }
+
+    static List<List<Vector2Int>> AgruparVizinhos(HashSet<Vector2Int> celulas)
+    {
+        var grupos = new List<List<Vector2Int>>();
+        var visitadas = new HashSet<Vector2Int>();
+        Vector2Int[] direcoes = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+        foreach (Vector2Int inicio in celulas)
+        {
+            if (visitadas.Contains(inicio)) continue;
+            var grupo = new List<Vector2Int>();
+            var fila = new Queue<Vector2Int>();
+            fila.Enqueue(inicio);
+            visitadas.Add(inicio);
+            while (fila.Count > 0)
+            {
+                Vector2Int atual = fila.Dequeue();
+                grupo.Add(atual);
+                foreach (Vector2Int d in direcoes)
+                {
+                    Vector2Int vizinha = atual + d;
+                    if (celulas.Contains(vizinha) && visitadas.Add(vizinha)) fila.Enqueue(vizinha);
+                }
+            }
+            grupos.Add(grupo);
+        }
+        return grupos;
+    }
+
+    // Nuvens, morros e arbustos de enfeite (sem colisão).
+    // Repare que as nuvens de enfeite são IGUAIS à nuvem assassina. ;)
+    static void Decorar(Transform raiz, string[] mapa, int largura, int altura, int semente)
+    {
+        var decoracao = new GameObject("Decoracao").transform;
+        decoracao.SetParent(raiz, false);
+        var sorteio = new System.Random(semente);
+
+        for (int x = sorteio.Next(2, 6); x < largura + 4; x += sorteio.Next(7, 13))
+            Visual("Nuvem", decoracao, new Vector3(x, altura - 2 - sorteio.Next(0, 5), 0f), "nuvem", -10);
+
+        for (int x = sorteio.Next(0, 4); x < largura; x += sorteio.Next(4, 9))
+        {
+            for (int linha = 1; linha < altura; linha++)
+            {
+                char c = x < mapa[linha].Length ? mapa[linha][x] : ' ';
+                char acima = x < mapa[linha - 1].Length ? mapa[linha - 1][x] : ' ';
+                if (c == '#' && acima == ' ')
+                {
+                    string sprite = sorteio.Next(3) == 0 ? "morro" : "arbusto";
+                    Visual("Enfeite", decoracao, new Vector3(x, altura - 1 - linha + 0.5f, 0f), sprite, -8);
+                    break;
+                }
+                if (c != ' ') break;
+            }
+        }
+    }
+}
