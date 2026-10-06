@@ -482,13 +482,25 @@ public static class FabricaDeSprites
         "...k...",
     };
 
-    // Pontinho do caminho no mapa do mundo.
-    static readonly string[] ArteTrilha =
+    // Casinha da capital (mapa do mundo).
+    static readonly string[] ArteCasa =
     {
-        ".dd.",
-        "dnnd",
-        "dnnd",
-        ".dd.",
+        "................",
+        ".......kk.......",
+        "......krrk......",
+        ".....krrrrk.....",
+        "....krrrrrrk....",
+        "...krrrrrrrrk...",
+        "..krrrrrrrrrrk..",
+        ".kkkkkkkkkkkkkk.",
+        "..knnnnnnnnnnk..",
+        "..knkkknnkkknk..",
+        "..knklknnklknk..",
+        "..knkkkddkkknk..",
+        "..knnnkddknnnk..",
+        "..knnnkddknnnk..",
+        "..kkkkkkkkkkkk..",
+        "................",
     };
 
     static readonly string[] ArtePoeira =
@@ -571,8 +583,12 @@ public static class FabricaDeSprites
 
             // Mapa do mundo
             case "no_mapa": return Procedural(16, 16, Centro, CorNoDoMapa);
-            case "trilha": return DeArte(ArteTrilha, Centro);
             case "arvore": return Procedural(16, 24, Base, CorArvore);
+            case "ponte": return Procedural(16, 16, Centro, CorPonte);
+            case "montanha": return Procedural(16, 16, Centro, CorMontanha);
+            case "casa": return DeArte(ArteCasa, Centro);
+            case "terra": return Procedural(16, 16, Centro, CorTerra);
+            case "nevoa": return Procedural(16, 16, Centro, CorNevoa);
 
             case "chao": return DeArte(ArteChao, Centro);
             case "chao_topo": return DeArte(ArteChaoTopo, Centro);
@@ -605,6 +621,7 @@ public static class FabricaDeSprites
             switch (nome.Substring(0, sublinhado))
             {
                 case "bandeira": return Procedural(16, 48, Base, (x, y) => CorBandeira(x, y, false, quadro));
+                case "agua": return Procedural(16, 16, Centro, (x, y) => CorAgua(x, y, quadro));
                 case "bloco_surpresa_brilho": return DeArte(ArteBlocoSurpresa, Centro, PixelsPorUnidade, quadro * 5f);
             }
         }
@@ -613,6 +630,7 @@ public static class FabricaDeSprites
 
     public const int QuadrosDaBandeira = 4;
     public const int QuadrosDoBrilho = 7;
+    public const int QuadrosDaAgua = 4;
 
     // Nomes dos quadros, para passar para a AnimacaoDeQuadros.
     public static Sprite[] Quadros(string nome, int quantidade)
@@ -893,6 +911,53 @@ public static class FabricaDeSprites
         if (d > 5.1f && dy < 0f) return Cor('s'); // sombrinha embaixo: parece um botão
         if (dx < -1f && dy > 1f && d < 4.5f && d > 3f) return Cor('w');
         return Cor('Z');
+    }
+
+    // Água do mapa: azul com ondinhas que andam (4 quadros).
+    static Color32 CorAgua(int x, int y, int quadro)
+    {
+        bool onda = (y % 6 == 2 && (x + quadro * 4) % 16 < 5) || (y % 6 == 5 && (x + 8 - quadro * 4 + 32) % 16 < 4);
+        if (onda) return new Color32(170, 215, 250, 255);
+        return (x * 3 + y * 5) % 11 == 0 ? new Color32(62, 128, 210, 255) : new Color32(74, 144, 226, 255);
+    }
+
+    // Ponte de madeira (vista de cima): tábuas com corrimão em cima e embaixo. A água aparece por baixo.
+    static Color32 CorPonte(int x, int y)
+    {
+        if (y == 0 || y == 15) return Transparente;
+        if (y <= 2 || y >= 13) return y == 1 || y == 14 ? Cor('k') : Cor('d');
+        if (x % 4 == 3) return Cor('d');
+        return Ruido(x, y) % 7 == 0 ? Cor('b') : Cor('n');
+    }
+
+    // Montanha com neve no pico.
+    static Color32 CorMontanha(int x, int y)
+    {
+        float meia = (15 - y) * 0.5f + 0.5f, dx = Mathf.Abs(x - 7.5f);
+        if (dx > meia) return Transparente;
+        if (dx > meia - 1f || y == 0) return Cor('k');
+        if (y >= 11) return Cor('w');
+        return x < 7.5f ? Cor('s') : Cor('S');
+    }
+
+    // Terra batida do caminho.
+    static Color32 CorTerra(int x, int y)
+    {
+        int r = Ruido(x, y) % 13;
+        if (r == 0) return Cor('b');
+        if (r == 1) return Cor('y');
+        return new Color32(232, 200, 150, 255);
+    }
+
+    // Névoa (o miasma da Bruxa) que esconde o que você ainda não descobriu.
+    // Uma bolota com a borda "pontilhada", para as bolotas vizinhas se misturarem.
+    static Color32 CorNevoa(int x, int y)
+    {
+        float dx = x - 7.5f, dy = y - 7.5f, d = Mathf.Sqrt(dx * dx + dy * dy);
+        if (d > 8f) return Transparente;
+        bool pontilhado = d > 6f && (x + y) % 2 == 0;
+        if (pontilhado) return Transparente;
+        return Ruido(x, y) % 9 == 0 ? new Color32(70, 34, 96, 255) : new Color32(44, 22, 64, 255);
     }
 
     // Árvore redondinha do mapa (copa verde com contorno e tronco marrom).

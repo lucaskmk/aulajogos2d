@@ -27,13 +27,17 @@ Na última fase a Baleia Branca aparece, e a Emilia espera o Subaru no final.
 Também funciona com controle (gamepad).
 
 ## Mapa do mundo
-Depois do título vem um **mapa no estilo Super Mario World**: cada ponto é uma fase, ligados por um caminho
-pontilhado. O Subaru anda de ponto em ponto e em cada ponto fica o "personagem" daquela fase
-(Puck, Mabeast, serra, nuvem malvada, coelho...). No fim do caminho ficam a mansão e a Emilia.
-- Verde = já passou nesta partida, amarelo = liberada, cinza = trancada (o personagem aparece só como sombra).
-- Ao passar de fase você volta ao mapa, o caminho até a próxima aparece e o Subaru anda sozinho até ela.
+Depois do título vem um **mapa no estilo Super Mario World**, maior que a tela (ele rola para o lado):
+a capital, o rio com a ponte, a floresta, os morros, o lago, o campo de flores, as montanhas e a mansão.
+Cada ponto é uma fase e o Subaru anda pelos caminhos entre elas. Em cada ponto fica o "personagem"
+daquela fase (Puck, Mabeast, serra, nuvem malvada, coelho...) e a Emilia espera na mansão.
+- **O mapa começa coberto pela névoa** (o miasma da Bruxa): você só vê em volta das fases liberadas e não
+  sabe onde fica a última. Ao passar de fase, a névoa some ao longo do caminho novo, o ponto da próxima fase
+  aparece e o Subaru anda sozinho até ele. Quando a última fase é liberada, a névoa do mapa inteiro vai embora.
+- Verde = já passou nesta partida, amarelo = liberada.
 - Dá para voltar e jogar de novo qualquer fase liberada. Fases liberadas em partidas anteriores continuam
   abertas (bom para apresentar), mas pular fases pelo mapa tira a partida do recorde.
+- O mapa é desenhado em texto em `MapaDoMundo.cs` (legenda no próprio arquivo), igual às fases.
 
 No título dá para **Continuar** a partida salva (fica em PlayerPrefs: onde o Subaru está, mortes, moedas e tempo)
 ou começar um **Novo jogo**.
@@ -52,7 +56,7 @@ A música abaixa sozinha quando você morre (para a OST do Retorno pela Morte ap
   - `Interface` — tudo o que é desenhado por cima do jogo (HUD, título, pausa, morte, vitória, falas, transição entre fases). Só lê o estado do `GerenciadorDoJogo`.
   - `SonsDaMorte` — o áudio do Retorno pela Morte (sincronizado com o renascimento) e a OST com fade.
   - `Musica` e `FabricaDeMusica` — música de fundo (arquivo ou lofi gerado por código).
-  - `MapaDoMundo` — o mapa de fases (pontos, caminho, personagens, Subaru andando). As posições ficam em `Pontos`.
+  - `MapaDoMundo` — o mapa de fases desenhado em texto (terreno, caminhos, névoa, personagens, Subaru andando).
   - `Progresso` — o que fica salvo em PlayerPrefs (continuar, fase máxima, recorde).
   - `Fases` — **as fases são desenhadas em texto**; cada caractere é um bloco (legenda no topo do arquivo).
   - `ConstrutorDeFase` — lê o texto e cria os objetos. O chão vira um único `CompositeCollider2D`.
@@ -76,6 +80,6 @@ com armadilhas trocando de lugar. Para usar, adicione uma lista `mudancas` à fa
 ## Criando uma fase nova
 Copie um bloco `new Fase { ... }` em `Fases.cs` e desenhe com os caracteres da legenda
 (`#` chão, `P` jogador, `G` bandeira, `C` chão que cai, `h` espinho escondido, `r` coelho, `w` Baleia Branca...).
-Acrescente também um ponto em `MapaDoMundo.Pontos` (senão a fase nova não aparece no mapa).
+Acrescente também o número dela no desenho do `MapaDoMundo`, ligado à anterior por um caminho de `+` (senão a fase nova não aparece no mapa).
 Para testar uma fase direto: durante o Play, selecione o objeto `GerenciadorDoJogo`, mude `Fase Inicial` no
 Inspector, volte ao título e escolha **Novo jogo**: o Subaru começa nesse ponto do mapa, já liberado.
