@@ -207,7 +207,8 @@ public class Interface : MonoBehaviour
 
             Vector3 tela = cam.WorldToScreenPoint(placa.transform.position + Vector3.up * 1.2f);
             float largura = 420f * escala, altura = 80f * escala;
-            var caixa = new Rect(tela.x - largura / 2f, Screen.height - tela.y - altura, largura, altura);
+            float x = Mathf.Clamp(tela.x - largura / 2f, 10f * escala, Screen.width - largura - 10f * escala); // não sai da tela
+            var caixa = new Rect(x, Screen.height - tela.y - altura, largura, altura);
             GUI.DrawTexture(caixa, fundoEscuro);
             GUI.Label(new Rect(caixa.x, caixa.y + 8f * escala, caixa.width, caixa.height - 8f * escala), placa.texto, estiloFala);
             Texto("Puck:", caixa.x + 10f * escala, caixa.y - 14f * escala, 2f, 0f, Lilas);
