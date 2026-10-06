@@ -141,7 +141,7 @@ public class Esmagador : MonoBehaviour
         for (int i = 0; i < quantidade; i++)
         {
             Collider2D outro = acertos[i].collider;
-            if (outro.GetComponent<Jogador>() != null || outro.GetComponent<Inimigo>() != null) continue;
+            if (outro.GetComponent<Jogador>() != null || Inimigo.EhBicho(outro)) continue;
             menor = Mathf.Min(menor, acertos[i].distance);
         }
         return menor;
@@ -154,7 +154,7 @@ public class Esmagador : MonoBehaviour
         for (int i = 0; i < quantidade; i++)
         {
             Collider2D outro = encostados[i];
-            if (outro.GetComponent<Jogador>() == null && outro.GetComponent<Inimigo>() == null) return true;
+            if (outro.GetComponent<Jogador>() == null && !Inimigo.EhBicho(outro)) return true;
         }
         return false;
     }

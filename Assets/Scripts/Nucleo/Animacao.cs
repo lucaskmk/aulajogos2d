@@ -6,6 +6,12 @@ using UnityEngine;
 //  - Flutuar:  vai e volta devagar na horizontal (nuvens).
 // A "fase" vem da posição do objeto, então cada um mexe num ritmo diferente
 // (e a nuvem assassina flutua IGUALZINHO às outras).
+//
+// paralaxe (só no Flutuar): o quanto o objeto acompanha a câmera, como as camadas do fundo.
+// 0 = parado no mundo; 0.25 = anda 25% do que a câmera anda, e parece mais longe.
+// Quando a câmera está bem em cima do objeto ele fica exatamente onde foi posto no mapa
+// (é assim que a nuvem assassina continua no lugar certo para te pegar).
+[DefaultExecutionOrder(100)] // roda depois da CameraSeguir, para não tremer
 public class Animacao : MonoBehaviour
 {
     public enum Tipo { Piscar, Balancar, Flutuar }
@@ -13,16 +19,18 @@ public class Animacao : MonoBehaviour
     public Tipo tipo;
     public float velocidade = 1f;
     public float intensidade = 1f;
+    public float paralaxe;
 
     Vector3 origem;
     float fase;
 
-    public static Animacao Adicionar(GameObject objeto, Tipo tipo, float velocidade, float intensidade)
+    public static Animacao Adicionar(GameObject objeto, Tipo tipo, float velocidade, float intensidade, float paralaxe = 0f)
     {
         var animacao = objeto.AddComponent<Animacao>();
         animacao.tipo = tipo;
         animacao.velocidade = velocidade;
         animacao.intensidade = intensidade;
+        animacao.paralaxe = paralaxe;
         return animacao;
     }
 
@@ -32,7 +40,7 @@ public class Animacao : MonoBehaviour
         fase = transform.position.x * 1.7f + transform.position.y * 0.9f;
     }
 
-    void Update()
+    void LateUpdate()
     {
         float onda = Mathf.Sin(Time.time * velocidade + fase);
         switch (tipo)
@@ -44,7 +52,11 @@ public class Animacao : MonoBehaviour
                 transform.localRotation = Quaternion.Euler(0f, 0f, onda * intensidade);
                 break;
             case Tipo.Flutuar:
-                transform.localPosition = origem + Vector3.right * onda * intensidade;
+                float deslocamento = onda * intensidade;
+                Camera cam = Camera.main;
+                if (paralaxe != 0f && cam != null)
+                    deslocamento += (cam.transform.position.x - origem.x) * paralaxe;
+                transform.localPosition = origem + Vector3.right * deslocamento;
                 break;
         }
     }

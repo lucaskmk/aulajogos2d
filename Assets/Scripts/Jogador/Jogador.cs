@@ -71,7 +71,7 @@ public class Jogador : MonoBehaviour
 
     void Update()
     {
-        if (Morto || congelado) return;
+        if (Morto || congelado || GerenciadorDoJogo.Pausado) return;
 
         AtualizarInversao();
         entradaX = Controles.Horizontal() * (controlesInvertidos ? -1f : 1f);
@@ -154,7 +154,7 @@ public class Jogador : MonoBehaviour
         for (int i = 0; i < quantidade; i++)
         {
             Collider2D outro = encostados[i];
-            if (outro != colisor && outro.GetComponent<Inimigo>() == null) return true;
+            if (outro != colisor && !Inimigo.EhBicho(outro)) return true;
         }
         return false;
     }
@@ -194,7 +194,7 @@ public class Jogador : MonoBehaviour
 
     public void Morrer(bool caiuNoBuraco = false)
     {
-        if (Morto || congelado) return;
+        if (Morto || congelado || GerenciadorDoJogo.Pausado) return;
         Morto = true;
 
         colisor.enabled = false;
@@ -237,6 +237,7 @@ public class Jogador : MonoBehaviour
 
     public void Teletransportar(Vector3 posicao)
     {
+        transform.position = posicao; // já muda agora (a câmera pode pular direto para cá)
         Corpo.position = posicao;
         Corpo.linearVelocity = Vector2.zero;
         pulando = false;

@@ -19,6 +19,9 @@ public class Inimigo : MonoBehaviour
     ContactFilter2D filtroSolido;
     readonly List<Collider2D> encostados = new List<Collider2D>();
 
+    // Inimigo ou coelho? (o jogador não "pisa no chão" em cima deles, e armadilhas não batem neles como se fossem parede)
+    public static bool EhBicho(Collider2D outro) => outro.GetComponent<Inimigo>() != null || outro.GetComponent<Coelho>() != null;
+
     void Awake()
     {
         corpo = gameObject.AddComponent<Rigidbody2D>();
@@ -100,6 +103,7 @@ public class Inimigo : MonoBehaviour
         corpo.simulated = false;
         jogador.Quicar(11f, true);
         GerenciadorDoJogo.Som("pisao");
+        Conquistas.Contar("mabeast", 10);
         Destroy(gameObject, 0.5f);
     }
 }

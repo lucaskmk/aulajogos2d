@@ -23,8 +23,16 @@
 //   W  bandeira que te manda de volta pro começo
 //   X  linha invisível que inverte os controles (cruzou de novo, desinverte)
 //   U  cano (2 de largura, desce até o chão): de tempos em tempos sai uma MÃO dele. Encostou, morreu
+//   r  coelho (Grande Coelho): pula atrás de você e se MULTIPLICA. Pise em cima para derrotar
+//   w  Baleia Branca: quando você passa daqui, ela surge do fundo e atravessa a tela (desvie!).
+//      Coloque no chão da arena, na linha em que o jogador anda
+//   L  Emilia (esperando no fim da última fase)
+//   D  porta da Beatrice (2 de altura): aperte S/seta para baixo na frente dela e ela te leva para OUTRA porta qualquer.
+//      Paredes de cima a baixo dividem a fase em salas; as portas são embaralhadas a cada morte
+//   Y  Beatrice (fala como as placas do Puck; os textos entram na mesma lista "placas")
+//   s  ponto de save: encostou, você renasce ali. Mas às vezes ele "muda de lugar"... :)
 //
-//  As placas recebem os textos na ordem da esquerda para a direita.
+//  As placas (quem fala é o Puck) recebem os textos na ordem da esquerda para a direita.
 //
 //  MUDANÇAS (opcional, nenhuma fase usa agora): a fase pode MUDAR depois que você morre (estilo Level Devil).
 //  Cada item de "mudancas" é uma versão da fase usada nas tentativas seguintes,
@@ -96,7 +104,7 @@ public static class Fases
                 "                  ######",
                 "          o       ######",
                 "                  ######",
-                "         B   U    ######                   $$",
+                "         B        ######                   $$",
                 "  P i    B      S ######            i        i  E B Z   G",
                 "######################################FFF#################",
                 "######################################FFF#################",
@@ -124,7 +132,7 @@ public static class Fases
                 "",
                 "                ??",
                 "                     $$",
-                "                                                  i         >                 R   S",
+                "                                             s    i         >                 R   S",
                 " <P i                     E   ###############################CCCC###########################",
                 "############  ######   ######################################CCCC###########################",
                 "############  ######   ######################################CCCC###########################",
@@ -181,7 +189,7 @@ public static class Fases
                 "                                                    ?K",
                 "",
                 "                                                  U",
-                "  P i  $$ m$            h                                i       G",
+                "  P i  $$ m$            h             rr                 i       G",
                 "###############   #############CCC############   #####################",
                 "###############   #############CCC############   #####################",
             },
@@ -209,7 +217,7 @@ public static class Fases
                 "                          ?",
                 "",
                 "                                                                U",
-                "  P i   X       e             X  e   E       i  X           X      G",
+                "  P i   X       e             X  e   E       is X           X      G",
                 "#####################   #################CCC########    ################",
                 "#####################   #################CCC########    ################",
             },
@@ -232,14 +240,42 @@ public static class Fases
                 "",
                 "",
                 "",
-                "",
-                "                                                 $",
+                "                                                                    BBBBB",
+                "                                                 $                    T",
                 "                                                BBB",
                 "",
                 "                                                       U",
                 "  P i                 i B  W                $m$               >        G",
                 "########### MM     ################   ######################################",
                 "###########        ################   ######################################",
+            },
+        },
+
+        new Fase
+        {
+            nome = "Biblioteca Proibida",
+            placas = new[]
+            {
+                "A Beatrice embaralhou as portas.\nAperte S (ou seta para baixo) na frente de uma para entrar.",
+                "Achou a porta certa, de fato.\nNão que eu estivesse esperando, kashira.",
+            },
+            mapa = new[]
+            {
+                "#############################################################",
+                "#############################################################",
+                "#           #        v  #           #           #           #",
+                "#           #           #           #           #           #",
+                "#           #           #           #           #           #",
+                "#           #           #           #           #           #",
+                "#           #           #           #           #           #",
+                "#           #           #           #           #  BBBBBB   #",
+                "#  BBBBBB   #           #           #           #           #",
+                "#           #           #  BBBBBB   #           #           #",
+                "#           #           #           #      $    #           #",
+                "#           #           #  $$$ m    #           #           #",
+                "# P i  D  D #  D  h  D  # E      D  #  D  e   D # D   Y  G  #",
+                "#############################################################",
+                "#############################################################",
             },
         },
 
@@ -264,13 +300,49 @@ public static class Fases
                 "",
                 "                                                  ?K",
                 "",
-                "                      U                                      i R    h     *",
-                "  P i $m$ X       X         e           <                 ####################",
-                "#############   ############### MM     ########CC#############################",
-                "#############   ###############        ########CC#############################",
+                "                      U                                U    i R    h       s      w                             *   L",
+                "  P i $m$ X       X         e           <                 #############################################################",
+                "#############   ############### MM     ########CC######################################################################",
+                "#############   ###############        ########CC######################################################################",
             },
         },
     };
+
+    // A fase secreta: aparece no mapa (numa ilha do lago) se você pegar TODAS as moedas da fase do segredo.
+    public const int IndiceSecreto = 99;
+    public const int FaseDoSegredo = 4; // "Eu mudo de ideia" (o Puck avisa: "Pegue as moedas! Todas!")
+
+    public static readonly Fase Secreta = new Fase
+    {
+        nome = "Santuário do Puck (secreta)",
+        placas = new[]
+        {
+            "Você achou a fase secreta!\nAqui não tem pegadinha. Juro de verdade.",
+            "Viu? Só moedas. Pode confiar.",
+            "...tá, só uma.",
+        },
+        mapa = new[]
+        {
+            "",
+            "",
+            "",
+            "",
+            "",
+            "        $$$                $$$                  $$$",
+            "       $   $              $   $                $   $",
+            "",
+            "",
+            "              ?  ?  ?            $$$",
+            "                                BBBBB",
+            "                                                       $$$",
+            "  P i    S  $$$             S         i          S          i   R     *",
+            "######################   ##################   ##########################",
+            "######################   ##################   ##########################",
+        },
+    };
+
+    // Dados de uma fase pelo índice (inclui a secreta).
+    public static Fase Dados(int indice) => indice == IndiceSecreto ? Secreta : Todas[indice];
 
     // Frases que aparecem quando você morre (escolhidas aleatoriamente).
     public static readonly string[] MensagensDeMorte =
@@ -301,5 +373,6 @@ public static class Fases
         "O Puck viu tudo.",
         "Foi o Mabeast. Ou o chão. Ou os dois.",
         "O Subaru já passou por coisa pior.",
+        "Porta errada, kashira.",
     };
 }

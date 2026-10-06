@@ -58,6 +58,7 @@ public static class FabricaDeSprites
         { 'M', new Color32(148, 152, 170, 255) }, // pedra (sombra)
         { 'Z', new Color32(226, 230, 240, 255) }, // pedra (brilho)
         { 'z', new Color32(96, 98, 120, 255) },   // rejunte da pedra
+        { 'e', new Color32(70, 120, 230, 255) },  // azul (olhos da Beatrice)
     };
 
     static Color32 Cor(char c) => paleta[c];
@@ -401,6 +402,148 @@ public static class FabricaDeSprites
         "zzzzzzzzzzzzzzzz",
     };
 
+    // Puck, o espírito-gatinho da Emilia: é ele quem "dá as dicas" (mentirosas) no lugar das placas.
+    static readonly string[] ArtePuck =
+    {
+        "................",
+        ".k.........k....",
+        "kpk.......kpk...",
+        "kppkkkkkkkppk...",
+        "ksssssssssssk...",
+        "ksssssssssssk.kk",
+        "kskwssssskwsk.k.",
+        "kskksspsskksk.k.",
+        "kpsssskksssspk.k",
+        ".kssssssssssk.k.",
+        "..kksssssssskkk.",
+        "...ksssssssk....",
+        "...kswssswsk....",
+        "....kkk.kkk.....",
+        "................",
+        "................",
+    };
+
+    // Grande Coelho: fofinho, pequeno... e se multiplica.
+    static readonly string[] ArteCoelho =
+    {
+        "................",
+        "................",
+        "................",
+        "....kkk.kkk.....",
+        "....kpk.kpk.....",
+        "....kpk.kpk.....",
+        "....kwk.kwk.....",
+        "...kkwwkwwkk....",
+        "..kwwwwwwwwwk...",
+        "..kwrwwwrwwwk...",
+        ".kwwwwpwwwwwwk..",
+        ".kwwwwwwwwwwwwk.",
+        ".kwwwwwwwwwwwwk.",
+        "..klwwwwwwwwlk..",
+        "...kkkk..kkkk...",
+        "................",
+    };
+
+    // Emilia: cabelo prateado, olhos roxos e a florzinha no cabelo.
+    static readonly string[] ArteEmilia =
+    {
+        ".....kkkkkk.....",
+        "...kkswwssskk...",
+        "..kswwssssssPk..",
+        ".kswssssssssPPk.",
+        ".ksssssssssswPk.",
+        ".kssskssssksssk.",
+        ".ksskcccccckssk.",
+        ".kskcVVccVVcksk.",
+        ".kskcVkccVkcksk.",
+        ".kskpccccccpksk.",
+        ".ksskccCCcckssk.",
+        ".ksssskkkkssssk.",
+        ".kssvkwwwwkvssk.",
+        ".kssckwvvwkcssk.",
+        "kssskwwvvwwksssk",
+        ".kskwwwwwwwwksk.",
+        ".kskwwvwwvwwksk.",
+        "..kwwwwwwwwwwk..",
+        ".kwwwwwwwwwwwwk.",
+        ".kvwwwwwwwwwwvk.",
+        "kvvvvvvvvvvvvvvk",
+        ".kkkkkkkkkkkkkk.",
+        ".....kck..kck...",
+        ".....kkk..kkk...",
+    };
+
+    // Beatrice: cabelo loiro em "furadeiras", laços cor-de-rosa e vestido vermelho.
+    static readonly string[] ArteBeatrice =
+    {
+        ".....kkkkkk.....",
+        "....kyyyyyyk....",
+        "...kyyyyyyyyk...",
+        "..kyyyyyyyyyyk..",
+        ".kpkyyyyyyyykpk.",
+        "kyykcccccccckyyk",
+        "kyokceecceeckoyk",
+        "kyykcekccekckyyk",
+        "koykcpccccpckyok",
+        "kyykcccCccckkyyk",
+        "koyokkkkkkkkoyok",
+        "kyykrrpwwprrkyyk",
+        "kooykrrppprrkyok",
+        "kyyk.krrrrk.kyyk",
+        ".kok.krrrrk.kok.",
+        "..k.krrppprk..k.",
+        "....krrrrrrrk...",
+        "...krrpppprrk...",
+        "..krrrrrrrrrrk..",
+        ".kpprrrrrrrrppk.",
+        "kppppppppppppppk",
+        ".kkkkkkkkkkkkkk.",
+        ".....kck..kck...",
+        ".....kkk..kkk...",
+    };
+
+    // Caveirinha do mapa (mostra quantas vezes você morreu em cada fase).
+    static readonly string[] ArteCaveira =
+    {
+        ".kkkkk.",
+        "kwwwwwk",
+        "kwkwkwk",
+        "kwwwwwk",
+        ".kwkwk.",
+        "..kkk..",
+    };
+
+    static readonly string[] ArteCoracao =
+    {
+        ".kk.kk.",
+        "krpkrrk",
+        "krrrrrk",
+        ".krrrk.",
+        "..krk..",
+        "...k...",
+    };
+
+    // Casinha da capital (mapa do mundo).
+    static readonly string[] ArteCasa =
+    {
+        "................",
+        ".......kk.......",
+        "......krrk......",
+        ".....krrrrk.....",
+        "....krrrrrrk....",
+        "...krrrrrrrrk...",
+        "..krrrrrrrrrrk..",
+        ".kkkkkkkkkkkkkk.",
+        "..knnnnnnnnnnk..",
+        "..knkkknnkkknk..",
+        "..knklknnklknk..",
+        "..knkkkddkkknk..",
+        "..knnnkddknnnk..",
+        "..knnnkddknnnk..",
+        "..kkkkkkkkkkkk..",
+        "................",
+    };
+
     static readonly string[] ArtePoeira =
     {
         ".ww.",
@@ -472,6 +615,29 @@ public static class FabricaDeSprites
             case "esmagador": return DeArte(ArteEsmagador, Centro);
             case "placa": return DeArte(ArtePlaca, Centro);
             case "mao_sombra": return DeArte(ArteMaoDaSombra, Centro);
+            case "puck": return DeArte(ArtePuck, Centro);
+            case "coelho": return DeArte(ArteCoelho, Centro);
+            case "emilia": return DeArte(ArteEmilia, Base);
+            case "coracao": return DeArte(ArteCoracao, Centro);
+            case "beatrice": return DeArte(ArteBeatrice, Base);
+            case "caveira": return DeArte(ArteCaveira, Centro);
+            case "porta": return Procedural(16, 32, Base, (x, y) => CorPorta(x, y, false));
+            case "porta_aberta": return Procedural(16, 32, Base, (x, y) => CorPorta(x, y, true));
+            case "ponto_save": return Procedural(16, 24, Base, (x, y) => CorPontoDeSave(x, y, false));
+            case "ponto_save_ativo": return Procedural(16, 24, Base, (x, y) => CorPontoDeSave(x, y, true));
+            case "baleia": return Procedural(64, 24, Centro, CorBaleia);
+            case "aviso": return Procedural(16, 16, Centro, CorAviso);
+
+            // Mapa do mundo
+            case "no_mapa": return Procedural(16, 16, Centro, CorNoDoMapa);
+            case "arvore": return Procedural(16, 24, Base, CorArvore);
+            case "ponte": return Procedural(16, 16, Centro, CorPonte);
+            case "montanha": return Procedural(16, 16, Centro, CorMontanha);
+            case "casa": return DeArte(ArteCasa, Centro);
+            case "terra": return Procedural(16, 16, Centro, CorTerra);
+            case "nevoa": return Procedural(16, 16, Centro, CorNevoa);
+            case "ceu": return Procedural(1, 32, Base, CorCeu);
+            case "sombra_nuvem": return Procedural(48, 20, Centro, CorSombraDaNuvem);
 
             case "chao": return DeArte(ArteChao, Centro);
             case "chao_topo": return DeArte(ArteChaoTopo, Centro);
@@ -484,8 +650,8 @@ public static class FabricaDeSprites
 
             case "espinho": return Procedural(16, 16, Centro, CorEspinho);
             case "serra": return Procedural(16, 16, Centro, CorSerra);
-            case "bandeira": return Procedural(16, 48, Base, (x, y) => CorBandeira(x, y, false));
-            case "bandeira_falsa": return Procedural(16, 48, Base, (x, y) => CorBandeira(x, y, true));
+            case "bandeira": return Procedural(16, 48, Base, (x, y) => CorBandeira(x, y, false, 0));
+            case "bandeira_falsa": return Procedural(16, 48, Base, (x, y) => CorBandeira(x, y, true, 0));
             case "nuvem": return Procedural(32, 18, Centro, (x, y) => CorNuvem(x, y, false));
             case "nuvem_malvada": return Procedural(32, 18, Centro, (x, y) => CorNuvem(x, y, true));
             case "cano_topo": return Procedural(32, 16, Centro, (x, y) => CorCano(x, y, true));
@@ -496,10 +662,35 @@ public static class FabricaDeSprites
             case "fundo_floresta": return Procedural(128, 112, Base, CorFloresta);
             case "fundo_arvores": return Procedural(128, 80, Base, CorArvores);
         }
+
+        // Quadros de animação: "bandeira_2" (pano tremulando), "bloco_surpresa_brilho_3" (brilho passando).
+        int sublinhado = nome.LastIndexOf('_');
+        if (sublinhado > 0 && int.TryParse(nome.Substring(sublinhado + 1), out int quadro))
+        {
+            switch (nome.Substring(0, sublinhado))
+            {
+                case "bandeira": return Procedural(16, 48, Base, (x, y) => CorBandeira(x, y, false, quadro));
+                case "agua": return Procedural(16, 16, Centro, (x, y) => CorAgua(x, y, quadro));
+                case "bloco_surpresa_brilho": return DeArte(ArteBlocoSurpresa, Centro, PixelsPorUnidade, quadro * 5f);
+            }
+        }
         throw new ArgumentException("Sprite desconhecido: " + nome);
     }
 
-    static Sprite DeArte(string[] linhas, Vector2 pivo, int pixelsPorUnidade = PixelsPorUnidade)
+    public const int QuadrosDaBandeira = 4;
+    public const int QuadrosDoBrilho = 7;
+    public const int QuadrosDaAgua = 4;
+
+    // Nomes dos quadros, para passar para a AnimacaoDeQuadros.
+    public static Sprite[] Quadros(string nome, int quantidade)
+    {
+        var quadros = new Sprite[quantidade];
+        for (int i = 0; i < quantidade; i++) quadros[i] = Pegar(nome + "_" + i);
+        return quadros;
+    }
+
+    // brilho: posição de uma faixa diagonal clara passando pelo desenho (NaN = sem brilho).
+    static Sprite DeArte(string[] linhas, Vector2 pivo, int pixelsPorUnidade = PixelsPorUnidade, float brilho = float.NaN)
     {
         int altura = linhas.Length;
         int largura = 0;
@@ -510,7 +701,10 @@ public static class FabricaDeSprites
             string linha = linhas[altura - 1 - y]; // a primeira linha do texto é o topo da imagem
             if (x >= linha.Length) return Transparente;
             char c = linha[x];
-            return paleta.TryGetValue(c, out Color32 cor) ? cor : Transparente;
+            if (!paleta.TryGetValue(c, out Color32 cor)) return Transparente;
+            if (c != 'k' && Mathf.Abs(x + y - brilho) <= 1.5f) // NaN nunca entra aqui
+                cor = Color32.Lerp(cor, Cor('w'), 0.65f);
+            return cor;
         }, pixelsPorUnidade);
     }
 
@@ -668,8 +862,14 @@ public static class FabricaDeSprites
         return Cor('s');
     }
 
-    static Color32 CorBandeira(int x, int y, bool falsa)
+    // quadro: 0 a 3, o pano "ondula" (quanto mais longe do mastro, mais ele sobe e desce).
+    static Color32 CorBandeira(int x, int y, bool falsa, int quadro)
     {
+        if (x >= 9)
+        {
+            float onda = Mathf.Sin(quadro * Mathf.PI / 2f - (x - 9) * 0.9f) * (x - 9) / 6f * 1.4f;
+            y -= Mathf.RoundToInt(onda);
+        }
         // bolinha no topo
         float bx = x - 7.5f, by = y - 45f;
         if (bx * bx + by * by < 5.5f) return Cor('y');
@@ -719,54 +919,318 @@ public static class FabricaDeSprites
         return y < 5 ? Cor('l') : Cor('w');
     }
 
+    // Baleia Branca (vista de lado, olhando para a esquerda): corpão, chifre na testa e cauda.
+    static bool DentroDaBaleia(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= 64 || y >= 24) return false;
+        float dy = y - 11f;
+        if (x <= 30) // cabeça e meio do corpo
+        {
+            float ex = (x - 30f) / 26f, ey = dy / 9f;
+            if (ex * ex + ey * ey <= 1f) return true;
+        }
+        else if (x <= 54 && Mathf.Abs(dy) <= 9f * (1f - (x - 30f) / 30f * 0.75f)) return true; // afina até a cauda
+        if (x > 54 && x <= 58 && Mathf.Abs(dy) <= 2.5f) return true; // "pescoço" da cauda
+        if (x >= 56 && x <= 63 && Mathf.Abs(dy) <= 1f + (x - 56) * 1.2f && !(x >= 61 && Mathf.Abs(dy) <= 1f)) return true; // nadadeira
+        return y >= 17 && y <= 23 && Mathf.Abs(x - 13f) <= (23 - y) * 0.5f; // chifre
+    }
+
+    static Color32 CorBaleia(int x, int y)
+    {
+        if (!DentroDaBaleia(x, y)) return Transparente;
+        bool borda = !DentroDaBaleia(x + 1, y) || !DentroDaBaleia(x - 1, y) || !DentroDaBaleia(x, y + 1) || !DentroDaBaleia(x, y - 1);
+        if (borda) return Cor('k');
+        if (y >= 18 && Mathf.Abs(x - 13f) <= (23 - y) * 0.5f) return Cor('n'); // chifre
+        if (x >= 13 && x <= 15 && y >= 12 && y <= 14)               // olho vermelho
+            return x == 14 && y == 13 ? Cor('k') : Cor('r');
+        if (y == 8 && x >= 5 && x <= 20) return Cor('k');           // boca
+        if (y < 8 && x < 40 && y % 2 == 0) return Cor('S');         // pregas da barriga
+        if (y < 8) return Cor('s');
+        if (y >= 15 && (x * 7 + y * 3) % 23 == 0) return Cor('l');  // cicatrizes
+        return Cor('w');
+    }
+
+    // Ponto (fase) do mapa: um "botão" branco com contorno. O mapa pinta com a cor do estado
+    // (verde = concluída, amarelo = liberada, cinza = trancada).
+    static Color32 CorNoDoMapa(int x, int y)
+    {
+        float dx = x - 7.5f, dy = y - 7.5f, d = Mathf.Sqrt(dx * dx + dy * dy);
+        if (d > 7.3f) return Transparente;
+        if (d > 6.3f) return Cor('k');
+        if (d > 5.1f && dy < 0f) return Cor('s'); // sombrinha embaixo: parece um botão
+        if (dx < -1f && dy > 1f && d < 4.5f && d > 3f) return Cor('w');
+        return Cor('Z');
+    }
+
+    // Água do mapa: azul com ondinhas que andam (4 quadros).
+    static Color32 CorAgua(int x, int y, int quadro)
+    {
+        bool onda = (y % 6 == 2 && (x + quadro * 4) % 16 < 5) || (y % 6 == 5 && (x + 8 - quadro * 4 + 32) % 16 < 4);
+        if (onda) return new Color32(170, 215, 250, 255);
+        return (x * 3 + y * 5) % 11 == 0 ? new Color32(62, 128, 210, 255) : new Color32(74, 144, 226, 255);
+    }
+
+    // Ponte de madeira (vista de cima): tábuas com corrimão em cima e embaixo. A água aparece por baixo.
+    static Color32 CorPonte(int x, int y)
+    {
+        if (y == 0 || y == 15) return Transparente;
+        if (y <= 2 || y >= 13) return y == 1 || y == 14 ? Cor('k') : Cor('d');
+        if (x % 4 == 3) return Cor('d');
+        return Ruido(x, y) % 7 == 0 ? Cor('b') : Cor('n');
+    }
+
+    // Montanha com neve no pico.
+    static Color32 CorMontanha(int x, int y)
+    {
+        float meia = (15 - y) * 0.5f + 0.5f, dx = Mathf.Abs(x - 7.5f);
+        if (dx > meia) return Transparente;
+        if (dx > meia - 1f || y == 0) return Cor('k');
+        if (y >= 11) return Cor('w');
+        return x < 7.5f ? Cor('s') : Cor('S');
+    }
+
+    // Terra batida do caminho.
+    static Color32 CorTerra(int x, int y)
+    {
+        int r = Ruido(x, y) % 13;
+        if (r == 0) return Cor('b');
+        if (r == 1) return Cor('y');
+        return new Color32(232, 200, 150, 255);
+    }
+
+    // Faixa de céu do horizonte do mapa: azul em cima, quase branco perto do chão.
+    static Color32 CorCeu(int x, int y) => Color32.Lerp(new Color32(225, 240, 250, 255), new Color32(130, 195, 240, 255), y / 31f);
+
+    // Sombra de nuvem passando pelo chão (preta, o mapa deixa bem transparente).
+    static Color32 CorSombraDaNuvem(int x, int y)
+    {
+        float ex = (x - 23.5f) / 23f, ey = (y - 9.5f) / 9f;
+        float d = ex * ex + ey * ey;
+        if (d > 1f || (d > 0.7f && (x + y) % 2 == 0)) return Transparente;
+        return new Color32(0, 0, 0, 255);
+    }
+
+    // Névoa (o miasma da Bruxa) que esconde o que você ainda não descobriu.
+    // Uma bolota com a borda "pontilhada", para as bolotas vizinhas se misturarem.
+    static Color32 CorNevoa(int x, int y)
+    {
+        float dx = x - 7.5f, dy = y - 7.5f, d = Mathf.Sqrt(dx * dx + dy * dy);
+        if (d > 8f) return Transparente;
+        bool pontilhado = d > 6f && (x + y) % 2 == 0;
+        if (pontilhado) return Transparente;
+        return Ruido(x, y) % 9 == 0 ? new Color32(70, 34, 96, 255) : new Color32(44, 22, 64, 255);
+    }
+
+    // Árvore redondinha do mapa (copa verde com contorno e tronco marrom).
+    static bool DentroDaCopa(int x, int y) => (x - 7.5f) * (x - 7.5f) + (y - 15f) * (y - 15f) <= 7.6f * 7.6f;
+
+    static Color32 CorArvore(int x, int y)
+    {
+        if (DentroDaCopa(x, y))
+        {
+            bool borda = !DentroDaCopa(x + 1, y) || !DentroDaCopa(x - 1, y) || !DentroDaCopa(x, y + 1) || !DentroDaCopa(x, y - 1);
+            if (borda) return Cor('q');
+            if ((x - 7.5f) - (y - 15f) > 4f) return Cor('G'); // sombra embaixo à direita
+            if ((x - 4f) * (x - 4f) + (y - 18f) * (y - 18f) < 5f) return Cor('a'); // brilho
+            return Cor('g');
+        }
+        if (x >= 6 && x <= 9 && y <= 8) return x == 6 || x == 9 ? Cor('d') : Cor('b');
+        return Transparente;
+    }
+
+    // Porta da Biblioteca Proibida: madeira com moldura lilás e topo em arco. Aberta, mostra a escuridão mágica.
+    static bool DentroDaPorta(int x, int y) =>
+        x >= 1 && x <= 14 && y >= 0 && (y < 24 || (x - 7.5f) * (x - 7.5f) + (y - 24f) * (y - 24f) <= 6.6f * 6.6f);
+
+    static Color32 CorPorta(int x, int y, bool aberta)
+    {
+        if (!DentroDaPorta(x, y)) return Transparente;
+        bool borda = !DentroDaPorta(x + 1, y) || !DentroDaPorta(x - 1, y) || !DentroDaPorta(x, y + 1) || (y == 0);
+        if (borda) return Cor('k');
+        bool moldura = !DentroDaPorta(x + 2, y) || !DentroDaPorta(x - 2, y) || !DentroDaPorta(x, y + 2);
+        if (moldura) return Cor('V');
+        if (aberta) return Ruido(x, y) % 11 == 0 ? Cor('P') : (Ruido(x, y) % 5 == 0 ? Cor('v') : Cor('x'));
+        if (x == 11 && (y == 12 || y == 13)) return Cor('y'); // maçaneta
+        return x % 4 == 2 ? Cor('d') : Cor('b');              // tábuas
+    }
+
+    // Ponto de save: um cristal num pedestal. Apagado é cinza; ativo, roxo e brilhando.
+    static Color32 CorPontoDeSave(int x, int y, bool ativo)
+    {
+        if (y <= 2) return x >= 3 && x <= 12 ? (y == 0 || x == 3 || x == 12 ? Cor('k') : Cor('S')) : Transparente;
+        float dx = Mathf.Abs(x - 7.5f), meia = 5.5f * (1f - Mathf.Abs(y - 12f) / 9f);
+        if (y > 21 || dx > meia) return Transparente;
+        if (dx > meia - 1f) return Cor('k');
+        if (!ativo) return x < 7.5f ? Cor('s') : Cor('S');
+        if (x == 5 && y >= 11 && y <= 15) return Cor('w');
+        return x < 7.5f ? Cor('P') : Cor('V');
+    }
+
+    // "!" de perigo (avisa a altura em que a Baleia vai passar).
+    static Color32 CorAviso(int x, int y)
+    {
+        float dx = x - 7.5f, dy = y - 7.5f, d = Mathf.Sqrt(dx * dx + dy * dy);
+        if (d > 7.6f) return Transparente;
+        if (d > 6.4f) return Cor('k');
+        if ((x == 7 || x == 8) && ((y >= 6 && y <= 12) || (y >= 3 && y <= 4))) return Cor('w');
+        return Cor('r');
+    }
+
     // ---------------------------------------------------------------- texto em pixel art
 
-    // Letrinhas 5x7 para o logo "Re:CILADA!" e o "DEAD > CONTINUE" (igual ao ímã do coelhinho).
-    // Só tem as letras que o jogo usa; '>' é a setinha.
+    // Letrinhas 5x7 (todas as maiúsculas, números e pontuação), usadas no logo, no "DEAD > CONTINUE" e no HUD.
+    // O 'e' minúsculo é só do logo "Re:CILADA!". Caractere que não existe aqui vira espaço.
     static readonly Dictionary<char, string[]> Letras = new Dictionary<char, string[]>
     {
         { 'A', new[] { ".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#" } },
+        { 'B', new[] { "####.", "#...#", "#...#", "####.", "#...#", "#...#", "####." } },
         { 'C', new[] { ".###.", "#...#", "#....", "#....", "#....", "#...#", ".###." } },
         { 'D', new[] { "####.", "#...#", "#...#", "#...#", "#...#", "#...#", "####." } },
         { 'E', new[] { "#####", "#....", "#....", "####.", "#....", "#....", "#####" } },
+        { 'F', new[] { "#####", "#....", "#....", "####.", "#....", "#....", "#...." } },
+        { 'G', new[] { ".###.", "#...#", "#....", "#.###", "#...#", "#...#", ".####" } },
+        { 'H', new[] { "#...#", "#...#", "#...#", "#####", "#...#", "#...#", "#...#" } },
         { 'I', new[] { "###", ".#.", ".#.", ".#.", ".#.", ".#.", "###" } },
+        { 'J', new[] { "..###", "...#.", "...#.", "...#.", "#..#.", "#..#.", ".##.." } },
+        { 'K', new[] { "#...#", "#..#.", "#.#..", "##...", "#.#..", "#..#.", "#...#" } },
         { 'L', new[] { "#....", "#....", "#....", "#....", "#....", "#....", "#####" } },
+        { 'M', new[] { "#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#" } },
         { 'N', new[] { "#...#", "##..#", "#.#.#", "#.#.#", "#..##", "#...#", "#...#" } },
         { 'O', new[] { ".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###." } },
+        { 'P', new[] { "####.", "#...#", "#...#", "####.", "#....", "#....", "#...." } },
+        { 'Q', new[] { ".###.", "#...#", "#...#", "#...#", "#.#.#", "#..#.", ".##.#" } },
         { 'R', new[] { "####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#" } },
+        { 'S', new[] { ".####", "#....", "#....", ".###.", "....#", "....#", "####." } },
         { 'T', new[] { "#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.." } },
         { 'U', new[] { "#...#", "#...#", "#...#", "#...#", "#...#", "#...#", ".###." } },
+        { 'V', new[] { "#...#", "#...#", "#...#", "#...#", "#...#", ".#.#.", "..#.." } },
+        { 'W', new[] { "#...#", "#...#", "#...#", "#.#.#", "#.#.#", "##.##", "#...#" } },
+        { 'X', new[] { "#...#", "#...#", ".#.#.", "..#..", ".#.#.", "#...#", "#...#" } },
+        { 'Y', new[] { "#...#", "#...#", ".#.#.", "..#..", "..#..", "..#..", "..#.." } },
+        { 'Z', new[] { "#####", "....#", "...#.", "..#..", ".#...", "#....", "#####" } },
+        { '0', new[] { ".###.", "#...#", "#..##", "#.#.#", "##..#", "#...#", ".###." } },
+        { '1', new[] { "..#..", ".##..", "..#..", "..#..", "..#..", "..#..", ".###." } },
+        { '2', new[] { ".###.", "#...#", "....#", "...#.", "..#..", ".#...", "#####" } },
+        { '3', new[] { "####.", "....#", "....#", ".###.", "....#", "....#", "####." } },
+        { '4', new[] { "...#.", "..##.", ".#.#.", "#..#.", "#####", "...#.", "...#." } },
+        { '5', new[] { "#####", "#....", "####.", "....#", "....#", "#...#", ".###." } },
+        { '6', new[] { ".###.", "#....", "#....", "####.", "#...#", "#...#", ".###." } },
+        { '7', new[] { "#####", "....#", "...#.", "..#..", ".#...", ".#...", ".#..." } },
+        { '8', new[] { ".###.", "#...#", "#...#", ".###.", "#...#", "#...#", ".###." } },
+        { '9', new[] { ".###.", "#...#", "#...#", ".####", "....#", "....#", ".###." } },
         { 'e', new[] { "....", "....", ".##.", "#..#", "####", "#...", ".###" } },
         { ':', new[] { ".", ".", "#", ".", ".", "#", "." } },
         { '!', new[] { "#", "#", "#", "#", "#", ".", "#" } },
+        { '?', new[] { ".###.", "#...#", "....#", "...#.", "..#..", ".....", "..#.." } },
+        { '.', new[] { ".", ".", ".", ".", ".", ".", "#" } },
+        { ',', new[] { "..", "..", "..", "..", "..", ".#", "#." } },
+        { '\'', new[] { "#", "#", ".", ".", ".", ".", "." } },
+        { '"', new[] { "#.#", "#.#", "...", "...", "...", "...", "..." } },
+        { '-', new[] { "....", "....", "....", "####", "....", "....", "...." } },
+        { '+', new[] { ".....", "..#..", "..#..", "#####", "..#..", "..#..", "....." } },
+        { '=', new[] { "....", "....", "####", "....", "####", "....", "...." } },
+        { '/', new[] { "....#", "....#", "...#.", "..#..", ".#...", "#....", "#...." } },
+        { '(', new[] { ".#", "#.", "#.", "#.", "#.", "#.", ".#" } },
+        { ')', new[] { "#.", ".#", ".#", ".#", ".#", ".#", "#." } },
+        { '%', new[] { "##..#", "##..#", "...#.", "..#..", ".#...", "#..##", "#..##" } },
+        { '*', new[] { ".....", "#.#.#", ".###.", "#####", ".###.", "#.#.#", "....." } },
         { '>', new[] { "#...", "##..", "###.", "####", "###.", "##..", "#..." } },
+        { '<', new[] { "...#", "..##", ".###", "####", ".###", "..##", "...#" } },
         { ' ', new[] { "..", "..", "..", "..", "..", "..", ".." } },
+    };
+
+    // Acentos (2 linhas em cima da letra) e cedilha (2 linhas embaixo). Só aparecem com comAcentos = true.
+    static readonly Dictionary<char, string[]> Acentos = new Dictionary<char, string[]>
+    {
+        { '\'', new[] { "...#.", "..#.." } }, // agudo
+        { '`', new[] { ".#...", "..#.." } },  // crase
+        { '^', new[] { "..#..", ".#.#." } },  // circunflexo
+        { '~', new[] { ".##.#", "#.##." } },  // til
+        { ',', new[] { "..#..", ".##.." } },  // cedilha
+    };
+
+    // Letra acentuada -> (letra base, acento).
+    static readonly Dictionary<char, (char letra, char acento)> LetrasAcentuadas = new Dictionary<char, (char, char)>
+    {
+        { 'Á', ('A', '\'') }, { 'À', ('A', '`') }, { 'Â', ('A', '^') }, { 'Ã', ('A', '~') },
+        { 'É', ('E', '\'') }, { 'Ê', ('E', '^') }, { 'Í', ('I', '\'') },
+        { 'Ó', ('O', '\'') }, { 'Ô', ('O', '^') }, { 'Õ', ('O', '~') },
+        { 'Ú', ('U', '\'') }, { 'Ç', ('C', ',') },
     };
 
     static readonly Dictionary<string, Texture2D> cacheDeTextos = new Dictionary<string, Texture2D>();
 
+    // Texto como Sprite, para colocar no mundo (ex.: o número de cada ponto do mapa).
+    // Fica no cache de sprites, que nunca é limpo durante o jogo.
+    public static Sprite SpriteDeTexto(string texto, Color32 corLetra, Color32 corContorno)
+    {
+        string nome = $"texto:{texto}|{corLetra}|{corContorno}";
+        if (cache.TryGetValue(nome, out Sprite pronto) && pronto != null) return pronto;
+        Texture2D textura = GerarTexto(texto, corLetra, corContorno, null, false);
+        var sprite = Sprite.Create(textura, new Rect(0, 0, textura.width, textura.height), Centro, PixelsPorUnidade, 0, SpriteMeshType.FullRect);
+        sprite.name = nome;
+        cache[nome] = sprite;
+        return sprite;
+    }
+    const int MaximoDeTextosGuardados = 400; // o HUD muda (tempo, mortes...): de vez em quando limpa o cache
+
     // Desenha o texto com as letrinhas acima, contorno de 1 pixel e (se quiser) uma sombra para baixo.
     // Devolve uma textura pequena: desenhe ela grande na tela (o filtro "Point" mantém os pixels nítidos).
-    public static Texture2D TextoEmPixel(string texto, Color32 corLetra, Color32 corContorno, Color32? corSombra = null)
+    // comAcentos = true reserva espaço para acentos e cedilha (o HUD usa assim, para todas as linhas terem a mesma altura).
+    public static Texture2D TextoEmPixel(string texto, Color32 corLetra, Color32 corContorno, Color32? corSombra = null, bool comAcentos = false)
     {
-        string chave = $"{texto}|{corLetra}|{corContorno}|{corSombra}";
+        string chave = $"{texto}|{corLetra}|{corContorno}|{corSombra}|{comAcentos}";
         if (cacheDeTextos.TryGetValue(chave, out Texture2D pronta) && pronta != null) return pronta;
+        if (cacheDeTextos.Count > MaximoDeTextosGuardados)
+        {
+            foreach (Texture2D velha in cacheDeTextos.Values) UnityEngine.Object.Destroy(velha);
+            cacheDeTextos.Clear();
+        }
+        Texture2D textura = GerarTexto(texto, corLetra, corContorno, corSombra, comAcentos);
+        cacheDeTextos[chave] = textura;
+        return textura;
+    }
+
+    static Texture2D GerarTexto(string texto, Color32 corLetra, Color32 corContorno, Color32? corSombra, bool comAcentos)
+    {
 
         const int alturaLetra = 7, margem = 1;
+        int espacoAcima = comAcentos ? 3 : 0, espacoAbaixo = comAcentos ? 2 : 0;
         int sombra = corSombra.HasValue ? 1 : 0;
-        int largura = margem * 2 + sombra - 1, altura = alturaLetra + margem * 2 + sombra;
-        foreach (char c in texto) largura += Letras[c][0].Length + 1;
+        int largura = margem * 2 + sombra - 1, altura = espacoAcima + alturaLetra + espacoAbaixo + margem * 2 + sombra;
+
+        string[] Desenho(char c, out string[] acento)
+        {
+            acento = null;
+            if (LetrasAcentuadas.TryGetValue(c, out var composta))
+            {
+                if (comAcentos) acento = Acentos[composta.acento];
+                c = composta.letra;
+            }
+            return Letras.TryGetValue(c, out string[] letra) ? letra : Letras[' '];
+        }
+        foreach (char c in texto) largura += Desenho(c, out _)[0].Length + 1;
 
         // marca onde tem letra (aqui y = 0 é o topo)
         var cheio = new bool[largura, altura];
-        int cursor = margem;
+        int cursor = margem, topo = margem + espacoAcima;
         foreach (char c in texto)
         {
-            string[] letra = Letras[c];
+            string[] letra = Desenho(c, out string[] acento);
+            int larguraLetra = letra[0].Length;
             for (int y = 0; y < alturaLetra; y++)
-                for (int x = 0; x < letra[y].Length; x++)
-                    if (letra[y][x] == '#') cheio[cursor + x, margem + y] = true;
-            cursor += letra[0].Length + 1;
+                for (int x = 0; x < larguraLetra; x++)
+                    if (letra[y][x] == '#') cheio[cursor + x, topo + y] = true;
+            if (acento != null)
+            {
+                bool cedilha = c == 'Ç';
+                int y0 = cedilha ? topo + alturaLetra : topo - 3; // acento: 1 linha de folga acima da letra
+                int recorte = (5 - larguraLetra) / 2;            // letra estreita (I): usa o meio do acento
+                for (int y = 0; y < 2; y++)
+                    for (int x = 0; x < larguraLetra; x++)
+                        if (acento[y][x + recorte] == '#') cheio[cursor + x, y0 + y] = true;
+            }
+            cursor += larguraLetra + 1;
         }
 
         bool Letra(int x, int y) => x >= 0 && y >= 0 && x < largura && y < altura && cheio[x, y];
@@ -795,7 +1259,6 @@ public static class FabricaDeSprites
             }
         textura.SetPixels32(pixels);
         textura.Apply();
-        cacheDeTextos[chave] = textura;
         return textura;
     }
 }
