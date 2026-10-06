@@ -30,7 +30,7 @@ public class Paralaxe : MonoBehaviour
 
         SolOuLua(raiz, noite);
 
-        Camada(raiz, "fundo_montanhas", 0.93f, -27, Color.Lerp(corDoFundo, claro, noite ? 0.1f : 0.35f), larguraFase, 0.5f);
+        Camada(raiz, "fundo_montanhas", 0.93f, -27, Color.Lerp(corDoFundo, claro, noite ? 0.1f : 0.35f), larguraFase, 3f);
         // (as ordens pulam o -23 de propósito: é onde a Baleia Branca nada no fundo)
         Camada(raiz, "fundo_castelo", 0.85f, -24, Color.Lerp(corDoFundo, Escuro, noite ? 0.35f : 0.15f), larguraFase);
         Camada(raiz, "fundo_floresta", 0.6f, -22, Color.Lerp(corDoFundo, Escuro, noite ? 0.5f : 0.3f), larguraFase);
@@ -39,8 +39,9 @@ public class Paralaxe : MonoBehaviour
         // neblina baixinha, entre o fundo e a fase
         Faixa(raiz, "Neblina", FabricaDeSprites.Pegar("neblina"), 1f, -19, new Color(claro.r, claro.g, claro.b, 0.35f), -0.5f, 3.5f);
 
-        // folhagem bem perto da câmera, escura, só na beirada de baixo da tela
-        Camada(raiz, "frente_folhas", -0.4f, 40, Color.Lerp(corDoFundo, Escuro, 0.8f) * new Color(1f, 1f, 1f, 0.92f), larguraFase, -1.25f);
+        // folhagem bem perto da câmera, escura, só na beirada de baixo da tela (moitas redondas:
+        // nada pontudo, para ninguém confundir com espinho)
+        Camada(raiz, "frente_folhas", -0.4f, 40, Color.Lerp(corDoFundo, Escuro, 0.8f) * new Color(1f, 1f, 1f, 0.8f), larguraFase, -1.3f);
     }
 
     // Versão pequena, para o horizonte do mapa do mundo: só a floresta e as árvores, encolhidas,

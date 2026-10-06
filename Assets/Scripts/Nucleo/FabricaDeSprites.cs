@@ -1100,7 +1100,7 @@ public static class FabricaDeSprites
     {
         float lado = 1f - Mathf.Abs(x - 15.5f) / 16f;
         float altura = y / 127f; // 1 = em cima (perto do sol)
-        return new Color32(255, 250, 225, (byte)(lado * lado * altura * 90f));
+        return new Color32(255, 250, 225, (byte)(lado * lado * altura * 130f));
     }
 
     // Montanhas lá longe (camada mais distante), com neve nos picos mais altos. Repete a cada 256 px.
@@ -1120,13 +1120,12 @@ public static class FabricaDeSprites
         return new Color32(255, 255, 255, (byte)(a * 255f));
     }
 
-    // Folhagem bem na frente da câmera (silhueta): arbustos e folhas de capim. Repete a cada 128 px.
+    // Folhagem bem na frente da câmera (silhueta de moitas arredondadas). Repete a cada 128 px.
     static Color32 CorFrente(int x, int y)
     {
         float t = 2f * Mathf.PI * x / 128f;
-        float moita = 9f + 5f * Mathf.Abs(Mathf.Sin(t * 2f)) + 3f * Mathf.Sin(t * 5f + 1f);
-        bool folha = (x % 5 == 2 || x % 7 == 4) && y < moita + 4f + Ruido(x, 1) % 6;
-        return y < moita || folha ? Cheio : Transparente;
+        float moita = 9f + 5f * Mathf.Abs(Mathf.Sin(t * 2f)) + 2f * Mathf.Sin(t * 5f + 1f);
+        return y < moita ? Cheio : Transparente;
     }
 
     // Céu em degradê (cor de cima -> cor de baixo), feito sob medida para cada fase.
