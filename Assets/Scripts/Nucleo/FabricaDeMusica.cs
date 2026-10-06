@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Música de fundo "lofi 8-bit" gerada por código (composição original, nada copiado).
-// Acordes com sétima bem suaves, baixo, uma melodia simples com eco, bateria com "swing"
-// e o chiado de disco de vinil. Cada fase ganha uma variação (outro tom e outra sequência de acordes).
+// Músicas geradas por código (composição original, nada copiado).
+// As fases e o mapa usam a bossa "indie aconchegante" de FabricaDeBossa.
+// Aqui fica a música da luta contra a Baleia Branca: lofi 8-bit rápido e tenso
+// (acordes com sétima, baixo, melodia com eco, bumbo em toda batida e chiado de vinil).
 public static class FabricaDeMusica
 {
     const int Taxa = 16000;          // qualidade baixinha de propósito: combina com o clima "lofi" (e gera mais rápido)
@@ -38,7 +39,7 @@ public static class FabricaDeMusica
     public static AudioClip Lofi(int fase)
     {
         if (cache.TryGetValue(fase, out AudioClip pronta) && pronta != null) return pronta;
-        AudioClip clipe = Compor(fase);
+        AudioClip clipe = fase == MusicaDoChefe ? Compor(fase) : FabricaDeBossa.Compor(fase);
         cache[fase] = clipe;
         return clipe;
     }
