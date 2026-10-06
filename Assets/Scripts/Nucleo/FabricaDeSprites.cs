@@ -589,6 +589,8 @@ public static class FabricaDeSprites
             case "casa": return DeArte(ArteCasa, Centro);
             case "terra": return Procedural(16, 16, Centro, CorTerra);
             case "nevoa": return Procedural(16, 16, Centro, CorNevoa);
+            case "ceu": return Procedural(1, 32, Base, CorCeu);
+            case "sombra_nuvem": return Procedural(48, 20, Centro, CorSombraDaNuvem);
 
             case "chao": return DeArte(ArteChao, Centro);
             case "chao_topo": return DeArte(ArteChaoTopo, Centro);
@@ -947,6 +949,18 @@ public static class FabricaDeSprites
         if (r == 0) return Cor('b');
         if (r == 1) return Cor('y');
         return new Color32(232, 200, 150, 255);
+    }
+
+    // Faixa de céu do horizonte do mapa: azul em cima, quase branco perto do chão.
+    static Color32 CorCeu(int x, int y) => Color32.Lerp(new Color32(225, 240, 250, 255), new Color32(130, 195, 240, 255), y / 31f);
+
+    // Sombra de nuvem passando pelo chão (preta, o mapa deixa bem transparente).
+    static Color32 CorSombraDaNuvem(int x, int y)
+    {
+        float ex = (x - 23.5f) / 23f, ey = (y - 9.5f) / 9f;
+        float d = ex * ex + ey * ey;
+        if (d > 1f || (d > 0.7f && (x + y) % 2 == 0)) return Transparente;
+        return new Color32(0, 0, 0, 255);
     }
 
     // Névoa (o miasma da Bruxa) que esconde o que você ainda não descobriu.

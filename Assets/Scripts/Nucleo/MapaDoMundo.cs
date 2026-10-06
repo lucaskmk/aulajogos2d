@@ -17,13 +17,14 @@ public class MapaDoMundo : MonoBehaviour
     //  .  grama            +  caminho           =  ponte (caminho por cima da água)
     //  ~  água             T  árvore            ^  montanha
     //  h  casa             f  flores            M  mansão (a base do desenho fica aqui)
+    //  c  céu (o horizonte lá em cima, com as camadas de paralaxe; a névoa não cobre)
     //  1 a 9  as fases. O caminho de '+' e '=' tem que ligar o 1 ao 2, o 2 ao 3, e assim por diante.
     // Regiões: a capital, o rio, a floresta, os morros, o lago, o campo de flores, as montanhas e a mansão.
     static readonly string[] Desenho =
     {
-            "............~~....TT.TTTTTTTTT^^^...............^^.^.^^.....",
-            ".............~~...T.TT...T.T.T....^^............^^^.^.^...f.",
-            ".............~~...TTT.T..TTTTT^^.................^.^^^..f...",
+            "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
             ".h.h..h......~~....TT.TT..T.T...^.............f.^^^^........",
             ".........h..~~.....T.TT.TTT.......^.++++.....ff.f...........",
             "..h....h....~~+++2+++..T..T.++++4++++..++5+++f..............",
@@ -54,6 +55,8 @@ public class MapaDoMundo : MonoBehaviour
     const float RaioDoPonto = 3.3f;    // quanto a névoa abre em volta de uma fase liberada
     const float RaioDoCaminho = 1.8f;  // e em volta do caminho
     const int OrdemDaNevoa = 30;
+    // O chão (água, ponte, terra) fica ATRÁS das sombras (Sombra.Ordem = -9), para tudo projetar sombra nele.
+    const int OrdemDaAgua = -14, OrdemDoCaminho = -13;
 
     public float velocidade = 6f;
 
@@ -67,6 +70,7 @@ public class MapaDoMundo : MonoBehaviour
     readonly List<List<Vector2Int>> caminhos = new List<List<Vector2Int>>(); // caminhos[i]: do ponto i até o i+1
     readonly Dictionary<Vector2Int, SpriteRenderer> terra = new Dictionary<Vector2Int, SpriteRenderer>();
     SpriteRenderer[,] nevoa;
+    float[,] tamanhoDaNevoa;
     SpriteRenderer[] desenhosDosPontos;
     Transform[] personagens;
     SpriteRenderer desenhoSubaru;
@@ -188,7 +192,11 @@ public class MapaDoMundo : MonoBehaviour
                 foreach (Vector2Int c in caminhos[i - 1]) Descobrir(descoberto, c, RaioDoCaminho);
         }
         if (!tudoDescoberto) CriarNevoa(descoberto);
-        else nevoa = new SpriteRenderer[Largura, Altura];
+        else
+        {
+            nevoa = new SpriteRenderer[Largura, Altura];
+            tamanhoDaNevoa = new float[Largura, Altura];
+        }
 
         if (caminhoNovo)
         {
@@ -199,6 +207,7 @@ public class MapaDoMundo : MonoBehaviour
         }
 
         DecorarCeu();
+        SombrasDeNuvem();
 
         // O Subaru.
         desenhoSubaru = ConstrutorDeFase.Visual("Subaru", transform, PosicaoNoPonto(Selecionado), "jogador", 10).GetComponent<SpriteRenderer>();
@@ -214,17 +223,18 @@ public class MapaDoMundo : MonoBehaviour
         switch (Celula(c))
         {
             case '~':
-                Agua(p);
+                Agua(p, sorteio);
                 break;
             case '=':
-                Agua(p);
-                ConstrutorDeFase.Visual("Ponte", transform, p, "ponte", -8, false);
+                Agua(p, sorteio);
+                ConstrutorDeFase.Visual("Ponte", transform, p, "ponte", OrdemDoCaminho, false);
                 break;
             case '+':
-                terra[c] = ConstrutorDeFase.Visual("Caminho", transform, p, "terra", -9, false).GetComponent<SpriteRenderer>();
+                terra[c] = ConstrutorDeFase.Visual("Caminho", transform, p, "terra", OrdemDoCaminho, false).GetComponent<SpriteRenderer>();
                 break;
             case 'T':
-                ConstrutorDeFase.Visual("Arvore", transform, p + Vector3.down * 0.5f, "arvore", linha - 4);
+                var arvore = ConstrutorDeFase.Visual("Arvore", transform, p + Vector3.down * 0.5f, "arvore", linha - 4);
+                Animacao.Adicionar(arvore, Animacao.Tipo.Balancar, 1.5f, 2.5f); // balançando no vento
                 break;
             case '^':
                 ConstrutorDeFase.Visual("Montanha", transform, p, "montanha", linha - 6);
@@ -251,10 +261,16 @@ public class MapaDoMundo : MonoBehaviour
         }
     }
 
-    void Agua(Vector3 p)
+    void Agua(Vector3 p, System.Random sorteio)
     {
-        var agua = ConstrutorDeFase.Visual("Agua", transform, p, "agua_0", -10, false).GetComponent<SpriteRenderer>();
+        var agua = ConstrutorDeFase.Visual("Agua", transform, p, "agua_0", OrdemDaAgua, false).GetComponent<SpriteRenderer>();
         AnimacaoDeQuadros.Adicionar(agua, FabricaDeSprites.Quadros("agua", FabricaDeSprites.QuadrosDaAgua), 3f);
+        if (sorteio.Next(6) == 0) // brilhinho do sol na água
+        {
+            var brilho = ConstrutorDeFase.Visual("Brilho", transform, p + new Vector3(0.2f, 0.2f, 0f), "brilho", OrdemDaAgua + 2, false);
+            brilho.transform.localScale = Vector3.one * 0.6f;
+            Animacao.Adicionar(brilho, Animacao.Tipo.Piscar, 3f, 0.9f);
+        }
     }
 
     static void Descobrir(bool[,] descoberto, Vector2Int centro, float raio)
@@ -267,13 +283,15 @@ public class MapaDoMundo : MonoBehaviour
     void CriarNevoa(bool[,] descoberto)
     {
         nevoa = new SpriteRenderer[Largura, Altura];
+        tamanhoDaNevoa = new float[Largura, Altura];
         var sorteio = new System.Random(77);
         for (int y = 0; y < Altura; y++)
             for (int x = 0; x < Largura; x++)
             {
-                if (descoberto[x, y]) continue;
+                if (descoberto[x, y] || Celula(new Vector2Int(x, y)) == 'c') continue;
                 var bolota = ConstrutorDeFase.Visual("Nevoa", transform, Mundo(new Vector2Int(x, y)), "nevoa", OrdemDaNevoa, false);
-                bolota.transform.localScale = Vector3.one * (1.6f + (float)sorteio.NextDouble() * 0.4f);
+                tamanhoDaNevoa[x, y] = 1.6f + (float)sorteio.NextDouble() * 0.4f;
+                bolota.transform.localScale = Vector3.one * tamanhoDaNevoa[x, y];
                 bolota.transform.rotation = Quaternion.Euler(0f, 0f, sorteio.Next(4) * 90f);
                 nevoa[x, y] = bolota.GetComponent<SpriteRenderer>();
             }
@@ -305,19 +323,59 @@ public class MapaDoMundo : MonoBehaviour
         Destroy(bolota.gameObject);
     }
 
-    // A Baleia Branca voando por cima da névoa, e umas nuvens.
+    // O horizonte lá em cima, igual ao fundo das fases: céu, floresta e árvores ao longe com paralaxe
+    // (andam mais devagar que o mapa quando a câmera rola), brilhinhos, a Baleia Branca e nuvens.
     void DecorarCeu()
     {
-        var baleia = ConstrutorDeFase.Visual("Baleia", transform, new Vector3(Largura / 2f, Altura - 2.2f, 0f), "baleia", OrdemDaNevoa + 1, false);
-        baleia.transform.localScale = Vector3.one * 0.5f;
-        baleia.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 0.85f);
-        Animacao.Adicionar(baleia, Animacao.Tipo.Flutuar, 0.05f, Largura / 2f - 4f);
+        int linhasDeCeu = 0;
+        while (linhasDeCeu < Altura && Desenho[linhasDeCeu][0] == 'c') linhasDeCeu++;
+        if (linhasDeCeu == 0) return;
+        float horizonte = Altura - linhasDeCeu - 0.5f; // y onde o céu encontra o chão
+        var corDoCeu = new Color32(130, 195, 240, 255);
 
-        for (int i = 0; i < 6; i++)
+        var ceu = ConstrutorDeFase.Visual("Ceu", transform, new Vector3(Largura / 2f, horizonte, 0f), "ceu", -26, false);
+        ceu.transform.localScale = new Vector3((Largura + 60f) * FabricaDeSprites.PixelsPorUnidade, (linhasDeCeu + 1f) / 2f, 1f);
+
+        Paralaxe.CriarHorizonte(transform, Largura, horizonte - 0.15f, 0.35f, corDoCeu, CorDoChao);
+
+        var sorteio = new System.Random(5);
+        for (int i = 0; i < Largura / 4; i++)
         {
-            var nuvem = ConstrutorDeFase.Visual("Nuvem", transform, new Vector3(4f + i * 10f, Altura - 3f - (i % 2) * 1.5f, 0f), "nuvem", OrdemDaNevoa + 2, false);
+            var brilho = ConstrutorDeFase.Visual("Brilho", transform,
+                new Vector3(sorteio.Next(0, Largura), horizonte + 1f + (float)sorteio.NextDouble() * (linhasDeCeu - 1f), 0f), "brilho", -25, false);
+            Animacao.Adicionar(brilho, Animacao.Tipo.Piscar, 3f, 0.7f);
+        }
+
+        // a Baleia Branca nadando lá longe, no céu
+        var baleia = ConstrutorDeFase.Visual("Baleia", transform, new Vector3(Largura / 2f, horizonte + linhasDeCeu * 0.6f, 0f), "baleia", -23, false);
+        baleia.transform.localScale = Vector3.one * 0.4f;
+        baleia.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 0.75f);
+        Animacao.Adicionar(baleia, Animacao.Tipo.Flutuar, 0.05f, Largura / 2f - 4f, 0.6f);
+
+        // nuvens do céu (atrás) e nuvens baixas, por cima de tudo (na frente da névoa)
+        for (int i = 0; i < 7; i++)
+        {
+            var nuvem = ConstrutorDeFase.Visual("Nuvem", transform, new Vector3(3f + i * 9f, horizonte + 1.2f + (i % 2) * 0.9f, 0f), "nuvem", -21, false);
+            Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.3f, 0.8f, 0.5f);
+        }
+        for (int i = 0; i < 4; i++)
+        {
+            var nuvem = ConstrutorDeFase.Visual("NuvemBaixa", transform, new Vector3(8f + i * 15f, horizonte - 2.5f - (i % 2) * 3f, 0f), "nuvem", OrdemDaNevoa + 2, false);
             nuvem.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 0.7f);
-            Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.3f, 1.2f);
+            nuvem.transform.localScale = Vector3.one * 1.3f;
+            Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.25f, 1.5f, 0.15f);
+        }
+    }
+
+    // Sombras de nuvem passando devagar pelo chão (escurecem tudo, até o Subaru).
+    void SombrasDeNuvem()
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            var sombra = ConstrutorDeFase.Visual("SombraDeNuvem", transform, new Vector3(Largura / 2f, 4.5f + i * 1.6f, 0f), "sombra_nuvem", 25, false);
+            sombra.GetComponent<SpriteRenderer>().color = new Color(0f, 0f, 0f, 0.12f);
+            sombra.transform.localScale = Vector3.one * (1.4f + i * 0.2f);
+            Animacao.Adicionar(sombra, Animacao.Tipo.Flutuar, 0.035f + i * 0.01f, Largura / 2f);
         }
     }
 
@@ -360,18 +418,23 @@ public class MapaDoMundo : MonoBehaviour
     {
         Andando = true;
         GerenciadorDoJogo.Som("pulo", 0.3f);
+        Vector3 pes = PosicaoNoPonto(Selecionado);
         foreach (Vector2Int celula in Rota(destino))
         {
             Vector3 alvo = Mundo(celula) + Vector3.up * 0.45f;
-            if (Mathf.Abs(alvo.x - Subaru.position.x) > 0.01f) desenhoSubaru.flipX = alvo.x < Subaru.position.x;
-            while (Subaru.position != alvo)
+            if (Mathf.Abs(alvo.x - pes.x) > 0.01f) desenhoSubaru.flipX = alvo.x < pes.x;
+            while (pes != alvo)
             {
-                Subaru.position = Vector3.MoveTowards(Subaru.position, alvo, velocidade * Time.deltaTime);
+                pes = Vector3.MoveTowards(pes, alvo, velocidade * Time.deltaTime);
                 timerPasso += Time.deltaTime;
+                // pulinhos enquanto anda, estilo mapa do Mario
+                Subaru.position = pes + Vector3.up * Mathf.Abs(Mathf.Sin(timerPasso * 14f)) * 0.15f;
                 desenhoSubaru.sprite = FabricaDeSprites.Pegar((int)(timerPasso * 10f) % 2 == 0 ? "jogador" : "jogador_andando");
                 yield return null;
             }
+            Efeitos.Poeira(transform, pes + Vector3.down * 0.4f, 1, 1f);
         }
+        Subaru.position = pes;
         desenhoSubaru.sprite = FabricaDeSprites.Pegar("jogador");
         Selecionado = destino;
         Andando = false;
@@ -431,6 +494,13 @@ public class MapaDoMundo : MonoBehaviour
             if (i != nascendo)
                 desenhosDosPontos[i].transform.localScale = Vector3.one * (i == Selecionado && !Andando ? 1f + 0.08f * Mathf.Sin(Time.time * 6f) : 1f);
         }
+
+        // a névoa "respira" devagar
+        if (nevoa != null)
+            for (int y = 0; y < Altura; y++)
+                for (int x = 0; x < Largura; x++)
+                    if (nevoa[x, y] != null)
+                        nevoa[x, y].transform.localScale = Vector3.one * tamanhoDaNevoa[x, y] * (1f + 0.06f * Mathf.Sin(Time.time * 1.3f + x * 0.7f + y * 1.1f));
 
         // parado, o Subaru respira
         if (!Andando) Subaru.localScale = new Vector3(1f, 1f + 0.04f * Mathf.Sin(Time.time * 3f), 1f);
