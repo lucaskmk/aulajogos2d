@@ -5,6 +5,7 @@ using UnityEngine;
 public class BandeiraFalsa : MonoBehaviour
 {
     SpriteRenderer visual;
+    AnimacaoDeQuadros tremular;
     bool revelada;
 
     void Awake()
@@ -13,6 +14,7 @@ public class BandeiraFalsa : MonoBehaviour
         visual.sprite = FabricaDeSprites.Pegar("bandeira");
         visual.sortingOrder = 1;
         Sombra.Adicionar(visual);
+        tremular = AnimacaoDeQuadros.Adicionar(visual, FabricaDeSprites.Quadros("bandeira", FabricaDeSprites.QuadrosDaBandeira), 6f); // igualzinha à de verdade
 
         var area = gameObject.AddComponent<BoxCollider2D>();
         area.isTrigger = true;
@@ -28,11 +30,13 @@ public class BandeiraFalsa : MonoBehaviour
         if (!revelada)
         {
             revelada = true;
+            tremular.enabled = false;
             visual.sprite = FabricaDeSprites.Pegar("bandeira_falsa");
             GerenciadorDoJogo.Som("risada");
             for (int i = -1; i <= 1; i++)
                 ConstrutorDeFase.Visual("EspinhoDaBandeira", transform, transform.position + new Vector3(i, 0.5f, 0f), "espinho", 2);
         }
         jogador.Morrer();
+        Conquistas.Desbloquear("bandeira_falsa");
     }
 }

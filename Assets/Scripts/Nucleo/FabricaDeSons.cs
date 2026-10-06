@@ -21,6 +21,10 @@ public static class FabricaDeSons
             { "pancada", Ruido("pancada", 0.35f, 0.45f) },
             { "serra", Varredura("serra", 900f, 1200f, 0.4f, 0.12f, true) },
             { "risada", Notas("risada", new[] { 620f, 0f, 560f, 0f, 500f, 0f, 440f }, new[] { 0.07f, 0.04f, 0.07f, 0.04f, 0.07f, 0.04f, 0.16f }, 0.18f) },
+            { "pop", Varredura("pop", 500f, 1100f, 0.07f, 0.2f, false) },             // coelho se multiplicando
+            { "rugido", Varredura("rugido", 120f, 45f, 1.1f, 0.35f, true) },          // Baleia Branca
+            { "porta", Varredura("porta", 320f, 140f, 0.3f, 0.2f, true) },            // porta da Beatrice rangendo
+            { "conquista", Notas("conquista", new[] { 784f, 988f, 1175f, 1568f }, new[] { 0.08f, 0.08f, 0.08f, 0.3f }, 0.16f) },
             { "vitoria", Notas("vitoria", new[] { 523f, 659f, 784f, 1047f, 0f, 784f, 1047f }, new[] { 0.1f, 0.1f, 0.1f, 0.2f, 0.06f, 0.1f, 0.4f }, 0.18f) },
         };
     }

@@ -8,6 +8,7 @@ public class BlocoSurpresa : MonoBehaviour
 
     Transform visual;
     SpriteRenderer desenho;
+    AnimacaoDeQuadros brilho;
     bool usado;
 
     void Awake()
@@ -15,6 +16,8 @@ public class BlocoSurpresa : MonoBehaviour
         var filho = ConstrutorDeFase.Visual("Visual", transform, transform.position, "bloco_surpresa", 0);
         visual = filho.transform;
         desenho = filho.GetComponent<SpriteRenderer>();
+        // um brilho passa pelo bloco de vez em quando (no 'K' também, senão ele se entregava)
+        brilho = AnimacaoDeQuadros.Adicionar(desenho, FabricaDeSprites.Quadros("bloco_surpresa_brilho", FabricaDeSprites.QuadrosDoBrilho), 20f, 2f);
         gameObject.AddComponent<BoxCollider2D>().size = Vector2.one;
     }
 
@@ -32,6 +35,7 @@ public class BlocoSurpresa : MonoBehaviour
     void Ativar(Jogador jogador)
     {
         usado = true;
+        brilho.enabled = false;
         desenho.sprite = FabricaDeSprites.Pegar("bloco_usado");
         StartCoroutine(Efeitos.Pulinho(visual));
 
