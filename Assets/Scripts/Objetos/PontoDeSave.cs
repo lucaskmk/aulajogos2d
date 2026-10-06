@@ -28,7 +28,7 @@ public class PontoDeSave : MonoBehaviour
     void Acender()
     {
         luz.pointLightOuterRadius = 3.5f;
-        luz.intensity = 0.9f;
+        luz.intensity = 0.5f;
     }
 
     // A posição do objeto é o chão; o jogador renasce no meio do bloco, como no 'P'.

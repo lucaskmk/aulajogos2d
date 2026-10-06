@@ -1,12 +1,27 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
 // Luzes 2D de verdade (URP): a luz global de cada fase e luzinhas pontuais em moedas, blocos,
 // cristais, portas, lampiões... O jogo usa sprites "iluminados", então a luz global um pouco abaixo de 1
 // deixa o cenário levemente mais escuro e as luzinhas aparecem brilhando.
+// As luzinhas só acendem nas fases ESCURAS (noite, biblioteca): de dia elas "estouravam" em branco.
 public static class Luzes
 {
+    const float LimiteDoEscuro = 0.8f; // luz global abaixo disso = fase escura, acende as luzinhas
+    const float Forca = 0.55f;         // multiplica a intensidade de todas as luzinhas
+
     static Light2D global;
+    static float intensidadeAtual = 1f;
+    static readonly List<(Light2D luz, float intensidade)> pontos = new List<(Light2D, float)>();
+
+    // Necessário porque o projeto está com "Enter Play Mode Options" (sem recarregar o domínio).
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void Limpar()
+    {
+        pontos.Clear();
+        intensidadeAtual = 1f;
+    }
 
     public static void PrepararGlobal()
     {
@@ -23,6 +38,16 @@ public static class Luzes
         if (global == null) PrepararGlobal();
         global.intensity = intensidade;
         global.color = cor;
+        intensidadeAtual = intensidade;
+        pontos.RemoveAll(p => p.luz == null);
+        foreach (var p in pontos) Aplicar(p.luz, p.intensidade);
+    }
+
+    static void Aplicar(Light2D luz, float intensidade)
+    {
+        bool escuro = intensidadeAtual < LimiteDoEscuro;
+        luz.enabled = escuro;
+        luz.intensity = intensidade * Forca;
     }
 
     // Luz pontual presa a um objeto. raio em blocos.
@@ -38,6 +63,8 @@ public static class Luzes
         luz.pointLightOuterRadius = raio;
         luz.pointLightInnerRadius = raio * 0.15f;
         luz.falloffIntensity = 0.65f;
+        pontos.Add((luz, intensidade));
+        Aplicar(luz, intensidade);
         return luz;
     }
 

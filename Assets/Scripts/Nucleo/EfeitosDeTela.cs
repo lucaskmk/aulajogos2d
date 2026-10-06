@@ -33,8 +33,8 @@ public class EfeitosDeTela : MonoBehaviour
         var perfil = ScriptableObject.CreateInstance<VolumeProfile>();
 
         bloom = perfil.Add<Bloom>(true);
-        bloom.threshold.value = 0.9f;  // só o que é bem claro (luzes, nuvens, brilhos) brilha
-        bloom.intensity.value = 0.5f;
+        bloom.threshold.value = 0.97f; // só o que é bem branco brilha, e de leve
+        bloom.intensity.value = 0.25f;
         bloom.scatter.value = 0.65f;
 
         vinheta = perfil.Add<Vignette>(true);
