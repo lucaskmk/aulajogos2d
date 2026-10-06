@@ -88,6 +88,9 @@ public class GerenciadorDoJogo : MonoBehaviour
     public readonly List<Placa> placas = new List<Placa>();
     public readonly List<Porta> portas = new List<Porta>();
     public Emilia Emilia { get; set; }
+    public BaleiaBranca Chefe { get; set; }
+    // Já venceu a Baleia nesta fase? (se morrer depois, ela não volta)
+    public bool ChefeDerrotado { get; private set; }
 
     // Fala de um personagem no mapa (depois de passar de fase). null = nenhuma.
     public Textos.Fala? Fala { get; private set; }
@@ -232,6 +235,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         FaseAtual = indice;
         moedasNaFase = 0;
         Emilia = null;
+        Chefe = null;
         Mapa = null;
 
         raizDaFase = new GameObject(indice == Fases.IndiceSecreto ? "Fase secreta" : "Fase " + (indice + 1)).transform;
@@ -305,6 +309,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (fase != Fases.IndiceSecreto && fase > FaseMaisLonge) partidaValida = false; // pulou fases pelo mapa: não vale recorde
         MortesNaFase = 0;
         pontoDeSave = null;
+        ChefeDerrotado = false;
         Fala = null;
         CarregarFase(fase);
         Estado = EstadoDoJogo.Jogando;
@@ -575,7 +580,8 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (Mortes >= 100) Conquistas.Desbloquear("cem_mortes");
 
         // Às vezes o ponto de save "muda de lugar" e você volta para o começo. :)
-        bool saveMudou = pontoDeSave.HasValue && Random.value < chanceDoSaveMudar;
+        // (menos na fase da Baleia Branca: aí já seria maldade demais)
+        bool saveMudou = pontoDeSave.HasValue && Chefe == null && Random.value < chanceDoSaveMudar;
         if (saveMudou)
         {
             pontoDeSave = null;
@@ -619,6 +625,16 @@ public class GerenciadorDoJogo : MonoBehaviour
     }
 
     public void GanharMoeda() => moedasNaFase++;
+
+    // Chamados pela Baleia Branca.
+    public void TocarMusicaDoChefe() => musica.TocarDaFase(FabricaDeMusica.MusicaDoChefe);
+
+    public void ChefeVencido(Vector3 renascerEm)
+    {
+        ChefeDerrotado = true;
+        pontoDeSave = renascerEm;
+        musica.TocarDaFase(FaseAtual);
+    }
 
     // Ponto de save (chamados pelo PontoDeSave).
     public void SalvarPonto(Vector3 lugar) => pontoDeSave = lugar;

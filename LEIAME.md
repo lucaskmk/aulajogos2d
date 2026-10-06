@@ -62,9 +62,20 @@ até a Beatrice. Aperte S na frente da porta.
 Na fase "Cadê a direita?", cruzar uma linha invisível começa uma contagem de 2 segundos antes de inverter
 os controles (dá tempo de se preparar, e voltar antes cancela). A última fase não tem mais inversão.
 
+## Chefe: a Baleia Branca
+No fim da última fase, ao entrar na arena, paredes de névoa fecham a passagem, a câmera trava e toca a
+música de chefe. A Baleia tem **3 de vida** (barra no topo da tela) e repete três ataques:
+1. **Investida:** atravessa a tela alta (não pule) ou baixa (pule por cima); o "!" mostra a altura.
+2. **Chuva de névoa:** bolas de névoa caem do céu; a sombra no chão mostra onde.
+3. **Mergulho:** a sombra dela te segue e ela despenca de barriga. Fica **atordoada** (estrelinhas):
+   **pule na cabeça dela** para tirar 1 de vida.
+
+A cada golpe ela fica mais rápida e faz mais investidas. Derrotada, a névoa some e o caminho até a
+bandeira e a Emilia abre. Se morrer depois disso, você renasce depois da arena.
+
 ## Ponto de save
 O cristal (`s` no mapa) vira o lugar onde você renasce. Mas, como no anime, às vezes (25% das mortes) o
-ponto de save "muda de lugar" e você volta para o começo. :)
+ponto de save "muda de lugar" e você volta para o começo. :) (Menos na fase da Baleia.)
 
 ## Conquistas, volume e créditos
 - 15 conquistas (ver no título): morrer para a nuvem, pisar em 10 coelhos, desviar da Baleia, achar a
