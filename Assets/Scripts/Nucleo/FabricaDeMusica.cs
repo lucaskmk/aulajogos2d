@@ -10,7 +10,8 @@ public static class FabricaDeMusica
     const float Batidas = 72f;       // batidas por minuto (bem calminho)
     const int Compassos = 8;         // o trecho que fica repetindo (loop)
 
-    public const int MusicaDoMapa = 100; // "fase" especial: a música do mapa do mundo
+    public const int MusicaDoMapa = 100;  // "fase" especial: a música do mapa do mundo
+    public const int MusicaDoChefe = 101; // a luta contra a Baleia Branca: mais rápida, tensa, bumbo em toda batida
 
     static readonly Dictionary<int, AudioClip> cache = new Dictionary<int, AudioClip>();
 
@@ -25,6 +26,9 @@ public static class FabricaDeMusica
         new[] { 5, 3, 0, 4 }, // vi - IV - I - V
         new[] { 0, 5, 3, 4 }, // I - vi - IV - V
     };
+
+    // A do chefe: vi - IV - V - V (do tom menor relativo, mais "épico").
+    static readonly int[] ProgressaoDoChefe = { 5, 3, 4, 4 };
 
     // Tom de cada fase (em semitons a partir de Dó). A última fase fica mais grave e misteriosa.
     static readonly int[] Tons = { 0, -3, 2, -5, 5, -2, 3, -7 };
@@ -42,10 +46,11 @@ public static class FabricaDeMusica
     static AudioClip Compor(int fase)
     {
         var sorteio = new System.Random(1234 + fase * 97);
-        int[] progressao = Progressoes[fase % Progressoes.Length];
-        int tom = Tons[fase % Tons.Length];
+        bool chefe = fase == MusicaDoChefe;
+        int[] progressao = chefe ? ProgressaoDoChefe : Progressoes[fase % Progressoes.Length];
+        int tom = chefe ? -3 : Tons[fase % Tons.Length];
 
-        float batida = 60f / Batidas;
+        float batida = 60f / (chefe ? 118f : Batidas);
         int amostrasPorBatida = Mathf.RoundToInt(batida * Taxa);
         int total = amostrasPorBatida * 4 * Compassos;
 
@@ -77,7 +82,7 @@ public static class FabricaDeMusica
                 Frequencia(36 + tom + NotaDaEscala(grau + 4)), 0.14f, Onda.Triangulo);
 
             ComporMelodia(melodia, sorteio, ritmos, compasso, grau, tom, inicio, amostrasPorBatida);
-            ComporBateria(bateria, sorteio, inicio, amostrasPorBatida);
+            ComporBateria(bateria, sorteio, inicio, amostrasPorBatida, chefe);
         }
 
         Eco(melodia, Mathf.RoundToInt(0.75f * amostrasPorBatida), 0.35f);
@@ -131,12 +136,12 @@ public static class FabricaDeMusica
         }
     }
 
-    static void ComporBateria(float[] trilha, System.Random sorteio, int inicio, int amostrasPorBatida)
+    static void ComporBateria(float[] trilha, System.Random sorteio, int inicio, int amostrasPorBatida, bool chefe)
     {
         for (int b = 0; b < 4; b++)
         {
             int tempo = inicio + b * amostrasPorBatida;
-            if (b == 0 || b == 2) Bumbo(trilha, tempo);
+            if (chefe || b == 0 || b == 2) Bumbo(trilha, tempo); // no chefe, bumbo em toda batida
             if (b == 1 || b == 3) Caixa(trilha, tempo, sorteio);
             Chimbal(trilha, tempo, sorteio, 0.03f);
             Chimbal(trilha, tempo + amostrasPorBatida / 2 + amostrasPorBatida / 6, sorteio, 0.018f); // com swing

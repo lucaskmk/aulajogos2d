@@ -24,8 +24,8 @@
 //   X  linha invisível que inverte os controles depois de uma contagem de 2 s (cruzou de novo, desinverte)
 //   U  cano (2 de largura, desce até o chão): de tempos em tempos sai uma MÃO dele. Encostou, morreu
 //   r  coelho (Grande Coelho): pula atrás de você e se MULTIPLICA. Pise em cima para derrotar
-//   w  Baleia Branca: quando você passa daqui, ela surge do fundo e atravessa a tela (desvie!).
-//      Coloque no chão da arena, na linha em que o jogador anda
+//   w  Baleia Branca (CHEFE): começo da arena de 26 blocos, na linha em que o jogador anda.
+//      Entrou, a arena fecha e a luta começa (3 de vida: pule na cabeça dela quando ela cair)
 //   L  Emilia (esperando no fim da última fase)
 //   0-9  porta da Beatrice (2 de altura), com o número em cima: aperte S/seta para baixo na frente dela.
 //      Para onde cada porta leva fica na lista "portas" da fase, em pares de ida e volta: "1-4" = a 1 leva
