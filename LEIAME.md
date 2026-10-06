@@ -18,16 +18,25 @@ Na última fase a Baleia Branca aparece, e a Emilia espera o Subaru no final.
 | A / D ou setas | andar |
 | Espaço / W / ↑ | pular (segure para pular mais alto) |
 | R | reiniciar a fase (conta como morte 😈) |
-| Esc | pausar / continuar |
-| Q (na pausa) | voltar ao título (o progresso fica salvo) |
+| Esc | pausar / continuar (no mapa: voltar ao título) |
+| Q (na pausa) | voltar ao mapa (o progresso fica salvo) |
 | Espaço / Enter (morto) | pular a animação da morte |
 | ↑ / ↓ e Enter (título) | escolher no menu |
+| Setas e Enter (mapa) | andar pelo caminho e entrar na fase |
 
 Também funciona com controle (gamepad).
 
-No título dá para **Continuar** da última fase alcançada (fica salvo em PlayerPrefs, com as mortes,
-moedas e o tempo), começar um **Novo jogo** ou **Escolher fase** (← / →) entre as que você já alcançou
-(depois de zerar, todas). Só partidas começadas na fase 1 valem para o recorde.
+## Mapa do mundo
+Depois do título vem um **mapa no estilo Super Mario World**: cada ponto é uma fase, ligados por um caminho
+pontilhado. O Subaru anda de ponto em ponto e em cada ponto fica o "personagem" daquela fase
+(Puck, Mabeast, serra, nuvem malvada, coelho...). No fim do caminho ficam a mansão e a Emilia.
+- Verde = já passou nesta partida, amarelo = liberada, cinza = trancada (o personagem aparece só como sombra).
+- Ao passar de fase você volta ao mapa, o caminho até a próxima aparece e o Subaru anda sozinho até ela.
+- Dá para voltar e jogar de novo qualquer fase liberada. Fases liberadas em partidas anteriores continuam
+  abertas (bom para apresentar), mas pular fases pelo mapa tira a partida do recorde.
+
+No título dá para **Continuar** a partida salva (fica em PlayerPrefs: onde o Subaru está, mortes, moedas e tempo)
+ou começar um **Novo jogo**.
 
 A animação da morte pode ser pulada depois de 0,5 s e fica mais curta a partir da 3ª morte na mesma fase.
 
@@ -38,11 +47,12 @@ A música abaixa sozinha quando você morre (para a OST do Retorno pela Morte ap
 
 ## Organização do código (`Assets/Scripts`)
 - **Nucleo/**
-  - `GerenciadorDoJogo` — máquina de estados (Título → Jogando ⇄ Pausado → Morreu → Fase concluída → Vitória),
+  - `GerenciadorDoJogo` — máquina de estados (Título → Mapa → Jogando ⇄ Pausado → Morreu → Fase concluída → Mapa ... → Vitória),
     contagem de mortes/moedas/tempo, menu do título e as marcas das mortes.
   - `Interface` — tudo o que é desenhado por cima do jogo (HUD, título, pausa, morte, vitória, falas, transição entre fases). Só lê o estado do `GerenciadorDoJogo`.
   - `SonsDaMorte` — o áudio do Retorno pela Morte (sincronizado com o renascimento) e a OST com fade.
   - `Musica` e `FabricaDeMusica` — música de fundo (arquivo ou lofi gerado por código).
+  - `MapaDoMundo` — o mapa de fases (pontos, caminho, personagens, Subaru andando). As posições ficam em `Pontos`.
   - `Progresso` — o que fica salvo em PlayerPrefs (continuar, fase máxima, recorde).
   - `Fases` — **as fases são desenhadas em texto**; cada caractere é um bloco (legenda no topo do arquivo).
   - `ConstrutorDeFase` — lê o texto e cria os objetos. O chão vira um único `CompositeCollider2D`.
@@ -66,5 +76,6 @@ com armadilhas trocando de lugar. Para usar, adicione uma lista `mudancas` à fa
 ## Criando uma fase nova
 Copie um bloco `new Fase { ... }` em `Fases.cs` e desenhe com os caracteres da legenda
 (`#` chão, `P` jogador, `G` bandeira, `C` chão que cai, `h` espinho escondido, `r` coelho, `w` Baleia Branca...).
-Para testar uma fase direto: no título, use **Escolher fase**. Ou, durante o Play, selecione o objeto
-`GerenciadorDoJogo`, mude `Fase Inicial` no Inspector, aperte **Esc** e depois **Q** e escolha **Novo jogo**.
+Acrescente também um ponto em `MapaDoMundo.Pontos` (senão a fase nova não aparece no mapa).
+Para testar uma fase direto: durante o Play, selecione o objeto `GerenciadorDoJogo`, mude `Fase Inicial` no
+Inspector, volte ao título e escolha **Novo jogo**: o Subaru começa nesse ponto do mapa, já liberado.

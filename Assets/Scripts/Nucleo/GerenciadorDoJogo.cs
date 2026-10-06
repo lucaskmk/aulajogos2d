@@ -2,10 +2,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
-public enum EstadoDoJogo { Titulo, Jogando, Pausado, Morreu, FaseConcluida, Vitoria }
+public enum EstadoDoJogo { Titulo, Mapa, Jogando, Pausado, Morreu, FaseConcluida, Vitoria }
 
-// O "cérebro" do jogo: carrega as fases, conta mortes e moedas e cuida dos estados
-// (título, jogando, pausa, morte, fase concluída, vitória).
+// O "cérebro" do jogo: carrega as fases e o mapa, conta mortes e moedas e cuida dos estados
+// (título, mapa do mundo, jogando, pausa, morte, fase concluída, vitória).
+// Caminho normal: Título -> Mapa -> Fase -> (passou) -> Mapa -> próxima fase ... -> Vitória.
 // Quem desenha a tela é a Interface; os sons da morte ficam em SonsDaMorte e a música em Musica.
 //
 // Ele se cria SOZINHO quando você aperta Play em qualquer cena
@@ -29,7 +30,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         new Color32(245, 185, 195, 255), // rosa claro
         new Color32(60, 80, 170, 255),   // azul-marinho (o "verdadeiro final")
     };
-    [Tooltip("Fase do 'Novo jogo' (0 = primeira). Útil para testar uma fase específica.")]
+    [Tooltip("Ponto do mapa em que o 'Novo jogo' começa (0 = primeira fase). Útil para testar uma fase específica.")]
     public int faseInicial = 0;
 
     [Header("Morte")]
@@ -71,6 +72,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         get
         {
             float saindo = Estado == EstadoDoJogo.FaseConcluida ? 1f - timerEstado / DuracaoTransicao : 0f;
+            if (trocaPendente != null) saindo = 1f - timerSaida / DuracaoTransicao;
             float entrando = timerEntrada / DuracaoTransicao;
             return Mathf.Clamp01(Mathf.Max(saindo, entrando));
         }
@@ -79,12 +81,17 @@ public class GerenciadorDoJogo : MonoBehaviour
     public readonly List<Placa> placas = new List<Placa>();
     public Emilia Emilia { get; set; }
 
-    // ------------------------------------------------------------------ menu do título
+    // ------------------------------------------------------------------ menu do título e mapa
 
-    public enum OpcaoDoMenu { Continuar, NovoJogo, EscolherFase }
+    public enum OpcaoDoMenu { Continuar, NovoJogo }
     public readonly List<OpcaoDoMenu> opcoesDoMenu = new List<OpcaoDoMenu>();
     public int OpcaoSelecionada { get; private set; }
-    public int FaseEscolhida { get; private set; }
+
+    public MapaDoMundo Mapa { get; private set; }
+    // Fases já passadas nesta partida (os pontos verdes do mapa).
+    public int FaseMaisLonge { get; private set; }
+    // Até que ponto do mapa dá para andar: o que você já alcançou em qualquer partida.
+    public int FaseLiberada => Mathf.Clamp(Mathf.Max(Progresso.FaseMaxima, FaseMaisLonge, faseInicial), 0, Fases.Todas.Length - 1);
 
     // ------------------------------------------------------------------ interno
 
@@ -96,7 +103,11 @@ public class GerenciadorDoJogo : MonoBehaviour
     float timerRenascer, timerEntrada;
     string aviso = "";
     float timerAviso;
-    bool comecouDoInicio; // só partidas desde a fase 1 valem recorde
+    bool partidaValida; // só partidas jogadas em ordem desde a fase 1 valem recorde
+
+    // Troca de tela com as sombras: primeiro cobre a tela, depois executa a troca.
+    System.Action trocaPendente;
+    float timerSaida;
 
     // Retorno pela Morte: onde você morreu nas últimas tentativas desta fase.
     readonly List<Vector3> lugaresDasMortes = new List<Vector3>();
@@ -152,6 +163,9 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (Estado != EstadoDoJogo.Titulo && Estado != EstadoDoJogo.Vitoria) SalvarProgresso();
     }
 
+    // Onde o Subaru está: no mapa, o ponto escolhido; numa fase, a própria fase.
+    int FaseDoSubaru => Estado == EstadoDoJogo.Mapa && Mapa != null ? Mapa.Selecionado : FaseAtual;
+
     void PrepararCamera()
     {
         Camera cam = Camera.main;
@@ -192,6 +206,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         FaseAtual = indice;
         moedasNaFase = 0;
         Emilia = null;
+        Mapa = null;
 
         raizDaFase = new GameObject("Fase " + (indice + 1)).transform;
         Color corDoFundo = coresDoFundo.Length > 0 ? coresDoFundo[indice % coresDoFundo.Length] : Color.cyan;
@@ -209,31 +224,82 @@ public class GerenciadorDoJogo : MonoBehaviour
         musica.TocarDaFase(indice); // se a música já é essa, continua de onde estava
     }
 
-    void VoltarAoTitulo()
+    // Mostra o mapa do mundo com o Subaru no ponto "no".
+    // andarPara >= 0: ele anda sozinho até lá (acabou de passar de fase); caminhoNovo: o caminho acabou de abrir.
+    void MostrarMapa(int no, int andarPara = -1, bool caminhoNovo = false)
     {
         Time.timeScale = 1f;
         AudioListener.pause = false;
+        if (raizDaFase != null) Destroy(raizDaFase.gameObject);
+
+        raizDaFase = new GameObject("Mapa").transform;
+        jogador = null;
+        Emilia = null;
+        Bandeiras = new List<Transform>();
+        FaseAtual = Mathf.Clamp(no, 0, Fases.Todas.Length - 1);
+        if (Camera.main != null) Camera.main.backgroundColor = MapaDoMundo.CorDoChao;
+
+        Mapa = MapaDoMundo.Criar(raizDaFase, FaseAtual, FaseLiberada, FaseMaisLonge, andarPara, caminhoNovo);
+        cameraSeguir.Configurar(Mapa.Subaru, MapaDoMundo.Largura, MapaDoMundo.Altura);
+        musica.TocarDaFase(FabricaDeMusica.MusicaDoMapa);
+        Estado = EstadoDoJogo.Mapa;
+    }
+
+    void VoltarAoTitulo()
+    {
         Mortes = 0;
         MortesNaFase = 0;
         moedas = 0;
         TempoTotal = 0f;
+        FaseMaisLonge = 0;
+        partidaValida = true;
         faseDasMarcas = -1; // partida nova: apaga as marcas das mortes
-        CarregarFase(Mathf.Clamp(faseInicial, 0, Fases.Todas.Length - 1));
-        jogador.Congelar();
-        Estado = EstadoDoJogo.Titulo;
+        MostrarMapa(Progresso.TemJogoSalvo ? Progresso.FaseSalva : Mathf.Clamp(faseInicial, 0, Fases.Todas.Length - 1));
+        Estado = EstadoDoJogo.Titulo; // o mapa aparece escurecido atrás do título
         MontarMenu();
+    }
+
+    // Cobre a tela com as sombras e, quando ela estiver toda coberta, executa "depois".
+    void Trocar(System.Action depois)
+    {
+        trocaPendente = depois;
+        timerSaida = DuracaoTransicao;
+    }
+
+    void JogarFase(int fase)
+    {
+        if (fase > FaseMaisLonge) partidaValida = false; // pulou fases pelo mapa: não vale recorde
+        MortesNaFase = 0;
+        CarregarFase(fase);
+        Estado = EstadoDoJogo.Jogando;
+        SalvarProgresso();
     }
 
     void Update()
     {
         timerRenascer -= Time.deltaTime;
-        timerEntrada -= Time.deltaTime;
+        timerEntrada -= Time.unscaledDeltaTime; // tempo real: a transição funciona até com o jogo pausado
         AjustarMusica();
+
+        if (trocaPendente != null)
+        {
+            timerSaida -= Time.unscaledDeltaTime;
+            if (timerSaida > 0f) return;
+            System.Action troca = trocaPendente;
+            trocaPendente = null;
+            troca();
+            timerEntrada = DuracaoTransicao; // as sombras saem da tela
+            return;
+        }
 
         switch (Estado)
         {
             case EstadoDoJogo.Titulo:
                 AtualizarMenu();
+                break;
+
+            case EstadoDoJogo.Mapa:
+                AtualizarMapa();
                 break;
 
             case EstadoDoJogo.Jogando:
@@ -247,8 +313,12 @@ public class GerenciadorDoJogo : MonoBehaviour
                 if (Controles.Pausar() || Controles.Confirmar()) Pausar(false);
                 else if (Controles.SairParaOTitulo())
                 {
-                    SalvarProgresso(); // dá para continuar depois pelo título
-                    VoltarAoTitulo();
+                    int fase = FaseAtual;
+                    Trocar(() =>
+                    {
+                        MostrarMapa(fase); // volta para o mapa, no ponto desta fase
+                        SalvarProgresso();
+                    });
                 }
                 break;
 
@@ -269,7 +339,7 @@ public class GerenciadorDoJogo : MonoBehaviour
                 break;
 
             case EstadoDoJogo.Vitoria:
-                if (Controles.Confirmar()) VoltarAoTitulo();
+                if (Controles.Confirmar()) Trocar(VoltarAoTitulo);
                 break;
         }
     }
@@ -284,19 +354,21 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     void ProximaFase()
     {
-        timerEntrada = DuracaoTransicao; // as sombras saem da tela na fase nova
+        timerEntrada = DuracaoTransicao; // as sombras saem da tela
         if (!EhUltimaFase)
         {
-            MortesNaFase = 0;
-            CarregarFase(FaseAtual + 1);
-            Estado = EstadoDoJogo.Jogando;
-            SalvarProgresso();
+            // volta para o mapa e o Subaru anda sozinho até a próxima fase
+            int proxima = FaseAtual + 1;
+            bool caminhoNovo = proxima > FaseLiberada;
+            FaseMaisLonge = Mathf.Max(FaseMaisLonge, proxima);
+            MostrarMapa(FaseAtual, proxima, caminhoNovo);
+            Progresso.Salvar(proxima, FaseMaisLonge, Mortes, moedas, TempoTotal, partidaValida);
             return;
         }
 
         Estado = EstadoDoJogo.Vitoria;
         Progresso.Zerou(Fases.Todas.Length);
-        if (comecouDoInicio) Progresso.TentarSalvarRecorde(Mortes);
+        if (partidaValida) Progresso.TentarSalvarRecorde(Mortes);
     }
 
     void Pausar(bool pausar)
@@ -306,7 +378,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         AudioListener.pause = pausar; // a música de fundo ignora isso e só fica mais baixa
     }
 
-    void SalvarProgresso() => Progresso.Salvar(FaseAtual, Mortes, moedas, TempoTotal, comecouDoInicio);
+    void SalvarProgresso() => Progresso.Salvar(FaseDoSubaru, FaseMaisLonge, Mortes, moedas, TempoTotal, partidaValida);
 
     void AjustarMusica()
     {
@@ -323,25 +395,14 @@ public class GerenciadorDoJogo : MonoBehaviour
         opcoesDoMenu.Clear();
         if (Progresso.TemJogoSalvo) opcoesDoMenu.Add(OpcaoDoMenu.Continuar);
         opcoesDoMenu.Add(OpcaoDoMenu.NovoJogo);
-        if (Progresso.FaseMaxima > 0) opcoesDoMenu.Add(OpcaoDoMenu.EscolherFase);
         OpcaoSelecionada = 0;
-        FaseEscolhida = Mathf.Clamp(Progresso.FaseSalva, 0, Progresso.FaseMaxima);
     }
 
     void AtualizarMenu()
     {
         if (Controles.CimaApertou()) MudarOpcao(-1);
         if (Controles.BaixoApertou()) MudarOpcao(1);
-
-        OpcaoDoMenu opcao = opcoesDoMenu[OpcaoSelecionada];
-        if (opcao == OpcaoDoMenu.EscolherFase)
-        {
-            int ultima = Mathf.Min(Progresso.FaseMaxima, Fases.Todas.Length - 1);
-            if (Controles.EsquerdaApertou()) FaseEscolhida = FaseEscolhida <= 0 ? ultima : FaseEscolhida - 1;
-            if (Controles.DireitaApertou()) FaseEscolhida = FaseEscolhida >= ultima ? 0 : FaseEscolhida + 1;
-        }
-
-        if (Controles.Confirmar()) Comecar(opcao);
+        if (Controles.Confirmar()) Comecar(opcoesDoMenu[OpcaoSelecionada]);
     }
 
     void MudarOpcao(int direcao)
@@ -353,31 +414,39 @@ public class GerenciadorDoJogo : MonoBehaviour
     void Comecar(OpcaoDoMenu opcao)
     {
         int fase;
-        switch (opcao)
+        if (opcao == OpcaoDoMenu.Continuar)
         {
-            case OpcaoDoMenu.Continuar:
-                Progresso.Carregar(out fase, out int mortesSalvas, out moedas, out float tempoSalvo, out comecouDoInicio);
-                Mortes = mortesSalvas;
-                TempoTotal = tempoSalvo;
-                break;
-            case OpcaoDoMenu.EscolherFase:
-                fase = FaseEscolhida;
-                comecouDoInicio = fase == 0;
-                break;
-            default:
-                fase = Mathf.Clamp(faseInicial, 0, Fases.Todas.Length - 1);
-                comecouDoInicio = fase == 0;
-                break;
+            Progresso.Carregar(out fase, out int maisLonge, out int mortesSalvas, out moedas, out float tempoSalvo, out partidaValida);
+            FaseMaisLonge = maisLonge;
+            Mortes = mortesSalvas;
+            TempoTotal = tempoSalvo;
         }
+        else
+        {
+            fase = Mathf.Clamp(faseInicial, 0, Fases.Todas.Length - 1);
+            partidaValida = fase == 0;
+        }
+        Trocar(() => MostrarMapa(fase));
+    }
 
-        fase = Mathf.Clamp(fase, 0, Fases.Todas.Length - 1);
-        if (fase != FaseAtual)
+    // No mapa: setas andam pelo caminho, Enter entra na fase, Esc volta ao título.
+    void AtualizarMapa()
+    {
+        if (Controles.Pausar())
         {
-            CarregarFase(fase);
-            timerEntrada = DuracaoTransicao;
+            SalvarProgresso();
+            Trocar(VoltarAoTitulo);
+            return;
         }
-        Estado = EstadoDoJogo.Jogando;
-        jogador.Liberar();
+        if (Mapa.Andando) return;
+        if (Controles.DireitaApertou() || Controles.CimaApertou()) Mapa.Mover(1);
+        else if (Controles.EsquerdaApertou() || Controles.BaixoApertou()) Mapa.Mover(-1);
+        else if (Controles.Confirmar())
+        {
+            int fase = Mapa.Selecionado;
+            Som("vitoria", 0.4f);
+            Trocar(() => JogarFase(fase));
+        }
     }
 
     // ------------------------------------------------------------------ chamados pelos objetos

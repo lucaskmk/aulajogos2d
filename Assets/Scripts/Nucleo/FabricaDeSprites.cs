@@ -482,6 +482,15 @@ public static class FabricaDeSprites
         "...k...",
     };
 
+    // Pontinho do caminho no mapa do mundo.
+    static readonly string[] ArteTrilha =
+    {
+        ".dd.",
+        "dnnd",
+        "dnnd",
+        ".dd.",
+    };
+
     static readonly string[] ArtePoeira =
     {
         ".ww.",
@@ -559,6 +568,11 @@ public static class FabricaDeSprites
             case "coracao": return DeArte(ArteCoracao, Centro);
             case "baleia": return Procedural(64, 24, Centro, CorBaleia);
             case "aviso": return Procedural(16, 16, Centro, CorAviso);
+
+            // Mapa do mundo
+            case "no_mapa": return Procedural(16, 16, Centro, CorNoDoMapa);
+            case "trilha": return DeArte(ArteTrilha, Centro);
+            case "arvore": return Procedural(16, 24, Base, CorArvore);
 
             case "chao": return DeArte(ArteChao, Centro);
             case "chao_topo": return DeArte(ArteChaoTopo, Centro);
@@ -869,6 +883,35 @@ public static class FabricaDeSprites
         return Cor('w');
     }
 
+    // Ponto (fase) do mapa: um "botão" branco com contorno. O mapa pinta com a cor do estado
+    // (verde = concluída, amarelo = liberada, cinza = trancada).
+    static Color32 CorNoDoMapa(int x, int y)
+    {
+        float dx = x - 7.5f, dy = y - 7.5f, d = Mathf.Sqrt(dx * dx + dy * dy);
+        if (d > 7.3f) return Transparente;
+        if (d > 6.3f) return Cor('k');
+        if (d > 5.1f && dy < 0f) return Cor('s'); // sombrinha embaixo: parece um botão
+        if (dx < -1f && dy > 1f && d < 4.5f && d > 3f) return Cor('w');
+        return Cor('Z');
+    }
+
+    // Árvore redondinha do mapa (copa verde com contorno e tronco marrom).
+    static bool DentroDaCopa(int x, int y) => (x - 7.5f) * (x - 7.5f) + (y - 15f) * (y - 15f) <= 7.6f * 7.6f;
+
+    static Color32 CorArvore(int x, int y)
+    {
+        if (DentroDaCopa(x, y))
+        {
+            bool borda = !DentroDaCopa(x + 1, y) || !DentroDaCopa(x - 1, y) || !DentroDaCopa(x, y + 1) || !DentroDaCopa(x, y - 1);
+            if (borda) return Cor('q');
+            if ((x - 7.5f) - (y - 15f) > 4f) return Cor('G'); // sombra embaixo à direita
+            if ((x - 4f) * (x - 4f) + (y - 18f) * (y - 18f) < 5f) return Cor('a'); // brilho
+            return Cor('g');
+        }
+        if (x >= 6 && x <= 9 && y <= 8) return x == 6 || x == 9 ? Cor('d') : Cor('b');
+        return Transparente;
+    }
+
     // "!" de perigo (avisa a altura em que a Baleia vai passar).
     static Color32 CorAviso(int x, int y)
     {
@@ -962,6 +1005,19 @@ public static class FabricaDeSprites
     };
 
     static readonly Dictionary<string, Texture2D> cacheDeTextos = new Dictionary<string, Texture2D>();
+
+    // Texto como Sprite, para colocar no mundo (ex.: o número de cada ponto do mapa).
+    // Fica no cache de sprites, que nunca é limpo durante o jogo.
+    public static Sprite SpriteDeTexto(string texto, Color32 corLetra, Color32 corContorno)
+    {
+        string nome = $"texto:{texto}|{corLetra}|{corContorno}";
+        if (cache.TryGetValue(nome, out Sprite pronto) && pronto != null) return pronto;
+        Texture2D textura = GerarTexto(texto, corLetra, corContorno, null, false);
+        var sprite = Sprite.Create(textura, new Rect(0, 0, textura.width, textura.height), Centro, PixelsPorUnidade, 0, SpriteMeshType.FullRect);
+        sprite.name = nome;
+        cache[nome] = sprite;
+        return sprite;
+    }
     const int MaximoDeTextosGuardados = 400; // o HUD muda (tempo, mortes...): de vez em quando limpa o cache
 
     // Desenha o texto com as letrinhas acima, contorno de 1 pixel e (se quiser) uma sombra para baixo.
@@ -976,6 +1032,13 @@ public static class FabricaDeSprites
             foreach (Texture2D velha in cacheDeTextos.Values) UnityEngine.Object.Destroy(velha);
             cacheDeTextos.Clear();
         }
+        Texture2D textura = GerarTexto(texto, corLetra, corContorno, corSombra, comAcentos);
+        cacheDeTextos[chave] = textura;
+        return textura;
+    }
+
+    static Texture2D GerarTexto(string texto, Color32 corLetra, Color32 corContorno, Color32? corSombra, bool comAcentos)
+    {
 
         const int alturaLetra = 7, margem = 1;
         int espacoAcima = comAcentos ? 3 : 0, espacoAbaixo = comAcentos ? 2 : 0;
@@ -1042,7 +1105,6 @@ public static class FabricaDeSprites
             }
         textura.SetPixels32(pixels);
         textura.Apply();
-        cacheDeTextos[chave] = textura;
         return textura;
     }
 }
