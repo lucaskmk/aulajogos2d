@@ -5,7 +5,8 @@ using UnityEngine.Rendering.Universal;
 // Luzes 2D de verdade (URP): a luz global de cada fase e luzinhas pontuais em moedas, blocos,
 // cristais, portas, lampiões... O jogo usa sprites "iluminados", então a luz global um pouco abaixo de 1
 // deixa o cenário levemente mais escuro e as luzinhas aparecem brilhando.
-// As luzinhas só acendem nas fases ESCURAS (noite, biblioteca): de dia elas "estouravam" em branco.
+// As luzinhas só existem nas fases ESCURAS (noite, biblioteca): de dia elas "estouravam" em branco.
+// (De dia elas nem são criadas: Ponto() devolve null. Por isso quem chama usa "luz?." / testa null.)
 public static class Luzes
 {
     const float LimiteDoEscuro = 0.8f; // luz global abaixo disso = fase escura, acende as luzinhas
@@ -43,16 +44,18 @@ public static class Luzes
         foreach (var p in pontos) Aplicar(p.luz, p.intensidade);
     }
 
+    static bool Escuro => intensidadeAtual < LimiteDoEscuro;
+
     static void Aplicar(Light2D luz, float intensidade)
     {
-        bool escuro = intensidadeAtual < LimiteDoEscuro;
-        luz.enabled = escuro;
-        luz.intensity = intensidade * Forca;
+        if (!Escuro) Object.Destroy(luz.gameObject); // ficou claro: some de vez
+        else luz.intensity = intensidade * Forca;
     }
 
     // Luz pontual presa a um objeto. raio em blocos.
     public static Light2D Ponto(Transform dono, Color cor, float raio, float intensidade, Vector3 deslocamento = default)
     {
+        if (!Escuro) return null; // de dia não precisa de luzinha
         var objeto = new GameObject("Luz");
         objeto.transform.SetParent(dono, false);
         objeto.transform.localPosition = deslocamento;

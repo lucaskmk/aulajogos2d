@@ -237,6 +237,12 @@ public class GerenciadorDoJogo : MonoBehaviour
         Color corDoFundo = indice == Fases.IndiceSecreto ? corDaFaseSecreta
             : coresDoFundo.Length > 0 ? coresDoFundo[indice % coresDoFundo.Length] : Color.cyan;
         if (Camera.main != null) Camera.main.backgroundColor = corDoFundo;
+        // a luz da fase vem ANTES de montar: assim as luzinhas só são criadas se a fase for escura
+        bool fasenoturna = indice == Fases.Todas.Length - 1;
+        bool biblioteca = Fases.Dados(indice).portas != null;
+        if (fasenoturna) Luzes.Ambiente(0.55f, new Color(0.75f, 0.8f, 1f));
+        else if (biblioteca) Luzes.Ambiente(0.72f, new Color(1f, 0.92f, 0.8f));
+        else Luzes.Ambiente(indice == Fases.IndiceSecreto ? 1f : 0.93f, Color.white);
         InfoFase info = ConstrutorDeFase.Construir(Fases.Dados(indice), raizDaFase, MortesNaFase);
         bool noite = EhUltimaFase;
         Paralaxe.Criar(raizDaFase, info.largura, corDoFundo, noite); // céu, montanhas, castelo, floresta...
@@ -256,14 +262,10 @@ public class GerenciadorDoJogo : MonoBehaviour
         musica.TocarDaFase(indice); // se a música já é essa, continua de onde estava
     }
 
-    // Luz e partículas de cada fase: noite com vaga-lumes, biblioteca com poeira dourada,
+    // Partículas de cada fase (a luz é ajustada em CarregarFase, antes de montar a fase): noite com vaga-lumes, biblioteca com poeira dourada,
     // fases rosadas com pétalas, a secreta com brilhos e as outras com pólen.
     void PrepararClima(int indice, bool noite)
     {
-        if (noite) Luzes.Ambiente(0.55f, new Color(0.75f, 0.8f, 1f));
-        else if (naBiblioteca) Luzes.Ambiente(0.72f, new Color(1f, 0.92f, 0.8f));
-        else Luzes.Ambiente(indice == Fases.IndiceSecreto ? 1f : 0.93f, Color.white);
-
         Ambiente.Tipo tipo = Ambiente.Tipo.Polen;
         if (noite) tipo = Ambiente.Tipo.VagaLumes;
         else if (naBiblioteca) tipo = Ambiente.Tipo.Poeira;
