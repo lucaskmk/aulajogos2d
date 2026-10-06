@@ -32,6 +32,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     float timerAviso;
 
     public Vector3 PosicaoInicial { get; private set; }
+    List<Transform> bandeiras = new List<Transform>();
 
     Transform raizDaFase;
     Jogador jogador;
@@ -112,6 +113,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         InfoFase info = ConstrutorDeFase.Construir(Fases.Todas[indice], raizDaFase, mortesNaFase);
 
         PosicaoInicial = info.inicio;
+        bandeiras = info.bandeiras;
         jogador = ConstrutorDeFase.Criar<Jogador>("Jogador", raizDaFase, info.inicio);
         jogador.inversores = info.inversores;
         aviso = "";
@@ -297,6 +299,8 @@ public class GerenciadorDoJogo : MonoBehaviour
         float w = Screen.width, h = Screen.height;
 
         DesenharPlacas(escala);
+        if (estado == Estado.Jogando || estado == Estado.Morreu || estado == Estado.FaseConcluida)
+            DesenharBarraDeProgresso(escala);
 
         if (estado != Estado.Titulo && estado != Estado.Vitoria)
         {
@@ -350,6 +354,44 @@ public class GerenciadorDoJogo : MonoBehaviour
                     TextoComSombra(new Rect(0, h * 0.85f, w, 50 * escala), "Aperte ENTER para jogar de novo", estiloMedio);
                 break;
         }
+    }
+
+    // Barrinha no topo: do início da fase até a bandeira mais distante.
+    // (Usa a mais distante de propósito, para não entregar qual é a bandeira de verdade.
+    //  E se a bandeira fujona fugir, o fim da barra foge junto.)
+    void DesenharBarraDeProgresso(float escala)
+    {
+        if (jogador == null) return;
+        float fim = float.MinValue;
+        foreach (Transform bandeira in bandeiras)
+            if (bandeira != null) fim = Mathf.Max(fim, bandeira.position.x);
+        float inicio = PosicaoInicial.x;
+        if (fim <= inicio) return;
+
+        float progresso = Mathf.Clamp01((jogador.transform.position.x - inicio) / (fim - inicio));
+
+        float largura = Mathf.Min(Screen.width * 0.36f, 520f * escala);
+        float altura = 12f * escala;
+        var barra = new Rect((Screen.width - largura) / 2f, 96f * escala, largura, altura); // abaixo do HUD, para não cobrir o nome da fase
+
+        Color corOriginal = GUI.color;
+        GUI.color = Color.black;
+        GUI.DrawTexture(new Rect(barra.x - 3f * escala, barra.y - 3f * escala, barra.width + 6f * escala, barra.height + 6f * escala), Texture2D.whiteTexture);
+        GUI.color = new Color(1f, 1f, 1f, 0.35f);
+        GUI.DrawTexture(barra, Texture2D.whiteTexture);
+        GUI.color = new Color(1f, 0.85f, 0.2f);
+        GUI.DrawTexture(new Rect(barra.x, barra.y, barra.width * progresso, barra.height), Texture2D.whiteTexture);
+        GUI.color = corOriginal;
+
+        // bandeira no fim da barra
+        float alturaBandeira = 42f * escala;
+        GUI.DrawTexture(new Rect(barra.xMax - alturaBandeira / 6f, barra.yMax - alturaBandeira, alturaBandeira / 3f, alturaBandeira),
+            FabricaDeSprites.Pegar("bandeira").texture);
+
+        // gatinho andando na barra
+        float tamanhoGato = 28f * escala;
+        GUI.DrawTexture(new Rect(barra.x + barra.width * progresso - tamanhoGato / 2f, barra.center.y - tamanhoGato / 2f, tamanhoGato, tamanhoGato),
+            FabricaDeSprites.Pegar("jogador").texture);
     }
 
     void DesenharPlacas(float escala)

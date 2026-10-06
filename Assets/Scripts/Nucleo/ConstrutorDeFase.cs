@@ -7,6 +7,7 @@ public class InfoFase
     public int largura;
     public int altura;
     public List<float> inversores = new List<float>(); // posições x das linhas 'X'
+    public List<Transform> bandeiras = new List<Transform>(); // todas as bandeiras (verdadeiras ou não)
 }
 
 // Lê o mapa de texto de uma fase (veja Fases.cs) e cria todos os objetos na cena.
@@ -73,17 +74,17 @@ public static class ConstrutorDeFase
                     case 'T': Criar<Esmagador>("Esmagador", raiz, pos); break;
                     case '<': Criar<Serra>("SerraTraseira", raiz, pos).direcao = 1; break;
                     case '>': Criar<Serra>("SerraDianteira", raiz, pos).direcao = -1; break;
-                    case 'G': Criar<Bandeira>("Bandeira", raiz, chaoDaCelula); break;
-                    case 'R': fujonas.Add(Criar<BandeiraFujona>("BandeiraFujona", raiz, chaoDaCelula)); break;
+                    case 'G': info.bandeiras.Add(Criar<Bandeira>("Bandeira", raiz, chaoDaCelula).transform); break;
+                    case 'R': fujonas.Add(Criar<BandeiraFujona>("BandeiraFujona", raiz, chaoDaCelula)); info.bandeiras.Add(fujonas[fujonas.Count - 1].transform); break;
                     case '*': destinoDaFujona = chaoDaCelula; break;
-                    case 'Z': Criar<BandeiraFalsa>("BandeiraFalsa", raiz, chaoDaCelula); break;
+                    case 'Z': info.bandeiras.Add(Criar<BandeiraFalsa>("BandeiraFalsa", raiz, chaoDaCelula).transform); break;
                     case 'o': Criar<NuvemAssassina>("NuvemAssassina", raiz, pos + Vector3.right * 0.5f); break;
                     case 'i': placas.Add(pos); break;
                     case '$': Criar<Moeda>("Moeda", raiz, pos); break;
                     case 'm': Criar<MoedaAssassina>("MoedaAssassina", raiz, pos); break;
                     case 'e': Criar<Inimigo>("InimigoDisfarcado", raiz, pos).espinhoso = true; break;
                     case 'M': celulasQueFogem.Add(new Vector2Int(x, linha)); break;
-                    case 'W': Criar<BandeiraVolta>("BandeiraVolta", raiz, chaoDaCelula); break;
+                    case 'W': info.bandeiras.Add(Criar<BandeiraVolta>("BandeiraVolta", raiz, chaoDaCelula).transform); break;
                     case 'X': info.inversores.Add(x); break;
                 }
             }
