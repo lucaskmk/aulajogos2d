@@ -135,6 +135,7 @@ public class Coelho : MonoBehaviour
         Efeitos.Poeira(transform.parent, transform.position + Vector3.down * 0.3f, 5, 2f);
         jogador.Quicar(11f, true);
         GerenciadorDoJogo.Som("pisao");
+        Conquistas.Contar("coelhos", 10);
         Destroy(gameObject, 0.4f);
     }
 }

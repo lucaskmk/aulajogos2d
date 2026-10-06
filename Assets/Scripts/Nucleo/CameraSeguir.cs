@@ -40,6 +40,14 @@ public class CameraSeguir : MonoBehaviour
         instancia.tempoTremor = duracao;
     }
 
+    // Pula direto para o jogador, sem deslizar (usado quando ele atravessa uma porta).
+    public static void Centralizar()
+    {
+        if (instancia == null || instancia.alvo == null) return;
+        instancia.velocidadeX = 0f;
+        instancia.transform.position = new Vector3(instancia.PosicaoDesejada(), instancia.alturaFixa, -10f);
+    }
+
     float PosicaoDesejada()
     {
         float meiaLargura = cam.orthographicSize * cam.aspect;

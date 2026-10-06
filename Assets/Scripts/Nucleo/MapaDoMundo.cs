@@ -10,6 +10,8 @@ using UnityEngine;
 // a névoa vai sumindo ao longo do caminho novo e o ponto da próxima fase aparece.
 //
 // Cores dos pontos: verde = já passou nesta partida, amarelo = liberada.
+// Embaixo de cada ponto, uma caveira com quantas vezes você morreu nela nesta partida.
+// Tem também uma fase SECRETA numa ilha do lago (aparece quando você pega todas as moedas da fase 5).
 // Quem lê as teclas é o GerenciadorDoJogo; aqui só tem o desenho, a névoa e a caminhada.
 public class MapaDoMundo : MonoBehaviour
 {
@@ -19,6 +21,7 @@ public class MapaDoMundo : MonoBehaviour
     //  h  casa             f  flores            M  mansão (a base do desenho fica aqui)
     //  c  céu (o horizonte lá em cima, com as camadas de paralaxe; a névoa não cobre)
     //  1 a 9  as fases. O caminho de '+' e '=' tem que ligar o 1 ao 2, o 2 ao 3, e assim por diante.
+    //  S  a fase secreta (ligada por caminho ao ponto da Fases.FaseDoSegredo)
     // Regiões: a capital, o rio, a floresta, os morros, o lago, o campo de flores, as montanhas e a mansão.
     static readonly string[] Desenho =
     {
@@ -28,11 +31,11 @@ public class MapaDoMundo : MonoBehaviour
             ".h.h..h......~~....TT.TT..T.T...^.............f.^^^^........",
             ".........h..~~.....T.TT.TTT.......^.++++.....ff.f...........",
             "..h....h....~~+++2+++..T..T.++++4++++..++5+++f..............",
-            "...........~~.+.....+TT.TTTT+.^...^.........+..f+++7++...M..",
-            "....1++++++==++...TT+.TTT...+T....^^....~~..+f..+....+......",
-            "...........~~.....T.+TT....T+T.......~~~~~~~=..f+....+......",
-            "........h...~~....T.++++3++++..^^^^.~~~~~~~~==6++...^+^.fff.",
-            ".h.h..h......~~...TTT.T...TTTT^.^...~~~~~~~~~~f.f.^^.+++8...",
+            "...........~~.+.....+TT.TTTT+.^...^......+..+..f+++7++...M..",
+            "....1++++++==++...TT+.TTT...+T....^^....~=..+f..+....+......",
+            "...........~~.....T.+TT....T+T.......~~~~=~~=..f+....8......",
+            "........h...~~....T.++++3++++..^^^^.~~~~.S.~==6++...^+^.fff.",
+            ".h.h..h......~~...TTT.T...TTTT^.^...~~~~f.f~~~f.f.^^.+++9...",
             ".....h.......~~...TTT..TTTTT.........~~~~~~~~..f^^^.^^^.....",
             ".............~~...TTTTTT.TT.TT.^.^^.....~~....f.^^^^.^^fff..",
             "............~~....TTT...TTT.T.^...^..........fff^.^.^^..fff.",
@@ -42,7 +45,7 @@ public class MapaDoMundo : MonoBehaviour
     // O "personagem" de cada fase, que fica do lado do ponto.
     static readonly string[] Personagens =
     {
-        "puck", "inimigo", "serra", "nuvem_malvada", "coelho", "inimigo_espinhos", "esmagador", "emilia",
+        "puck", "inimigo", "serra", "nuvem_malvada", "coelho", "inimigo_espinhos", "esmagador", "beatrice", "emilia",
     };
 
     public static int Largura => Desenho[0].Length;
@@ -51,6 +54,8 @@ public class MapaDoMundo : MonoBehaviour
 
     static readonly Color CorConcluida = new Color(0.45f, 0.95f, 0.45f);
     static readonly Color CorLiberada = new Color(1f, 0.85f, 0.25f);
+    static readonly Color CorSecreta = new Color(0.85f, 0.6f, 1f);
+    static readonly Color32 Branco = new Color32(255, 255, 255, 255), Preto = new Color32(20, 20, 28, 255);
 
     const float RaioDoPonto = 3.6f;    // quanto a névoa abre em volta de uma fase liberada
     const float RaioDoCaminho = 1.8f;  // e em volta do caminho
@@ -77,9 +82,19 @@ public class MapaDoMundo : MonoBehaviour
     float timerPasso;
     int nascendo = -1; // ponto que está aparecendo agora (animação própria)
 
-    // no: onde o Subaru começa. andarPara: se >= 0, ele anda sozinho até lá (acabou de passar de fase).
+    // Fase secreta
+    bool secretaLiberada;
+    Vector2Int? pontoSecreto;
+    List<Vector2Int> caminhoSecreto;
+    SpriteRenderer desenhoSecreto;
+    Transform personagemSecreto;
+
+    // no: onde o Subaru começa (pode ser Fases.IndiceSecreto). mortes: mortes por fase (a última é a da secreta).
+    // andarPara: se >= 0, ele anda sozinho até lá (acabou de passar de fase).
     // caminhoNovo: o caminho até "andarPara" acabou de ser liberado (a névoa some aos pouquinhos).
-    public static MapaDoMundo Criar(Transform raiz, int no, int liberado, int concluidas, int andarPara = -1, bool caminhoNovo = false)
+    // mostrarSecreta: a fase secreta acabou de ser liberada (aparece com animação).
+    public static MapaDoMundo Criar(Transform raiz, int no, int liberado, int concluidas, int[] mortes,
+        bool secretaLiberada, int andarPara = -1, bool caminhoNovo = false, bool mostrarSecreta = false)
     {
         var mapa = new GameObject("MapaDoMundo").AddComponent<MapaDoMundo>();
         mapa.transform.SetParent(raiz, false);
@@ -87,9 +102,10 @@ public class MapaDoMundo : MonoBehaviour
         int ultimo = mapa.pontos.Count - 1;
         mapa.liberado = Mathf.Clamp(liberado, 0, ultimo);
         mapa.concluidas = concluidas;
-        mapa.Selecionado = Mathf.Clamp(no, 0, ultimo);
+        mapa.secretaLiberada = secretaLiberada && mapa.pontoSecreto.HasValue;
+        mapa.Selecionado = no == Fases.IndiceSecreto && mapa.secretaLiberada ? no : Mathf.Clamp(no, 0, ultimo);
         if (andarPara > ultimo) andarPara = -1;
-        mapa.Montar(andarPara, caminhoNovo && andarPara >= 0);
+        mapa.Montar(andarPara, caminhoNovo && andarPara >= 0, mostrarSecreta && mapa.secretaLiberada, mortes);
         return mapa;
     }
 
@@ -99,7 +115,8 @@ public class MapaDoMundo : MonoBehaviour
     static char Celula(Vector2Int c) =>
         c.y >= 0 && c.y < Altura && c.x >= 0 && c.x < Desenho[c.y].Length ? Desenho[c.y][c.x] : ' ';
 
-    static bool DaPraAndar(char c) => c == '+' || c == '=' || char.IsDigit(c);
+    static bool EhPonto(char c) => char.IsDigit(c) || c == 'S';
+    static bool DaPraAndar(char c) => c == '+' || c == '=' || EhPonto(c);
 
     // Acha os pontos das fases e o caminho entre cada par (busca em largura pelas células de caminho).
     void LerDesenho()
@@ -107,7 +124,10 @@ public class MapaDoMundo : MonoBehaviour
         var achados = new SortedDictionary<int, Vector2Int>();
         for (int y = 0; y < Altura; y++)
             for (int x = 0; x < Desenho[y].Length; x++)
+            {
                 if (char.IsDigit(Desenho[y][x])) achados[Desenho[y][x] - '1'] = new Vector2Int(x, y);
+                if (Desenho[y][x] == 'S') pontoSecreto = new Vector2Int(x, y);
+            }
         foreach (var par in achados)
             if (par.Key == pontos.Count && pontos.Count < Fases.Todas.Length) pontos.Add(par.Value);
 
@@ -120,6 +140,12 @@ public class MapaDoMundo : MonoBehaviour
                 caminho = new List<Vector2Int> { pontos[i + 1] };
             }
             caminhos.Add(caminho);
+        }
+
+        if (pontoSecreto.HasValue && Fases.FaseDoSegredo < pontos.Count)
+        {
+            caminhoSecreto = AcharCaminho(pontos[Fases.FaseDoSegredo], pontoSecreto.Value);
+            if (caminhoSecreto == null) pontoSecreto = null; // sem caminho, sem fase secreta no mapa
         }
     }
 
@@ -140,7 +166,7 @@ public class MapaDoMundo : MonoBehaviour
             {
                 Vector2Int vizinha = atual + d;
                 if (veioDe.ContainsKey(vizinha) || !DaPraAndar(Celula(vizinha))) continue;
-                if (char.IsDigit(Celula(vizinha)) && vizinha != ate) continue; // não atravessa outras fases
+                if (EhPonto(Celula(vizinha)) && vizinha != ate) continue; // não atravessa outras fases
                 veioDe[vizinha] = atual;
                 fila.Enqueue(vizinha);
             }
@@ -155,7 +181,7 @@ public class MapaDoMundo : MonoBehaviour
 
     // ------------------------------------------------------------------ montagem
 
-    void Montar(int andarPara, bool caminhoNovo)
+    void Montar(int andarPara, bool caminhoNovo, bool mostrarSecreta, int[] mortes)
     {
         var sorteio = new System.Random(2024);
         for (int y = 0; y < Altura; y++)
@@ -177,7 +203,26 @@ public class MapaDoMundo : MonoBehaviour
 
             var personagem = ConstrutorDeFase.Visual("Personagem", transform, LugarDoPersonagem(i, 0f), Personagens[i % Personagens.Length], 9);
             personagens[i] = personagem.transform;
-            if (Personagens[i % Personagens.Length] != "emilia") personagem.transform.localScale = Vector3.one * 0.8f;
+            if (!EmPe(i)) personagem.transform.localScale = Vector3.one * 0.8f;
+
+            if (i <= liberado && mortes != null && i < mortes.Length) Caveira(pontos[i], mortes[i]);
+        }
+
+        // A fase secreta: um ponto lilás com "?" e uma moeda girando em cima.
+        if (pontoSecreto.HasValue)
+        {
+            desenhoSecreto = ConstrutorDeFase.Visual("PontoSecreto", transform, Mundo(pontoSecreto.Value), "no_mapa", 2).GetComponent<SpriteRenderer>();
+            desenhoSecreto.color = CorSecreta;
+            var numero = new GameObject("Numero");
+            numero.transform.SetParent(desenhoSecreto.transform, false);
+            var desenhoNumero = numero.AddComponent<SpriteRenderer>();
+            desenhoNumero.sprite = FabricaDeSprites.SpriteDeTexto("?", Preto, new Color32(255, 255, 255, 0));
+            desenhoNumero.sortingOrder = 3;
+            personagemSecreto = ConstrutorDeFase.Visual("Moeda", transform, Mundo(pontoSecreto.Value) + new Vector3(0.95f, 0.75f, 0f), "moeda", 9).transform;
+            bool aparece = secretaLiberada && !mostrarSecreta;
+            desenhoSecreto.transform.localScale = aparece ? Vector3.one : Vector3.zero;
+            personagemSecreto.gameObject.SetActive(aparece);
+            if (secretaLiberada && mortes != null && mortes.Length > pontos.Count) Caveira(pontoSecreto.Value, mortes[pontos.Count]);
         }
 
         // O que já foi descoberto: em volta das fases liberadas e dos caminhos entre elas.
@@ -190,6 +235,11 @@ public class MapaDoMundo : MonoBehaviour
             Descobrir(descoberto, pontos[i], RaioDoPonto);
             if (i > 0 && !(caminhoNovo && i == andarPara))
                 foreach (Vector2Int c in caminhos[i - 1]) Descobrir(descoberto, c, RaioDoCaminho);
+        }
+        if (secretaLiberada && !mostrarSecreta)
+        {
+            Descobrir(descoberto, pontoSecreto.Value, RaioDoPonto - 1f);
+            foreach (Vector2Int c in caminhoSecreto) Descobrir(descoberto, c, RaioDoCaminho);
         }
         if (!tudoDescoberto) CriarNevoa(descoberto);
         else
@@ -213,7 +263,29 @@ public class MapaDoMundo : MonoBehaviour
         desenhoSubaru = ConstrutorDeFase.Visual("Subaru", transform, PosicaoNoPonto(Selecionado), "jogador", 10).GetComponent<SpriteRenderer>();
         Subaru = desenhoSubaru.transform;
 
-        if (andarPara >= 0) StartCoroutine(LiberarEAndar(andarPara, caminhoNovo));
+        if (andarPara >= 0 || mostrarSecreta) StartCoroutine(LiberarEAndar(andarPara, caminhoNovo, mostrarSecreta));
+    }
+
+    // Caveirinha com o número de mortes, embaixo do ponto.
+    void Caveira(Vector2Int ponto, int mortes)
+    {
+        if (mortes <= 0) return;
+        Vector3 lugar = Mundo(ponto) + new Vector3(-0.3f, -0.8f, 0f);
+        var caveira = ConstrutorDeFase.Visual("Caveira", transform, lugar, "caveira", 4);
+        caveira.transform.localScale = Vector3.one * 1.3f;
+        var numero = new GameObject("Mortes");
+        numero.transform.SetParent(transform, false);
+        numero.transform.position = lugar + new Vector3(0.5f + 0.15f * (mortes.ToString().Length - 1), 0f, 0f);
+        var desenho = numero.AddComponent<SpriteRenderer>();
+        desenho.sprite = FabricaDeSprites.SpriteDeTexto(mortes.ToString(), Branco, Preto);
+        desenho.sortingOrder = 4;
+        numero.transform.localScale = Vector3.one * 0.8f;
+    }
+
+    bool EmPe(int i) // personagens com o pé no chão (arte com a base no pivô)
+    {
+        string nome = Personagens[i % Personagens.Length];
+        return nome == "emilia" || nome == "beatrice";
     }
 
     void MontarCelula(Vector2Int c, System.Random sorteio)
@@ -372,14 +444,12 @@ public class MapaDoMundo : MonoBehaviour
         }
     }
 
-    // O Subaru fica com os pés no centro do ponto.
-    Vector3 PosicaoNoPonto(int i) => Mundo(pontos[i]) + Vector3.up * 0.45f;
+    Vector2Int CelulaDoPonto(int fase) => fase == Fases.IndiceSecreto ? pontoSecreto.Value : pontos[fase];
 
-    Vector3 LugarDoPersonagem(int i, float pulo)
-    {
-        bool emilia = Personagens[i % Personagens.Length] == "emilia";
-        return Mundo(pontos[i]) + new Vector3(0.95f, (emilia ? -0.3f : 0.75f) + pulo, 0f);
-    }
+    // O Subaru fica com os pés no centro do ponto.
+    Vector3 PosicaoNoPonto(int fase) => Mundo(CelulaDoPonto(fase)) + Vector3.up * 0.45f;
+
+    Vector3 LugarDoPersonagem(int i, float pulo) => Mundo(pontos[i]) + new Vector3(0.95f, (EmPe(i) ? -0.3f : 0.75f) + pulo, 0f);
 
     // ------------------------------------------------------------------ andar
 
@@ -392,7 +462,26 @@ public class MapaDoMundo : MonoBehaviour
             if (!Andando) GerenciadorDoJogo.Som("bloco", 0.4f);
             return false;
         }
-        StartCoroutine(Andar(destino));
+        StartCoroutine(Andar(destino, Rota(destino)));
+        return true;
+    }
+
+    // Do ponto da fase do segredo para a fase secreta (e de volta).
+    public bool IrParaSecreta()
+    {
+        if (Andando || !secretaLiberada || Selecionado != Fases.FaseDoSegredo) return false;
+        StartCoroutine(Andar(Fases.IndiceSecreto, caminhoSecreto));
+        return true;
+    }
+
+    public bool VoltarDaSecreta()
+    {
+        if (Andando || Selecionado != Fases.IndiceSecreto) return false;
+        var volta = new List<Vector2Int>(caminhoSecreto);
+        volta.Reverse();
+        volta.RemoveAt(0);
+        volta.Add(pontos[Fases.FaseDoSegredo]);
+        StartCoroutine(Andar(Fases.FaseDoSegredo, volta));
         return true;
     }
 
@@ -407,12 +496,12 @@ public class MapaDoMundo : MonoBehaviour
         return volta;
     }
 
-    IEnumerator Andar(int destino)
+    IEnumerator Andar(int destino, List<Vector2Int> rota)
     {
         Andando = true;
         GerenciadorDoJogo.Som("pulo", 0.3f);
         Vector3 pes = PosicaoNoPonto(Selecionado);
-        foreach (Vector2Int celula in Rota(destino))
+        foreach (Vector2Int celula in rota)
         {
             Vector3 alvo = Mundo(celula) + Vector3.up * 0.45f;
             if (Mathf.Abs(alvo.x - pes.x) > 0.01f) desenhoSubaru.flipX = alvo.x < pes.x;
@@ -434,10 +523,31 @@ public class MapaDoMundo : MonoBehaviour
     }
 
     // Acabou de passar de fase: a névoa some ao longo do caminho novo, a fase nova aparece e o Subaru vai até lá.
-    IEnumerator LiberarEAndar(int destino, bool caminhoNovo)
+    // Se a fase secreta acabou de ser liberada, ela aparece primeiro.
+    IEnumerator LiberarEAndar(int destino, bool caminhoNovo, bool mostrarSecreta)
     {
         Andando = true;
         yield return new WaitForSeconds(0.7f); // espera a transição de tela
+
+        if (mostrarSecreta)
+        {
+            foreach (Vector2Int c in caminhoSecreto)
+            {
+                Revelar(c, RaioDoCaminho);
+                GerenciadorDoJogo.Som("moeda", 0.12f);
+                yield return new WaitForSeconds(0.1f);
+            }
+            Revelar(pontoSecreto.Value, RaioDoPonto - 1f);
+            GerenciadorDoJogo.Som("conquista");
+            yield return Nascer(desenhoSecreto.transform);
+            personagemSecreto.gameObject.SetActive(true);
+            yield return new WaitForSeconds(0.8f);
+        }
+        if (destino < 0)
+        {
+            Andando = false;
+            yield break;
+        }
 
         if (caminhoNovo)
         {
@@ -455,19 +565,24 @@ public class MapaDoMundo : MonoBehaviour
             Revelar(pontos[destino], ultima ? Largura : RaioDoPonto);
             if (ultima) CameraSeguir.Tremer(0.1f, 0.6f);
             GerenciadorDoJogo.Som("mola", 0.6f);
-            Transform novo = desenhosDosPontos[destino].transform;
-            for (float t = 0f; t < 0.35f; t += Time.deltaTime)
-            {
-                novo.localScale = Vector3.one * Mathf.Sin(t / 0.35f * Mathf.PI * 0.75f) / 0.7071f;
-                yield return null;
-            }
-            novo.localScale = Vector3.one;
+            yield return Nascer(desenhosDosPontos[destino].transform);
             nascendo = -1;
-            Efeitos.Poeira(transform, novo.position, 8, 2.5f);
             yield return new WaitForSeconds(0.3f);
         }
 
-        yield return Andar(destino);
+        yield return Andar(destino, Rota(destino));
+    }
+
+    // O ponto "nasce" com um pulinho e um pouco de poeira.
+    IEnumerator Nascer(Transform ponto)
+    {
+        for (float t = 0f; t < 0.35f; t += Time.deltaTime)
+        {
+            ponto.localScale = Vector3.one * Mathf.Sin(t / 0.35f * Mathf.PI * 0.75f) / 0.7071f;
+            yield return null;
+        }
+        ponto.localScale = Vector3.one;
+        Efeitos.Poeira(transform, ponto.position, 8, 2.5f);
     }
 
     // ------------------------------------------------------------------ animação
@@ -486,6 +601,15 @@ public class MapaDoMundo : MonoBehaviour
             // o ponto em que o Subaru está "pulsa" de leve
             if (i != nascendo)
                 desenhosDosPontos[i].transform.localScale = Vector3.one * (i == Selecionado && !Andando ? 1f + 0.08f * Mathf.Sin(Time.time * 6f) : 1f);
+        }
+
+        // a fase secreta: a moeda gira em cima do ponto, e o ponto pulsa quando o Subaru está nele
+        if (personagemSecreto != null && personagemSecreto.gameObject.activeSelf)
+        {
+            personagemSecreto.localScale = new Vector3(Mathf.Cos(Time.time * 3f), 1f, 1f);
+            if (Selecionado == Fases.IndiceSecreto && !Andando)
+                desenhoSecreto.transform.localScale = Vector3.one * (1f + 0.08f * Mathf.Sin(Time.time * 6f));
+            else desenhoSecreto.transform.localScale = Vector3.one;
         }
 
         // a névoa "respira" devagar

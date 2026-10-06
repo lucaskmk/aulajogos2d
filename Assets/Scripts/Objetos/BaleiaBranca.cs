@@ -94,7 +94,11 @@ public class BaleiaBranca : MonoBehaviour
             yield return new WaitForSeconds(0.9f);
         }
 
-        if (Ativa()) GerenciadorDoJogo.Instancia.Avisar("A Baleia Branca foi embora... por enquanto.", 2.5f);
+        if (Ativa())
+        {
+            GerenciadorDoJogo.Instancia.Avisar("A Baleia Branca foi embora... por enquanto.", 2.5f);
+            Conquistas.Desbloquear("baleia");
+        }
     }
 
     // Atravessa a tela da direita para a esquerda na altura y.

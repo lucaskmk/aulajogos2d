@@ -60,14 +60,14 @@ public class SonsDaMorte : MonoBehaviour
         if (!fonteDaOst.isPlaying) return;
         timerOst -= Time.deltaTime;
         if (timerOst <= 0f) fonteDaOst.Stop();
-        else fonteDaOst.volume = Mathf.Clamp01(timerOst / DuracaoFadeOst);
+        else fonteDaOst.volume = Mathf.Clamp01(timerOst / DuracaoFadeOst) * Opcoes.Musica;
     }
 
     void TocarOst()
     {
         if (fonteDaOst.clip == null) return;
         fonteDaOst.Stop(); // morreu de novo? recomeça do início
-        fonteDaOst.volume = 1f;
+        fonteDaOst.volume = Opcoes.Musica;
         fonteDaOst.Play();
         timerOst = DuracaoOst;
     }
@@ -81,6 +81,7 @@ public class SonsDaMorte : MonoBehaviour
             return;
         }
         fonteDaMorte.Stop(); // morreu de novo durante o áudio? recomeça
+        fonteDaMorte.volume = Opcoes.Efeitos;
         float atraso = duracao - picoDaMorte;
         if (atraso >= 0f)
         {

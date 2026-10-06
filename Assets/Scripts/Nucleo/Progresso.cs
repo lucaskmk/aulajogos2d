@@ -16,10 +16,35 @@ public static class Progresso
     const string ChaveTempo = "cilada_salvo_tempo";
     const string ChaveValida = "cilada_salvo_valida";
     const string ChaveFaseMaxima = "cilada_fase_maxima";
+    const string ChaveMortesPorFase = "cilada_salvo_mortes_por_fase";
+    const string ChaveSecreta = "cilada_secreta_liberada";
 
     public static bool TemJogoSalvo => PlayerPrefs.GetInt(ChaveTemJogo, 0) == 1;
     public static int FaseSalva => PlayerPrefs.GetInt(ChaveFase, 0);
     public static int FaseMaxima => PlayerPrefs.GetInt(ChaveFaseMaxima, 0);
+
+    // A fase secreta (vale para sempre depois de liberada).
+    public static bool SecretaLiberada => PlayerPrefs.GetInt(ChaveSecreta, 0) == 1;
+
+    public static void LiberarSecreta()
+    {
+        PlayerPrefs.SetInt(ChaveSecreta, 1);
+        PlayerPrefs.Save();
+    }
+
+    // Mortes em cada fase nesta partida (as caveiras do mapa), guardadas como "3,0,12,...".
+    public static void SalvarMortesPorFase(int[] mortes)
+    {
+        PlayerPrefs.SetString(ChaveMortesPorFase, string.Join(",", mortes));
+        PlayerPrefs.Save();
+    }
+
+    public static void CarregarMortesPorFase(int[] mortes)
+    {
+        string[] partes = PlayerPrefs.GetString(ChaveMortesPorFase, "").Split(',');
+        for (int i = 0; i < mortes.Length; i++)
+            mortes[i] = i < partes.Length && int.TryParse(partes[i], out int n) ? n : 0;
+    }
 
     // fase: onde o Subaru está. maisLonge: a fase mais longe liberada NESTA partida.
     // valida: a partida foi jogada em ordem desde a fase 1? Só assim ela vale para o recorde.
@@ -32,7 +57,7 @@ public static class Progresso
         PlayerPrefs.SetInt(ChaveMoedas, moedas);
         PlayerPrefs.SetFloat(ChaveTempo, tempo);
         PlayerPrefs.SetInt(ChaveValida, valida ? 1 : 0);
-        int maxima = Mathf.Max(fase, maisLonge);
+        int maxima = Mathf.Max(fase == Fases.IndiceSecreto ? 0 : fase, maisLonge); // a secreta não conta
         if (maxima > FaseMaxima) PlayerPrefs.SetInt(ChaveFaseMaxima, maxima);
         PlayerPrefs.Save();
     }
