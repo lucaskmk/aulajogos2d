@@ -38,7 +38,7 @@ public class BlocoSurpresa : MonoBehaviour
     {
         usado = true;
         brilho.enabled = false;
-        luz.enabled = false;
+        if (luz != null) luz.enabled = false;
         desenho.sprite = FabricaDeSprites.Pegar("bloco_usado");
         StartCoroutine(Efeitos.Pulinho(visual));
 

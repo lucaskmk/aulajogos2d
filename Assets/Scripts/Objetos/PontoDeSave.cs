@@ -27,6 +27,7 @@ public class PontoDeSave : MonoBehaviour
 
     void Acender()
     {
+        if (luz == null) return;
         luz.pointLightOuterRadius = 3.5f;
         luz.intensity = 0.5f;
     }
