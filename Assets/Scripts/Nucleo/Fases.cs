@@ -21,14 +21,15 @@
 //   e  inimigo disfarçado (igual ao normal, mas tem espinhos: NÃO pise!)
 //   M  bloco que foge quando você pula perto dele
 //   W  bandeira que te manda de volta pro começo
-//   X  linha invisível que inverte os controles (cruzou de novo, desinverte)
+//   X  linha invisível que inverte os controles depois de uma contagem de 2 s (cruzou de novo, desinverte)
 //   U  cano (2 de largura, desce até o chão): de tempos em tempos sai uma MÃO dele. Encostou, morreu
 //   r  coelho (Grande Coelho): pula atrás de você e se MULTIPLICA. Pise em cima para derrotar
 //   w  Baleia Branca: quando você passa daqui, ela surge do fundo e atravessa a tela (desvie!).
 //      Coloque no chão da arena, na linha em que o jogador anda
 //   L  Emilia (esperando no fim da última fase)
-//   D  porta da Beatrice (2 de altura): aperte S/seta para baixo na frente dela e ela te leva para OUTRA porta qualquer.
-//      Paredes de cima a baixo dividem a fase em salas; as portas são embaralhadas a cada morte
+//   0-9  porta da Beatrice (2 de altura), com o número em cima: aperte S/seta para baixo na frente dela.
+//      Para onde cada porta leva fica na lista "portas" da fase, em pares de ida e volta: "1-4" = a 1 leva
+//      para a 4 e a 4 volta para a 1. É SEMPRE igual (dá para decorar o caminho)
 //   Y  Beatrice (fala como as placas do Puck; os textos entram na mesma lista "placas")
 //   s  ponto de save: encostou, você renasce ali. Mas às vezes ele "muda de lugar"... :)
 //
@@ -47,6 +48,7 @@ public class Fase
     public string[] mapa;
     public string[] placas;
     public string[][] mudancas;
+    public string[] portas; // pares de portas ligadas, ex.: "1-4" (só na Biblioteca Proibida)
 }
 
 public static class Fases
@@ -256,14 +258,18 @@ public static class Fases
             nome = "Biblioteca Proibida",
             placas = new[]
             {
-                "A Beatrice embaralhou as portas.\nAperte S (ou seta para baixo) na frente de uma para entrar.",
+                "Cada porta tem um número e SEMPRE leva para o mesmo lugar.\nDecore o caminho! (S para entrar)",
+                "Beco sem saída! Mas tem Mabeast.\nA porta 9 sempre volta para a 2.",
                 "Achou a porta certa, de fato.\nNão que eu estivesse esperando, kashira.",
             },
+            // A sai pela 1 ou 3 (sala das armadilhas), a 6 vai para a sala das moedas, a 8 vai para a Beatrice.
+            // A 2 é o beco sem saída com os Mabeasts.
+            portas = new[] { "1-4", "3-5", "2-9", "6-7", "8-0" },
             mapa = new[]
             {
                 "#############################################################",
                 "#############################################################",
-                "#           #        v  #           #           #           #",
+                "#           #         v #           #           #           #",
                 "#           #           #           #           #           #",
                 "#           #           #           #           #           #",
                 "#           #           #           #           #           #",
@@ -272,8 +278,8 @@ public static class Fases
                 "#  BBBBBB   #           #           #           #           #",
                 "#           #           #  BBBBBB   #           #           #",
                 "#           #           #           #      $    #           #",
-                "#           #           #  $$$ m    #           #           #",
-                "# P i  D  D #  D  h  D  # E      D  #  D  e   D # D   Y  G  #",
+                "#           #           #   $$$m    #           #           #",
+                "# Pi 1  2 3 # 4 h 5 h 6 # 7   E   8 # 9 i e  E  # 0   Y  G  #",
                 "#############################################################",
                 "#############################################################",
             },
@@ -301,7 +307,7 @@ public static class Fases
                 "                                                  ?K",
                 "",
                 "                      U                                U    i R    h       s      w                             *   L",
-                "  P i $m$ X       X         e           <                 #############################################################",
+                "  P i $m$                   e           <                 #############################################################",
                 "#############   ############### MM     ########CC######################################################################",
                 "#############   ###############        ########CC######################################################################",
             },

@@ -25,9 +25,12 @@ public class Jogador : MonoBehaviour
     public bool NoChao { get; private set; }
     public Rigidbody2D Corpo { get; private set; }
 
-    // Posições x das linhas 'X' da fase. Cada linha cruzada inverte os controles.
+    // Posições x das linhas 'X' da fase. Cada linha cruzada inverte os controles,
+    // mas só depois de uma contagem (dá tempo de se preparar; se voltar antes, cancela).
     public List<float> inversores = new List<float>();
+    public float tempoParaInverter = 2f;
     bool controlesInvertidos;
+    float timerInversao = -1f; // contando até inverter (-1 = nada pendente)
 
     BoxCollider2D colisor;
     SpriteRenderer visual;
@@ -138,8 +141,25 @@ public class Jogador : MonoBehaviour
             if (transform.position.x > x) cruzadas++;
 
         bool invertido = cruzadas % 2 == 1;
-        if (invertido == controlesInvertidos) return;
+        if (invertido == controlesInvertidos)
+        {
+            if (timerInversao >= 0f) GerenciadorDoJogo.Instancia.Avisar("Ufa. Cancelou.", 1f); // voltou antes de inverter
+            timerInversao = -1f;
+            return;
+        }
 
+        // cruzou a linha: começa a contagem
+        if (timerInversao < 0f)
+        {
+            timerInversao = tempoParaInverter;
+            GerenciadorDoJogo.Som("armadilha", 0.5f);
+        }
+        timerInversao -= Time.deltaTime;
+        string oQue = invertido ? "Invertendo os controles" : "Desinvertendo";
+        GerenciadorDoJogo.Instancia.Avisar($"{oQue} em {Mathf.CeilToInt(Mathf.Max(timerInversao, 0.01f))}...", 0.2f);
+        if (timerInversao > 0f) return;
+
+        timerInversao = -1f;
         controlesInvertidos = invertido;
         GerenciadorDoJogo.Som("risada");
         GerenciadorDoJogo.Instancia.Avisar(invertido ? "CONTROLES INVERTIDOS :)" : "Controles normais... por enquanto.");

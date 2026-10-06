@@ -1,13 +1,15 @@
 using System.Collections;
 using UnityEngine;
 
-// 'D' - porta da Biblioteca Proibida (o "Door Crossing" da Beatrice).
-// Aperte S (ou seta para baixo) na frente dela: você sai por OUTRA porta, que pode estar
-// na sala da Beatrice... ou não. O ConstrutorDeFase sorteia para onde cada porta leva
-// (de novo a cada morte), garantindo que sempre exista um caminho até a sala da bandeira.
+// '0' a '9' - porta da Biblioteca Proibida (o "Door Crossing" da Beatrice), com o número em cima.
+// Aperte S (ou seta para baixo) na frente dela: você sai pela porta par dela (lista "portas" da fase).
+// É sempre o mesmo caminho, então dá para decorar. Depois de atravessar, espera um pouquinho
+// antes de poder entrar de novo (senão você atravessava sem querer, ida e volta).
 public class Porta : MonoBehaviour
 {
-    public int sala;          // em qual sala ela fica (as salas são separadas por paredes)
+    public const float Espera = 1f; // segundos depois de atravessar até poder entrar de novo
+
+    public char numero;
     public Porta destino;
 
     SpriteRenderer desenho;
@@ -36,6 +38,22 @@ public class Porta : MonoBehaviour
         if (GerenciadorDoJogo.Instancia != null) GerenciadorDoJogo.Instancia.portas.Remove(this);
     }
 
+    // Escreve o número em cima da porta.
+    public void Numerar(char numeroDaPorta)
+    {
+        numero = numeroDaPorta;
+        var placa = new GameObject("Numero");
+        placa.transform.SetParent(transform, false);
+        placa.transform.position = transform.position + Vector3.up * 2.35f;
+        var desenhoDoNumero = placa.AddComponent<SpriteRenderer>();
+        desenhoDoNumero.sprite = FabricaDeSprites.SpriteDeTexto(numero.ToString(), new Color32(255, 222, 90, 255), new Color32(20, 20, 28, 255));
+        desenhoDoNumero.sortingOrder = 1;
+        placa.transform.localScale = Vector3.one * 1.3f;
+    }
+
+    // Já dá para entrar de novo? (a Interface só mostra a dica quando pode)
+    public static bool PodeEntrar => Time.time >= podeEntrarDepoisDe;
+
     // O jogador está parado na frente desta porta?
     public bool JogadorNaFrente()
     {
@@ -47,7 +65,7 @@ public class Porta : MonoBehaviour
 
     void Update()
     {
-        if (atravessando || destino == null || Time.time < podeEntrarDepoisDe) return;
+        if (atravessando || destino == null || !PodeEntrar) return;
         if (JogadorNaFrente() && Controles.BaixoApertou())
             StartCoroutine(Atravessar(GerenciadorDoJogo.JogadorAtual));
     }
@@ -55,7 +73,7 @@ public class Porta : MonoBehaviour
     IEnumerator Atravessar(Jogador jogador)
     {
         atravessando = true;
-        podeEntrarDepoisDe = Time.time + 0.8f;
+        podeEntrarDepoisDe = Time.time + 0.3f + Espera; // 0,3 s atravessando + a espera
         jogador.Congelar(); // ninguém te mata dentro da porta
         desenho.sprite = aberta;
         GerenciadorDoJogo.Som("porta");
@@ -67,8 +85,7 @@ public class Porta : MonoBehaviour
         CameraSeguir.Centralizar();
         Efeitos.Poeira(destino.transform.parent, destino.transform.position + Vector3.up * 0.5f, 6, 2f);
         Conquistas.Contar("portas", 20);
-        if (Random.value < 0.4f)
-            GerenciadorDoJogo.Instancia.Avisar(Textos.PortaErrada[Random.Range(0, Textos.PortaErrada.Length)], 1.5f);
+        GerenciadorDoJogo.Instancia.Avisar($"Porta {numero} -> porta {destino.numero}", 1.8f); // para ajudar a decorar
 
         yield return new WaitForSeconds(0.2f);
         desenho.sprite = fechada;

@@ -51,7 +51,7 @@ public static class ConstrutorDeFase
         var celulasQueFogem = new HashSet<Vector2Int>();
         var placas = new List<(Vector3 lugar, bool beatrice)>();
         var portas = new List<Porta>();
-        float xDaBandeira = -1f;
+
         var fujonas = new List<BandeiraFujona>();
         Vector3? destinoDaFujona = null;
 
@@ -62,6 +62,14 @@ public static class ConstrutorDeFase
                 char c = mapa[linha][x];
                 Vector3 pos = Posicao(x, linha);
                 Vector3 chaoDaCelula = pos + Vector3.down * 0.5f;
+
+                if (char.IsDigit(c)) // porta da Beatrice, com o número dela
+                {
+                    var porta = Criar<Porta>("Porta " + c, raiz, chaoDaCelula);
+                    porta.Numerar(c);
+                    portas.Add(porta);
+                    continue;
+                }
 
                 switch (c)
                 {
@@ -81,7 +89,7 @@ public static class ConstrutorDeFase
                     case 'T': Criar<Esmagador>("Esmagador", raiz, pos); break;
                     case '<': Criar<Serra>("SerraTraseira", raiz, pos).direcao = 1; break;
                     case '>': Criar<Serra>("SerraDianteira", raiz, pos).direcao = -1; break;
-                    case 'G': info.bandeiras.Add(Criar<Bandeira>("Bandeira", raiz, chaoDaCelula).transform); xDaBandeira = x; break;
+                    case 'G': info.bandeiras.Add(Criar<Bandeira>("Bandeira", raiz, chaoDaCelula).transform); break;
                     case 'R': fujonas.Add(Criar<BandeiraFujona>("BandeiraFujona", raiz, chaoDaCelula)); info.bandeiras.Add(fujonas[fujonas.Count - 1].transform); break;
                     case '*': destinoDaFujona = chaoDaCelula; break;
                     case 'Z': info.bandeiras.Add(Criar<BandeiraFalsa>("BandeiraFalsa", raiz, chaoDaCelula).transform); break;
@@ -97,7 +105,6 @@ public static class ConstrutorDeFase
                     case 'r': Criar<Coelho>("Coelho", raiz, pos); break;
                     case 'w': Criar<BaleiaBranca>("BaleiaBranca", raiz, pos); break;
                     case 'L': Criar<Emilia>("Emilia", raiz, pos); break;
-                    case 'D': portas.Add(Criar<Porta>("Porta", raiz, chaoDaCelula)); break;
                     case 's': Criar<PontoDeSave>("PontoDeSave", raiz, chaoDaCelula); break;
                     case 'U':
                         // o cano desce até encontrar chão
@@ -142,14 +149,11 @@ public static class ConstrutorDeFase
             if (placas[i].beatrice) placa.VirarBeatrice();
         }
 
-        // Portas da Beatrice: cada uma sabe a sala em que está, e o destino é sorteado.
+        // Portas da Beatrice: liga os pares da lista "portas" da fase (ida e volta, sempre iguais).
         if (portas.Count > 0)
         {
             info.temPortas = true;
-            int[] salaDaColuna = Salas(mapa, largura, altura);
-            foreach (Porta porta in portas) porta.sala = salaDaColuna[Mathf.RoundToInt(porta.transform.position.x)];
-            int salaFinal = xDaBandeira >= 0f ? salaDaColuna[Mathf.RoundToInt(xDaBandeira)] : -1;
-            LigarPortas(portas, salaDaColuna[Mathf.RoundToInt(info.inicio.x)], salaFinal, tentativa);
+            LigarPortas(fase, portas);
         }
 
         // Paredes invisíveis nas bordas da fase.
@@ -163,53 +167,23 @@ public static class ConstrutorDeFase
 
     // ------------------------------------------------------------------ ajudantes
 
-    // Numera as salas da fase: uma coluna toda de '#', de cima a baixo, é uma parede entre duas salas.
-    static int[] Salas(string[] mapa, int largura, int altura)
+    // "1-4" = a porta 1 leva para a 4 e a 4 volta para a 1.
+    static void LigarPortas(Fase fase, List<Porta> portas)
     {
-        var sala = new int[largura];
-        int atual = 0;
-        for (int x = 0; x < largura; x++)
+        Porta Achar(char numero) => portas.Find(p => p.numero == numero);
+        foreach (string par in fase.portas ?? new string[0])
         {
-            bool parede = true;
-            for (int linha = 0; linha < altura && parede; linha++)
-                parede = x < mapa[linha].Length && mapa[linha][x] == '#';
-            if (parede) atual++;
-            sala[x] = atual;
-        }
-        return sala;
-    }
-
-    // Sorteia para onde cada porta leva (sempre para OUTRA sala), até achar um sorteio em que
-    // dá para ir da sala inicial até a sala da bandeira. A "semente" muda a cada morte.
-    static void LigarPortas(List<Porta> portas, int salaInicial, int salaFinal, int semente)
-    {
-        var sorteio = new System.Random(semente * 7919 + 13);
-        for (int tentativa = 0; tentativa < 300; tentativa++)
-        {
-            foreach (Porta porta in portas)
+            Porta a = par.Length == 3 ? Achar(par[0]) : null, b = par.Length == 3 ? Achar(par[2]) : null;
+            if (a == null || b == null)
             {
-                List<Porta> opcoes = portas.FindAll(outra => outra.sala != porta.sala);
-                porta.destino = opcoes.Count > 0 ? opcoes[sorteio.Next(opcoes.Count)] : null;
+                Debug.LogWarning($"Par de portas inválido na fase \"{fase.nome}\": {par}");
+                continue;
             }
-            if (salaFinal < 0 || Alcanca(portas, salaInicial, salaFinal)) return;
+            a.destino = b;
+            b.destino = a;
         }
-        Debug.LogWarning("ConstrutorDeFase: não achei um jeito de ligar as portas até a bandeira.");
-    }
-
-    static bool Alcanca(List<Porta> portas, int de, int ate)
-    {
-        var visitadas = new HashSet<int> { de };
-        var fila = new Queue<int>();
-        fila.Enqueue(de);
-        while (fila.Count > 0)
-        {
-            int sala = fila.Dequeue();
-            if (sala == ate) return true;
-            foreach (Porta porta in portas)
-                if (porta.sala == sala && porta.destino != null && visitadas.Add(porta.destino.sala))
-                    fila.Enqueue(porta.destino.sala);
-        }
-        return false;
+        foreach (Porta porta in portas)
+            if (porta.destino == null) Debug.LogWarning($"A porta {porta.numero} da fase \"{fase.nome}\" não leva a lugar nenhum.");
     }
 
     // Devolve o mapa da fase já com as trocas da tentativa atual (veja "MUDANÇAS" em Fases.cs).

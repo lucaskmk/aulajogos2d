@@ -662,7 +662,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         Fase fase = DadosDaFase;
         if (MortesNaFase == 1 && fase.mudancas != null && fase.mudancas.Length > 0)
             return "Ah, e eu mudei umas coisinhas. :)";
-        if (naBiblioteca && Random.value < 0.4f) return "A Beatrice mudou as portas de lugar, kashira.";
+        if (naBiblioteca && Random.value < 0.4f) return "Lembra para onde cada porta leva? Kashira.";
         if (MortesNaFase == 5) return "Dica: nem tudo é o que parece.";
         return Fases.MensagensDeMorte[Random.Range(0, Fases.MensagensDeMorte.Length)];
     }
