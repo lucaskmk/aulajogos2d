@@ -61,8 +61,21 @@ public static class FabricaDeSprites
         { 'e', new Color32(70, 120, 230, 255) },  // azul (olhos da Beatrice)
     };
 
-    static Color32 Cor(char c) => paleta[c];
-    static readonly Color32 Transparente = new Color32(0, 0, 0, 0);
+    // Cor da paleta pelo caractere (as letras usadas nos desenhos em texto).
+    public static Color32 Cor(char c) => paleta[c];
+    public static readonly Color32 Transparente = new Color32(0, 0, 0, 0);
+
+    // Sprites "de fora": cada armadilha/personagem novo pode registrar os próprios desenhos no seu arquivo
+    // (em um método [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]),
+    // e eles passam a funcionar com Pegar("nome") em qualquer lugar (inclusive no mapa do mundo).
+    // Um nome registrado aqui tem prioridade sobre os desenhos deste arquivo.
+    static readonly Dictionary<string, Func<Sprite>> registrados = new Dictionary<string, Func<Sprite>>();
+
+    public static void Registrar(string nome, Func<Sprite> criar)
+    {
+        registrados[nome] = criar;
+        cache.Remove(nome); // se já tinha sido criado com o desenho antigo, recria
+    }
 
     // ---------------------------------------------------------------- desenhos
 
@@ -596,11 +609,12 @@ public static class FabricaDeSprites
         return s;
     }
 
-    static readonly Vector2 Centro = new Vector2(0.5f, 0.5f);
-    static readonly Vector2 Base = new Vector2(0.5f, 0f);
+    public static readonly Vector2 Centro = new Vector2(0.5f, 0.5f);
+    public static readonly Vector2 Base = new Vector2(0.5f, 0f);
 
     static Sprite Criar(string nome)
     {
+        if (registrados.TryGetValue(nome, out Func<Sprite> criarRegistrado)) return criarRegistrado();
         switch (nome)
         {
             case "jogador": return DeArte(ArteJogador, Centro);
@@ -709,7 +723,7 @@ public static class FabricaDeSprites
     }
 
     // brilho: posição de uma faixa diagonal clara passando pelo desenho (NaN = sem brilho).
-    static Sprite DeArte(string[] linhas, Vector2 pivo, int pixelsPorUnidade = PixelsPorUnidade, float brilho = float.NaN)
+    public static Sprite DeArte(string[] linhas, Vector2 pivo, int pixelsPorUnidade = PixelsPorUnidade, float brilho = float.NaN)
     {
         int altura = linhas.Length;
         int largura = 0;
@@ -727,7 +741,7 @@ public static class FabricaDeSprites
         }, pixelsPorUnidade);
     }
 
-    static Sprite Procedural(int largura, int altura, Vector2 pivo, Func<int, int, Color32> corDoPixel, int pixelsPorUnidade = PixelsPorUnidade)
+    public static Sprite Procedural(int largura, int altura, Vector2 pivo, Func<int, int, Color32> corDoPixel, int pixelsPorUnidade = PixelsPorUnidade)
     {
         var textura = new Texture2D(largura, altura, TextureFormat.RGBA32, false)
         {
