@@ -35,7 +35,15 @@ public static class ConstrutorDeFase
         }
         Vector3 Posicao(int x, int linha) => new Vector3(x, altura - 1 - linha, 0f);
         bool PareceChao(char c) => c == '#' || c == 'C' || c == 'F'; // falso e o que cai são IGUAIS ao chão de verdade
-        string SpriteDoChao(int x, int linha) => PareceChao(Celula(x, linha - 1)) ? "chao" : "chao_topo";
+        // De vez em quando um bloco com rachadura ou com florzinha, para o chão não ficar repetitivo.
+        // (escolhido pela posição: o chão falso e o que cai continuam IGUAIS ao de verdade)
+        string SpriteDoChao(int x, int linha)
+        {
+            bool topo = !PareceChao(Celula(x, linha - 1));
+            bool variado = (x * 7 + linha * 13) % 9 == 0;
+            if (topo) return variado ? "chao_topo_florido" : "chao_topo";
+            return variado ? "chao_rachado" : "chao";
+        }
 
         // Todo o chão firme vira UM colisor só (CompositeCollider2D).
         // Isso evita o jogador "enganchar" nas emendas entre os blocos.
@@ -51,7 +59,7 @@ public static class ConstrutorDeFase
         var celulasQueFogem = new HashSet<Vector2Int>();
         var placas = new List<(Vector3 lugar, bool beatrice)>();
         var portas = new List<Porta>();
-        float xDaBandeira = -1f;
+
         var fujonas = new List<BandeiraFujona>();
         Vector3? destinoDaFujona = null;
 
@@ -62,6 +70,14 @@ public static class ConstrutorDeFase
                 char c = mapa[linha][x];
                 Vector3 pos = Posicao(x, linha);
                 Vector3 chaoDaCelula = pos + Vector3.down * 0.5f;
+
+                if (char.IsDigit(c)) // porta da Beatrice, com o número dela
+                {
+                    var porta = Criar<Porta>("Porta " + c, raiz, chaoDaCelula);
+                    porta.Numerar(c);
+                    portas.Add(porta);
+                    continue;
+                }
 
                 switch (c)
                 {
@@ -81,7 +97,7 @@ public static class ConstrutorDeFase
                     case 'T': Criar<Esmagador>("Esmagador", raiz, pos); break;
                     case '<': Criar<Serra>("SerraTraseira", raiz, pos).direcao = 1; break;
                     case '>': Criar<Serra>("SerraDianteira", raiz, pos).direcao = -1; break;
-                    case 'G': info.bandeiras.Add(Criar<Bandeira>("Bandeira", raiz, chaoDaCelula).transform); xDaBandeira = x; break;
+                    case 'G': info.bandeiras.Add(Criar<Bandeira>("Bandeira", raiz, chaoDaCelula).transform); break;
                     case 'R': fujonas.Add(Criar<BandeiraFujona>("BandeiraFujona", raiz, chaoDaCelula)); info.bandeiras.Add(fujonas[fujonas.Count - 1].transform); break;
                     case '*': destinoDaFujona = chaoDaCelula; break;
                     case 'Z': info.bandeiras.Add(Criar<BandeiraFalsa>("BandeiraFalsa", raiz, chaoDaCelula).transform); break;
@@ -97,7 +113,6 @@ public static class ConstrutorDeFase
                     case 'r': Criar<Coelho>("Coelho", raiz, pos); break;
                     case 'w': Criar<BaleiaBranca>("BaleiaBranca", raiz, pos); break;
                     case 'L': Criar<Emilia>("Emilia", raiz, pos); break;
-                    case 'D': portas.Add(Criar<Porta>("Porta", raiz, chaoDaCelula)); break;
                     case 's': Criar<PontoDeSave>("PontoDeSave", raiz, chaoDaCelula); break;
                     case 'U':
                         // o cano desce até encontrar chão
@@ -142,14 +157,11 @@ public static class ConstrutorDeFase
             if (placas[i].beatrice) placa.VirarBeatrice();
         }
 
-        // Portas da Beatrice: cada uma sabe a sala em que está, e o destino é sorteado.
+        // Portas da Beatrice: liga os pares da lista "portas" da fase (ida e volta, sempre iguais).
         if (portas.Count > 0)
         {
             info.temPortas = true;
-            int[] salaDaColuna = Salas(mapa, largura, altura);
-            foreach (Porta porta in portas) porta.sala = salaDaColuna[Mathf.RoundToInt(porta.transform.position.x)];
-            int salaFinal = xDaBandeira >= 0f ? salaDaColuna[Mathf.RoundToInt(xDaBandeira)] : -1;
-            LigarPortas(portas, salaDaColuna[Mathf.RoundToInt(info.inicio.x)], salaFinal, tentativa);
+            LigarPortas(fase, portas);
         }
 
         // Paredes invisíveis nas bordas da fase.
@@ -163,53 +175,23 @@ public static class ConstrutorDeFase
 
     // ------------------------------------------------------------------ ajudantes
 
-    // Numera as salas da fase: uma coluna toda de '#', de cima a baixo, é uma parede entre duas salas.
-    static int[] Salas(string[] mapa, int largura, int altura)
+    // "1-4" = a porta 1 leva para a 4 e a 4 volta para a 1.
+    static void LigarPortas(Fase fase, List<Porta> portas)
     {
-        var sala = new int[largura];
-        int atual = 0;
-        for (int x = 0; x < largura; x++)
+        Porta Achar(char numero) => portas.Find(p => p.numero == numero);
+        foreach (string par in fase.portas ?? new string[0])
         {
-            bool parede = true;
-            for (int linha = 0; linha < altura && parede; linha++)
-                parede = x < mapa[linha].Length && mapa[linha][x] == '#';
-            if (parede) atual++;
-            sala[x] = atual;
-        }
-        return sala;
-    }
-
-    // Sorteia para onde cada porta leva (sempre para OUTRA sala), até achar um sorteio em que
-    // dá para ir da sala inicial até a sala da bandeira. A "semente" muda a cada morte.
-    static void LigarPortas(List<Porta> portas, int salaInicial, int salaFinal, int semente)
-    {
-        var sorteio = new System.Random(semente * 7919 + 13);
-        for (int tentativa = 0; tentativa < 300; tentativa++)
-        {
-            foreach (Porta porta in portas)
+            Porta a = par.Length == 3 ? Achar(par[0]) : null, b = par.Length == 3 ? Achar(par[2]) : null;
+            if (a == null || b == null)
             {
-                List<Porta> opcoes = portas.FindAll(outra => outra.sala != porta.sala);
-                porta.destino = opcoes.Count > 0 ? opcoes[sorteio.Next(opcoes.Count)] : null;
+                Debug.LogWarning($"Par de portas inválido na fase \"{fase.nome}\": {par}");
+                continue;
             }
-            if (salaFinal < 0 || Alcanca(portas, salaInicial, salaFinal)) return;
+            a.destino = b;
+            b.destino = a;
         }
-        Debug.LogWarning("ConstrutorDeFase: não achei um jeito de ligar as portas até a bandeira.");
-    }
-
-    static bool Alcanca(List<Porta> portas, int de, int ate)
-    {
-        var visitadas = new HashSet<int> { de };
-        var fila = new Queue<int>();
-        fila.Enqueue(de);
-        while (fila.Count > 0)
-        {
-            int sala = fila.Dequeue();
-            if (sala == ate) return true;
-            foreach (Porta porta in portas)
-                if (porta.sala == sala && porta.destino != null && visitadas.Add(porta.destino.sala))
-                    fila.Enqueue(porta.destino.sala);
-        }
-        return false;
+        foreach (Porta porta in portas)
+            if (porta.destino == null) Debug.LogWarning($"A porta {porta.numero} da fase \"{fase.nome}\" não leva a lugar nenhum.");
     }
 
     // Devolve o mapa da fase já com as trocas da tentativa atual (veja "MUDANÇAS" em Fases.cs).
@@ -319,20 +301,30 @@ public static class ConstrutorDeFase
             Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.4f, 0.4f, ParalaxeDasNuvens);
         }
 
-        for (int x = sorteio.Next(0, 4); x < largura; x += sorteio.Next(4, 9))
+        // Enfeites em cima do chão: capim, flores, arbustos, pedras, cogumelos, cercas e lampiões (que iluminam).
+        int ultimoLampiao = -100;
+        for (int x = sorteio.Next(0, 3); x < largura; x += sorteio.Next(2, 5))
         {
-            for (int linha = 1; linha < altura; linha++)
+            int linha = LinhaDoChao(mapa, x, altura);
+            if (linha < 0) continue;
+            Vector3 base_ = new Vector3(x + (float)(sorteio.NextDouble() - 0.5) * 0.4f, altura - 1 - linha + 0.5f, 0f);
+            bool chaoDosLados = LinhaDoChao(mapa, x - 1, altura) == linha && LinhaDoChao(mapa, x + 1, altura) == linha;
+
+            int sorte = sorteio.Next(100);
+            if (sorte < 5 && x - ultimoLampiao > 10 && chaoDosLados)
             {
-                char c = x < mapa[linha].Length ? mapa[linha][x] : ' ';
-                char acima = x < mapa[linha - 1].Length ? mapa[linha - 1][x] : ' ';
-                if (c == '#' && acima == ' ')
-                {
-                    string sprite = sorteio.Next(3) == 0 ? "flor" : "tufo";
-                    var enfeite = Visual("Enfeite", decoracao, new Vector3(x, altura - 1 - linha + 0.5f, 0f), sprite, -8);
-                    Animacao.Adicionar(enfeite, Animacao.Tipo.Balancar, 2.5f, 6f);
-                    break;
-                }
-                if (c != ' ') break;
+                var lampiao = Visual("Lampiao", decoracao, base_, "lampiao", -7);
+                Luzes.Ponto(lampiao.transform, Luzes.Quente, 4.5f, 0.85f, Vector3.up * 2.15f);
+                ultimoLampiao = x;
+            }
+            else if (sorte < 18 && chaoDosLados) Visual("Arbusto", decoracao, base_, "arbusto", -7);
+            else if (sorte < 26 && chaoDosLados) Visual("Cerca", decoracao, base_, "cerca", -7);
+            else if (sorte < 35) Visual("Pedra", decoracao, base_, "pedra", -7);
+            else if (sorte < 42) Visual("Cogumelo", decoracao, base_, "cogumelo", -7);
+            else
+            {
+                var enfeite = Visual("Enfeite", decoracao, base_, sorte < 65 ? "flor" : "tufo", -8);
+                Animacao.Adicionar(enfeite, Animacao.Tipo.Balancar, 2.5f, 6f);
             }
         }
 
@@ -342,5 +334,20 @@ public static class ConstrutorDeFase
             var brilho = Visual("Brilho", decoracao, new Vector3(sorteio.Next(0, largura), altura - 1 - sorteio.Next(0, 9), 0f), "brilho", -11, false);
             Animacao.Adicionar(brilho, Animacao.Tipo.Piscar, 3f, 0.7f);
         }
+    }
+
+    // A linha do primeiro chão firme ('#') de cima para baixo nesta coluna, com espaço livre em cima.
+    // -1 se não tiver (buraco, coluna fora da fase ou algo em cima).
+    static int LinhaDoChao(string[] mapa, int x, int altura)
+    {
+        if (x < 0) return -1;
+        for (int linha = 1; linha < altura; linha++)
+        {
+            char c = x < mapa[linha].Length ? mapa[linha][x] : ' ';
+            char acima = x < mapa[linha - 1].Length ? mapa[linha - 1][x] : ' ';
+            if (c == '#' && acima == ' ') return linha;
+            if (c != ' ') return -1;
+        }
+        return -1;
     }
 }

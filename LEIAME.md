@@ -50,14 +50,32 @@ daquela fase (Puck, Mabeast, serra, nuvem malvada, coelho...) e a Emilia espera 
 - **Fase secreta:** pegue TODAS as moedas da fase 5 ("Pegue as moedas! Todas!") sem morrer no meio. Uma ilha
   aparece no lago; no ponto 5, aperte seta para baixo para ir até ela.
 
-## Biblioteca Proibida (o minigame das portas)
-A fase 8 é dividida em salas por paredes. Cada porta (`D` no mapa) leva para uma porta de OUTRA sala,
-sorteada a cada morte (o "Door Crossing" da Beatrice), sempre garantindo que exista um caminho até a sala
-dela, onde está a bandeira. Algumas salas têm armadilhas, outras só moedas. Aperte S na frente da porta.
+## Biblioteca Proibida (o quebra-cabeça das portas)
+A fase 8 é dividida em salas por paredes. Cada porta tem um **número** em cima e funciona em pares de
+ida e volta, sempre iguais (dá para decorar): a lista `portas` da fase em `Fases.cs` diz quem leva para quem
+(`"1-4"` = a 1 leva para a 4 e a 4 volta para a 1). Ao atravessar, aparece "Porta 1 -> porta 4" para ajudar
+a lembrar, e você precisa esperar 1 segundo antes de entrar em outra porta. Uma das portas leva para um
+beco sem saída cheio de Mabeasts; o caminho certo passa pela sala das armadilhas e pela sala das moedas
+até a Beatrice. Aperte S na frente da porta.
+
+## Controles invertidos
+Na fase "Cadê a direita?", cruzar uma linha invisível começa uma contagem de 2 segundos antes de inverter
+os controles (dá tempo de se preparar, e voltar antes cancela). A última fase não tem mais inversão.
+
+## Chefe: a Baleia Branca
+No fim da última fase, ao entrar na arena, paredes de névoa fecham a passagem, a câmera trava e toca a
+música de chefe. A Baleia tem **3 de vida** (barra no topo da tela) e repete três ataques:
+1. **Investida:** atravessa a tela alta (não pule) ou baixa (pule por cima); o "!" mostra a altura.
+2. **Chuva de névoa:** bolas de névoa caem do céu; a sombra no chão mostra onde.
+3. **Mergulho:** a sombra dela te segue e ela despenca de barriga. Fica **atordoada** (estrelinhas):
+   **pule na cabeça dela** para tirar 1 de vida.
+
+A cada golpe ela fica mais rápida e faz mais investidas. Derrotada, a névoa some e o caminho até a
+bandeira e a Emilia abre. Se morrer depois disso, você renasce depois da arena.
 
 ## Ponto de save
 O cristal (`s` no mapa) vira o lugar onde você renasce. Mas, como no anime, às vezes (25% das mortes) o
-ponto de save "muda de lugar" e você volta para o começo. :)
+ponto de save "muda de lugar" e você volta para o começo. :) (Menos na fase da Baleia.)
 
 ## Conquistas, volume e créditos
 - 15 conquistas (ver no título): morrer para a nuvem, pisar em 10 coelhos, desviar da Baleia, achar a
@@ -74,6 +92,19 @@ A animação da morte pode ser pulada depois de 0,5 s e fica mais curta a partir
 O jogo toca `Assets/Resources/Sons/musica_fundo` (mp3, ogg ou wav) se o arquivo existir.
 Se não existir, toca uma música **lofi 8-bit original gerada por código** (`FabricaDeMusica`), com uma variação por fase.
 A música abaixa sozinha quando você morre (para a OST do Retorno pela Morte aparecer) e na pausa.
+
+## Visual
+- **Fundo em camadas com paralaxe:** céu em degradê, sol com raios de luz (ou lua e estrelas na fase noturna),
+  montanhas, castelo, floresta, árvores, neblina perto do chão e uma folhagem escura bem na frente da câmera,
+  que passa mais rápido que o chão. Cada camada anda numa velocidade diferente (`Paralaxe.cs`).
+- **Pós-processamento do URP** (`EfeitosDeTela.cs`): bloom nas partes claras, vinheta roxa, saturação e contraste.
+  Na morte a tela perde a cor e ganha aberração cromática; no renascimento, um "soco" de distorção de lente.
+- **Luzes 2D** (`Luzes.cs`): moedas, blocos `?`, cristais de save, portas, bandeiras, lampiões e a mão do cano
+  brilham. A última fase é de noite (o Subaru ilumina em volta) e a biblioteca tem luz quente.
+- **Sombras:** a sombrinha projetada roxa em tudo e uma sombra oval no chão embaixo de quem está no ar.
+- **Clima** (`Ambiente.cs`): pólen, pétalas nas fases rosadas, vaga-lumes de noite, poeira dourada na biblioteca.
+- **Chão e enfeites:** blocos com rachaduras e florzinhas, e o cenário ganha capim, flores, arbustos, pedras,
+  cogumelos, cercas e lampiões automaticamente.
 
 ## Organização do código (`Assets/Scripts`)
 - **Nucleo/**

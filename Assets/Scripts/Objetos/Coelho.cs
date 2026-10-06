@@ -40,6 +40,7 @@ public class Coelho : MonoBehaviour
 
         visual = ConstrutorDeFase.Visual("Visual", transform, transform.position, "coelho", 6).GetComponent<SpriteRenderer>();
         filtroSolido = new ContactFilter2D { useTriggers = false };
+        SombraNoChao.Adicionar(gameObject, 0.7f);
 
         // coelhos atravessam uns aos outros (senão o bando vira uma pilha)
         foreach (Coelho outro in todos)

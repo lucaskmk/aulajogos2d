@@ -48,15 +48,6 @@ public static class Textos
         return DepoisDaFase[faseConcluida % DepoisDaFase.Length];
     }
 
-    // Frases da Beatrice quando a porta te leva para o lugar errado.
-    public static readonly string[] PortaErrada =
-    {
-        "Porta errada, kashira.",
-        "Você é teimoso, de fato.",
-        "Hmpf. Tente de novo.",
-        "Eu não vou facilitar, kashira!",
-    };
-
     // ------------------------------------------------------------------ créditos
 
     // Coloque aqui os nomes do grupo.
