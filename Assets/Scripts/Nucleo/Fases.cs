@@ -23,8 +23,12 @@
 //   W  bandeira que te manda de volta pro começo
 //   X  linha invisível que inverte os controles (cruzou de novo, desinverte)
 //   U  cano (2 de largura, desce até o chão): de tempos em tempos sai uma MÃO dele. Encostou, morreu
+//   r  coelho (Grande Coelho): pula atrás de você e se MULTIPLICA. Pise em cima para derrotar
+//   w  Baleia Branca: quando você passa daqui, ela surge do fundo e atravessa a tela (desvie!).
+//      Coloque no chão da arena, na linha em que o jogador anda
+//   L  Emilia (esperando no fim da última fase)
 //
-//  As placas recebem os textos na ordem da esquerda para a direita.
+//  As placas (quem fala é o Puck) recebem os textos na ordem da esquerda para a direita.
 //
 //  MUDANÇAS (opcional, nenhuma fase usa agora): a fase pode MUDAR depois que você morre (estilo Level Devil).
 //  Cada item de "mudancas" é uma versão da fase usada nas tentativas seguintes,
@@ -96,7 +100,7 @@ public static class Fases
                 "                  ######",
                 "          o       ######",
                 "                  ######",
-                "         B   U    ######                   $$",
+                "         B        ######                   $$",
                 "  P i    B      S ######            i        i  E B Z   G",
                 "######################################FFF#################",
                 "######################################FFF#################",
@@ -181,7 +185,7 @@ public static class Fases
                 "                                                    ?K",
                 "",
                 "                                                  U",
-                "  P i  $$ m$            h                                i       G",
+                "  P i  $$ m$            h             rr                 i       G",
                 "###############   #############CCC############   #####################",
                 "###############   #############CCC############   #####################",
             },
@@ -232,8 +236,8 @@ public static class Fases
                 "",
                 "",
                 "",
-                "",
-                "                                                 $",
+                "                                                                    BBBBB",
+                "                                                 $                    T",
                 "                                                BBB",
                 "",
                 "                                                       U",
@@ -264,10 +268,10 @@ public static class Fases
                 "",
                 "                                                  ?K",
                 "",
-                "                      U                                      i R    h     *",
-                "  P i $m$ X       X         e           <                 ####################",
-                "#############   ############### MM     ########CC#############################",
-                "#############   ###############        ########CC#############################",
+                "                      U                                U    i R    h              w                             *   L",
+                "  P i $m$ X       X         e           <                 #############################################################",
+                "#############   ############### MM     ########CC######################################################################",
+                "#############   ###############        ########CC######################################################################",
             },
         },
     };

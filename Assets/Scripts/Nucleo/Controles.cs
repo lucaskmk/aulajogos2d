@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 // Leitura de teclado e controle (usa o Input System novo do Unity).
 // Fica tudo aqui para que o resto do jogo não precise saber qual tecla foi apertada.
@@ -60,11 +61,35 @@ public static class Controles
             || (controle != null && controle.buttonNorth.wasPressedThisFrame);
     }
 
-    public static bool Voltar()
+    // Esc: pausa e despausa (no controle, Start ou Select).
+    public static bool Pausar()
     {
         var teclado = Keyboard.current;
         var controle = Gamepad.current;
         return (teclado != null && teclado.escapeKey.wasPressedThisFrame)
-            || (controle != null && controle.selectButton.wasPressedThisFrame);
+            || (controle != null && (controle.selectButton.wasPressedThisFrame || controle.startButton.wasPressedThisFrame));
+    }
+
+    // Q: na pausa, volta para o título (no controle, o botão B / bolinha).
+    public static bool SairParaOTitulo()
+    {
+        var teclado = Keyboard.current;
+        var controle = Gamepad.current;
+        return (teclado != null && teclado.qKey.wasPressedThisFrame)
+            || (controle != null && controle.buttonEast.wasPressedThisFrame);
+    }
+
+    // Setas, WASD ou o direcional do controle, para andar nos menus (só no quadro em que apertou).
+    public static bool CimaApertou() => Apertou(t => t.upArrowKey, t => t.wKey, c => c.dpad.up);
+    public static bool BaixoApertou() => Apertou(t => t.downArrowKey, t => t.sKey, c => c.dpad.down);
+    public static bool EsquerdaApertou() => Apertou(t => t.leftArrowKey, t => t.aKey, c => c.dpad.left);
+    public static bool DireitaApertou() => Apertou(t => t.rightArrowKey, t => t.dKey, c => c.dpad.right);
+
+    static bool Apertou(System.Func<Keyboard, KeyControl> seta, System.Func<Keyboard, KeyControl> letra, System.Func<Gamepad, ButtonControl> direcional)
+    {
+        var teclado = Keyboard.current;
+        var controle = Gamepad.current;
+        return (teclado != null && (seta(teclado).wasPressedThisFrame || letra(teclado).wasPressedThisFrame))
+            || (controle != null && direcional(controle).wasPressedThisFrame);
     }
 }

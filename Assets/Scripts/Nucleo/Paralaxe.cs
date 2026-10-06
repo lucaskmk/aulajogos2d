@@ -14,8 +14,9 @@ public class Paralaxe : MonoBehaviour
     public static void Criar(Transform raiz, int larguraFase, Color corDoFundo)
     {
         var escuro = new Color(0.15f, 0.1f, 0.3f);
-        Camada(raiz, "fundo_castelo", 0.85f, -22, Color.Lerp(corDoFundo, escuro, 0.15f), larguraFase);
-        Camada(raiz, "fundo_floresta", 0.6f, -21, Color.Lerp(corDoFundo, escuro, 0.3f), larguraFase);
+        // (as ordens pulam o -23 de propósito: é onde a Baleia Branca nada no fundo)
+        Camada(raiz, "fundo_castelo", 0.85f, -24, Color.Lerp(corDoFundo, escuro, 0.15f), larguraFase);
+        Camada(raiz, "fundo_floresta", 0.6f, -22, Color.Lerp(corDoFundo, escuro, 0.3f), larguraFase);
         Camada(raiz, "fundo_arvores", 0.35f, -20, Color.Lerp(corDoFundo, escuro, 0.45f), larguraFase);
     }
 
