@@ -37,6 +37,9 @@ daquela fase (Puck, Mabeast, serra, nuvem malvada, coelho...) e a Emilia espera 
 - Verde = já passou nesta partida, amarelo = liberada.
 - Dá para voltar e jogar de novo qualquer fase liberada. Fases liberadas em partidas anteriores continuam
   abertas (bom para apresentar), mas pular fases pelo mapa tira a partida do recorde.
+- Igual às fases, o mapa tem horizonte com paralaxe (céu, floresta e árvores ao longe, brilhinhos, nuvens e a
+  Baleia Branca nadando no céu), sombras projetadas em tudo, sombras de nuvem passando pelo chão, árvores
+  balançando, brilhos na água e a névoa "respirando".
 - O mapa é desenhado em texto em `MapaDoMundo.cs` (legenda no próprio arquivo), igual às fases.
 
 No título dá para **Continuar** a partida salva (fica em PlayerPrefs: onde o Subaru está, mortes, moedas e tempo)
