@@ -19,6 +19,9 @@ public class Inimigo : MonoBehaviour
     ContactFilter2D filtroSolido;
     readonly List<Collider2D> encostados = new List<Collider2D>();
 
+    // Inimigo ou coelho? (o jogador não "pisa no chão" em cima deles, e armadilhas não batem neles como se fossem parede)
+    public static bool EhBicho(Collider2D outro) => outro.GetComponent<Inimigo>() != null || outro.GetComponent<Coelho>() != null;
+
     void Awake()
     {
         corpo = gameObject.AddComponent<Rigidbody2D>();

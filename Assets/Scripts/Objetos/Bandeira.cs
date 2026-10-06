@@ -11,6 +11,7 @@ public class Bandeira : MonoBehaviour
         visual.sprite = FabricaDeSprites.Pegar("bandeira");
         visual.sortingOrder = 1;
         Sombra.Adicionar(visual);
+        AnimacaoDeQuadros.Adicionar(visual, FabricaDeSprites.Quadros("bandeira", FabricaDeSprites.QuadrosDaBandeira), 6f); // tremulando
 
         var area = gameObject.AddComponent<BoxCollider2D>();
         area.isTrigger = true;

@@ -13,6 +13,9 @@ public class InfoFase
 // Lê o mapa de texto de uma fase (veja Fases.cs) e cria todos os objetos na cena.
 public static class ConstrutorDeFase
 {
+    // As nuvens (as de enfeite E a assassina) andam um pouquinho com a câmera, como o fundo.
+    public const float ParalaxeDasNuvens = 0.25f;
+
     // tentativa = quantas vezes o jogador já morreu nesta fase (escolhe a versão do mapa)
     public static InfoFase Construir(Fase fase, Transform raiz, int tentativa)
     {
@@ -86,6 +89,9 @@ public static class ConstrutorDeFase
                     case 'M': celulasQueFogem.Add(new Vector2Int(x, linha)); break;
                     case 'W': info.bandeiras.Add(Criar<BandeiraVolta>("BandeiraVolta", raiz, chaoDaCelula).transform); break;
                     case 'X': info.inversores.Add(x); break;
+                    case 'r': Criar<Coelho>("Coelho", raiz, pos); break;
+                    case 'w': Criar<BaleiaBranca>("BaleiaBranca", raiz, pos); break;
+                    case 'L': Criar<Emilia>("Emilia", raiz, pos); break;
                     case 'U':
                         // o cano desce até encontrar chão
                         int alturaDoCano = 1;
@@ -243,7 +249,7 @@ public static class ConstrutorDeFase
         for (int x = sorteio.Next(2, 6); x < largura + 4; x += sorteio.Next(7, 13))
         {
             var nuvem = Visual("Nuvem", decoracao, new Vector3(x, altura - 2 - sorteio.Next(0, 5), 0f), "nuvem", -10, false);
-            Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.4f, 0.4f);
+            Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.4f, 0.4f, ParalaxeDasNuvens);
         }
 
         for (int x = sorteio.Next(0, 4); x < largura; x += sorteio.Next(4, 9))
