@@ -15,6 +15,7 @@ public class Moeda : MonoBehaviour
         var area = gameObject.AddComponent<CircleCollider2D>();
         area.isTrigger = true;
         area.radius = 0.35f;
+        Luzes.Ponto(transform, Luzes.Dourada, 1.3f, 0.5f);
     }
 
     void Update()

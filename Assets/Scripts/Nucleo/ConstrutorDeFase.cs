@@ -35,7 +35,15 @@ public static class ConstrutorDeFase
         }
         Vector3 Posicao(int x, int linha) => new Vector3(x, altura - 1 - linha, 0f);
         bool PareceChao(char c) => c == '#' || c == 'C' || c == 'F'; // falso e o que cai são IGUAIS ao chão de verdade
-        string SpriteDoChao(int x, int linha) => PareceChao(Celula(x, linha - 1)) ? "chao" : "chao_topo";
+        // De vez em quando um bloco com rachadura ou com florzinha, para o chão não ficar repetitivo.
+        // (escolhido pela posição: o chão falso e o que cai continuam IGUAIS ao de verdade)
+        string SpriteDoChao(int x, int linha)
+        {
+            bool topo = !PareceChao(Celula(x, linha - 1));
+            bool variado = (x * 7 + linha * 13) % 9 == 0;
+            if (topo) return variado ? "chao_topo_florido" : "chao_topo";
+            return variado ? "chao_rachado" : "chao";
+        }
 
         // Todo o chão firme vira UM colisor só (CompositeCollider2D).
         // Isso evita o jogador "enganchar" nas emendas entre os blocos.
@@ -293,20 +301,30 @@ public static class ConstrutorDeFase
             Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.4f, 0.4f, ParalaxeDasNuvens);
         }
 
-        for (int x = sorteio.Next(0, 4); x < largura; x += sorteio.Next(4, 9))
+        // Enfeites em cima do chão: capim, flores, arbustos, pedras, cogumelos, cercas e lampiões (que iluminam).
+        int ultimoLampiao = -100;
+        for (int x = sorteio.Next(0, 3); x < largura; x += sorteio.Next(2, 5))
         {
-            for (int linha = 1; linha < altura; linha++)
+            int linha = LinhaDoChao(mapa, x, altura);
+            if (linha < 0) continue;
+            Vector3 base_ = new Vector3(x + (float)(sorteio.NextDouble() - 0.5) * 0.4f, altura - 1 - linha + 0.5f, 0f);
+            bool chaoDosLados = LinhaDoChao(mapa, x - 1, altura) == linha && LinhaDoChao(mapa, x + 1, altura) == linha;
+
+            int sorte = sorteio.Next(100);
+            if (sorte < 5 && x - ultimoLampiao > 10 && chaoDosLados)
             {
-                char c = x < mapa[linha].Length ? mapa[linha][x] : ' ';
-                char acima = x < mapa[linha - 1].Length ? mapa[linha - 1][x] : ' ';
-                if (c == '#' && acima == ' ')
-                {
-                    string sprite = sorteio.Next(3) == 0 ? "flor" : "tufo";
-                    var enfeite = Visual("Enfeite", decoracao, new Vector3(x, altura - 1 - linha + 0.5f, 0f), sprite, -8);
-                    Animacao.Adicionar(enfeite, Animacao.Tipo.Balancar, 2.5f, 6f);
-                    break;
-                }
-                if (c != ' ') break;
+                var lampiao = Visual("Lampiao", decoracao, base_, "lampiao", -7);
+                Luzes.Ponto(lampiao.transform, Luzes.Quente, 4.5f, 0.85f, Vector3.up * 2.15f);
+                ultimoLampiao = x;
+            }
+            else if (sorte < 18 && chaoDosLados) Visual("Arbusto", decoracao, base_, "arbusto", -7);
+            else if (sorte < 26 && chaoDosLados) Visual("Cerca", decoracao, base_, "cerca", -7);
+            else if (sorte < 35) Visual("Pedra", decoracao, base_, "pedra", -7);
+            else if (sorte < 42) Visual("Cogumelo", decoracao, base_, "cogumelo", -7);
+            else
+            {
+                var enfeite = Visual("Enfeite", decoracao, base_, sorte < 65 ? "flor" : "tufo", -8);
+                Animacao.Adicionar(enfeite, Animacao.Tipo.Balancar, 2.5f, 6f);
             }
         }
 
@@ -316,5 +334,20 @@ public static class ConstrutorDeFase
             var brilho = Visual("Brilho", decoracao, new Vector3(sorteio.Next(0, largura), altura - 1 - sorteio.Next(0, 9), 0f), "brilho", -11, false);
             Animacao.Adicionar(brilho, Animacao.Tipo.Piscar, 3f, 0.7f);
         }
+    }
+
+    // A linha do primeiro chão firme ('#') de cima para baixo nesta coluna, com espaço livre em cima.
+    // -1 se não tiver (buraco, coluna fora da fase ou algo em cima).
+    static int LinhaDoChao(string[] mapa, int x, int altura)
+    {
+        if (x < 0) return -1;
+        for (int linha = 1; linha < altura; linha++)
+        {
+            char c = x < mapa[linha].Length ? mapa[linha][x] : ' ';
+            char acima = x < mapa[linha - 1].Length ? mapa[linha - 1][x] : ' ';
+            if (c == '#' && acima == ' ') return linha;
+            if (c != ' ') return -1;
+        }
+        return -1;
     }
 }
