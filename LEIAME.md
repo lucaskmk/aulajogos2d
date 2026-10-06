@@ -90,6 +90,8 @@ A animação da morte pode ser pulada depois de 0,5 s e fica mais curta a partir
 
 ## Música
 O jogo toca `Assets/Resources/Sons/musica_fundo` (mp3, ogg ou wav) se o arquivo existir.
+Para repetir só um trecho dele (o refrão, por exemplo), coloque o segundo de início e de fim em
+`InicioDoTrecho` e `FimDoTrecho`, no topo de `Assets/Scripts/Nucleo/Musica.cs`.
 Sem ele, toca uma música **original gerada por código** no clima de abertura de anime "dark"
 (`FabricaDeEpico`): tom menor com a escala menor harmônica, cordas, arpejo rápido, baixo pulsando, melodia de
 "violino" que cresce no refrão e bateria de rock. O mapa tem uma versão calma sem bateria e a luta contra a
