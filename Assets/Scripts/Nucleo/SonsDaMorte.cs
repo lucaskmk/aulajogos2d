@@ -9,8 +9,10 @@ public class SonsDaMorte : MonoBehaviour
 {
     const string AudioDaMorte = "Sons/retorno_pela_morte"; // em Assets/Resources, sem a extensão
     const string MusicaDaMorte = "Sons/ost_morte";
-    const float DuracaoOst = 4f;       // quanto tempo a música toca
-    const float DuracaoFadeOst = 1.5f; // nos últimos 1,5 s ela vai sumindo
+    const float DuracaoOst = 2f;       // quanto tempo a música toca (curtinho: morre-se MUITO neste jogo)
+    const float DuracaoFadeOst = 0.8f; // nos últimos 0,8 s ela vai sumindo
+    const float VolumeDaOst = 0.7f;
+    const float GanhoDoRenascer = 1.8f; // o "TUM" do renascimento fica mais alto que o arquivo original
 
     AudioSource fonteDaMorte;
     AudioClip clipeDaMorte;
@@ -31,6 +33,8 @@ public class SonsDaMorte : MonoBehaviour
         {
             fonteDaMorte.clip = clipeDaMorte;
             picoDaMorte = AcharPico(clipeDaMorte);
+            clipeDaMorte = MaisAlto(clipeDaMorte, GanhoDoRenascer);
+            fonteDaMorte.clip = clipeDaMorte;
         }
 
         fonteDaOst = gameObject.AddComponent<AudioSource>();
@@ -60,14 +64,14 @@ public class SonsDaMorte : MonoBehaviour
         if (!fonteDaOst.isPlaying) return;
         timerOst -= Time.deltaTime;
         if (timerOst <= 0f) fonteDaOst.Stop();
-        else fonteDaOst.volume = Mathf.Clamp01(timerOst / DuracaoFadeOst) * Opcoes.Musica;
+        else fonteDaOst.volume = Mathf.Clamp01(timerOst / DuracaoFadeOst) * VolumeDaOst * Opcoes.Musica;
     }
 
     void TocarOst()
     {
         if (fonteDaOst.clip == null) return;
         fonteDaOst.Stop(); // morreu de novo? recomeça do início
-        fonteDaOst.volume = Opcoes.Musica;
+        fonteDaOst.volume = VolumeDaOst * Opcoes.Musica;
         fonteDaOst.Play();
         timerOst = DuracaoOst;
     }
@@ -92,6 +96,19 @@ public class SonsDaMorte : MonoBehaviour
             fonteDaMorte.Play();
             fonteDaMorte.time = -atraso; // a espera é mais curta que o começo do áudio: pula um pedaço
         }
+    }
+
+    // Cópia do áudio com o volume multiplicado (o AudioSource não passa de 100%).
+    // Usa uma curva suave (tanh) no lugar de cortar o som, para não "estourar" feio.
+    static AudioClip MaisAlto(AudioClip original, float ganho)
+    {
+        var amostras = new float[original.samples * original.channels];
+        if (!original.GetData(amostras, 0)) return original; // não deu para ler: fica o original
+        for (int i = 0; i < amostras.Length; i++)
+            amostras[i] = (float)System.Math.Tanh(amostras[i] * ganho);
+        var copia = AudioClip.Create(original.name + "_alto", original.samples, original.channels, original.frequency, false);
+        copia.SetData(amostras, 0);
+        return copia;
     }
 
     // Primeiro instante em que o áudio chega à metade do volume máximo (o "TUM").
