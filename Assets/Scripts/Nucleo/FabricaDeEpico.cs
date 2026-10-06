@@ -9,7 +9,7 @@ using UnityEngine;
 //  - melodia de "violino" que cresce no refrão (segunda metade);
 //  - bateria de rock (bumbo, caixa, chimbal, prato no começo de cada parte e virada no fim).
 // Três jeitos de tocar:
-//  - Fase:  completa, ~146 bpm;
+//  - Fase:  refrão o tempo todo, em loop, 150 bpm;
 //  - Mapa:  calma e misteriosa, sem bateria;
 //  - Chefe: mais rápida e pesada (luta contra a Baleia Branca).
 public static class FabricaDeEpico
@@ -39,7 +39,7 @@ public static class FabricaDeEpico
         var sorteio = new System.Random(777 + semente * 61);
         int[] progressao = Progressoes[Mathf.Abs(semente) % Progressoes.Length];
         int tom = 57 + Tons[Mathf.Abs(semente) % Tons.Length]; // lá 3 = 57
-        float bpm = jeito == Jeito.Chefe ? 168f : jeito == Jeito.Mapa ? 112f : 146f;
+        float bpm = jeito == Jeito.Chefe ? 168f : jeito == Jeito.Mapa ? 112f : 150f;
 
         int batida = Mathf.RoundToInt(60f / bpm * Taxa);
         int semi = batida / 4, porCompasso = batida * 4, total = porCompasso * Compassos;
@@ -54,7 +54,7 @@ public static class FabricaDeEpico
         {
             int grau = progressao[c % progressao.Length];
             int inicio = c * porCompasso;
-            bool refrao = c >= Compassos / 2;
+            bool refrao = jeito != Jeito.Mapa || c >= Compassos / 2; // nas fases: refrão o tempo todo, em loop
             int[] acorde = { Nota(tom, grau), Nota(tom, grau + 2), Nota(tom, grau + 4) };
 
             // cordas: o acorde inteiro, entrando devagar (no refrão, mais forte e uma oitava a mais)
@@ -126,8 +126,8 @@ public static class FabricaDeEpico
 
         for (int c = 0; c < Compassos; c += 2)
         {
-            bool refrao = c >= Compassos / 2;
-            if (!refrao && c % 4 == 2 && jeito != Jeito.Chefe) continue; // no verso, a melodia "responde" e descansa
+            bool refrao = jeito != Jeito.Mapa || c >= Compassos / 2;
+            if (!refrao && c % 4 == 2) continue; // no mapa, a melodia "responde" e descansa
             int grau = progressao[c % progressao.Length];
             for (int i = 0; i < ritmo.Length; i++)
             {
@@ -204,8 +204,8 @@ public static class FabricaDeEpico
     // Bateria de rock. Prato no começo do verso e do refrão; virada de caixa no último compasso de cada parte.
     static void Bateria(float[] trilha, int inicio, int batida, int compasso, bool pesada, System.Random sorteio)
     {
-        bool virada = compasso % 8 == 7;
-        if (compasso % 8 == 0) Prato(trilha, inicio, sorteio);
+        bool virada = compasso % 4 == 3;
+        if (compasso % 4 == 0) Prato(trilha, inicio, sorteio);
         for (int b = 0; b < 4; b++)
         {
             int t = inicio + b * batida;
