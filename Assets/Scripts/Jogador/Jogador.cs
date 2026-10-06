@@ -41,6 +41,7 @@ public class Jogador : MonoBehaviour
     float quedaMaisRapida; // para saber com que força ele aterrissou
 
     float entradaX;
+    float empurrao; // vento, esteira... (somado à velocidade que o jogador quer; zera a cada passo da física)
     bool segurandoPulo;
     float timerBufferPulo;
     float timerCoyote;
@@ -98,7 +99,9 @@ public class Jogador : MonoBehaviour
         timerBufferPulo -= dt;
 
         Vector2 v = Corpo.linearVelocity;
-        v.x = Mathf.MoveTowards(v.x, entradaX * velocidade, aceleracao * dt);
+        float vento = empurrao;
+        empurrao = 0f;
+        v.x = Mathf.MoveTowards(v.x, entradaX * velocidade + vento, aceleracao * dt);
 
         if (timerBufferPulo > 0f && timerCoyote > 0f)
         {
@@ -254,6 +257,17 @@ public class Jogador : MonoBehaviour
         Vector2 p = Corpo.position;
         p.y = Mathf.Min(p.y, baseDoBloco - 0.5f);
         Corpo.position = p;
+    }
+
+    // Empurra o jogador para os lados (vento, esteira...). Chame A CADA FixedUpdate enquanto estiver empurrando:
+    // o valor (em unidades/s, negativo = para a esquerda) é somado à velocidade que ele quer andar no próximo passo.
+    public void Empurrar(float velocidadeX) => empurrao += velocidadeX;
+
+    // Move o jogador junto com uma plataforma (chame com o quanto a plataforma andou neste passo).
+    public void Carregar(Vector2 deslocamento)
+    {
+        if (Morto || congelado) return;
+        Corpo.position += deslocamento;
     }
 
     public void Teletransportar(Vector3 posicao)

@@ -66,7 +66,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     public bool EhUltimaFase => FaseAtual == Fases.Todas.Length - 1;
     public bool NaSecreta => FaseAtual == Fases.IndiceSecreto;
     // Para os efeitos de tela: a última fase é de noite, e a biblioteca tem luz quente.
-    public bool FaseNoturna => Mapa == null && EhUltimaFase;
+    public bool FaseNoturna => Mapa == null && (DadosDaFase.noite || DadosDaFase.escura);
     public bool NaBiblioteca => Mapa == null && naBiblioteca;
     public Fase DadosDaFase => Fases.Dados(FaseAtual);
 
@@ -93,6 +93,9 @@ public class GerenciadorDoJogo : MonoBehaviour
     public BaleiaBranca Chefe { get; set; }
     // Já venceu a Baleia nesta fase? (se morrer depois, ela não volta)
     public bool ChefeDerrotado { get; private set; }
+    // Em que etapa da luta o jogador chegou (como os checkpoints do chefe final do Helltaker):
+    // morreu na etapa 2? Renasce já na etapa 2. Zera ao entrar na fase pelo mapa.
+    public int EtapaDoChefe { get; set; }
 
     // Fala de um personagem no mapa (depois de passar de fase). null = nenhuma.
     public Textos.Fala? Fala { get; private set; }
@@ -238,13 +241,14 @@ public class GerenciadorDoJogo : MonoBehaviour
             : coresDoFundo.Length > 0 ? coresDoFundo[indice % coresDoFundo.Length] : Color.cyan;
         if (Camera.main != null) Camera.main.backgroundColor = corDoFundo;
         // a luz da fase vem ANTES de montar: assim as luzinhas só são criadas se a fase for escura
-        bool fasenoturna = indice == Fases.Todas.Length - 1;
-        bool biblioteca = Fases.Dados(indice).portas != null;
-        if (fasenoturna) Luzes.Ambiente(0.55f, new Color(0.75f, 0.8f, 1f));
+        Fase dados = Fases.Dados(indice);
+        bool biblioteca = dados.portas != null;
+        if (dados.escura) Luzes.Ambiente(0.22f, new Color(0.7f, 0.72f, 1f));
+        else if (dados.noite) Luzes.Ambiente(0.55f, new Color(0.75f, 0.8f, 1f));
         else if (biblioteca) Luzes.Ambiente(0.72f, new Color(1f, 0.92f, 0.8f));
         else Luzes.Ambiente(indice == Fases.IndiceSecreto ? 1f : 0.93f, Color.white);
-        InfoFase info = ConstrutorDeFase.Construir(Fases.Dados(indice), raizDaFase, MortesNaFase);
-        bool noite = EhUltimaFase;
+        InfoFase info = ConstrutorDeFase.Construir(dados, raizDaFase, MortesNaFase);
+        bool noite = dados.noite || dados.escura;
         Paralaxe.Criar(raizDaFase, info.largura, corDoFundo, noite); // céu, montanhas, castelo, floresta...
         MarcaDaMorte.Criar(raizDaFase, lugaresDasMortes);
 
@@ -256,7 +260,8 @@ public class GerenciadorDoJogo : MonoBehaviour
         // renasce no ponto de save, se tiver um
         jogador = ConstrutorDeFase.Criar<Jogador>("Jogador", raizDaFase, pontoDeSave ?? info.inicio);
         jogador.inversores = info.inversores;
-        if (noite || naBiblioteca) Luzes.Ponto(jogador.transform, new Color(0.9f, 0.9f, 1f), 4.5f, 0.7f); // o Subaru "ilumina" em volta
+        if (dados.escura) Luzes.Ponto(jogador.transform, new Color(1f, 0.95f, 0.85f), 6f, 1.6f); // no escuro: a "lanterna" do Subaru
+        else if (noite || naBiblioteca) Luzes.Ponto(jogador.transform, new Color(0.9f, 0.9f, 1f), 4.5f, 0.7f); // o Subaru "ilumina" em volta
         aviso = "";
         cameraSeguir.Configurar(jogador.transform, info.largura, info.altura);
         musica.TocarDaFase(indice); // se a música já é essa, continua de onde estava
@@ -327,6 +332,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         MortesNaFase = 0;
         pontoDeSave = null;
         ChefeDerrotado = false;
+        EtapaDoChefe = 0;
         Fala = null;
         CarregarFase(fase);
         Estado = EstadoDoJogo.Jogando;

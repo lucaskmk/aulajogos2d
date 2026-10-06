@@ -20,7 +20,8 @@ public class MapaDoMundo : MonoBehaviour
     //  ~  água             T  árvore            ^  montanha
     //  h  casa             f  flores            M  mansão (a base do desenho fica aqui)
     //  c  céu (o horizonte lá em cima, com as camadas de paralaxe; a névoa não cobre)
-    //  1 a 9  as fases. O caminho de '+' e '=' tem que ligar o 1 ao 2, o 2 ao 3, e assim por diante.
+    //  1 a 9, A a G  as fases (A = 10, B = 11 ... G = 16). O caminho de '+' e '=' tem que ligar o 1 ao 2,
+    //         o 2 ao 3, e assim por diante (o 9 ao A).
     //  S  a fase secreta (ligada por caminho ao ponto da Fases.FaseDoSegredo)
     // Regiões: a capital, o rio, a floresta, os morros, o lago, o campo de flores, as montanhas e a mansão.
     static readonly string[] Desenho =
@@ -115,7 +116,15 @@ public class MapaDoMundo : MonoBehaviour
     static char Celula(Vector2Int c) =>
         c.y >= 0 && c.y < Altura && c.x >= 0 && c.x < Desenho[c.y].Length ? Desenho[c.y][c.x] : ' ';
 
-    static bool EhPonto(char c) => char.IsDigit(c) || c == 'S';
+    // Número da fase de um ponto do mapa: '1' a '9' = fases 1 a 9, 'A' a 'G' = fases 10 a 16. -1 = não é fase.
+    static int IndiceDoPonto(char c)
+    {
+        if (c >= '1' && c <= '9') return c - '1';
+        if (c >= 'A' && c <= 'G') return 9 + (c - 'A');
+        return -1;
+    }
+
+    static bool EhPonto(char c) => IndiceDoPonto(c) >= 0 || c == 'S';
     static bool DaPraAndar(char c) => c == '+' || c == '=' || EhPonto(c);
 
     // Acha os pontos das fases e o caminho entre cada par (busca em largura pelas células de caminho).
@@ -125,7 +134,8 @@ public class MapaDoMundo : MonoBehaviour
         for (int y = 0; y < Altura; y++)
             for (int x = 0; x < Desenho[y].Length; x++)
             {
-                if (char.IsDigit(Desenho[y][x])) achados[Desenho[y][x] - '1'] = new Vector2Int(x, y);
+                int indice = IndiceDoPonto(Desenho[y][x]);
+                if (indice >= 0) achados[indice] = new Vector2Int(x, y);
                 if (Desenho[y][x] == 'S') pontoSecreto = new Vector2Int(x, y);
             }
         foreach (var par in achados)

@@ -21,7 +21,8 @@
 //   e  inimigo disfarçado (igual ao normal, mas tem espinhos: NÃO pise!)
 //   M  bloco que foge quando você pula perto dele
 //   W  bandeira que te manda de volta pro começo
-//   X  linha invisível que inverte os controles depois de uma contagem de 2 s (cruzou de novo, desinverte)
+//   X  linha invisível que inverte os controles depois de uma contagem de 2 s (cruzou de novo, desinverte).
+//      Só UMA fase usa isso, e só num trecho (é difícil demais para usar sempre)
 //   U  cano (2 de largura, desce até o chão): de tempos em tempos sai uma MÃO dele. Encostou, morreu
 //   r  coelho (Grande Coelho): pula atrás de você e se MULTIPLICA. Pise em cima para derrotar
 //   w  Baleia Branca (CHEFE): começo da arena de 26 blocos, na linha em que o jogador anda.
@@ -49,6 +50,8 @@ public class Fase
     public string[] placas;
     public string[][] mudancas;
     public string[] portas; // pares de portas ligadas, ex.: "1-4" (só na Biblioteca Proibida)
+    public bool noite;      // fase de noite: céu escuro com lua e estrelas, luzinhas acesas, vaga-lumes
+    public bool escura;     // fase no ESCURO: quase não se vê nada, só em volta do Subaru e das luzinhas
 }
 
 public static class Fases
@@ -219,7 +222,7 @@ public static class Fases
                 "                    ?     ?",
                 "                                                     $$",
                 "          $$$                                                   U",
-                "  P i   X       e             X  e   E       is X           X      G",
+                "  P i           e                e   E       is X           X      G",
                 "#####################   #################CCC########    ################",
                 "#####################   #################CCC########    ################",
             },
