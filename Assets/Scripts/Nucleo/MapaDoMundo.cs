@@ -52,7 +52,7 @@ public class MapaDoMundo : MonoBehaviour
     static readonly Color CorConcluida = new Color(0.45f, 0.95f, 0.45f);
     static readonly Color CorLiberada = new Color(1f, 0.85f, 0.25f);
 
-    const float RaioDoPonto = 3.3f;    // quanto a névoa abre em volta de uma fase liberada
+    const float RaioDoPonto = 3.6f;    // quanto a névoa abre em volta de uma fase liberada
     const float RaioDoCaminho = 1.8f;  // e em volta do caminho
     const int OrdemDaNevoa = 30;
     // O chão (água, ponte, terra) fica ATRÁS das sombras (Sombra.Ordem = -9), para tudo projetar sombra nele.
@@ -352,18 +352,11 @@ public class MapaDoMundo : MonoBehaviour
         baleia.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 0.75f);
         Animacao.Adicionar(baleia, Animacao.Tipo.Flutuar, 0.05f, Largura / 2f - 4f, 0.6f);
 
-        // nuvens do céu (atrás) e nuvens baixas, por cima de tudo (na frente da névoa)
+        // nuvens do céu
         for (int i = 0; i < 7; i++)
         {
             var nuvem = ConstrutorDeFase.Visual("Nuvem", transform, new Vector3(3f + i * 9f, horizonte + 1.2f + (i % 2) * 0.9f, 0f), "nuvem", -21, false);
             Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.3f, 0.8f, 0.5f);
-        }
-        for (int i = 0; i < 4; i++)
-        {
-            var nuvem = ConstrutorDeFase.Visual("NuvemBaixa", transform, new Vector3(8f + i * 15f, horizonte - 2.5f - (i % 2) * 3f, 0f), "nuvem", OrdemDaNevoa + 2, false);
-            nuvem.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 0.7f);
-            nuvem.transform.localScale = Vector3.one * 1.3f;
-            Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.25f, 1.5f, 0.15f);
         }
     }
 
