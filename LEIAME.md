@@ -90,6 +90,9 @@ A animação da morte pode ser pulada depois de 0,5 s e fica mais curta a partir
 
 ## Música
 O jogo toca `Assets/Resources/Sons/musica_fundo` (mp3, ogg ou wav) se o arquivo existir.
+Sem ele, cada fase toca uma música **original gerada por código** em clima "indie aconchegante" com harmonia de
+**bossa nova** (`FabricaDeBossa`): violão de nylon dedilhado, baixo de bossa, flauta, chocalho e aro de caixa.
+A luta contra a Baleia Branca tem uma música própria, mais rápida e tensa.
 Se não existir, toca uma música **lofi 8-bit original gerada por código** (`FabricaDeMusica`), com uma variação por fase.
 A música abaixa sozinha quando você morre (para a OST do Retorno pela Morte aparecer) e na pausa.
 
