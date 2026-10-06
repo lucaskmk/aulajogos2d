@@ -1,330 +1,425 @@
 using UnityEngine;
 
-// Música de fundo no clima de abertura de anime "dark" (tipo as aberturas de Re:Zero).
-// Composição ORIGINAL, gerada por código:
-//  - tom menor, com a escala menor HARMÔNICA (a sétima sobe: aquele clima dramático/misterioso);
-//  - cordas (várias "serras" levemente desafinadas = som de orquestra/sintetizador);
-//  - arpejo rápido de piano/sintetizador em semicolcheias;
-//  - baixo pulsando em colcheias;
-//  - melodia de "violino" que cresce no refrão (segunda metade);
-//  - bateria de rock (bumbo, caixa, chimbal, prato no começo de cada parte e virada no fim).
+// Música de fundo no clima de abertura de anime "dark" (piano + orquestra + banda).
+// Composição ORIGINAL, gerada por código, em ré menor (menor harmônica: o dó# dá a tensão).
+// Estrutura (16 compassos, repete em loop):
+//  - Intro  (4): acordes "martelados" no piano em ritmo sincopado, com o baixo em oitavas junto;
+//  - Refrão (8): melodia de violino + piano, piano fazendo arpejo em colcheias, cordas e bateria;
+//  - Ponte  (4): notas longas, bateria em meio-tempo, uma escala descendo no piano e virada de caixa
+//                que joga de volta para a intro.
+// Os instrumentos são sintetizados: piano com harmônicos que somem em tempos diferentes (soa de verdade),
+// cordas com várias vozes levemente desafinadas, violino com vibrato e um reverb de sala por cima.
 // Três jeitos de tocar:
-//  - Fase:  refrão o tempo todo, em loop, 150 bpm;
-//  - Mapa:  calma e misteriosa, sem bateria;
-//  - Chefe: mais rápida e pesada (luta contra a Baleia Branca).
+//  - Fase:  152 bpm, completo;
+//  - Mapa:  98 bpm, só piano e cordas (calmo e misterioso);
+//  - Chefe: 168 bpm, bumbo em toda batida e baixo mais pesado.
 public static class FabricaDeEpico
 {
     public enum Jeito { Fase, Mapa, Chefe }
 
-    const int Taxa = 16000;
-    const int Compassos = 16; // 8 de "verso" + 8 de "refrão", e repete
+    const int Taxa = 22050;
+    const int Compassos = 16;
+    const int Re4 = 62; // a melodia está escrita em semitons a partir do ré 4
 
-    // Escala menor harmônica (semitons): lá, si, dó, ré, mi, fá, sol#.
-    static readonly int[] Escala = { 0, 2, 3, 5, 7, 8, 11 };
+    // Acorde de cada compasso: fundamental em semitons a partir de ré, e se é menor.
+    // Intro: Dm Bb Gm A | Refrão: Dm Bb F C Gm Bb A Dm | Ponte: Bb C A A
+    static readonly int[] Raizes = { 0, -4, 5, 7, 0, -4, 3, -2, 5, -4, 7, 0, -4, -2, 7, 7 };
+    static readonly bool[] Menores = { true, false, true, false, true, false, false, false, true, false, false, true, false, false, false, false };
 
-    // Acordes em graus da escala (0 = i, 5 = VI, 6 = VII...). Um acorde por compasso.
-    // O V (grau 4) é MAIOR por causa da menor harmônica: é ele que dá a "tensão".
-    static readonly int[][] Progressoes =
+    // Melodia do refrão: (compasso do refrão, início em semicolcheias, duração em semicolcheias, nota a partir do ré 4)
+    static readonly int[,] Refrao =
     {
-        new[] { 0, 5, 2, 6, 0, 5, 3, 4 },   // i - VI - III - VII | i - VI - iv - V
-        new[] { 0, 6, 5, 4, 0, 6, 5, 4 },   // i - VII - VI - V (a "andaluza")
-        new[] { 5, 6, 0, 0, 3, 4, 0, 4 },   // VI - VII - i | iv - V - i - V
-        new[] { 0, 3, 6, 2, 5, 3, 4, 4 },   // i - iv - VII - III | VI - iv - V - V
+        { 0, 0, 4, 12 }, { 0, 4, 2, 10 }, { 0, 6, 2, 12 }, { 0, 8, 6, 15 }, { 0, 14, 2, 14 },
+        { 1, 0, 6, 12 }, { 1, 6, 2, 10 }, { 1, 8, 4, 8 },  { 1, 12, 2, 10 }, { 1, 14, 2, 12 },
+        { 2, 0, 8, 10 }, { 2, 8, 4, 7 },  { 2, 12, 2, 3 }, { 2, 14, 2, 7 },
+        { 3, 0, 12, 5 }, { 3, 12, 2, 7 }, { 3, 14, 2, 8 },
+        { 4, 0, 4, 12 }, { 4, 4, 2, 8 },  { 4, 6, 2, 12 }, { 4, 8, 6, 17 }, { 4, 14, 2, 15 },
+        { 5, 0, 6, 15 }, { 5, 6, 2, 12 }, { 5, 8, 4, 8 },  { 5, 12, 2, 12 }, { 5, 14, 2, 15 },
+        { 6, 0, 8, 14 }, { 6, 8, 4, 11 }, { 6, 12, 2, 14 }, { 6, 14, 2, 17 },
+        { 7, 0, 4, 15 }, { 7, 4, 2, 14 }, { 7, 6, 2, 11 }, { 7, 8, 8, 12 },
     };
 
-    static readonly int[] Tons = { 0, 5, -2, 3, -4, 2, -5, 7, -1 };
+    // Melodia da ponte (notas longas, crescendo)
+    static readonly int[,] Ponte = { { 0, 0, 16, 12 }, { 1, 0, 16, 14 }, { 2, 0, 8, 14 }, { 2, 8, 8, 11 } };
+
+    // Escala descendo no último compasso (lá 5 até sol 3, ré menor harmônica)
+    static readonly int[] Descida = { 19, 17, 15, 14, 12, 11, 8, 7, 5, 3, 2, 0, -1, -4, -5, -7 };
+
+    // Ritmo dos acordes martelados da intro: (início, duração) em semicolcheias
+    static readonly int[,] Martelo = { { 0, 2 }, { 2, 2 }, { 6, 2 }, { 8, 2 }, { 10, 4 }, { 14, 2 } };
+    static readonly int[,] MarteloFinal = { { 0, 2 }, { 2, 2 }, { 6, 2 }, { 8, 8 } };
+
+    // Transposição por fase (pequena, para o piano não embolar no grave nem ficar estridente no agudo)
+    static readonly int[] Tons = { 0, 2, -2, 3, -3, 1, -1, 4, -4 };
 
     public static AudioClip Compor(int semente, Jeito jeito)
     {
         var sorteio = new System.Random(777 + semente * 61);
-        int[] progressao = Progressoes[Mathf.Abs(semente) % Progressoes.Length];
-        int tom = 57 + Tons[Mathf.Abs(semente) % Tons.Length]; // lá 3 = 57
-        float bpm = jeito == Jeito.Chefe ? 168f : jeito == Jeito.Mapa ? 112f : 150f;
+        bool mapa = jeito == Jeito.Mapa, chefe = jeito == Jeito.Chefe;
+        int tom = chefe ? -1 : mapa ? 0 : Tons[Mathf.Abs(semente) % Tons.Length]; // chefe: dó# menor, mais escuro
+        float bpm = chefe ? 168f : mapa ? 98f : 152f;
 
         int batida = Mathf.RoundToInt(60f / bpm * Taxa);
         int semi = batida / 4, porCompasso = batida * 4, total = porCompasso * Compassos;
 
+        var piano = new float[total];
         var cordas = new float[total];
-        var arpejo = new float[total];
+        var violino = new float[total];
         var baixo = new float[total];
-        var melodia = new float[total];
         var bateria = new float[total];
 
         for (int c = 0; c < Compassos; c++)
         {
-            int grau = progressao[c % progressao.Length];
             int inicio = c * porCompasso;
-            bool refrao = jeito != Jeito.Mapa || c >= Compassos / 2; // nas fases: refrão o tempo todo, em loop
-            int[] acorde = { Nota(tom, grau), Nota(tom, grau + 2), Nota(tom, grau + 4) };
+            int[] acorde = Voicing(Re4 + tom + Raizes[c], Menores[c], Re4 + tom - 2);
+            int grave = Re4 + tom - 26 + Mod12(Raizes[c] + 2); // fundamental entre dó 2 e si 2
+            bool intro = c < 4, ponte = c >= 12;
 
-            // cordas: o acorde inteiro, entrando devagar (no refrão, mais forte e uma oitava a mais)
-            foreach (int n in acorde) Cordas(cordas, inicio, porCompasso, Frequencia(n), refrao ? 0.05f : 0.035f);
-            if (refrao) Cordas(cordas, inicio, porCompasso, Frequencia(acorde[0] + 12), 0.03f);
+            // cordas: o acorde segurado o compasso inteiro (crescendo na ponte)
+            float vc = mapa ? 0.05f : intro ? 0.035f : ponte ? 0.05f + (c - 12) * 0.008f : 0.045f;
+            foreach (int n in acorde) Cordas(cordas, inicio, porCompasso, Freq(n), vc);
+            Cordas(cordas, inicio, porCompasso, Freq(grave + 12), vc * 0.8f);
 
-            // arpejo: sobe e desce pelas notas do acorde em semicolcheias
-            int[] subida = { 0, 1, 2, 3, 4, 3, 2, 1 };
-            for (int s = 0; s < 16; s++)
+            if (intro && !mapa)
             {
-                int k = subida[s % subida.Length];
-                int nota = acorde[k % 3] + 12 * (k / 3) + 12;
-                Pluck(arpejo, inicio + s * semi, semi * 2, Frequencia(nota), jeito == Jeito.Mapa ? 0.05f : 0.06f);
+                // acordes martelados: piano (nota de cima dobrada uma oitava acima) e baixo em oitavas no mesmo ritmo
+                int[,] ritmo = c == 3 ? MarteloFinal : Martelo;
+                for (int i = 0; i < ritmo.GetLength(0); i++)
+                {
+                    int t = inicio + ritmo[i, 0] * semi, d = ritmo[i, 1] * semi;
+                    foreach (int n in acorde) Piano(piano, t, d, Freq(n), 0.16f);
+                    Piano(piano, t, d, Freq(acorde[2] + 12), 0.12f);
+                    Piano(piano, t, d, Freq(grave), 0.2f);
+                    Piano(piano, t, d, Freq(grave + 12), 0.16f);
+                    Baixo(baixo, t, d, Freq(grave), 0.16f);
+                    Bumbo(bateria, t, 0.5f);
+                }
+                if (c == 0 || c == 2) Prato(bateria, inicio, sorteio, 0.09f);
+                Caixa(bateria, inicio + 10 * semi, sorteio, 0.22f);
             }
-
-            // baixo: colcheias na fundamental (oitava pulando no fim do compasso)
-            if (jeito != Jeito.Mapa)
+            else
+            {
+                // piano: arpejo em colcheias (sobe e desce pelo acorde) + fundamental em oitavas
+                int[] subida = { 0, 1, 2, 3, 2, 1, 2, 3 };
                 for (int e = 0; e < 8; e++)
                 {
-                    int nota = acorde[0] - 24 + (e == 7 ? 12 : 0);
-                    Baixo(baixo, inicio + e * batida / 2, batida / 2, Frequencia(nota), 0.22f);
+                    int k = subida[e];
+                    int nota = k == 3 ? acorde[0] + 12 : acorde[k];
+                    float v = (mapa ? 0.1f : 0.075f) * (e % 2 == 0 ? 1f : 0.8f);
+                    Piano(piano, inicio + e * 2 * semi, 4 * semi, Freq(nota), v);
                 }
-            else Baixo(baixo, inicio, porCompasso, Frequencia(acorde[0] - 24), 0.2f);
+                Piano(piano, inicio, porCompasso / 2, Freq(grave), mapa ? 0.2f : 0.16f);
+                Piano(piano, inicio, porCompasso / 2, Freq(grave + 12), mapa ? 0.14f : 0.12f);
+                if (mapa) Piano(piano, inicio + porCompasso / 2, porCompasso / 2, Freq(grave + 7), 0.1f);
 
-            if (jeito != Jeito.Mapa) Bateria(bateria, inicio, batida, c, jeito == Jeito.Chefe, sorteio);
+                // baixo: colcheias pulsando (no mapa, uma nota longa)
+                if (mapa) Baixo(baixo, inicio, porCompasso, Freq(grave), 0.12f);
+                else
+                    for (int e = 0; e < 8; e++)
+                    {
+                        if (ponte && e % 2 == 1 && c < Compassos - 1) continue; // meio-tempo na ponte
+                        int oitava = chefe && e % 2 == 1 ? 12 : 0;
+                        Baixo(baixo, inicio + e * 2 * semi, 2 * semi, Freq(grave + oitava), 0.18f);
+                    }
+
+                if (!mapa) Bateria(bateria, inicio, batida, c, chefe, sorteio);
+            }
+
+            // último compasso: escala descendo no piano, levando de volta para a intro
+            if (c == Compassos - 1)
+                for (int s = 0; s < 16; s++)
+                    Piano(piano, inicio + s * semi, 2 * semi, Freq(Re4 + tom + Descida[s]), 0.06f + s * 0.004f);
         }
 
-        if (jeito == Jeito.Mapa) ComporMelodia(melodia, progressao, tom, semi, porCompasso, sorteio, jeito);
-        else ComporGancho(melodia, tom, semi, porCompasso);
-        Eco(melodia, batida * 3 / 4, 0.28f);
-        Eco(arpejo, batida * 3 / 2, 0.2f);
+        // melodia: violino + piano dobrando (no mapa, só piano)
+        for (int i = 0; i < Refrao.GetLength(0); i++)
+            Melodia(violino, piano, 4 + Refrao[i, 0], Refrao[i, 1], Refrao[i, 2], Re4 + tom + Refrao[i, 3], semi, porCompasso, mapa);
+        for (int i = 0; i < Ponte.GetLength(0); i++)
+            Melodia(violino, piano, 12 + Ponte[i, 0], Ponte[i, 1], Ponte[i, 2], Re4 + tom + Ponte[i, 3], semi, porCompasso, mapa);
 
-        // mistura, um filtro leve para tirar o "chiado" das serras e uma saturação suave (dá peso)
+        // mistura: piano, cordas e violino passam pelo reverb; baixo e bateria ficam "secos" (mais punch)
+        var sala = new float[total];
+        for (int i = 0; i < total; i++) sala[i] = piano[i] + cordas[i] + violino[i];
+        float[] reverb = Reverb(sala, mapa ? 0.86f : 0.8f);
+        float molhado = mapa ? 0.4f : 0.28f;
+
         var dados = new float[total];
-        float filtrado = 0f, maximo = 0.0001f;
+        float maximo = 0.0001f;
         for (int i = 0; i < total; i++)
         {
-            float amostra = cordas[i] + arpejo[i] + baixo[i] + melodia[i] + bateria[i];
-            filtrado += (amostra - filtrado) * 0.55f;
-            dados[i] = (float)System.Math.Tanh(filtrado * 1.6f);
+            float amostra = sala[i] + reverb[i] * molhado + baixo[i] + bateria[i];
+            dados[i] = (float)System.Math.Tanh(amostra * 1.3f);
             maximo = Mathf.Max(maximo, Mathf.Abs(dados[i]));
         }
-        for (int i = 0; i < total; i++) dados[i] *= 0.8f / maximo;
+        for (int i = 0; i < total; i++) dados[i] *= 0.85f / maximo;
 
         var clipe = AudioClip.Create("musica_epica_" + semente + "_" + jeito, total, 1, Taxa, false);
         clipe.SetData(dados, 0);
         return clipe;
     }
 
-    // O GANCHO das fases (e do chefe), com o ritmo:
-    //   "tu tu tuu,  tu tu tu tuuuu"   (frase A, 2 compassos)
-    //   "tu tu tuuu, tu tu tu tuuuu"   (frase B, 2 compassos, responde a A)
-    // Notas originais na menor harmônica, subindo como numa abertura de anime. A segunda metade da música
-    // repete uma oitava acima, com o final resolvendo na tônica (para o loop emendar).
-    // Cada nota: (início em semicolcheias, duração em semicolcheias, grau da escala).
-    static readonly int[,] FraseA = { { 0, 2, 4 }, { 2, 2, 4 }, { 4, 4, 7 }, { 8, 2, 6 }, { 10, 2, 7 }, { 12, 2, 8 }, { 14, 10, 9 } };
-    static readonly int[,] FraseB = { { 0, 2, 9 }, { 2, 2, 8 }, { 4, 6, 7 }, { 10, 2, 6 }, { 12, 2, 5 }, { 14, 2, 6 }, { 16, 12, 4 } };
-    static readonly int[,] FraseFinal = { { 0, 2, 9 }, { 2, 2, 8 }, { 4, 6, 7 }, { 10, 2, 8 }, { 12, 2, 6 }, { 14, 2, 8 }, { 16, 12, 7 } };
-
-    static void ComporGancho(float[] trilha, int tom, int semi, int porCompasso)
+    static void Melodia(float[] violino, float[] piano, int compasso, int inicio16, int dur16, int nota, int semi, int porCompasso, bool mapa)
     {
-        for (int c = 0; c < Compassos; c += 2)
+        int t = compasso * porCompasso + inicio16 * semi, d = dur16 * semi;
+        if (mapa)
         {
-            int parte = (c / 2) % 4;                 // A, B, A, B...
-            bool alto = c >= Compassos / 2;          // segunda metade: uma oitava acima
-            bool ultima = c == Compassos - 2;
-            int[,] frase = ultima ? FraseFinal : parte % 2 == 0 ? FraseA : FraseB;
-            for (int i = 0; i < frase.GetLength(0); i++)
-            {
-                int inicio = c * porCompasso + frase[i, 0] * semi;
-                int duracao = frase[i, 1] * semi;
-                int nota = Nota(tom, frase[i, 2]) + (alto ? 12 : 0);
-                Violino(trilha, inicio, duracao, Frequencia(nota), 0.13f);
-                Violino(trilha, inicio, duracao, Frequencia(nota - 12), 0.05f); // dobra uma oitava abaixo: mais "cheio"
-            }
+            Piano(piano, t, d, Freq(nota + 12), 0.13f);
+            return;
         }
+        Violino(violino, t, d, Freq(nota + 12), 0.1f);
+        Violino(violino, t, d, Freq(nota), 0.07f);
+        Piano(piano, t, d, Freq(nota + 12), 0.1f);
     }
 
-    // Melodia do mapa: um "motivo" de 2 compassos que se repete acompanhando os acordes.
-    // No verso ela é mais espaçada; no refrão sobe uma oitava e fica mais cheia.
-    static void ComporMelodia(float[] trilha, int[] progressao, int tom, int semi, int porCompasso, System.Random sorteio, Jeito jeito)
+    // As três notas do acorde, todas entre "piso" e uma oitava acima (posição fechada).
+    static int[] Voicing(int raiz, bool menor, int piso)
     {
-        // ritmo do motivo (em semicolcheias, dentro de 2 compassos) e o "desenho" das notas (graus relativos)
-        int[][] ritmos =
+        int[] intervalos = { 0, menor ? 3 : 4, 7 };
+        var notas = new int[3];
+        for (int i = 0; i < 3; i++)
         {
-            new[] { 0, 6, 8, 12, 16, 22, 24 },
-            new[] { 0, 4, 6, 8, 14, 16, 20, 24, 28 },
-            new[] { 0, 3, 6, 12, 16, 19, 22, 28 },
-        };
-        int[] ritmo = ritmos[sorteio.Next(ritmos.Length)];
-        var desenho = new int[ritmo.Length];
-        int passo = 0;
-        for (int i = 0; i < desenho.Length; i++)
-        {
-            passo += sorteio.Next(-2, 3);
-            if (i == 0) passo = 0;
-            desenho[i] = Mathf.Clamp(passo, -3, 5);
+            int n = raiz + intervalos[i];
+            while (n < piso) n += 12;
+            while (n >= piso + 12) n -= 12;
+            notas[i] = n;
         }
-
-        for (int c = 0; c < Compassos; c += 2)
-        {
-            bool refrao = jeito != Jeito.Mapa || c >= Compassos / 2;
-            if (!refrao && c % 4 == 2) continue; // no mapa, a melodia "responde" e descansa
-            int grau = progressao[c % progressao.Length];
-            for (int i = 0; i < ritmo.Length; i++)
-            {
-                int inicio = c * porCompasso + ritmo[i] * semi;
-                int fim = i + 1 < ritmo.Length ? ritmo[i + 1] : 32;
-                int duracao = (fim - ritmo[i]) * semi;
-                int nota = Nota(tom, grau + desenho[i]) + (refrao ? 12 : 0);
-                Violino(trilha, inicio, duracao, Frequencia(nota), refrao ? 0.11f : 0.08f);
-            }
-        }
+        System.Array.Sort(notas);
+        return notas;
     }
+
+    static int Mod12(int x) => ((x % 12) + 12) % 12;
 
     // ------------------------------------------------------------------ instrumentos
 
-    // Cordas: 3 "serras" um pouquinho desafinadas entre si (som cheio), entrando devagar.
+    // Piano: soma de harmônicos (um pouco "esticados", como numa corda de verdade). Os harmônicos agudos somem
+    // antes dos graves, as notas agudas somem antes das graves, e cada nota tem duas "cordas" levemente
+    // desafinadas (o batimento dá o som de piano). Ao soltar a tecla, a nota abafa rapidinho.
+    static void Piano(float[] trilha, int inicio, int duracao, float freq, float volume)
+    {
+        int soltar = Taxa / 12;
+        int fim = Mathf.Min(duracao + soltar, Taxa * 3);
+        float brilho = Mathf.Clamp01(1.3f - freq / 1400f);
+        float abafa = Mathf.Exp(-1f / (soltar * 0.25f));
+        for (int h = 1; h <= 7; h++)
+        {
+            float fh = h * freq * Mathf.Sqrt(1f + 0.0004f * h * h);
+            if (fh > Taxa * 0.45f) break;
+            float amp = volume / Mathf.Pow(h, 1.1f) * (h == 1 ? 1f : brilho);
+            float decai = Mathf.Exp(-(0.8f + 0.9f * h + freq / 350f) / Taxa);
+            int cordas = h <= 3 ? 2 : 1; // os harmônicos de cima com uma corda só (gera mais rápido, quase não muda o som)
+            for (int corda = 0; corda < cordas; corda++)
+            {
+                double w = 2.0 * System.Math.PI * fh * (cordas == 1 ? 1.0 : corda == 0 ? 0.9993 : 1.0007) / Taxa;
+                float cw = (float)System.Math.Cos(w), sw = (float)System.Math.Sin(w);
+                float s = 0f, co = 1f; // oscilador por rotação: rápido, sem chamar seno a cada amostra
+                float env = amp / cordas;
+                for (int i = 0; i < fim; i++)
+                {
+                    float ns = s * cw + co * sw;
+                    co = co * cw - s * sw;
+                    s = ns;
+                    env *= i < duracao ? decai : abafa;
+                    trilha[(inicio + i) % trilha.Length] += s * env * (i < 40 ? i / 40f : 1f);
+                }
+            }
+        }
+        // o "toque" do martelo: um estalinho curto
+        float anterior = 0f;
+        uint ruido = (uint)inicio * 2654435761u + 1u;
+        for (int i = 0; i < 120; i++)
+        {
+            ruido ^= ruido << 13; ruido ^= ruido >> 17; ruido ^= ruido << 5;
+            float r = (ruido / (float)uint.MaxValue) * 2f - 1f;
+            anterior += (r - anterior) * 0.3f;
+            trilha[(inicio + i) % trilha.Length] += anterior * volume * 0.25f * (1f - i / 120f);
+        }
+    }
+
+    // Cordas: 5 "serras" desafinadas entre si, filtradas (som macio de orquestra), entrando devagar.
+    static readonly float[] Desafino = { 1f, 1.004f, 0.996f, 1.0075f, 0.9925f };
+
     static void Cordas(float[] trilha, int inicio, int duracao, float freq, float volume)
     {
-        float f1 = 0f, f2 = 0.33f, f3 = 0.66f;
+        var fases = new float[Desafino.Length];
+        for (int v = 0; v < fases.Length; v++) fases[v] = v * 0.21f;
+        float f1 = 0f, f2 = 0f;
         for (int i = 0; i < duracao; i++)
         {
-            int j = (inicio + i) % trilha.Length;
-            f1 += freq / Taxa; f2 += freq * 1.006f / Taxa; f3 += freq * 0.994f / Taxa;
-            float serra = (f1 % 1f) + (f2 % 1f) + (f3 % 1f) - 1.5f;
+            float serra = 0f;
+            for (int v = 0; v < fases.Length; v++)
+            {
+                fases[v] += freq * Desafino[v] / Taxa;
+                if (fases[v] >= 1f) fases[v] -= 1f;
+                serra += fases[v];
+            }
+            serra = serra / fases.Length * 2f - 1f;
+            f1 += (serra - f1) * 0.12f;
+            f2 += (f1 - f2) * 0.12f;
             float t = i / (float)duracao;
-            float envelope = Mathf.Min(1f, t * 5f) * Mathf.Min(1f, (1f - t) * 8f);
-            trilha[j] += serra * volume * envelope;
+            float envelope = Mathf.Min(1f, t * 4f) * Mathf.Min(1f, (1f - t) * 10f);
+            trilha[(inicio + i) % trilha.Length] += f2 * volume * envelope * 2.2f;
         }
     }
 
-    // Notinha curta e brilhante (piano/sintetizador do arpejo).
-    static void Pluck(float[] trilha, int inicio, int duracao, float freq, float volume)
+    // Violino: serra filtrada com vibrato que entra depois do ataque, e o arco que cresce um pouquinho.
+    static void Violino(float[] trilha, int inicio, int duracao, float freq, float volume)
     {
-        float fase = 0f;
-        for (int i = 0; i < duracao; i++)
+        float fase = 0f, f1 = 0f, f2 = 0f;
+        int fim = duracao + Taxa / 20;
+        for (int i = 0; i < fim; i++)
         {
-            int j = (inicio + i) % trilha.Length;
-            fase += freq / Taxa;
-            float t = i / (float)duracao;
-            float onda = Mathf.Sin(2f * Mathf.PI * fase) * 0.7f + ((fase % 1f) < 0.5f ? 0.3f : -0.3f);
-            trilha[j] += onda * volume * (1f - t) * (1f - t);
+            float s = i / (float)Taxa;
+            float vibrato = 1f + 0.006f * Mathf.Sin(2f * Mathf.PI * 5.5f * s) * Mathf.Clamp01((s - 0.12f) * 4f);
+            fase += freq * vibrato / Taxa;
+            if (fase >= 1f) fase -= 1f;
+            float onda = fase * 2f - 1f;
+            f1 += (onda - f1) * 0.3f;
+            f2 += (f1 - f2) * 0.3f;
+            float envelope = Mathf.Min(1f, s / 0.04f) * (0.85f + 0.15f * Mathf.Min(1f, s * 2f));
+            if (i >= duracao) envelope *= 1f - (i - duracao) / (float)(fim - duracao);
+            trilha[(inicio + i) % trilha.Length] += f2 * volume * envelope;
         }
     }
 
+    // Baixo: senoide com um pouco do 2º harmônico (grave e redondo, sem embolar com o piano).
     static void Baixo(float[] trilha, int inicio, int duracao, float freq, float volume)
     {
         float fase = 0f;
         for (int i = 0; i < duracao; i++)
         {
-            int j = (inicio + i) % trilha.Length;
             fase += freq / Taxa;
+            if (fase >= 1f) fase -= 1f;
             float t = i / (float)duracao;
-            float onda = (fase % 1f) * 2f - 1f; // serra: baixo "rasgado"
-            trilha[j] += onda * volume * Mathf.Min(1f, t * 40f) * (1f - t * 0.6f);
+            float onda = Mathf.Sin(2f * Mathf.PI * fase) + 0.35f * Mathf.Sin(4f * Mathf.PI * fase);
+            float envelope = Mathf.Min(1f, i / 60f) * (1f - t * 0.5f) * Mathf.Min(1f, (1f - t) * 20f);
+            trilha[(inicio + i) % trilha.Length] += onda * volume * envelope;
         }
     }
 
-    // "Violino": serra suave com vibrato que entra depois do ataque.
-    static void Violino(float[] trilha, int inicio, int duracao, float freq, float volume)
-    {
-        float fase = 0f, filtrado = 0f;
-        for (int i = 0; i < duracao; i++)
-        {
-            int j = (inicio + i) % trilha.Length;
-            float s = i / (float)Taxa, t = i / (float)duracao;
-            float vibrato = 1f + 0.008f * Mathf.Sin(2f * Mathf.PI * 6f * s) * Mathf.Clamp01(s * 4f);
-            fase += freq * vibrato / Taxa;
-            float onda = (fase % 1f) * 2f - 1f;
-            filtrado += (onda - filtrado) * 0.25f; // tira a aspereza
-            float envelope = Mathf.Min(1f, s / 0.03f) * Mathf.Min(1f, (1f - t) * 5f);
-            trilha[j] += filtrado * volume * envelope;
-        }
-    }
-
-    // Bateria de rock. Prato no começo do verso e do refrão; virada de caixa no último compasso de cada parte.
+    // Bateria. Refrão: rock com prato a cada 4 compassos e virada no fim da frase.
+    // Ponte: meio-tempo, e no último compasso uma virada de caixa crescendo.
     static void Bateria(float[] trilha, int inicio, int batida, int compasso, bool pesada, System.Random sorteio)
     {
-        bool virada = compasso % 4 == 3;
-        if (compasso % 4 == 0) Prato(trilha, inicio, sorteio);
+        if (compasso == 4 || compasso == 8 || compasso == 12) Prato(trilha, inicio, sorteio, 0.1f);
+
+        if (compasso == Compassos - 1)
+        {
+            Bumbo(trilha, inicio, 0.5f);
+            for (int s = 0; s < 16; s++) Caixa(trilha, inicio + s * batida / 4, sorteio, 0.06f + s * 0.012f);
+            return;
+        }
+
+        bool ponte = compasso >= 12;
         for (int b = 0; b < 4; b++)
         {
             int t = inicio + b * batida;
-            if (b == 0 || b == 2 || pesada) Bumbo(trilha, t);
-            if (b == 2) Bumbo(trilha, t + batida / 2);
-            if (b == 1 || b == 3) Caixa(trilha, t, sorteio, 0.2f);
-            Chimbal(trilha, t, sorteio, 0.03f);
-            Chimbal(trilha, t + batida / 2, sorteio, 0.02f);
+            if (ponte)
+            {
+                if (b == 0) Bumbo(trilha, t, 0.5f);
+                if (b == 2) Caixa(trilha, t, sorteio, 0.24f);
+                Chimbal(trilha, t, sorteio, 0.025f);
+                continue;
+            }
+            if (b == 0 || b == 2 || pesada) Bumbo(trilha, t, 0.5f);
+            if (b == 2) Bumbo(trilha, t + batida / 2, 0.4f);
+            if (b == 1 || b == 3) Caixa(trilha, t, sorteio, 0.22f);
+            Chimbal(trilha, t, sorteio, 0.035f);
+            Chimbal(trilha, t + batida / 2, sorteio, 0.022f);
         }
-        if (virada)
+        if (compasso == 11)
             for (int s = 0; s < 4; s++) Caixa(trilha, inicio + 3 * batida + s * batida / 4, sorteio, 0.12f + s * 0.03f);
     }
 
-    static void Bumbo(float[] trilha, int inicio)
+    static void Bumbo(float[] trilha, int inicio, float volume)
     {
-        int duracao = Taxa / 6;
+        int duracao = Taxa / 5;
         float fase = 0f;
         for (int i = 0; i < duracao; i++)
         {
-            int j = (inicio + i) % trilha.Length;
             float t = i / (float)duracao;
-            fase += Mathf.Lerp(140f, 45f, Mathf.Sqrt(t)) / Taxa;
-            trilha[j] += Mathf.Sin(2f * Mathf.PI * fase) * 0.45f * (1f - t) * (1f - t);
+            fase += Mathf.Lerp(150f, 42f, Mathf.Sqrt(t)) / Taxa;
+            trilha[(inicio + i) % trilha.Length] += Mathf.Sin(2f * Mathf.PI * fase) * volume * (1f - t) * (1f - t);
         }
     }
 
     static void Caixa(float[] trilha, int inicio, System.Random sorteio, float volume)
     {
-        int duracao = Taxa / 7;
-        float fase = 0f;
+        int duracao = Taxa / 6;
+        float fase = 0f, anterior = 0f;
         for (int i = 0; i < duracao; i++)
         {
-            int j = (inicio + i) % trilha.Length;
             float t = i / (float)duracao;
-            fase += 190f / Taxa;
-            float valor = (float)(sorteio.NextDouble() * 2.0 - 1.0) * 0.8f + Mathf.Sin(2f * Mathf.PI * fase) * 0.4f;
-            trilha[j] += valor * volume * (1f - t) * (1f - t) * (1f - t);
+            fase += 185f / Taxa;
+            float ruido = (float)(sorteio.NextDouble() * 2.0 - 1.0);
+            anterior += (ruido - anterior) * 0.6f;
+            float corpo = Mathf.Sin(2f * Mathf.PI * fase) * Mathf.Max(0f, 1f - t * 4f);
+            trilha[(inicio + i) % trilha.Length] += (anterior * 0.8f * (1f - t) * (1f - t) * (1f - t) + corpo * 0.5f) * volume;
         }
     }
 
     static void Chimbal(float[] trilha, int inicio, System.Random sorteio, float volume)
     {
-        int duracao = Taxa / 30;
+        int duracao = Taxa / 28;
         float anterior = 0f;
         for (int i = 0; i < duracao; i++)
         {
-            int j = (inicio + i) % trilha.Length;
             float ruido = (float)(sorteio.NextDouble() * 2.0 - 1.0);
             float agudo = ruido - anterior;
             anterior = ruido;
-            trilha[j] += agudo * volume * (1f - i / (float)duracao);
+            trilha[(inicio + i) % trilha.Length] += agudo * volume * (1f - i / (float)duracao);
         }
     }
 
-    static void Prato(float[] trilha, int inicio, System.Random sorteio)
+    static void Prato(float[] trilha, int inicio, System.Random sorteio, float volume)
     {
-        int duracao = Taxa * 3 / 2;
+        int duracao = Taxa * 2;
         float anterior = 0f;
         for (int i = 0; i < duracao; i++)
         {
-            int j = (inicio + i) % trilha.Length;
             float ruido = (float)(sorteio.NextDouble() * 2.0 - 1.0);
             float agudo = ruido - anterior;
             anterior = ruido;
             float t = i / (float)duracao;
-            trilha[j] += agudo * 0.08f * (1f - t) * (1f - t);
+            trilha[(inicio + i) % trilha.Length] += agudo * volume * (1f - t) * (1f - t) * (1f - t);
         }
     }
 
-    static void Eco(float[] trilha, int atraso, float retorno)
+    // Reverb de sala (estilo Schroeder: 4 ecos com realimentação em paralelo + 2 "difusores" em série).
+    // Roda duas vezes pela música para o rabo do reverb do fim cair no começo (o loop emenda sem corte).
+    static float[] Reverb(float[] entrada, float realimenta)
     {
-        int n = trilha.Length;
-        var linha = new float[atraso];
+        int n = entrada.Length;
         var saida = new float[n];
-        for (int i = 0; i < 2 * n; i++)
+        foreach (int atraso in new[] { 1557, 1617, 1491, 1422 })
         {
-            float valor = trilha[i % n] + linha[i % atraso] * retorno;
-            linha[i % atraso] = valor;
-            if (i >= n) saida[i - n] = valor;
+            var linha = new float[atraso];
+            float amortece = 0f;
+            for (int i = 0; i < 2 * n; i++)
+            {
+                int k = i % atraso;
+                float atrasado = linha[k];
+                amortece += (atrasado - amortece) * 0.6f; // os agudos somem antes, como numa sala de verdade
+                linha[k] = entrada[i % n] + amortece * realimenta;
+                if (i >= n) saida[i - n] += atrasado * 0.25f;
+            }
         }
-        System.Array.Copy(saida, trilha, n);
+        foreach (int atraso in new[] { 225, 556 })
+        {
+            var linha = new float[atraso];
+            var difuso = new float[n];
+            for (int i = 0; i < 2 * n; i++)
+            {
+                int k = i % atraso;
+                float atrasado = linha[k];
+                float x = saida[i % n];
+                float y = -0.5f * x + atrasado;
+                linha[k] = x + 0.5f * y;
+                if (i >= n) difuso[i - n] = y;
+            }
+            saida = difuso;
+        }
+        return saida;
     }
 
-    // Nota MIDI de um grau da escala menor harmônica (graus podem passar de 7: sobe oitava).
-    static int Nota(int tom, int grau)
-    {
-        int oitava = Mathf.FloorToInt(grau / 7f);
-        return tom + oitava * 12 + Escala[grau - oitava * 7];
-    }
-
-    static float Frequencia(int notaMidi) => 440f * Mathf.Pow(2f, (notaMidi - 69) / 12f);
+    static float Freq(int notaMidi) => 440f * Mathf.Pow(2f, (notaMidi - 69) / 12f);
 }
