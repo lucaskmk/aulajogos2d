@@ -43,6 +43,7 @@ public class Interface : MonoBehaviour
         switch (estado)
         {
             case EstadoDoJogo.Titulo: DesenharTitulo(); break;
+            case EstadoDoJogo.Mapa: DesenharMapa(); break;
             case EstadoDoJogo.Pausado: DesenharPausa(); break;
             case EstadoDoJogo.Morreu: DesenharMorte(); break;
             case EstadoDoJogo.FaseConcluida: DesenharFaseConcluida(); break;
@@ -78,8 +79,15 @@ public class Interface : MonoBehaviour
         Fase fase = Fases.Todas[jogo.FaseAtual];
         const float pixel = 2.5f;
         float margem = 20f * escala, linha2 = 46f * escala;
-        Texto($"Fase {jogo.FaseAtual + 1}/{Fases.Todas.Length}: {fase.nome}", margem, 10f * escala, pixel, 0f, Branco, w * 0.3f);
-        Texto($"Mortes: {jogo.Mortes}", margem, linha2, pixel, 0f, Branco);
+        if (jogo.Estado == EstadoDoJogo.Mapa)
+        {
+            Texto($"Mortes: {jogo.Mortes}", margem, 10f * escala, pixel, 0f, Branco);
+        }
+        else
+        {
+            Texto($"Fase {jogo.FaseAtual + 1}/{Fases.Todas.Length}: {fase.nome}", margem, 10f * escala, pixel, 0f, Branco, w * 0.3f);
+            Texto($"Mortes: {jogo.Mortes}", margem, linha2, pixel, 0f, Branco);
+        }
         Texto($"Moedas: {jogo.Moedas}", w - margem, 10f * escala, pixel, 1f, Amarelo);
         Texto(FormatarTempo(jogo.TempoTotal), w - margem, linha2, pixel, 1f, Branco);
     }
@@ -103,23 +111,29 @@ public class Interface : MonoBehaviour
         }
 
         Texto("A/D ou SETAS: andar    ESPAÇO/W: pular (segure para ir mais alto)", w / 2f, h * 0.8f, 2f, 0.5f, Branco, w * 0.95f);
-        Texto("R: reiniciar fase    ESC: pausa    ENTER: escolher", w / 2f, h * 0.8f + 32f * escala, 2f, 0.5f, Branco, w * 0.95f);
+        Texto("R: reiniciar fase    ESC: pausa    ENTER: confirmar", w / 2f, h * 0.8f + 32f * escala, 2f, 0.5f, Branco, w * 0.95f);
         int recorde = Progresso.Recorde;
         if (recorde >= 0)
             Texto($"Recorde: zerou com {recorde} mortes", w / 2f, h * 0.91f, 2f, 0.5f, Verde);
     }
 
-    string TextoDaOpcao(GerenciadorDoJogo.OpcaoDoMenu opcao)
+    static string TextoDaOpcao(GerenciadorDoJogo.OpcaoDoMenu opcao) =>
+        opcao == GerenciadorDoJogo.OpcaoDoMenu.Continuar ? $"Continuar (fase {Progresso.FaseSalva + 1})" : "Novo jogo";
+
+    // Mapa do mundo: o nome da fase escolhida e os comandos, numa faixa escura embaixo.
+    void DesenharMapa()
     {
-        switch (opcao)
-        {
-            case GerenciadorDoJogo.OpcaoDoMenu.Continuar:
-                return $"Continuar (fase {Progresso.FaseSalva + 1})";
-            case GerenciadorDoJogo.OpcaoDoMenu.EscolherFase:
-                return $"Escolher fase: < {jogo.FaseEscolhida + 1} >";
-            default:
-                return "Novo jogo";
-        }
+        MapaDoMundo mapa = jogo.Mapa;
+        if (mapa == null) return;
+        float w = Screen.width, h = Screen.height;
+        GUI.DrawTexture(new Rect(0, h - 135f * escala, w, 135f * escala), fundoEscuro);
+
+        int fase = mapa.Selecionado;
+        Texto($"Fase {fase + 1}: {Fases.Todas[fase].nome}", w / 2f, h - 125f * escala, 3.5f, 0.5f, Amarelo, w * 0.9f);
+        string situacao = fase < jogo.FaseMaisLonge ? "já passou (dá para jogar de novo)" : "ainda não passou nesta partida";
+        Texto(situacao, w / 2f, h - 78f * escala, 2f, 0.5f, fase < jogo.FaseMaisLonge ? Verde : Lilas, w * 0.9f);
+        string comandos = mapa.Andando ? "..." : "SETAS: andar     ENTER: jogar     ESC: título";
+        Texto(comandos, w / 2f, h - 42f * escala, 2f, 0.5f, Branco, w * 0.9f);
     }
 
     void DesenharPausa()
@@ -128,8 +142,8 @@ public class Interface : MonoBehaviour
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         Texto("PAUSA", w / 2f, h * 0.3f, 9f, 0.5f, Lilas);
         Texto("ESC: continuar", w / 2f, h * 0.52f, 3.5f, 0.5f, Branco);
-        Texto("Q: voltar ao título", w / 2f, h * 0.52f + 52f * escala, 3.5f, 0.5f, Branco);
-        Texto("(o progresso fica salvo: é só escolher \"Continuar\")", w / 2f, h * 0.75f, 2f, 0.5f, Branco, w * 0.9f);
+        Texto("Q: voltar ao mapa", w / 2f, h * 0.52f + 52f * escala, 3.5f, 0.5f, Branco);
+        Texto("(o progresso fica salvo)", w / 2f, h * 0.75f, 2f, 0.5f, Branco, w * 0.9f);
     }
 
     void DesenharMorte()

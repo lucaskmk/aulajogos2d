@@ -10,6 +10,8 @@ public static class FabricaDeMusica
     const float Batidas = 72f;       // batidas por minuto (bem calminho)
     const int Compassos = 8;         // o trecho que fica repetindo (loop)
 
+    public const int MusicaDoMapa = 100; // "fase" especial: a música do mapa do mundo
+
     static readonly Dictionary<int, AudioClip> cache = new Dictionary<int, AudioClip>();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
