@@ -13,7 +13,7 @@ public class EspinhoEscondido : MonoBehaviour
     void Awake()
     {
         // Fica escondido ATRÁS do bloco de chão (ordem de desenho -1).
-        var filho = ConstrutorDeFase.Visual("Espinho", transform, transform.position + Vector3.down * 0.85f, "espinho", -1);
+        var filho = ConstrutorDeFase.Visual("Espinho", transform, transform.position + Vector3.down * 0.85f, "espinho", -1, false); // sem sombra para não se entregar
         espinho = filho.transform;
 
         Perigo.Adicionar(gameObject, new Vector2(0.75f, 0.45f), new Vector2(0f, -0.25f));

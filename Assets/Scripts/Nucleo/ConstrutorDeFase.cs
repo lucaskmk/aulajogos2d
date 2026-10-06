@@ -86,6 +86,13 @@ public static class ConstrutorDeFase
                     case 'M': celulasQueFogem.Add(new Vector2Int(x, linha)); break;
                     case 'W': info.bandeiras.Add(Criar<BandeiraVolta>("BandeiraVolta", raiz, chaoDaCelula).transform); break;
                     case 'X': info.inversores.Add(x); break;
+                    case 'U':
+                        // o cano desce até encontrar chão
+                        int alturaDoCano = 1;
+                        while (linha + alturaDoCano < altura && !PareceChao(Celula(x, linha + alturaDoCano)) && Celula(x, linha + alturaDoCano) != 'B')
+                            alturaDoCano++;
+                        Criar<Cano>("Cano", raiz, pos).Montar(alturaDoCano);
+                        break;
                 }
             }
         }
@@ -166,7 +173,8 @@ public static class ConstrutorDeFase
         return objeto.AddComponent<T>();
     }
 
-    public static GameObject Visual(string nome, Transform pai, Vector3 posicao, string sprite, int ordem)
+    // Cria um objeto só com desenho. Com sombra = true ele ganha a sombrinha projetada (veja Sombra.cs).
+    public static GameObject Visual(string nome, Transform pai, Vector3 posicao, string sprite, int ordem, bool sombra = true)
     {
         var objeto = new GameObject(nome);
         objeto.transform.SetParent(pai, false);
@@ -174,6 +182,7 @@ public static class ConstrutorDeFase
         var visual = objeto.AddComponent<SpriteRenderer>();
         visual.sprite = FabricaDeSprites.Pegar(sprite);
         visual.sortingOrder = ordem;
+        if (sombra) Sombra.Adicionar(visual);
         return objeto;
     }
 
@@ -223,7 +232,7 @@ public static class ConstrutorDeFase
         return grupos;
     }
 
-    // Nuvens, morros e arbustos de enfeite (sem colisão).
+    // Nuvens, tufos de grama, flores e brilhinhos de enfeite (sem colisão).
     // Repare que as nuvens de enfeite são IGUAIS à nuvem assassina. ;)
     static void Decorar(Transform raiz, string[] mapa, int largura, int altura, int semente)
     {
@@ -232,7 +241,10 @@ public static class ConstrutorDeFase
         var sorteio = new System.Random(semente);
 
         for (int x = sorteio.Next(2, 6); x < largura + 4; x += sorteio.Next(7, 13))
-            Visual("Nuvem", decoracao, new Vector3(x, altura - 2 - sorteio.Next(0, 5), 0f), "nuvem", -10);
+        {
+            var nuvem = Visual("Nuvem", decoracao, new Vector3(x, altura - 2 - sorteio.Next(0, 5), 0f), "nuvem", -10, false);
+            Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.4f, 0.4f);
+        }
 
         for (int x = sorteio.Next(0, 4); x < largura; x += sorteio.Next(4, 9))
         {
@@ -242,12 +254,20 @@ public static class ConstrutorDeFase
                 char acima = x < mapa[linha - 1].Length ? mapa[linha - 1][x] : ' ';
                 if (c == '#' && acima == ' ')
                 {
-                    string sprite = sorteio.Next(3) == 0 ? "morro" : "arbusto";
-                    Visual("Enfeite", decoracao, new Vector3(x, altura - 1 - linha + 0.5f, 0f), sprite, -8);
+                    string sprite = sorteio.Next(3) == 0 ? "flor" : "tufo";
+                    var enfeite = Visual("Enfeite", decoracao, new Vector3(x, altura - 1 - linha + 0.5f, 0f), sprite, -8);
+                    Animacao.Adicionar(enfeite, Animacao.Tipo.Balancar, 2.5f, 6f);
                     break;
                 }
                 if (c != ' ') break;
             }
+        }
+
+        // Brilhinhos no céu, como no fundo dos ímãs de Re:Zero.
+        for (int i = 0; i < largura / 3; i++)
+        {
+            var brilho = Visual("Brilho", decoracao, new Vector3(sorteio.Next(0, largura), altura - 1 - sorteio.Next(0, 9), 0f), "brilho", -11, false);
+            Animacao.Adicionar(brilho, Animacao.Tipo.Piscar, 3f, 0.7f);
         }
     }
 }

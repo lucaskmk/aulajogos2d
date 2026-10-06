@@ -15,7 +15,18 @@ public class GerenciadorDoJogo : MonoBehaviour
     enum Estado { Titulo, Jogando, Morreu, FaseConcluida, Vitoria }
 
     [Header("Configuração")]
-    public Color corDoCeu = new Color32(107, 140, 255, 255);
+    [Tooltip("Cor de fundo de cada fase (tons pastel, como os ímãs de Re:Zero). Se faltar cor, repete do começo.")]
+    public Color[] coresDoFundo =
+    {
+        new Color32(150, 215, 235, 255), // azul claro
+        new Color32(245, 190, 120, 255), // laranja
+        new Color32(130, 210, 200, 255), // verde-água
+        new Color32(240, 150, 205, 255), // rosa
+        new Color32(245, 222, 110, 255), // amarelo
+        new Color32(195, 165, 230, 255), // lilás
+        new Color32(245, 185, 195, 255), // rosa claro
+        new Color32(60, 80, 170, 255),   // azul-marinho (o "verdadeiro final")
+    };
     public float tempoAposMorte = 1.3f;
     public float tempoAposConcluir = 2.2f;
     [Tooltip("Fase inicial (0 = primeira). Útil para testar uma fase específica.")]
@@ -40,9 +51,24 @@ public class GerenciadorDoJogo : MonoBehaviour
     AudioSource fonteDeAudio;
     Dictionary<string, AudioClip> sons;
 
+    // Retorno pela Morte (Re:Zero): áudio próprio, cujo pico é sincronizado com o renascimento.
+    AudioSource fonteDaMorte;
+    AudioClip clipeDaMorte;
+    float picoDaMorte;   // em que segundo do áudio vem a parte mais alta
+    float timerRenascer; // clarão logo depois de renascer
+
+    // Música que toca junto com as mãos da sombra: só os primeiros segundos, sumindo aos poucos.
+    AudioSource fonteDaOst;
+    float timerOst;
+
     public readonly List<Placa> placas = new List<Placa>();
 
     const string ChaveRecorde = "cilada_recorde_mortes";
+    const string AudioDaMorte = "Sons/retorno_pela_morte"; // em Assets/Resources, sem a extensão
+    const float DuracaoRenascer = 0.7f;
+    const string MusicaDaMorte = "Sons/ost_morte";
+    const float DuracaoOst = 4f;     // quanto tempo a música toca
+    const float DuracaoFadeOst = 1.5f; // nos últimos 1,5 s ela vai sumindo
 
     // ------------------------------------------------------------------ inicialização
 
@@ -67,6 +93,19 @@ public class GerenciadorDoJogo : MonoBehaviour
         fonteDeAudio = gameObject.AddComponent<AudioSource>();
         sons = FabricaDeSons.CriarTodos();
 
+        fonteDaMorte = gameObject.AddComponent<AudioSource>();
+        fonteDaMorte.playOnAwake = false;
+        clipeDaMorte = Resources.Load<AudioClip>(AudioDaMorte);
+        if (clipeDaMorte != null)
+        {
+            fonteDaMorte.clip = clipeDaMorte;
+            picoDaMorte = AcharPico(clipeDaMorte);
+        }
+
+        fonteDaOst = gameObject.AddComponent<AudioSource>();
+        fonteDaOst.playOnAwake = false;
+        fonteDaOst.clip = Resources.Load<AudioClip>(MusicaDaMorte);
+
         VoltarAoTitulo();
     }
 
@@ -86,7 +125,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         }
         cam.orthographic = true;
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = corDoCeu;
+        cam.backgroundColor = coresDoFundo[0];
         cameraSeguir = cam.GetComponent<CameraSeguir>();
         if (cameraSeguir == null) cameraSeguir = cam.gameObject.AddComponent<CameraSeguir>();
     }
@@ -110,7 +149,10 @@ public class GerenciadorDoJogo : MonoBehaviour
         moedasNaFase = 0;
 
         raizDaFase = new GameObject("Fase " + (indice + 1)).transform;
+        Color corDoFundo = coresDoFundo.Length > 0 ? coresDoFundo[indice % coresDoFundo.Length] : Color.cyan;
+        if (Camera.main != null) Camera.main.backgroundColor = corDoFundo;
         InfoFase info = ConstrutorDeFase.Construir(Fases.Todas[indice], raizDaFase, mortesNaFase);
+        Paralaxe.Criar(raizDaFase, info.largura, corDoFundo); // castelo e floresta ao fundo
 
         PosicaoInicial = info.inicio;
         bandeiras = info.bandeiras;
@@ -134,6 +176,9 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     void Update()
     {
+        timerRenascer -= Time.deltaTime;
+        AtualizarOst();
+
         switch (estado)
         {
             case Estado.Titulo:
@@ -158,6 +203,8 @@ public class GerenciadorDoJogo : MonoBehaviour
                 {
                     CarregarFase(faseAtual);
                     estado = Estado.Jogando;
+                    timerRenascer = DuracaoRenascer; // é aqui que o áudio está no pico
+                    CameraSeguir.Tremer(0.15f, 0.25f);
                 }
                 break;
 
@@ -195,8 +242,64 @@ public class GerenciadorDoJogo : MonoBehaviour
         estado = Estado.Morreu;
         timerEstado = tempoAposMorte;
         mensagem = EscolherMensagem();
-        Som("morte");
+        TocarRetornoPelaMorte();
+        TocarOst();
         if (!caiuNoBuraco) CameraSeguir.Tremer(0.2f, 0.2f);
+    }
+
+    void TocarOst()
+    {
+        if (fonteDaOst.clip == null) return;
+        fonteDaOst.Stop(); // morreu de novo? recomeça do início
+        fonteDaOst.volume = 1f;
+        fonteDaOst.Play();
+        timerOst = DuracaoOst;
+    }
+
+    // Fade-out: o volume cai até zero nos últimos segundos e aí a música para.
+    void AtualizarOst()
+    {
+        if (!fonteDaOst.isPlaying) return;
+        timerOst -= Time.deltaTime;
+        if (timerOst <= 0f) fonteDaOst.Stop();
+        else fonteDaOst.volume = Mathf.Clamp01(timerOst / DuracaoFadeOst);
+    }
+
+    // Agenda o áudio para que a parte mais alta caia EXATAMENTE quando o jogador renasce
+    // (tempoAposMorte segundos depois de morrer).
+    void TocarRetornoPelaMorte()
+    {
+        if (clipeDaMorte == null)
+        {
+            Som("morte"); // sem o arquivo de áudio, usa o som 8-bit
+            return;
+        }
+        fonteDaMorte.Stop(); // morreu de novo durante o áudio? recomeça
+        float atraso = tempoAposMorte - picoDaMorte;
+        if (atraso >= 0f)
+        {
+            fonteDaMorte.PlayDelayed(atraso);
+        }
+        else
+        {
+            fonteDaMorte.Play();
+            fonteDaMorte.time = -atraso; // a espera é mais curta que o começo do áudio: pula um pedaço
+        }
+    }
+
+    // Primeiro instante em que o áudio chega à metade do volume máximo (o "TUM").
+    static float AcharPico(AudioClip clipe)
+    {
+        clipe.LoadAudioData();
+        var amostras = new float[clipe.samples * clipe.channels];
+        if (!clipe.GetData(amostras, 0)) return 0f;
+
+        float maximo = 0f;
+        foreach (float a in amostras) maximo = Mathf.Max(maximo, Mathf.Abs(a));
+        for (int i = 0; i < amostras.Length; i++)
+            if (Mathf.Abs(amostras[i]) >= maximo * 0.5f)
+                return (float)(i / clipe.channels) / clipe.frequency;
+        return 0f;
     }
 
     public void FaseConcluida()
@@ -241,7 +344,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         switch (mortes)
         {
-            case 1: return "Primeira de muitas...";
+            case 1: return "Retorno pela Morte desbloqueado. :)";
             case 10: return "10 mortes! Tá indo bem (mentira)";
             case 25: return "25 mortes. Já pensou em jogar outra coisa?";
             case 50: return "50 MORTES! Parabéns pela persistência!";
@@ -269,8 +372,8 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (mortes < 10) return "Suspeito de hack";
         if (mortes < 30) return "Sobrevivente";
         if (mortes < 60) return "Teimoso profissional";
-        if (mortes < 100) return "Colecionador de mortes";
-        return "Lenda da persistência";
+        if (mortes < 100) return "Colecionador de Retornos";
+        return "Natsuki Subaru honorário";
     }
 
     // ------------------------------------------------------------------ interface (HUD e telas)
@@ -299,6 +402,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         float w = Screen.width, h = Screen.height;
 
         DesenharPlacas(escala);
+        DesenharRetornoPelaMorte(escala);
         if (estado == Estado.Jogando || estado == Estado.Morreu || estado == Estado.FaseConcluida)
             DesenharBarraDeProgresso(escala);
 
@@ -321,8 +425,9 @@ public class GerenciadorDoJogo : MonoBehaviour
             case Estado.Titulo:
                 GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
                 estiloGrande.fontSize = Mathf.RoundToInt(120 * escala);
-                TextoComSombra(new Rect(0, h * 0.18f, w, 150 * escala), "CILADA!", estiloGrande, new Color(1f, 0.85f, 0.2f));
-                TextoComSombra(new Rect(0, h * 0.18f + 130 * escala, w, 50 * escala), "um jogo de plataforma nada confiável", estiloMedio);
+                // logo no estilo "Re:ZERO": letras azul-marinho com borda branca
+                DesenharTextoEmPixel(FabricaDeSprites.TextoEmPixel("Re:CILADA!", CorMarinho, Color.white, CorMarinho), w / 2f, h * 0.2f, 130f * escala);
+                TextoComSombra(new Rect(0, h * 0.2f + 140 * escala, w, 50 * escala), "começando a vida do zero (de novo, e de novo...)", estiloMedio);
                 if (Time.unscaledTime % 1f < 0.65f)
                     TextoComSombra(new Rect(0, h * 0.6f, w, 50 * escala), "Aperte ENTER para começar", estiloMedio, new Color(1f, 0.85f, 0.2f));
                 estiloPlaca.fontSize = Mathf.RoundToInt(22 * escala);
@@ -334,7 +439,11 @@ public class GerenciadorDoJogo : MonoBehaviour
                 break;
 
             case Estado.Morreu:
-                TextoComSombra(new Rect(0, h * 0.35f, w, 100 * escala), mensagem, estiloMedio, new Color(1f, 0.4f, 0.4f));
+                TextoComSombra(new Rect(0, h * 0.42f, w, 100 * escala), mensagem, estiloMedio, new Color(1f, 0.4f, 0.4f));
+                // "DEAD > CONTINUE", igual ao ímã do coelhinho
+                DesenharTextoEmPixel(FabricaDeSprites.TextoEmPixel("DEAD", new Color32(230, 40, 50, 255), Color.white, new Color32(20, 20, 28, 255)), w / 2f, h * 0.17f, 110f * escala);
+                if (Time.time % 0.5f < 0.35f)
+                    DesenharTextoEmPixel(FabricaDeSprites.TextoEmPixel("> CONTINUE", Color.white, new Color32(20, 20, 28, 255)), w / 2f, h * 0.17f + 125f * escala, 36f * escala);
                 break;
 
             case Estado.FaseConcluida:
@@ -372,7 +481,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
         float largura = Mathf.Min(Screen.width * 0.36f, 520f * escala);
         float altura = 12f * escala;
-        var barra = new Rect((Screen.width - largura) / 2f, 96f * escala, largura, altura); // abaixo do HUD, para não cobrir o nome da fase
+        var barra = new Rect((Screen.width - largura) / 2f, 58f * escala, largura, altura); // na altura da 2ª linha do HUD, entre "Mortes" e o tempo
 
         Color corOriginal = GUI.color;
         GUI.color = Color.black;
@@ -388,10 +497,62 @@ public class GerenciadorDoJogo : MonoBehaviour
         GUI.DrawTexture(new Rect(barra.xMax - alturaBandeira / 6f, barra.yMax - alturaBandeira, alturaBandeira / 3f, alturaBandeira),
             FabricaDeSprites.Pegar("bandeira").texture);
 
-        // gatinho andando na barra
-        float tamanhoGato = 28f * escala;
-        GUI.DrawTexture(new Rect(barra.x + barra.width * progresso - tamanhoGato / 2f, barra.center.y - tamanhoGato / 2f, tamanhoGato, tamanhoGato),
-            FabricaDeSprites.Pegar("jogador").texture);
+        // Subaru andando na barra
+        Texture subaru = FabricaDeSprites.Pegar("jogador").texture;
+        float alturaJogador = 32f * escala, larguraJogador = alturaJogador * subaru.width / subaru.height;
+        GUI.DrawTexture(new Rect(barra.x + barra.width * progresso - larguraJogador / 2f, barra.center.y - alturaJogador / 2f, larguraJogador, alturaJogador),
+            subaru);
+    }
+
+    // Mãos de sombra da tela de morte: (posição ao longo da borda 0..1, borda: 0 = baixo, 1 = esquerda, 2 = direita, atraso 0..1)
+    static readonly Vector3[] MaosDaSombra =
+    {
+        new Vector3(0.12f, 0, 0.00f), new Vector3(0.36f, 0, 0.15f), new Vector3(0.64f, 0, 0.05f), new Vector3(0.88f, 0, 0.20f),
+        new Vector3(0.40f, 1, 0.10f), new Vector3(0.78f, 1, 0.25f),
+        new Vector3(0.35f, 2, 0.20f), new Vector3(0.72f, 2, 0.00f),
+    };
+
+    // Estilo Re:Zero: ao morrer a tela escurece e mãos de sombra avançam das bordas;
+    // no pico do áudio você renasce com um clarão.
+    void DesenharRetornoPelaMorte(float escala)
+    {
+        float w = Screen.width, h = Screen.height;
+        Color corOriginal = GUI.color;
+
+        if (estado == Estado.Morreu)
+        {
+            float p = Mathf.Clamp01(1f - timerEstado / tempoAposMorte); // 0 = acabou de morrer, 1 = vai renascer
+            GUI.color = new Color(0.06f, 0f, 0.1f, Mathf.SmoothStep(0f, 0.85f, p));
+            GUI.DrawTexture(new Rect(0, 0, w, h), Texture2D.whiteTexture);
+
+            Texture mao = FabricaDeSprites.Pegar("mao_sombra").texture;
+            float largura = 100f * escala, altura = largura * 1.5f; // a arte tem 16x24
+            GUI.color = Color.white;
+            Matrix4x4 matrizOriginal = GUI.matrix;
+            for (int i = 0; i < MaosDaSombra.Length; i++)
+            {
+                Vector3 m = MaosDaSombra[i];
+                float avanco = Mathf.Clamp01((p - m.z) / (1f - m.z));
+                if (avanco <= 0f) continue;
+                float alcance = altura * 0.85f * avanco + Mathf.Sin(Time.time * 7f + i * 1.7f) * 5f * escala;
+
+                // a mão é desenhada "para cima" e girada para sair da borda certa
+                Vector2 pivo = m.y == 0 ? new Vector2(m.x * w, h) : new Vector2(m.y == 1 ? 0f : w, m.x * h);
+                float angulo = m.y == 0 ? 0f : (m.y == 1 ? 90f : -90f);
+                GUI.matrix = matrizOriginal;
+                GUIUtility.RotateAroundPivot(angulo, pivo);
+                GUI.DrawTexture(new Rect(pivo.x - largura / 2f, pivo.y - alcance, largura, altura), mao);
+            }
+            GUI.matrix = matrizOriginal;
+        }
+
+        if (timerRenascer > 0f)
+        {
+            float t = timerRenascer / DuracaoRenascer; // 1 = acabou de renascer
+            GUI.color = new Color(0.85f, 0.7f, 1f, t * t * 0.9f);
+            GUI.DrawTexture(new Rect(0, 0, w, h), Texture2D.whiteTexture);
+        }
+        GUI.color = corOriginal;
     }
 
     void DesenharPlacas(float escala)
@@ -409,6 +570,15 @@ public class GerenciadorDoJogo : MonoBehaviour
             GUI.DrawTexture(caixa, fundoEscuro);
             GUI.Label(caixa, placa.texto, estiloPlaca);
         }
+    }
+
+    static readonly Color32 CorMarinho = new Color32(44, 52, 130, 255);
+
+    // Desenha um texto de FabricaDeSprites.TextoEmPixel centralizado em (centroX, topo), com a altura pedida.
+    static void DesenharTextoEmPixel(Texture2D texto, float centroX, float topo, float altura)
+    {
+        float largura = altura * texto.width / texto.height;
+        GUI.DrawTexture(new Rect(centroX - largura / 2f, topo, largura, altura), texto);
     }
 
     static void TextoComSombra(Rect area, string texto, GUIStyle estilo, Color? cor = null)

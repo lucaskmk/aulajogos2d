@@ -13,6 +13,7 @@ public class Mola : MonoBehaviour
         visual = gameObject.AddComponent<SpriteRenderer>();
         visual.sprite = FabricaDeSprites.Pegar("mola");
         visual.sortingOrder = 2;
+        Sombra.Adicionar(visual);
 
         var area = gameObject.AddComponent<BoxCollider2D>();
         area.isTrigger = true;

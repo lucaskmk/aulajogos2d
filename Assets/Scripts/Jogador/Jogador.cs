@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// O gatinho controlado pelo jogador.
+// O Subaru, controlado pelo jogador (a arte fica em FabricaDeSprites).
 // Usa Rigidbody2D (física do Unity) com alguns truques de "game feel":
 //  - pulo variável: segurar o botão pula mais alto, soltar cedo pula mais baixo;
 //  - coyote time: ainda dá pra pular uma fração de segundo depois de sair da beirada;
 //  - buffer de pulo: apertar pular um pouquinho antes de tocar o chão também funciona.
-[RequireComponent(typeof(Rigidbody2D), typeof(BoxCollider2D), typeof(SpriteRenderer))]
+// O desenho fica num objeto filho ("Visual") para poder esticar e achatar sem mexer no colisor.
+[RequireComponent(typeof(Rigidbody2D), typeof(BoxCollider2D))]
 public class Jogador : MonoBehaviour
 {
     [Header("Movimento")]
@@ -31,6 +32,10 @@ public class Jogador : MonoBehaviour
     BoxCollider2D colisor;
     SpriteRenderer visual;
     Sprite spriteParado, spriteAndando;
+
+    // "Estica e achata": (1, 1) é o normal; volta sozinho para o normal aos poucos.
+    Vector2 escala = Vector2.one;
+    float quedaMaisRapida; // para saber com que força ele aterrissou
 
     float entradaX;
     bool segurandoPulo;
@@ -57,11 +62,9 @@ public class Jogador : MonoBehaviour
         colisor.offset = new Vector2(0f, -0.02f);
         colisor.sharedMaterial = new PhysicsMaterial2D("SemAtrito") { friction = 0f, bounciness = 0f };
 
-        visual = GetComponent<SpriteRenderer>();
+        visual = ConstrutorDeFase.Visual("Visual", transform, transform.position, "jogador", 10).GetComponent<SpriteRenderer>();
         spriteParado = FabricaDeSprites.Pegar("jogador");
         spriteAndando = FabricaDeSprites.Pegar("jogador_andando");
-        visual.sprite = spriteParado;
-        visual.sortingOrder = 10;
 
         filtroSolido = new ContactFilter2D { useTriggers = false };
     }
@@ -83,7 +86,10 @@ public class Jogador : MonoBehaviour
         if (Morto || congelado) return;
         float dt = Time.fixedDeltaTime;
 
+        bool estavaNoChao = NoChao;
         NoChao = ChecarChao();
+        if (!NoChao) quedaMaisRapida = Mathf.Min(quedaMaisRapida, Corpo.linearVelocity.y);
+        else if (!estavaNoChao) Aterrissou();
         timerCoyote = NoChao ? tempoCoyote : timerCoyote - dt;
         timerBufferPulo -= dt;
 
@@ -97,6 +103,8 @@ public class Jogador : MonoBehaviour
             timerCoyote = 0f;
             pulando = true;
             GerenciadorDoJogo.Som("pulo");
+            escala = new Vector2(0.75f, 1.25f); // estica no pulo
+            Efeitos.Poeira(transform.parent, transform.position + Vector3.down * 0.45f, 4, 2f);
         }
 
         // Soltou o botão no meio da subida? Corta o pulo.
@@ -111,6 +119,15 @@ public class Jogador : MonoBehaviour
         Corpo.linearVelocity = v;
 
         if (transform.position.y < -2f) Morrer(caiuNoBuraco: true);
+    }
+
+    void Aterrissou()
+    {
+        float forca = Mathf.InverseLerp(0f, -quedaMaxima, quedaMaisRapida); // 0 = pulinho, 1 = queda máxima
+        quedaMaisRapida = 0f;
+        if (forca < 0.2f) return;
+        escala = new Vector2(1f + 0.35f * forca, 1f - 0.3f * forca); // achata ao cair
+        Efeitos.Poeira(transform.parent, transform.position + Vector3.down * 0.45f, Mathf.RoundToInt(3 + 5 * forca), 2.5f);
     }
 
     // Invertido quando o jogador está à direita de um número ÍMPAR de linhas 'X'.
@@ -159,6 +176,18 @@ public class Jogador : MonoBehaviour
         {
             visual.sprite = spriteParado;
         }
+
+        // Volta aos poucos para o tamanho normal. Parado no chão, ele "respira".
+        escala = Vector2.Lerp(escala, Vector2.one, 12f * Time.deltaTime);
+        float respiracao = NoChao && entradaX == 0f ? 1f + 0.04f * Mathf.Sin(Time.time * 3f) : 1f;
+        AplicarEscala(new Vector2(escala.x, escala.y * respiracao));
+    }
+
+    // Estica a partir dos pés (o desenho tem o centro no meio, então desce o tanto que encolheu).
+    void AplicarEscala(Vector2 e)
+    {
+        visual.transform.localScale = new Vector3(e.x, e.y, 1f);
+        visual.transform.localPosition = new Vector3(0f, -0.5f * (1f - e.y), 0f);
     }
 
     // ------------------------------------------------------------ usado pelos outros objetos
@@ -169,6 +198,7 @@ public class Jogador : MonoBehaviour
         Morto = true;
 
         colisor.enabled = false;
+        AplicarEscala(Vector2.one);
         visual.flipY = true;          // morte "estilo Mario": vira de cabeça pra baixo e cai da tela
         visual.sprite = spriteParado;
         visual.sortingOrder = 100;
@@ -191,6 +221,7 @@ public class Jogador : MonoBehaviour
         Corpo.linearVelocity = new Vector2(Corpo.linearVelocity.x, forca);
         pulando = podeCortar;
         timerCoyote = 0f;
+        escala = new Vector2(0.7f, 1.3f);
     }
 
     // Bateu a cabeça em algo que acabou de aparecer (bloco invisível).
@@ -198,6 +229,7 @@ public class Jogador : MonoBehaviour
     {
         Corpo.linearVelocity = new Vector2(Corpo.linearVelocity.x, 0f);
         pulando = false;
+        escala = new Vector2(1.2f, 0.8f); // amassou a cabeça
         Vector2 p = Corpo.position;
         p.y = Mathf.Min(p.y, baseDoBloco - 0.5f);
         Corpo.position = p;

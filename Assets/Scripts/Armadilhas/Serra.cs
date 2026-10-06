@@ -3,13 +3,15 @@ using UnityEngine;
 
 // '<' - serra que aparece POR TRÁS e persegue o jogador (corre!).
 // '>' - serra que vem pela frente quando você se aproxima (pule!).
-// A serra se quebra quando bate numa parede.
+// Depois de passar do jogador, a serra VOLTA (uma vez). A serra se quebra quando bate numa parede.
 public class Serra : MonoBehaviour
 {
     public int direcao = 1;                         // 1 = vai para a direita, -1 = vai para a esquerda
     public float velocidade = 8f;
     public float distanciaAtrasParaComecar = 5f;    // serra traseira: espera o jogador abrir essa vantagem
     public float distanciaFrenteParaComecar = 12f;  // serra dianteira: começa quando o jogador chega a essa distância
+    public float distanciaParaVoltar = 4f;          // quanto ela passa do jogador antes de dar meia-volta
+    public int voltas = 1;                          // quantas vezes ela pode voltar
 
     Transform visual;
     bool ativa;
@@ -45,6 +47,15 @@ public class Serra : MonoBehaviour
                 }
             }
             return;
+        }
+
+        // Passou do jogador? Meia-volta!
+        if (voltas > 0 && GerenciadorDoJogo.JogadorVivo(out Vector2 alvo)
+            && (transform.position.x - alvo.x) * direcao > distanciaParaVoltar)
+        {
+            direcao = -direcao;
+            voltas--;
+            GerenciadorDoJogo.Som("serra");
         }
 
         visual.Rotate(0f, 0f, -900f * direcao * Time.deltaTime);

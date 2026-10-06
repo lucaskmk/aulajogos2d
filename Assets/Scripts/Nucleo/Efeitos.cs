@@ -17,6 +17,17 @@ public static class Efeitos
         if (alvo != null) alvo.localPosition = inicio;
     }
 
+    // Nuvenzinha de poeira saindo de um ponto (pulo, aterrissagem, esmagador arrastando...).
+    public static void Poeira(Transform pai, Vector3 posicao, int quantidade, float forca)
+    {
+        for (int i = 0; i < quantidade; i++)
+        {
+            var velocidade = new Vector2(Random.Range(-1f, 1f) * forca, Random.Range(0.1f, 0.6f) * forca);
+            Particula.Criar(pai, posicao + (Vector3)(Random.insideUnitCircle * 0.15f), velocidade,
+                Random.Range(0.25f, 0.45f), Random.Range(0.7f, 1.2f), new Color(1f, 1f, 1f, 0.85f));
+        }
+    }
+
     // Moeda que salta do bloco e some.
     public static IEnumerator MoedaSaltando(Transform pai, Vector3 posicao)
     {

@@ -9,6 +9,7 @@ public class BandeiraVolta : MonoBehaviour
         var visual = gameObject.AddComponent<SpriteRenderer>();
         visual.sprite = FabricaDeSprites.Pegar("bandeira");
         visual.sortingOrder = 1;
+        Sombra.Adicionar(visual);
 
         var area = gameObject.AddComponent<BoxCollider2D>();
         area.isTrigger = true;

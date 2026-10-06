@@ -1,7 +1,12 @@
-# CILADA! — um jogo de plataforma nada confiável
+# Re:CILADA! — um jogo de plataforma nada confiável
 
 Jogo 2D de plataforma "troll" (no estilo Cat Mario / Level Devil): tudo parece normal,
 mas o chão cai, espinhos brotam do nada, a bandeira foge e as nuvens têm dentes.
+
+Tema **Re:Zero**: você é o Subaru, os inimigos são Mabeasts e cada morte é um
+*Retorno pela Morte*: a tela escurece, as mãos da Bruxa avançam e você renasce no pico do áudio
+`Assets/Resources/Sons/retorno_pela_morte.mp3` (o momento do pico é detectado sozinho; para trocar o som,
+é só substituir o arquivo mantendo o nome).
 
 ## Como jogar
 1. Abra o projeto no Unity 6 (6000.6.2f1).
@@ -30,9 +35,9 @@ Também funciona com controle (gamepad).
 - **Objetos/** `Inimigo`, `Moeda`, `Placa`, `Bandeira`, `BandeiraFujona`, `BandeiraFalsa`.
 
 ## Fases que mudam
-Da fase 5 em diante, a fase **muda depois que você morre** (estilo Level Devil): armadilhas trocam de lugar,
-moedas viram moedas assassinas, a bandeira certa vira a errada... Cada fase tem uma lista `mudancas`
-em `Fases.cs` com as trocas usadas em cada tentativa.
+Recurso opcional (desligado em todas as fases): uma fase pode **mudar depois que você morre** (estilo Level Devil),
+com armadilhas trocando de lugar. Para usar, adicione uma lista `mudancas` à fase em `Fases.cs`
+(o formato está explicado no topo do arquivo).
 
 ## Criando uma fase nova
 Copie um bloco `new Fase { ... }` em `Fases.cs` e desenhe com os caracteres da legenda

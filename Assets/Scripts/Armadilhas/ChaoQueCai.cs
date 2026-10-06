@@ -15,7 +15,9 @@ public class ChaoQueCai : MonoBehaviour
         var bloco = new GameObject("Bloco");
         bloco.transform.SetParent(transform, false);
         bloco.transform.position = posicao;
-        bloco.AddComponent<SpriteRenderer>().sprite = sprite;
+        var desenho = bloco.AddComponent<SpriteRenderer>();
+        desenho.sprite = sprite;
+        Sombra.Adicionar(desenho); // o chão de verdade tem sombra, então esse também
         bloco.AddComponent<BoxCollider2D>().size = Vector2.one;
         blocos.Add(bloco.transform);
     }

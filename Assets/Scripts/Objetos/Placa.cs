@@ -11,6 +11,7 @@ public class Placa : MonoBehaviour
         var visual = gameObject.AddComponent<SpriteRenderer>();
         visual.sprite = FabricaDeSprites.Pegar("placa");
         visual.sortingOrder = -1;
+        Sombra.Adicionar(visual);
     }
 
     void OnEnable()

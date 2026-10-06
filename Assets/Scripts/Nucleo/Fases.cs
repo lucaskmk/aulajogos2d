@@ -22,10 +22,11 @@
 //   M  bloco que foge quando você pula perto dele
 //   W  bandeira que te manda de volta pro começo
 //   X  linha invisível que inverte os controles (cruzou de novo, desinverte)
+//   U  cano (2 de largura, desce até o chão): de tempos em tempos sai uma MÃO dele. Encostou, morreu
 //
 //  As placas recebem os textos na ordem da esquerda para a direita.
 //
-//  MUDANÇAS: a fase pode MUDAR depois que você morre (estilo Level Devil).
+//  MUDANÇAS (opcional, nenhuma fase usa agora): a fase pode MUDAR depois que você morre (estilo Level Devil).
 //  Cada item de "mudancas" é uma versão da fase usada nas tentativas seguintes,
 //  escrita como uma lista de trocas "coluna,linha,caractere" ('.' = vazio).
 //  Coluna e linha começam em 0 (linha 0 = topo). Na 1ª tentativa vale o mapa
@@ -49,7 +50,7 @@ public static class Fases
             nome = "Bem-vindo :)",
             placas = new[]
             {
-                "Bem-vindo ao CILADA!\nA/D ou SETAS para andar, ESPAÇO para pular.",
+                "Bem-vindo ao Re:CILADA!\nA/D ou SETAS para andar, ESPAÇO para pular.",
                 "Dica: pule BEM alto aqui!",
                 "A bandeira tá logo ali. Pode ir tranquilo!",
             },
@@ -66,7 +67,7 @@ public static class Fases
                 "                                           v",
                 "        ?B?    II                   ?K",
                 "                            $$",
-                "",
+                "                                        U",
                 "  P i       i       $$h          E                      i   R               *",
                 "###############  ##########CCCC################   ###############   ##############",
                 "###############  ##########CCCC################   ###############   ##############",
@@ -95,7 +96,7 @@ public static class Fases
                 "                  ######",
                 "          o       ######",
                 "                  ######",
-                "         B        ######                   $$",
+                "         B   U    ######                   $$",
                 "  P i    B      S ######            i        i  E B Z   G",
                 "######################################FFF#################",
                 "######################################FFF#################",
@@ -151,7 +152,7 @@ public static class Fases
                 "",
                 "                    ##    ?K?                            IIII",
                 "                                              o",
-                "              ##  FF",
+                "              ##  FF                U",
                 "  P i h                        $$$                E   i           G",
                 "###########            ##################CCC#############    #########",
                 "###########            ##################CCC#############    #########",
@@ -179,15 +180,10 @@ public static class Fases
                 "                                        v",
                 "                                                    ?K",
                 "",
-                "",
+                "                                                  U",
                 "  P i  $$ m$            h                                i       G",
                 "###############   #############CCC############   #####################",
                 "###############   #############CCC############   #####################",
-            },
-            mudancas = new[]
-            {
-                new[] { "10,12,$", "8,12,m", "24,12,.", "21,12,h", "31,13,#", "32,13,#", "33,13,#", "31,14,#", "32,14,#", "33,14,#", "36,13,C", "37,13,C", "38,13,C", "36,14,C", "37,14,C", "38,14,C", "40,8,.", "42,8,v", "52,9,K", "53,9,?", "60,12,B", "63,12,Z" },
-                new[] { "24,12,.", "27,12,h", "36,13,C", "37,13,C", "36,14,C", "37,14,C", "42,8,v", "11,12,m", "10,12,$" },
             },
         },
 
@@ -212,15 +208,10 @@ public static class Fases
                 "",
                 "                          ?",
                 "",
-                "",
+                "                                                                U",
                 "  P i   X       e             X  e   E       i  X           X      G",
                 "#####################   #################CCC########    ################",
                 "#####################   #################CCC########    ################",
-            },
-            mudancas = new[]
-            {
-                new[] { "12,12,X", "16,12,E", "37,12,e" },
-                new[] { "30,12,.", "28,12,X", "33,12,E", "26,9,K" },
             },
         },
 
@@ -245,15 +236,10 @@ public static class Fases
                 "                                                 $",
                 "                                                BBB",
                 "",
-                "",
+                "                                                       U",
                 "  P i                 i B  W                $m$               >        G",
                 "########### MM     ################   ######################################",
                 "###########        ################   ######################################",
-            },
-            mudancas = new[]
-            {
-                new[] { "27,12,G", "71,12,W" },
-                new[] { "31,12,h", "45,12,$", "46,12,m" },
             },
         },
 
@@ -278,15 +264,10 @@ public static class Fases
                 "",
                 "                                                  ?K",
                 "",
-                "                                                             i R    h     *",
+                "                      U                                      i R    h     *",
                 "  P i $m$ X       X         e           <                 ####################",
                 "#############   ############### MM     ########CC#############################",
                 "#############   ###############        ########CC#############################",
-            },
-            mudancas = new[]
-            {
-                new[] { "10,12,.", "7,12,$", "8,12,m" },
-                new[] { "68,11,.", "66,11,h", "28,12,E", "50,9,K", "51,9,?" },
             },
         },
     };
@@ -312,5 +293,13 @@ public static class Fases
         "O jogo tá rindo de você.",
         "Mais uma pra conta!",
         "Respira e tenta de novo.",
+        // --- Re:Zero ---
+        "Recomeçando do zero...",
+        "A Bruxa mandou um abraço.",
+        "Só você lembra dessa morte.",
+        "Emilia-tan ficaria decepcionada.",
+        "O Puck viu tudo.",
+        "Foi o Mabeast. Ou o chão. Ou os dois.",
+        "O Subaru já passou por coisa pior.",
     };
 }
