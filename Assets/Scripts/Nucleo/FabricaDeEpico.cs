@@ -82,7 +82,8 @@ public static class FabricaDeEpico
             if (jeito != Jeito.Mapa) Bateria(bateria, inicio, batida, c, jeito == Jeito.Chefe, sorteio);
         }
 
-        ComporMelodia(melodia, progressao, tom, semi, porCompasso, sorteio, jeito);
+        if (jeito == Jeito.Mapa) ComporMelodia(melodia, progressao, tom, semi, porCompasso, sorteio, jeito);
+        else ComporGancho(melodia, tom, semi, porCompasso);
         Eco(melodia, batida * 3 / 4, 0.28f);
         Eco(arpejo, batida * 3 / 2, 0.2f);
 
@@ -103,7 +104,36 @@ public static class FabricaDeEpico
         return clipe;
     }
 
-    // Melodia: um "motivo" de 2 compassos que se repete acompanhando os acordes.
+    // O GANCHO das fases (e do chefe), com o ritmo:
+    //   "tu tu tuu,  tu tu tu tuuuu"   (frase A, 2 compassos)
+    //   "tu tu tuuu, tu tu tu tuuuu"   (frase B, 2 compassos, responde a A)
+    // Notas originais na menor harmônica, subindo como numa abertura de anime. A segunda metade da música
+    // repete uma oitava acima, com o final resolvendo na tônica (para o loop emendar).
+    // Cada nota: (início em semicolcheias, duração em semicolcheias, grau da escala).
+    static readonly int[,] FraseA = { { 0, 2, 4 }, { 2, 2, 4 }, { 4, 4, 7 }, { 8, 2, 6 }, { 10, 2, 7 }, { 12, 2, 8 }, { 14, 10, 9 } };
+    static readonly int[,] FraseB = { { 0, 2, 9 }, { 2, 2, 8 }, { 4, 6, 7 }, { 10, 2, 6 }, { 12, 2, 5 }, { 14, 2, 6 }, { 16, 12, 4 } };
+    static readonly int[,] FraseFinal = { { 0, 2, 9 }, { 2, 2, 8 }, { 4, 6, 7 }, { 10, 2, 8 }, { 12, 2, 6 }, { 14, 2, 8 }, { 16, 12, 7 } };
+
+    static void ComporGancho(float[] trilha, int tom, int semi, int porCompasso)
+    {
+        for (int c = 0; c < Compassos; c += 2)
+        {
+            int parte = (c / 2) % 4;                 // A, B, A, B...
+            bool alto = c >= Compassos / 2;          // segunda metade: uma oitava acima
+            bool ultima = c == Compassos - 2;
+            int[,] frase = ultima ? FraseFinal : parte % 2 == 0 ? FraseA : FraseB;
+            for (int i = 0; i < frase.GetLength(0); i++)
+            {
+                int inicio = c * porCompasso + frase[i, 0] * semi;
+                int duracao = frase[i, 1] * semi;
+                int nota = Nota(tom, frase[i, 2]) + (alto ? 12 : 0);
+                Violino(trilha, inicio, duracao, Frequencia(nota), 0.13f);
+                Violino(trilha, inicio, duracao, Frequencia(nota - 12), 0.05f); // dobra uma oitava abaixo: mais "cheio"
+            }
+        }
+    }
+
+    // Melodia do mapa: um "motivo" de 2 compassos que se repete acompanhando os acordes.
     // No verso ela é mais espaçada; no refrão sobe uma oitava e fica mais cheia.
     static void ComporMelodia(float[] trilha, int[] progressao, int tom, int semi, int porCompasso, System.Random sorteio, Jeito jeito)
     {
