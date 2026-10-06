@@ -17,6 +17,8 @@ public class Emilia : MonoBehaviour
         visual = filho.transform;
         desenho = filho.GetComponent<SpriteRenderer>();
         if (GerenciadorDoJogo.Instancia != null) GerenciadorDoJogo.Instancia.Emilia = this;
+        Luzes.Ponto(transform, new Color(0.9f, 0.85f, 1f), 3f, 0.7f, Vector3.up * 0.7f);
+        SombraNoChao.Adicionar(gameObject, 0.9f);
     }
 
     void OnDestroy()

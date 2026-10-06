@@ -37,6 +37,7 @@ public class Inimigo : MonoBehaviour
         visual = ConstrutorDeFase.Visual("Visual", transform, transform.position, "inimigo", 6).GetComponent<SpriteRenderer>();
 
         filtroSolido = new ContactFilter2D { useTriggers = false };
+        SombraNoChao.Adicionar(gameObject, 0.9f);
     }
 
     void Update()

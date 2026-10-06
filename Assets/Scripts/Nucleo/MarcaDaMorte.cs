@@ -22,6 +22,7 @@ public class MarcaDaMorte : MonoBehaviour
             marca.desenho = objeto.GetComponent<SpriteRenderer>();
             marca.transparencia = Mathf.Lerp(0.25f, 0.6f, (i + 1f) / lugares.Count);
             marca.fase = i * 1.3f;
+            Luzes.Ponto(objeto.transform, Luzes.Lilas, 1.2f, 0.25f + 0.1f * i / Mathf.Max(1, lugares.Count - 1));
         }
     }
 

@@ -23,6 +23,14 @@ public class BandeiraFujona : MonoBehaviour
     void Start()
     {
         if (!destino.HasValue) bandeira.podeTocar = true; // sem '*' no mapa: vira bandeira normal
+
+        // Já venceu a Baleia Branca e morreu depois? A bandeira já está lá na frente, te esperando.
+        else if (GerenciadorDoJogo.Instancia.ChefeDerrotado)
+        {
+            transform.position = destino.Value;
+            fugiu = true;
+            bandeira.podeTocar = true;
+        }
     }
 
     void Update()

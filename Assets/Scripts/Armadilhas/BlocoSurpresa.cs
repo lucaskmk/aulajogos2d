@@ -9,6 +9,7 @@ public class BlocoSurpresa : MonoBehaviour
     Transform visual;
     SpriteRenderer desenho;
     AnimacaoDeQuadros brilho;
+    UnityEngine.Rendering.Universal.Light2D luz;
     bool usado;
 
     void Awake()
@@ -19,6 +20,7 @@ public class BlocoSurpresa : MonoBehaviour
         // um brilho passa pelo bloco de vez em quando (no 'K' também, senão ele se entregava)
         brilho = AnimacaoDeQuadros.Adicionar(desenho, FabricaDeSprites.Quadros("bloco_surpresa_brilho", FabricaDeSprites.QuadrosDoBrilho), 20f, 2f);
         gameObject.AddComponent<BoxCollider2D>().size = Vector2.one;
+        luz = Luzes.Ponto(transform, Luzes.Lilas, 1.6f, 0.45f); // o 'K' brilha igualzinho
     }
 
     void OnCollisionEnter2D(Collision2D colisao)
@@ -36,6 +38,7 @@ public class BlocoSurpresa : MonoBehaviour
     {
         usado = true;
         brilho.enabled = false;
+        luz.enabled = false;
         desenho.sprite = FabricaDeSprites.Pegar("bloco_usado");
         StartCoroutine(Efeitos.Pulinho(visual));
 

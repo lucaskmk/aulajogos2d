@@ -11,6 +11,7 @@ public class CameraSeguir : MonoBehaviour
     Transform alvo;
     Camera cam;
     float limiteEsquerdo, limiteDireito, alturaFixa;
+    float esquerdaDaFase, direitaDaFase; // os limites normais (para destravar depois da luta)
     float velocidadeX;
     float tempoTremor, forcaTremor;
 
@@ -27,8 +28,8 @@ public class CameraSeguir : MonoBehaviour
         alvo = novoAlvo;
         cam.orthographicSize = alturaFase / 2f;
         alturaFixa = (alturaFase - 1) / 2f;
-        limiteEsquerdo = -0.5f;
-        limiteDireito = larguraFase - 0.5f;
+        limiteEsquerdo = esquerdaDaFase = -0.5f;
+        limiteDireito = direitaDaFase = larguraFase - 0.5f;
         velocidadeX = 0f;
         transform.position = new Vector3(PosicaoDesejada(), alturaFixa, -10f);
     }
@@ -38,6 +39,21 @@ public class CameraSeguir : MonoBehaviour
         if (instancia == null) return;
         instancia.forcaTremor = forca;
         instancia.tempoTremor = duracao;
+    }
+
+    // Prende a câmera entre dois x (a arena do chefe). Destravar() volta ao normal.
+    public static void Travar(float esquerda, float direita)
+    {
+        if (instancia == null) return;
+        instancia.limiteEsquerdo = esquerda;
+        instancia.limiteDireito = direita;
+    }
+
+    public static void Destravar()
+    {
+        if (instancia == null) return;
+        instancia.limiteEsquerdo = instancia.esquerdaDaFase;
+        instancia.limiteDireito = instancia.direitaDaFase;
     }
 
     // Pula direto para o jogador, sem deslizar (usado quando ele atravessa uma porta).

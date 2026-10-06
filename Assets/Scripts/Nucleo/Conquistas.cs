@@ -28,7 +28,7 @@ public static class Conquistas
         new Conquista("pular_morte", "Sem tempo para luto", "Pular a animação da morte 20 vezes."),
         new Conquista("mabeast", "Domador de Mabeasts", "Pisar em 10 Mabeasts."),
         new Conquista("coelhos", "Controle de pragas", "Pisar em 10 Grandes Coelhos."),
-        new Conquista("baleia", "Sobreviveu à Baleia Branca", "Desviar de todas as investidas da Baleia."),
+        new Conquista("baleia", "Caçador de Baleias", "Derrotar a Baleia Branca."),
         new Conquista("portas", "Viajante da biblioteca", "Atravessar 20 portas da Beatrice."),
         new Conquista("biblioteca", "Kashira!", "Encontrar a Beatrice na Biblioteca Proibida."),
         new Conquista("save_mudou", "Mudaram meu save!", "Ver o ponto de save mudar de lugar."),
