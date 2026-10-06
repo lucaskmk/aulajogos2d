@@ -8,6 +8,8 @@ public class InfoFase
     public int altura;
     public List<float> inversores = new List<float>(); // posições x das linhas 'X'
     public List<Transform> bandeiras = new List<Transform>(); // todas as bandeiras (verdadeiras ou não)
+    public int totalDeMoedas;  // moedas '$' + blocos '?' (para a fase secreta: "pegue TODAS")
+    public bool temPortas;     // é a Biblioteca Proibida?
 }
 
 // Lê o mapa de texto de uma fase (veja Fases.cs) e cria todos os objetos na cena.
@@ -47,7 +49,9 @@ public static class ConstrutorDeFase
 
         var celulasQueCaem = new HashSet<Vector2Int>();
         var celulasQueFogem = new HashSet<Vector2Int>();
-        var placas = new List<Vector3>();
+        var placas = new List<(Vector3 lugar, bool beatrice)>();
+        var portas = new List<Porta>();
+        float xDaBandeira = -1f;
         var fujonas = new List<BandeiraFujona>();
         Vector3? destinoDaFujona = null;
 
@@ -66,7 +70,7 @@ public static class ConstrutorDeFase
                     case 'F': Visual("ChaoFalso", raiz, pos, SpriteDoChao(x, linha), 0); break;
                     case 'C': celulasQueCaem.Add(new Vector2Int(x, linha)); break;
                     case 'P': info.inicio = pos; break;
-                    case '?': Criar<BlocoSurpresa>("BlocoMoeda", raiz, pos); break;
+                    case '?': Criar<BlocoSurpresa>("BlocoMoeda", raiz, pos); info.totalDeMoedas++; break;
                     case 'K': Criar<BlocoSurpresa>("BlocoPegadinha", raiz, pos).soltaInimigo = true; break;
                     case 'I': Criar<BlocoInvisivel>("BlocoInvisivel", raiz, pos); break;
                     case '^': Criar<Espinho>("Espinho", raiz, pos); break;
@@ -77,13 +81,14 @@ public static class ConstrutorDeFase
                     case 'T': Criar<Esmagador>("Esmagador", raiz, pos); break;
                     case '<': Criar<Serra>("SerraTraseira", raiz, pos).direcao = 1; break;
                     case '>': Criar<Serra>("SerraDianteira", raiz, pos).direcao = -1; break;
-                    case 'G': info.bandeiras.Add(Criar<Bandeira>("Bandeira", raiz, chaoDaCelula).transform); break;
+                    case 'G': info.bandeiras.Add(Criar<Bandeira>("Bandeira", raiz, chaoDaCelula).transform); xDaBandeira = x; break;
                     case 'R': fujonas.Add(Criar<BandeiraFujona>("BandeiraFujona", raiz, chaoDaCelula)); info.bandeiras.Add(fujonas[fujonas.Count - 1].transform); break;
                     case '*': destinoDaFujona = chaoDaCelula; break;
                     case 'Z': info.bandeiras.Add(Criar<BandeiraFalsa>("BandeiraFalsa", raiz, chaoDaCelula).transform); break;
                     case 'o': Criar<NuvemAssassina>("NuvemAssassina", raiz, pos + Vector3.right * 0.5f); break;
-                    case 'i': placas.Add(pos); break;
-                    case '$': Criar<Moeda>("Moeda", raiz, pos); break;
+                    case 'i': placas.Add((pos, false)); break;
+                    case 'Y': placas.Add((pos, true)); break;
+                    case '$': Criar<Moeda>("Moeda", raiz, pos); info.totalDeMoedas++; break;
                     case 'm': Criar<MoedaAssassina>("MoedaAssassina", raiz, pos); break;
                     case 'e': Criar<Inimigo>("InimigoDisfarcado", raiz, pos).espinhoso = true; break;
                     case 'M': celulasQueFogem.Add(new Vector2Int(x, linha)); break;
@@ -92,6 +97,8 @@ public static class ConstrutorDeFase
                     case 'r': Criar<Coelho>("Coelho", raiz, pos); break;
                     case 'w': Criar<BaleiaBranca>("BaleiaBranca", raiz, pos); break;
                     case 'L': Criar<Emilia>("Emilia", raiz, pos); break;
+                    case 'D': portas.Add(Criar<Porta>("Porta", raiz, chaoDaCelula)); break;
+                    case 's': Criar<PontoDeSave>("PontoDeSave", raiz, chaoDaCelula); break;
                     case 'U':
                         // o cano desce até encontrar chão
                         int alturaDoCano = 1;
@@ -126,12 +133,23 @@ public static class ConstrutorDeFase
         foreach (BandeiraFujona fujona in fujonas)
             if (destinoDaFujona.HasValue) fujona.destino = destinoDaFujona.Value;
 
-        // Placas: textos na ordem da esquerda para a direita.
-        placas.Sort((a, b) => a.x.CompareTo(b.x));
+        // Placas (Puck e Beatrice): textos na ordem da esquerda para a direita.
+        placas.Sort((a, b) => a.lugar.x.CompareTo(b.lugar.x));
         for (int i = 0; i < placas.Count; i++)
         {
-            var placa = Criar<Placa>("Placa", raiz, placas[i]);
+            var placa = Criar<Placa>("Placa", raiz, placas[i].lugar);
             placa.texto = fase.placas != null && i < fase.placas.Length ? fase.placas[i] : "...";
+            if (placas[i].beatrice) placa.VirarBeatrice();
+        }
+
+        // Portas da Beatrice: cada uma sabe a sala em que está, e o destino é sorteado.
+        if (portas.Count > 0)
+        {
+            info.temPortas = true;
+            int[] salaDaColuna = Salas(mapa, largura, altura);
+            foreach (Porta porta in portas) porta.sala = salaDaColuna[Mathf.RoundToInt(porta.transform.position.x)];
+            int salaFinal = xDaBandeira >= 0f ? salaDaColuna[Mathf.RoundToInt(xDaBandeira)] : -1;
+            LigarPortas(portas, salaDaColuna[Mathf.RoundToInt(info.inicio.x)], salaFinal, tentativa);
         }
 
         // Paredes invisíveis nas bordas da fase.
@@ -144,6 +162,55 @@ public static class ConstrutorDeFase
     }
 
     // ------------------------------------------------------------------ ajudantes
+
+    // Numera as salas da fase: uma coluna toda de '#', de cima a baixo, é uma parede entre duas salas.
+    static int[] Salas(string[] mapa, int largura, int altura)
+    {
+        var sala = new int[largura];
+        int atual = 0;
+        for (int x = 0; x < largura; x++)
+        {
+            bool parede = true;
+            for (int linha = 0; linha < altura && parede; linha++)
+                parede = x < mapa[linha].Length && mapa[linha][x] == '#';
+            if (parede) atual++;
+            sala[x] = atual;
+        }
+        return sala;
+    }
+
+    // Sorteia para onde cada porta leva (sempre para OUTRA sala), até achar um sorteio em que
+    // dá para ir da sala inicial até a sala da bandeira. A "semente" muda a cada morte.
+    static void LigarPortas(List<Porta> portas, int salaInicial, int salaFinal, int semente)
+    {
+        var sorteio = new System.Random(semente * 7919 + 13);
+        for (int tentativa = 0; tentativa < 300; tentativa++)
+        {
+            foreach (Porta porta in portas)
+            {
+                List<Porta> opcoes = portas.FindAll(outra => outra.sala != porta.sala);
+                porta.destino = opcoes.Count > 0 ? opcoes[sorteio.Next(opcoes.Count)] : null;
+            }
+            if (salaFinal < 0 || Alcanca(portas, salaInicial, salaFinal)) return;
+        }
+        Debug.LogWarning("ConstrutorDeFase: não achei um jeito de ligar as portas até a bandeira.");
+    }
+
+    static bool Alcanca(List<Porta> portas, int de, int ate)
+    {
+        var visitadas = new HashSet<int> { de };
+        var fila = new Queue<int>();
+        fila.Enqueue(de);
+        while (fila.Count > 0)
+        {
+            int sala = fila.Dequeue();
+            if (sala == ate) return true;
+            foreach (Porta porta in portas)
+                if (porta.sala == sala && porta.destino != null && visitadas.Add(porta.destino.sala))
+                    fila.Enqueue(porta.destino.sala);
+        }
+        return false;
+    }
 
     // Devolve o mapa da fase já com as trocas da tentativa atual (veja "MUDANÇAS" em Fases.cs).
     static string[] AplicarMudancas(Fase fase, int tentativa)

@@ -40,6 +40,7 @@ public class Musica : MonoBehaviour
     void Update()
     {
         // tempo "real": continua funcionando com o jogo pausado (Time.timeScale = 0)
-        fonte.volume = Mathf.MoveTowards(fonte.volume, alvo * volume, velocidadeDoFade * volume * Time.unscaledDeltaTime);
+        float maximo = volume * Opcoes.Musica; // o volume da música do menu de pausa
+        fonte.volume = Mathf.MoveTowards(fonte.volume, alvo * maximo, velocidadeDoFade * volume * Time.unscaledDeltaTime);
     }
 }

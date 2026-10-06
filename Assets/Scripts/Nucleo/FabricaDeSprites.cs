@@ -58,6 +58,7 @@ public static class FabricaDeSprites
         { 'M', new Color32(148, 152, 170, 255) }, // pedra (sombra)
         { 'Z', new Color32(226, 230, 240, 255) }, // pedra (brilho)
         { 'z', new Color32(96, 98, 120, 255) },   // rejunte da pedra
+        { 'e', new Color32(70, 120, 230, 255) },  // azul (olhos da Beatrice)
     };
 
     static Color32 Cor(char c) => paleta[c];
@@ -472,6 +473,46 @@ public static class FabricaDeSprites
         ".....kkk..kkk...",
     };
 
+    // Beatrice: cabelo loiro em "furadeiras", laços cor-de-rosa e vestido vermelho.
+    static readonly string[] ArteBeatrice =
+    {
+        ".....kkkkkk.....",
+        "....kyyyyyyk....",
+        "...kyyyyyyyyk...",
+        "..kyyyyyyyyyyk..",
+        ".kpkyyyyyyyykpk.",
+        "kyykcccccccckyyk",
+        "kyokceecceeckoyk",
+        "kyykcekccekckyyk",
+        "koykcpccccpckyok",
+        "kyykcccCccckkyyk",
+        "koyokkkkkkkkoyok",
+        "kyykrrpwwprrkyyk",
+        "kooykrrppprrkyok",
+        "kyyk.krrrrk.kyyk",
+        ".kok.krrrrk.kok.",
+        "..k.krrppprk..k.",
+        "....krrrrrrrk...",
+        "...krrpppprrk...",
+        "..krrrrrrrrrrk..",
+        ".kpprrrrrrrrppk.",
+        "kppppppppppppppk",
+        ".kkkkkkkkkkkkkk.",
+        ".....kck..kck...",
+        ".....kkk..kkk...",
+    };
+
+    // Caveirinha do mapa (mostra quantas vezes você morreu em cada fase).
+    static readonly string[] ArteCaveira =
+    {
+        ".kkkkk.",
+        "kwwwwwk",
+        "kwkwkwk",
+        "kwwwwwk",
+        ".kwkwk.",
+        "..kkk..",
+    };
+
     static readonly string[] ArteCoracao =
     {
         ".kk.kk.",
@@ -578,6 +619,12 @@ public static class FabricaDeSprites
             case "coelho": return DeArte(ArteCoelho, Centro);
             case "emilia": return DeArte(ArteEmilia, Base);
             case "coracao": return DeArte(ArteCoracao, Centro);
+            case "beatrice": return DeArte(ArteBeatrice, Base);
+            case "caveira": return DeArte(ArteCaveira, Centro);
+            case "porta": return Procedural(16, 32, Base, (x, y) => CorPorta(x, y, false));
+            case "porta_aberta": return Procedural(16, 32, Base, (x, y) => CorPorta(x, y, true));
+            case "ponto_save": return Procedural(16, 24, Base, (x, y) => CorPontoDeSave(x, y, false));
+            case "ponto_save_ativo": return Procedural(16, 24, Base, (x, y) => CorPontoDeSave(x, y, true));
             case "baleia": return Procedural(64, 24, Centro, CorBaleia);
             case "aviso": return Procedural(16, 16, Centro, CorAviso);
 
@@ -989,6 +1036,34 @@ public static class FabricaDeSprites
         }
         if (x >= 6 && x <= 9 && y <= 8) return x == 6 || x == 9 ? Cor('d') : Cor('b');
         return Transparente;
+    }
+
+    // Porta da Biblioteca Proibida: madeira com moldura lilás e topo em arco. Aberta, mostra a escuridão mágica.
+    static bool DentroDaPorta(int x, int y) =>
+        x >= 1 && x <= 14 && y >= 0 && (y < 24 || (x - 7.5f) * (x - 7.5f) + (y - 24f) * (y - 24f) <= 6.6f * 6.6f);
+
+    static Color32 CorPorta(int x, int y, bool aberta)
+    {
+        if (!DentroDaPorta(x, y)) return Transparente;
+        bool borda = !DentroDaPorta(x + 1, y) || !DentroDaPorta(x - 1, y) || !DentroDaPorta(x, y + 1) || (y == 0);
+        if (borda) return Cor('k');
+        bool moldura = !DentroDaPorta(x + 2, y) || !DentroDaPorta(x - 2, y) || !DentroDaPorta(x, y + 2);
+        if (moldura) return Cor('V');
+        if (aberta) return Ruido(x, y) % 11 == 0 ? Cor('P') : (Ruido(x, y) % 5 == 0 ? Cor('v') : Cor('x'));
+        if (x == 11 && (y == 12 || y == 13)) return Cor('y'); // maçaneta
+        return x % 4 == 2 ? Cor('d') : Cor('b');              // tábuas
+    }
+
+    // Ponto de save: um cristal num pedestal. Apagado é cinza; ativo, roxo e brilhando.
+    static Color32 CorPontoDeSave(int x, int y, bool ativo)
+    {
+        if (y <= 2) return x >= 3 && x <= 12 ? (y == 0 || x == 3 || x == 12 ? Cor('k') : Cor('S')) : Transparente;
+        float dx = Mathf.Abs(x - 7.5f), meia = 5.5f * (1f - Mathf.Abs(y - 12f) / 9f);
+        if (y > 21 || dx > meia) return Transparente;
+        if (dx > meia - 1f) return Cor('k');
+        if (!ativo) return x < 7.5f ? Cor('s') : Cor('S');
+        if (x == 5 && y >= 11 && y <= 15) return Cor('w');
+        return x < 7.5f ? Cor('P') : Cor('V');
     }
 
     // "!" de perigo (avisa a altura em que a Baleia vai passar).

@@ -40,5 +40,6 @@ public class MoedaAssassina : MonoBehaviour
             GerenciadorDoJogo.Som("risada");
         }
         jogador.Morrer();
+        Conquistas.Desbloquear("moeda_assassina");
     }
 }

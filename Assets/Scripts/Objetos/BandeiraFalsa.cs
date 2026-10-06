@@ -37,5 +37,6 @@ public class BandeiraFalsa : MonoBehaviour
                 ConstrutorDeFase.Visual("EspinhoDaBandeira", transform, transform.position + new Vector3(i, 0.5f, 0f), "espinho", 2);
         }
         jogador.Morrer();
+        Conquistas.Desbloquear("bandeira_falsa");
     }
 }

@@ -7,7 +7,8 @@ Tema **Re:Zero**: você é o Subaru, os inimigos são Mabeasts e Grandes Coelhos
 e cada morte é um *Retorno pela Morte*: a tela escurece, as mãos da Bruxa avançam e você renasce no pico do áudio
 `Assets/Resources/Sons/retorno_pela_morte.mp3` (o momento do pico é detectado sozinho; para trocar o som,
 é só substituir o arquivo mantendo o nome). No lugar das suas últimas mortes fica a marca da mão da Bruxa.
-Na última fase a Baleia Branca aparece, e a Emilia espera o Subaru no final.
+Na Biblioteca Proibida a Beatrice embaralha as portas, na última fase a Baleia Branca aparece,
+e a Emilia espera o Subaru no final.
 
 ## Como jogar
 1. Abra o projeto no Unity 6 (6000.6.2f1).
@@ -23,6 +24,8 @@ Na última fase a Baleia Branca aparece, e a Emilia espera o Subaru no final.
 | Espaço / Enter (morto) | pular a animação da morte |
 | ↑ / ↓ e Enter (título) | escolher no menu |
 | Setas e Enter (mapa) | andar pelo caminho e entrar na fase |
+| S / seta para baixo | entrar numa porta da Beatrice |
+| Setas (pausa) | volume da música e dos efeitos |
 
 Também funciona com controle (gamepad).
 
@@ -42,6 +45,26 @@ daquela fase (Puck, Mabeast, serra, nuvem malvada, coelho...) e a Emilia espera 
   balançando, brilhos na água e a névoa "respirando".
 - O mapa é desenhado em texto em `MapaDoMundo.cs` (legenda no próprio arquivo), igual às fases.
 
+- Embaixo de cada ponto aparece uma **caveira com quantas vezes você morreu** naquela fase, e depois de cada
+  fase o Puck, a Emilia ou a Beatrice **comentam** (as falas ficam em `Textos.cs`).
+- **Fase secreta:** pegue TODAS as moedas da fase 5 ("Pegue as moedas! Todas!") sem morrer no meio. Uma ilha
+  aparece no lago; no ponto 5, aperte seta para baixo para ir até ela.
+
+## Biblioteca Proibida (o minigame das portas)
+A fase 8 é dividida em salas por paredes. Cada porta (`D` no mapa) leva para uma porta de OUTRA sala,
+sorteada a cada morte (o "Door Crossing" da Beatrice), sempre garantindo que exista um caminho até a sala
+dela, onde está a bandeira. Algumas salas têm armadilhas, outras só moedas. Aperte S na frente da porta.
+
+## Ponto de save
+O cristal (`s` no mapa) vira o lugar onde você renasce. Mas, como no anime, às vezes (25% das mortes) o
+ponto de save "muda de lugar" e você volta para o começo. :)
+
+## Conquistas, volume e créditos
+- 15 conquistas (ver no título): morrer para a nuvem, pisar em 10 coelhos, desviar da Baleia, achar a
+  Beatrice, zerar... Ficam salvas em PlayerPrefs (`Conquistas.cs`).
+- Na pausa: setas para cima/baixo escolhem música ou efeitos, esquerda/direita mudam o volume.
+- Depois de zerar vêm os créditos. **Coloque os nomes do grupo em `Textos.cs` (lista `Creditos`).**
+
 No título dá para **Continuar** a partida salva (fica em PlayerPrefs: onde o Subaru está, mortes, moedas e tempo)
 ou começar um **Novo jogo**.
 
@@ -60,7 +83,8 @@ A música abaixa sozinha quando você morre (para a OST do Retorno pela Morte ap
   - `SonsDaMorte` — o áudio do Retorno pela Morte (sincronizado com o renascimento) e a OST com fade.
   - `Musica` e `FabricaDeMusica` — música de fundo (arquivo ou lofi gerado por código).
   - `MapaDoMundo` — o mapa de fases desenhado em texto (terreno, caminhos, névoa, personagens, Subaru andando).
-  - `Progresso` — o que fica salvo em PlayerPrefs (continuar, fase máxima, recorde).
+  - `Progresso` — o que fica salvo em PlayerPrefs (continuar, fase máxima, mortes por fase, fase secreta, recorde).
+  - `Conquistas`, `Opcoes` (volume) e `Textos` (falas do mapa e créditos).
   - `Fases` — **as fases são desenhadas em texto**; cada caractere é um bloco (legenda no topo do arquivo).
   - `ConstrutorDeFase` — lê o texto e cria os objetos. O chão vira um único `CompositeCollider2D`.
   - `FabricaDeSprites` — toda a arte é gerada por código (pixel art escrita em texto + desenhos por fórmula),
@@ -72,7 +96,7 @@ A música abaixa sozinha quando você morre (para a OST do Retorno pela Morte ap
 - **Armadilhas/** uma classe por pegadinha: `ChaoQueCai`, `EspinhoEscondido`, `EspinhoQueCai`,
   `BlocoInvisivel`, `BlocoSurpresa`, `BlocoQueFoge`, `Mola`, `Serra`, `Esmagador`, `Cano`, `NuvemAssassina`,
   `MoedaAssassina`, `Espinho`, e `Perigo` (base: "encostou, morreu").
-- **Objetos/** `Inimigo`, `Coelho`, `BaleiaBranca`, `Emilia`, `Moeda`, `Placa` (o Puck), `Bandeira`, `BandeiraFujona`,
+- **Objetos/** `Inimigo`, `Coelho`, `BaleiaBranca`, `Emilia`, `Porta`, `PontoDeSave`, `Moeda`, `Placa` (o Puck e a Beatrice), `Bandeira`, `BandeiraFujona`,
   `BandeiraFalsa`, `BandeiraVolta`.
 
 ## Fases que mudam
@@ -86,3 +110,14 @@ Copie um bloco `new Fase { ... }` em `Fases.cs` e desenhe com os caracteres da l
 Acrescente também o número dela no desenho do `MapaDoMundo`, ligado à anterior por um caminho de `+` (senão a fase nova não aparece no mapa).
 Para testar uma fase direto: durante o Play, selecione o objeto `GerenciadorDoJogo`, mude `Fase Inicial` no
 Inspector, volte ao título e escolha **Novo jogo**: o Subaru começa nesse ponto do mapa, já liberado.
+
+## Publicar no itch.io (para jogar no navegador)
+1. No Unity Hub, instale o módulo **Web Build Support** na versão do Unity do projeto (se ainda não tiver).
+2. No Unity: **File → Build Profiles → Web → Switch Platform**.
+3. Em **Player Settings → Publishing Settings**, deixe **Compression Format = Gzip** e marque
+   **Decompression Fallback** (assim funciona em qualquer servidor, inclusive o do itch.io).
+4. **Build** numa pasta vazia. Compacte o CONTEÚDO da pasta (o `index.html` tem que ficar na raiz do .zip).
+5. No itch.io: **Upload new project → Kind of project: HTML**, envie o .zip e marque
+   "This file will be played in the browser". Tamanho da tela: 1280 x 720, com botão de tela cheia.
+
+O progresso (PlayerPrefs) fica salvo no navegador de cada jogador.

@@ -103,6 +103,7 @@ public class Inimigo : MonoBehaviour
         corpo.simulated = false;
         jogador.Quicar(11f, true);
         GerenciadorDoJogo.Som("pisao");
+        Conquistas.Contar("mabeast", 10);
         Destroy(gameObject, 0.5f);
     }
 }

@@ -237,6 +237,7 @@ public class Jogador : MonoBehaviour
 
     public void Teletransportar(Vector3 posicao)
     {
+        transform.position = posicao; // já muda agora (a câmera pode pular direto para cá)
         Corpo.position = posicao;
         Corpo.linearVelocity = Vector2.zero;
         pulando = false;

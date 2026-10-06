@@ -5,6 +5,8 @@ using UnityEngine;
 public class Perigo : MonoBehaviour
 {
     public bool ativo = true;
+    [Tooltip("Se tiver, essa conquista é desbloqueada quando este perigo te mata.")]
+    public string conquista;
 
     void OnTriggerEnter2D(Collider2D outro) => Encostou(outro);
     void OnTriggerStay2D(Collider2D outro) => Encostou(outro);
@@ -13,7 +15,9 @@ public class Perigo : MonoBehaviour
     {
         if (!ativo) return;
         var jogador = outro.GetComponent<Jogador>();
-        if (jogador != null) jogador.Morrer();
+        if (jogador == null || jogador.Morto) return;
+        jogador.Morrer();
+        if (jogador.Morto && !string.IsNullOrEmpty(conquista)) Conquistas.Desbloquear(conquista);
     }
 
     // Ajudante para criar a "área que mata" de um objeto.
