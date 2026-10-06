@@ -339,7 +339,7 @@ public class Interface : MonoBehaviour
         if (cam == null || jogo.Estado != EstadoDoJogo.Jogando) return;
         foreach (Porta porta in jogo.portas)
         {
-            if (porta == null || !porta.JogadorNaFrente()) continue;
+            if (porta == null || !Porta.PodeEntrar || !porta.JogadorNaFrente()) continue;
             Vector3 tela = cam.WorldToScreenPoint(porta.transform.position + Vector3.up * 2.3f);
             if (Time.unscaledTime % 0.8f < 0.55f)
                 Texto("S: entrar", tela.x, Screen.height - tela.y - 30f * escala, 2.2f, 0.5f, Lilas);

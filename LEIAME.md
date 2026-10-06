@@ -50,10 +50,17 @@ daquela fase (Puck, Mabeast, serra, nuvem malvada, coelho...) e a Emilia espera 
 - **Fase secreta:** pegue TODAS as moedas da fase 5 ("Pegue as moedas! Todas!") sem morrer no meio. Uma ilha
   aparece no lago; no ponto 5, aperte seta para baixo para ir até ela.
 
-## Biblioteca Proibida (o minigame das portas)
-A fase 8 é dividida em salas por paredes. Cada porta (`D` no mapa) leva para uma porta de OUTRA sala,
-sorteada a cada morte (o "Door Crossing" da Beatrice), sempre garantindo que exista um caminho até a sala
-dela, onde está a bandeira. Algumas salas têm armadilhas, outras só moedas. Aperte S na frente da porta.
+## Biblioteca Proibida (o quebra-cabeça das portas)
+A fase 8 é dividida em salas por paredes. Cada porta tem um **número** em cima e funciona em pares de
+ida e volta, sempre iguais (dá para decorar): a lista `portas` da fase em `Fases.cs` diz quem leva para quem
+(`"1-4"` = a 1 leva para a 4 e a 4 volta para a 1). Ao atravessar, aparece "Porta 1 -> porta 4" para ajudar
+a lembrar, e você precisa esperar 1 segundo antes de entrar em outra porta. Uma das portas leva para um
+beco sem saída cheio de Mabeasts; o caminho certo passa pela sala das armadilhas e pela sala das moedas
+até a Beatrice. Aperte S na frente da porta.
+
+## Controles invertidos
+Na fase "Cadê a direita?", cruzar uma linha invisível começa uma contagem de 2 segundos antes de inverter
+os controles (dá tempo de se preparar, e voltar antes cancela). A última fase não tem mais inversão.
 
 ## Ponto de save
 O cristal (`s` no mapa) vira o lugar onde você renasce. Mas, como no anime, às vezes (25% das mortes) o
