@@ -2,9 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Músicas geradas por código (composição original, nada copiado).
-// As fases e o mapa usam a bossa "indie aconchegante" de FabricaDeBossa.
-// Aqui fica a música da luta contra a Baleia Branca: lofi 8-bit rápido e tenso
-// (acordes com sétima, baixo, melodia com eco, bumbo em toda batida e chiado de vinil).
+// Fases, mapa e a luta contra a Baleia usam a música "épica de anime" de FabricaDeEpico.
+// (A função Compor daqui é o lofi 8-bit antigo, guardado como alternativa.)
 public static class FabricaDeMusica
 {
     const int Taxa = 16000;          // qualidade baixinha de propósito: combina com o clima "lofi" (e gera mais rápido)
@@ -39,7 +38,9 @@ public static class FabricaDeMusica
     public static AudioClip Lofi(int fase)
     {
         if (cache.TryGetValue(fase, out AudioClip pronta) && pronta != null) return pronta;
-        AudioClip clipe = fase == MusicaDoChefe ? Compor(fase) : FabricaDeBossa.Compor(fase);
+        FabricaDeEpico.Jeito jeito = fase == MusicaDoChefe ? FabricaDeEpico.Jeito.Chefe
+            : fase == MusicaDoMapa ? FabricaDeEpico.Jeito.Mapa : FabricaDeEpico.Jeito.Fase;
+        AudioClip clipe = FabricaDeEpico.Compor(fase, jeito);
         cache[fase] = clipe;
         return clipe;
     }
