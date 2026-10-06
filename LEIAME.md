@@ -93,6 +93,19 @@ O jogo toca `Assets/Resources/Sons/musica_fundo` (mp3, ogg ou wav) se o arquivo 
 Se não existir, toca uma música **lofi 8-bit original gerada por código** (`FabricaDeMusica`), com uma variação por fase.
 A música abaixa sozinha quando você morre (para a OST do Retorno pela Morte aparecer) e na pausa.
 
+## Visual
+- **Fundo em camadas com paralaxe:** céu em degradê, sol com raios de luz (ou lua e estrelas na fase noturna),
+  montanhas, castelo, floresta, árvores, neblina perto do chão e uma folhagem escura bem na frente da câmera,
+  que passa mais rápido que o chão. Cada camada anda numa velocidade diferente (`Paralaxe.cs`).
+- **Pós-processamento do URP** (`EfeitosDeTela.cs`): bloom nas partes claras, vinheta roxa, saturação e contraste.
+  Na morte a tela perde a cor e ganha aberração cromática; no renascimento, um "soco" de distorção de lente.
+- **Luzes 2D** (`Luzes.cs`): moedas, blocos `?`, cristais de save, portas, bandeiras, lampiões e a mão do cano
+  brilham. A última fase é de noite (o Subaru ilumina em volta) e a biblioteca tem luz quente.
+- **Sombras:** a sombrinha projetada roxa em tudo e uma sombra oval no chão embaixo de quem está no ar.
+- **Clima** (`Ambiente.cs`): pólen, pétalas nas fases rosadas, vaga-lumes de noite, poeira dourada na biblioteca.
+- **Chão e enfeites:** blocos com rachaduras e florzinhas, e o cenário ganha capim, flores, arbustos, pedras,
+  cogumelos, cercas e lampiões automaticamente.
+
 ## Organização do código (`Assets/Scripts`)
 - **Nucleo/**
   - `GerenciadorDoJogo` — máquina de estados (Título → Mapa → Jogando ⇄ Pausado → Morreu → Fase concluída → Mapa ... → Vitória),

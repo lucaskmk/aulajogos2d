@@ -26,6 +26,7 @@ public class Porta : MonoBehaviour
         fechada = FabricaDeSprites.Pegar("porta");
         aberta = FabricaDeSprites.Pegar("porta_aberta");
         desenho = ConstrutorDeFase.Visual("Visual", transform, transform.position, "porta", -1).GetComponent<SpriteRenderer>();
+        Luzes.Ponto(transform, Luzes.Lilas, 2.2f, 0.55f, Vector3.up * 1.2f);
     }
 
     void OnEnable()

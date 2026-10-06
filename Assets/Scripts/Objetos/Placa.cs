@@ -17,6 +17,7 @@ public class Placa : MonoBehaviour
         var filho = ConstrutorDeFase.Visual("Puck", transform, transform.position, "puck", 5);
         visual = filho.transform;
         desenho = filho.GetComponent<SpriteRenderer>();
+        SombraNoChao.Adicionar(gameObject, 0.8f);
     }
 
     public void VirarBeatrice()

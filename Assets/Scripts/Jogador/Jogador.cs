@@ -70,6 +70,7 @@ public class Jogador : MonoBehaviour
         spriteAndando = FabricaDeSprites.Pegar("jogador_andando");
 
         filtroSolido = new ContactFilter2D { useTriggers = false };
+        SombraNoChao.Adicionar(gameObject, 0.85f);
     }
 
     void Update()

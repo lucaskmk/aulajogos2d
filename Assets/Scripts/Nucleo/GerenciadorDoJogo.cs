@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 
 public enum EstadoDoJogo { Titulo, Conquistas, Mapa, Jogando, Pausado, Morreu, FaseConcluida, Vitoria, Creditos }
 
@@ -66,6 +65,9 @@ public class GerenciadorDoJogo : MonoBehaviour
     public List<Transform> Bandeiras { get; private set; } = new List<Transform>();
     public bool EhUltimaFase => FaseAtual == Fases.Todas.Length - 1;
     public bool NaSecreta => FaseAtual == Fases.IndiceSecreto;
+    // Para os efeitos de tela: a última fase é de noite, e a biblioteca tem luz quente.
+    public bool FaseNoturna => Mapa == null && EhUltimaFase;
+    public bool NaBiblioteca => Mapa == null && naBiblioteca;
     public Fase DadosDaFase => Fases.Dados(FaseAtual);
 
     // 0 = acabou de morrer, 1 = vai renascer
@@ -169,12 +171,13 @@ public class GerenciadorDoJogo : MonoBehaviour
         Instancia = this;
 
         PrepararCamera();
-        PrepararLuz();
+        Luzes.PrepararGlobal();
         fonteDeAudio = gameObject.AddComponent<AudioSource>();
         sons = FabricaDeSons.CriarTodos();
         sonsDaMorte = gameObject.AddComponent<SonsDaMorte>();
         musica = gameObject.AddComponent<Musica>();
         gameObject.AddComponent<Interface>();
+        gameObject.AddComponent<EfeitosDeTela>();
 
         VoltarAoTitulo();
     }
@@ -211,14 +214,6 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (cameraSeguir == null) cameraSeguir = cam.gameObject.AddComponent<CameraSeguir>();
     }
 
-    // O template 2D do URP usa sprites "iluminados": sem uma luz global tudo ficaria preto.
-    static void PrepararLuz()
-    {
-        if (FindAnyObjectByType<Light2D>() != null) return;
-        var luz = new GameObject("Global Light 2D").AddComponent<Light2D>();
-        luz.lightType = Light2D.LightType.Global;
-        luz.intensity = 1f;
-    }
 
     // ------------------------------------------------------------------ fases
 
@@ -243,19 +238,38 @@ public class GerenciadorDoJogo : MonoBehaviour
             : coresDoFundo.Length > 0 ? coresDoFundo[indice % coresDoFundo.Length] : Color.cyan;
         if (Camera.main != null) Camera.main.backgroundColor = corDoFundo;
         InfoFase info = ConstrutorDeFase.Construir(Fases.Dados(indice), raizDaFase, MortesNaFase);
-        Paralaxe.Criar(raizDaFase, info.largura, corDoFundo); // castelo e floresta ao fundo
+        bool noite = EhUltimaFase;
+        Paralaxe.Criar(raizDaFase, info.largura, corDoFundo, noite); // céu, montanhas, castelo, floresta...
         MarcaDaMorte.Criar(raizDaFase, lugaresDasMortes);
 
         PosicaoInicial = info.inicio;
         Bandeiras = info.bandeiras;
         moedasParaOSegredo = info.totalDeMoedas;
         naBiblioteca = info.temPortas;
+        PrepararClima(indice, noite);
         // renasce no ponto de save, se tiver um
         jogador = ConstrutorDeFase.Criar<Jogador>("Jogador", raizDaFase, pontoDeSave ?? info.inicio);
         jogador.inversores = info.inversores;
+        if (noite || naBiblioteca) Luzes.Ponto(jogador.transform, new Color(0.9f, 0.9f, 1f), 4.5f, 0.7f); // o Subaru "ilumina" em volta
         aviso = "";
         cameraSeguir.Configurar(jogador.transform, info.largura, info.altura);
         musica.TocarDaFase(indice); // se a música já é essa, continua de onde estava
+    }
+
+    // Luz e partículas de cada fase: noite com vaga-lumes, biblioteca com poeira dourada,
+    // fases rosadas com pétalas, a secreta com brilhos e as outras com pólen.
+    void PrepararClima(int indice, bool noite)
+    {
+        if (noite) Luzes.Ambiente(0.55f, new Color(0.75f, 0.8f, 1f));
+        else if (naBiblioteca) Luzes.Ambiente(0.72f, new Color(1f, 0.92f, 0.8f));
+        else Luzes.Ambiente(indice == Fases.IndiceSecreto ? 1f : 0.93f, Color.white);
+
+        Ambiente.Tipo tipo = Ambiente.Tipo.Polen;
+        if (noite) tipo = Ambiente.Tipo.VagaLumes;
+        else if (naBiblioteca) tipo = Ambiente.Tipo.Poeira;
+        else if (indice == Fases.IndiceSecreto) tipo = Ambiente.Tipo.Brilhos;
+        else if (indice == 3 || indice == 6) tipo = Ambiente.Tipo.Petalas;
+        Ambiente.Criar(raizDaFase, tipo, tipo == Ambiente.Tipo.VagaLumes ? 16 : tipo == Ambiente.Tipo.Poeira ? 40 : 26);
     }
 
     // Mostra o mapa do mundo com o Subaru no ponto "no".
@@ -272,6 +286,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         Bandeiras = new List<Transform>();
         FaseAtual = no == Fases.IndiceSecreto && Progresso.SecretaLiberada ? no : Mathf.Clamp(no, 0, Fases.Todas.Length - 1);
         if (Camera.main != null) Camera.main.backgroundColor = MapaDoMundo.CorDoChao;
+        Luzes.Ambiente(1f, Color.white);
 
         Mapa = MapaDoMundo.Criar(raizDaFase, FaseAtual, FaseLiberada, FaseMaisLonge, mortesPorFase,
             Progresso.SecretaLiberada, andarPara, caminhoNovo, mostrarSecreta);

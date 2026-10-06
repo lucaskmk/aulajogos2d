@@ -7,6 +7,7 @@ public class PontoDeSave : MonoBehaviour
 {
     SpriteRenderer desenho;
     Transform cristal;
+    UnityEngine.Rendering.Universal.Light2D luz;
     bool ativo;
 
     void Awake()
@@ -14,12 +15,20 @@ public class PontoDeSave : MonoBehaviour
         var filho = ConstrutorDeFase.Visual("Cristal", transform, transform.position, "ponto_save", -1);
         cristal = filho.transform;
         desenho = filho.GetComponent<SpriteRenderer>();
+        luz = Luzes.Ponto(transform, Luzes.Lilas, 1.5f, 0.3f, Vector3.up * 0.9f);
     }
 
     void Start()
     {
         ativo = GerenciadorDoJogo.Instancia.EhPontoDeSave(LugarDeRenascer);
         desenho.sprite = FabricaDeSprites.Pegar(ativo ? "ponto_save_ativo" : "ponto_save");
+        if (ativo) Acender();
+    }
+
+    void Acender()
+    {
+        luz.pointLightOuterRadius = 3.5f;
+        luz.intensity = 0.9f;
     }
 
     // A posição do objeto é o chão; o jogador renasce no meio do bloco, como no 'P'.
@@ -39,6 +48,7 @@ public class PontoDeSave : MonoBehaviour
     {
         ativo = true;
         desenho.sprite = FabricaDeSprites.Pegar("ponto_save_ativo");
+        Acender();
         GerenciadorDoJogo.Instancia.SalvarPonto(LugarDeRenascer);
         GerenciadorDoJogo.Som("moeda");
         GerenciadorDoJogo.Instancia.Avisar("Ponto de save! (confia?)", 2f);

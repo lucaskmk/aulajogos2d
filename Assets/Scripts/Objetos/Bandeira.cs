@@ -13,6 +13,7 @@ public class Bandeira : MonoBehaviour
         Sombra.Adicionar(visual);
         AnimacaoDeQuadros.Adicionar(visual, FabricaDeSprites.Quadros("bandeira", FabricaDeSprites.QuadrosDaBandeira), 6f); // tremulando
 
+        Luzes.Ponto(transform, Luzes.Verde, 2.5f, 0.45f, Vector3.up * 2.2f); // todas brilham igual (até a falsa)
         var area = gameObject.AddComponent<BoxCollider2D>();
         area.isTrigger = true;
         area.size = new Vector2(0.5f, 3f);

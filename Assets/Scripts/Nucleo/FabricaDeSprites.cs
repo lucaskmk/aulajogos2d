@@ -641,6 +641,25 @@ public static class FabricaDeSprites
 
             case "chao": return DeArte(ArteChao, Centro);
             case "chao_topo": return DeArte(ArteChaoTopo, Centro);
+            // variações, para o chão não ficar repetitivo
+            case "chao_rachado": return DeArte(Variar(ArteChao, 11), Centro);
+            case "chao_topo_florido": return DeArte(Florir(ArteChaoTopo), Centro);
+
+            // enfeites do cenário (sem colisão)
+            case "arbusto": return Procedural(24, 12, Base, CorArbusto);
+            case "pedra": return Procedural(12, 8, Base, CorPedra);
+            case "cerca": return Procedural(16, 14, Base, CorCerca);
+            case "lampiao": return Procedural(10, 40, Base, CorLampiao);
+            case "cogumelo": return Procedural(10, 9, Base, CorCogumelo);
+            case "sombra_oval": return Procedural(16, 6, Centro, CorSombraOval);
+
+            // céu e fundo
+            case "sol": return Procedural(48, 48, Centro, CorSol);
+            case "lua": return Procedural(40, 40, Centro, CorLua);
+            case "raio_de_luz": return Procedural(32, 128, new Vector2(0.5f, 1f), CorRaioDeLuz);
+            case "fundo_montanhas": return Procedural(256, 96, Base, CorMontanhas);
+            case "neblina": return Procedural(1, 32, Base, CorNeblina);
+            case "frente_folhas": return Procedural(128, 24, Base, CorFrente);
             case "tijolo": return DeArte(ArteCaixote, Centro);
             case "bloco_usado": return DeArte(ArteBlocoUsado, Centro);
             case "tufo": return DeArte(ArteTufo, Base);
@@ -960,6 +979,165 @@ public static class FabricaDeSprites
         if (d > 5.1f && dy < 0f) return Cor('s'); // sombrinha embaixo: parece um botão
         if (dx < -1f && dy > 1f && d < 4.5f && d > 3f) return Cor('w');
         return Cor('Z');
+    }
+
+    // ---------------------------------------------------------------- variações do chão
+
+    // Rachaduras: troca alguns pixels da pedra pelo rejunte, num desenho que depende da semente.
+    static string[] Variar(string[] arte, int semente)
+    {
+        var nova = (string[])arte.Clone();
+        for (int y = 2; y < nova.Length - 2; y++)
+        {
+            char[] linha = nova[y].ToCharArray();
+            for (int x = 1; x < linha.Length - 1; x++)
+                if (linha[x] == 'm' && Ruido(x + semente, y * 3) % 17 == 0) linha[x] = 'z';
+            nova[y] = new string(linha);
+        }
+        return nova;
+    }
+
+    // Florzinhas na grama do topo do chão.
+    static string[] Florir(string[] arte)
+    {
+        var nova = (string[])arte.Clone();
+        char[] linha = nova[1].ToCharArray();
+        linha[3] = 'p'; linha[11] = 'y';
+        nova[1] = new string(linha);
+        linha = nova[2].ToCharArray();
+        linha[3] = 'G'; linha[11] = 'G';
+        nova[2] = new string(linha);
+        return nova;
+    }
+
+    // ---------------------------------------------------------------- enfeites
+
+    static bool Bolinha(int x, int y, float cx, float cy, float r) => (x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r;
+
+    static Color32 CorArbusto(int x, int y)
+    {
+        bool Dentro(int a, int b) => b >= 0 && (Bolinha(a, b, 6f, 4f, 5f) || Bolinha(a, b, 12f, 5.5f, 6f) || Bolinha(a, b, 18f, 4f, 5f));
+        if (!Dentro(x, y)) return Transparente;
+        if (!Dentro(x + 1, y) || !Dentro(x - 1, y) || !Dentro(x, y + 1)) return Cor('q');
+        if (Bolinha(x, y, 10f, 9f, 2f) || Bolinha(x, y, 5f, 6.5f, 1.5f)) return Cor('a');
+        return y < 4 ? Cor('G') : Cor('g');
+    }
+
+    static Color32 CorPedra(int x, int y)
+    {
+        bool Dentro(int a, int b) => b >= 0 && ((a - 5.5f) * (a - 5.5f) / 30f + b * b / 42f <= 1f);
+        if (!Dentro(x, y)) return Transparente;
+        if (!Dentro(x + 1, y) || !Dentro(x - 1, y) || !Dentro(x, y + 1)) return Cor('z');
+        if (x < 5 && y > 3) return Cor('Z');
+        return x > 7 ? Cor('M') : Cor('m');
+    }
+
+    static Color32 CorCerca(int x, int y)
+    {
+        bool poste = (x >= 2 && x <= 4) || (x >= 11 && x <= 13);
+        bool ponta = poste && y >= 12 && Mathf.Abs(x - (x < 8 ? 3f : 12f)) <= 13 - y;
+        bool trilho = (y >= 4 && y <= 5) || (y >= 9 && y <= 10);
+        if (poste && (y < 12 || ponta)) return x == 2 || x == 4 || x == 11 || x == 13 ? Cor('d') : Cor('n');
+        if (trilho) return y == 4 || y == 9 ? Cor('d') : Cor('b');
+        return Transparente;
+    }
+
+    static Color32 CorLampiao(int x, int y)
+    {
+        if (y <= 1) return x >= 2 && x <= 7 ? Cor('k') : Transparente;  // base
+        if (y < 30) return x == 4 ? Cor('S') : x == 5 ? Cor('k') : Transparente; // poste
+        if (y >= 30 && y <= 38 && x >= 1 && x <= 8)                     // lanterna
+        {
+            if (x == 1 || x == 8 || y == 30 || y == 38) return Cor('k');
+            return (x >= 3 && x <= 6 && y >= 32 && y <= 36) ? Cor('w') : Cor('y');
+        }
+        if (y == 39 && x >= 3 && x <= 6) return Cor('k');
+        return Transparente;
+    }
+
+    static Color32 CorCogumelo(int x, int y)
+    {
+        bool chapeu = y >= 4 && Bolinha(x, y, 4.5f, 4f, 4.6f);
+        if (chapeu)
+        {
+            if (!Bolinha(x, y, 4.5f, 4f, 3.7f) || y == 4) return Cor('k');
+            return Bolinha(x, y, 3f, 6f, 0.8f) || Bolinha(x, y, 6.5f, 5.5f, 0.8f) ? Cor('w') : Cor('r');
+        }
+        if (y < 4 && x >= 3 && x <= 6) return x == 3 || x == 6 ? Cor('k') : Cor('n');
+        return Transparente;
+    }
+
+    static Color32 CorSombraOval(int x, int y)
+    {
+        float ex = (x - 7.5f) / 8f, ey = (y - 2.5f) / 3f;
+        return ex * ex + ey * ey <= 1f ? new Color32(0, 0, 0, 255) : Transparente;
+    }
+
+    // ---------------------------------------------------------------- céu
+
+    // Sol: miolo claro e um brilho que vai sumindo (a cor do brilho vem da transparência).
+    static Color32 CorSol(int x, int y)
+    {
+        float d = Mathf.Sqrt((x - 23.5f) * (x - 23.5f) + (y - 23.5f) * (y - 23.5f));
+        if (d < 8f) return new Color32(255, 252, 230, 255);
+        if (d < 9.5f) return new Color32(255, 240, 170, 255);
+        float brilho = Mathf.Clamp01(1f - (d - 9.5f) / 14f);
+        return new Color32(255, 235, 160, (byte)(brilho * brilho * 170f));
+    }
+
+    // Lua crescente com brilho em volta (para a fase noturna).
+    static Color32 CorLua(int x, int y)
+    {
+        float d = Mathf.Sqrt((x - 19.5f) * (x - 19.5f) + (y - 19.5f) * (y - 19.5f));
+        float dSombra = Mathf.Sqrt((x - 24f) * (x - 24f) + (y - 22f) * (y - 22f));
+        if (d < 9f && dSombra >= 7.5f) return new Color32(235, 240, 255, 255);
+        float brilho = Mathf.Clamp01(1f - (d - 7f) / 13f);
+        return new Color32(200, 210, 255, (byte)(brilho * brilho * 110f));
+    }
+
+    // Faixa de luz que desce do sol (some no meio e nas pontas).
+    static Color32 CorRaioDeLuz(int x, int y)
+    {
+        float lado = 1f - Mathf.Abs(x - 15.5f) / 16f;
+        float altura = y / 127f; // 1 = em cima (perto do sol)
+        return new Color32(255, 250, 225, (byte)(lado * lado * altura * 90f));
+    }
+
+    // Montanhas lá longe (camada mais distante), com neve nos picos mais altos. Repete a cada 256 px.
+    static Color32 CorMontanhas(int x, int y)
+    {
+        float t = 2f * Mathf.PI * x / 256f;
+        float altura = 34f + 18f * Mathf.Sin(t) + 10f * Mathf.Sin(3f * t + 1f) + 5f * Mathf.Sin(7f * t + 2f);
+        if (y >= altura) return Transparente;
+        if (altura > 52f && y > altura - 5f) return new Color32(255, 255, 255, 255); // neve
+        return Detalhe;
+    }
+
+    // Neblina perto do chão: branca, opaca embaixo e sumindo para cima.
+    static Color32 CorNeblina(int x, int y)
+    {
+        float a = Mathf.Pow(1f - y / 31f, 1.6f);
+        return new Color32(255, 255, 255, (byte)(a * 255f));
+    }
+
+    // Folhagem bem na frente da câmera (silhueta): arbustos e folhas de capim. Repete a cada 128 px.
+    static Color32 CorFrente(int x, int y)
+    {
+        float t = 2f * Mathf.PI * x / 128f;
+        float moita = 9f + 5f * Mathf.Abs(Mathf.Sin(t * 2f)) + 3f * Mathf.Sin(t * 5f + 1f);
+        bool folha = (x % 5 == 2 || x % 7 == 4) && y < moita + 4f + Ruido(x, 1) % 6;
+        return y < moita || folha ? Cheio : Transparente;
+    }
+
+    // Céu em degradê (cor de cima -> cor de baixo), feito sob medida para cada fase.
+    public static Sprite Degrade(Color32 topo, Color32 baixo)
+    {
+        string nome = $"degrade:{topo}|{baixo}";
+        if (cache.TryGetValue(nome, out Sprite pronto) && pronto != null) return pronto;
+        Sprite sprite = Procedural(1, 64, Base, (x, y) => Color32.Lerp(baixo, topo, y / 63f));
+        sprite.name = nome;
+        cache[nome] = sprite;
+        return sprite;
     }
 
     // Água do mapa: azul com ondinhas que andam (4 quadros).
