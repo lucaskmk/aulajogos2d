@@ -18,8 +18,12 @@ public static class Progresso
     const string ChaveFaseMaxima = "cilada_fase_maxima";
     const string ChaveMortesPorFase = "cilada_salvo_mortes_por_fase";
     const string ChaveSecreta = "cilada_secreta_liberada";
+    const string ChaveQuantasFases = "cilada_salvo_quantas_fases";
 
-    public static bool TemJogoSalvo => PlayerPrefs.GetInt(ChaveTemJogo, 0) == 1;
+    // Uma partida salva quando o jogo tinha OUTRA lista de fases (ex.: a versão antiga, de 10 fases) não
+    // dá para continuar: os números das fases mudaram de lugar. Nesse caso o "Continuar" some (Novo Jogo).
+    public static bool TemJogoSalvo =>
+        PlayerPrefs.GetInt(ChaveTemJogo, 0) == 1 && PlayerPrefs.GetInt(ChaveQuantasFases, 0) == Fases.Todas.Length;
     public static int FaseSalva => PlayerPrefs.GetInt(ChaveFase, 0);
     public static int FaseMaxima => PlayerPrefs.GetInt(ChaveFaseMaxima, 0);
 
@@ -51,6 +55,7 @@ public static class Progresso
     public static void Salvar(int fase, int maisLonge, int mortes, int moedas, float tempo, bool valida)
     {
         PlayerPrefs.SetInt(ChaveTemJogo, 1);
+        PlayerPrefs.SetInt(ChaveQuantasFases, Fases.Todas.Length);
         PlayerPrefs.SetInt(ChaveFase, fase);
         PlayerPrefs.SetInt(ChaveMaisLonge, maisLonge);
         PlayerPrefs.SetInt(ChaveMortes, mortes);
