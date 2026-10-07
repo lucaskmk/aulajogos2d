@@ -25,12 +25,20 @@ public class BandeiraFujona : MonoBehaviour
         if (!destino.HasValue) bandeira.podeTocar = true; // sem '*' no mapa: vira bandeira normal
 
         // Já venceu a Baleia Branca e morreu depois? A bandeira já está lá na frente, te esperando.
-        else if (GerenciadorDoJogo.Instancia.ChefeDerrotado)
+        // Já fugiu antes: o chefe foi vencido, ou você renasceu num checkpoint DEPOIS dela
+        // (a fase é remontada a cada morte; sem isso ela voltava para trás do checkpoint e sumia do fim).
+        else if (GerenciadorDoJogo.Instancia.ChefeDerrotado || RenasceuDepoisDela())
         {
             transform.position = destino.Value;
             fugiu = true;
             bandeira.podeTocar = true;
         }
+    }
+
+    bool RenasceuDepoisDela()
+    {
+        Vector3? save = GerenciadorDoJogo.Instancia.PontoDeSave;
+        return save.HasValue && save.Value.x > transform.position.x;
     }
 
     void Update()

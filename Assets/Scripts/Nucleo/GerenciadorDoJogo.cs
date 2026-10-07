@@ -680,6 +680,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     // Ponto de save (chamados pelo PontoDeSave).
     public void SalvarPonto(Vector3 lugar) => pontoDeSave = lugar;
+    public Vector3? PontoDeSave => pontoDeSave; // onde o Subaru renasce (null = no começo da fase)
     public bool EhPontoDeSave(Vector3 lugar) => pontoDeSave.HasValue && Vector3.Distance(pontoDeSave.Value, lugar) < 0.1f;
 
     // Mensagem rápida no meio da tela (controles invertidos, volta pro começo...).
