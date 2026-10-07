@@ -32,7 +32,7 @@ public static class Textos
         { "Oni de Cabelo Azul", Puck("Venceu a Rem! Ela mandou pedir desculpas pelas {0} vez(es). Mentira, ela não mandou.") },
         { "Voa, Barusu!", Puck("A Ram mandou dizer: \"Barusu voou {0} vez(es). Previsível.\"") },
         { "Dança das Gêmeas", Puck("Tic, tic, TAC... e você caiu {0} vez(es). A Ram mandou dizer que você dança muito mal.") },
-        { "Quem apagou a luz?", Puck("Sobreviveu à Elsa! Ela só viu suas entranhas {0} vez(es). Ela manda lembranças.") },
+        { "A Caçadora de Entranhas", Puck("Venceu a Elsa! Ela só viu suas entranhas {0} vez(es). E disse que volta. Ela SEMPRE volta.") },
         { "Eu Te Amo (CORRE!)", Puck("A Bruxa te abraçou {0} vezes. Ela gosta MESMO de você, hein? Eu ficaria preocupado.") },
         { "O Verdadeiro Final (juro)", Puck("Ops. Esqueci de falar da Baleia Branca. Boa sorte! :)") },
     };

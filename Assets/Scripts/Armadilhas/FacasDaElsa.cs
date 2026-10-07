@@ -57,11 +57,12 @@ public class FacasDaElsa : MonoBehaviour
     static readonly Vector2 TamanhoDaAreaQueMata = new Vector2(0.7f, 0.24f); // um pouco menor que o desenho (é mais justo)
     static readonly Vector2 CentroDaAreaQueMata = new Vector2(0.2f, 0f);     // a lâmina fica na frente do cabo
 
-    static readonly Color CorDosOlhos = new Color(0.8f, 0.5f, 1f);       // lilás (os olhos dela de longe)
-    static readonly Color CorDoAviso = new Color(1f, 0.25f, 0.35f);      // vermelho: vai jogar!
-    static readonly Color CorDaFaca = new Color(1f, 0.45f, 0.5f);        // a luz da lâmina (diferente dos vaga-lumes e das moedas)
-    static readonly Color CorDoRastro = new Color(1f, 0.65f, 0.7f, 0.6f);
-    static readonly Color CorDaFaisca = new Color(1f, 0.95f, 0.7f);
+    // (públicas: a luta contra a Elsa, em ElsaCacadora.cs, usa as mesmas cores)
+    public static readonly Color CorDosOlhos = new Color(0.8f, 0.5f, 1f);       // lilás (os olhos dela de longe)
+    public static readonly Color CorDoAviso = new Color(1f, 0.25f, 0.35f);      // vermelho: vai jogar!
+    public static readonly Color CorDaFaca = new Color(1f, 0.45f, 0.5f);        // a luz da lâmina (diferente dos vaga-lumes e das moedas)
+    public static readonly Color CorDoRastro = new Color(1f, 0.65f, 0.7f, 0.6f);
+    public static readonly Color CorDaFaisca = new Color(1f, 0.95f, 0.7f);
 
     // Uma faca: na mão da Elsa (durante o aviso), voando, ou cravada em algo (apagando).
     class Faca
@@ -194,11 +195,12 @@ public class FacasDaElsa : MonoBehaviour
 
     Faca CriarFaca(float desvio)
     {
-        var objeto = ConstrutorDeFase.Visual("FacaDaElsa", transform.parent, transform.position, "faca", 5);
+        SpriteRenderer desenho = DesenharFaca(transform.parent, transform.position, 5, out Light2D luz);
+        GameObject objeto = desenho.gameObject;
         var faca = new Faca
         {
             objeto = objeto.transform,
-            desenho = objeto.GetComponent<SpriteRenderer>(),
+            desenho = desenho,
             desvio = desvio,
             estado = EstadoDaFaca.NaMao,
         };
@@ -207,9 +209,28 @@ public class FacasDaElsa : MonoBehaviour
         faca.perigo.ativo = false;
         faca.perigo.conquista = "elsa";
         Perigo.TornarMovel(objeto);
-        faca.luz = Luzes.Ponto(faca.objeto, CorDaFaca, 2f, 1f);
+        faca.luz = luz;
         if (faca.luz != null) faca.intensidadeDaLuz = faca.luz.intensity;
         return faca;
+    }
+
+    // Só o DESENHO de uma faca, com a luz própria dela (luz = null nas fases claras).
+    // Público porque a luta contra a Elsa (ElsaCacadora.cs) usa as mesmas facas: lá quem decide
+    // se a faca mata é a própria luta (com as "zonas"), então aqui não vai nenhum Perigo.
+    public static SpriteRenderer DesenharFaca(Transform pai, Vector3 lugar, int ordem, out Light2D luz)
+    {
+        var objeto = ConstrutorDeFase.Visual("FacaDaElsa", pai, lugar, "faca", ordem);
+        luz = Luzes.Ponto(objeto.transform, CorDaFaca, 2f, 1f);
+        return objeto.GetComponent<SpriteRenderer>();
+    }
+
+    // Gira o desenho da faca para a direção. Indo para a esquerda o desenho também é espelhado:
+    // assim o fio da lâmina fica sempre para baixo.
+    public static void ApontarDesenho(SpriteRenderer desenho, Vector2 direcao)
+    {
+        float angulo = Mathf.Atan2(direcao.y, direcao.x) * Mathf.Rad2Deg;
+        desenho.transform.localRotation = Quaternion.Euler(0f, 0f, angulo);
+        desenho.flipY = direcao.x < 0f;
     }
 
     // Põe as facas da mão no lugar: um pouco à frente dela, apontando para o alvo (cada uma no seu ângulo do leque).
@@ -237,14 +258,8 @@ public class FacasDaElsa : MonoBehaviour
         return new Vector2(Mathf.Cos(radianos) * lado, Mathf.Sin(radianos));
     }
 
-    // Gira o desenho (e a área que mata) para a direção da faca.
-    // Indo para a esquerda o desenho também é espelhado: assim o fio da lâmina fica sempre para baixo.
-    static void Apontar(Faca faca)
-    {
-        float angulo = Mathf.Atan2(faca.direcao.y, faca.direcao.x) * Mathf.Rad2Deg;
-        faca.objeto.localRotation = Quaternion.Euler(0f, 0f, angulo);
-        faca.desenho.flipY = faca.direcao.x < 0f;
-    }
+    // Gira o desenho (e a área que mata, que está no mesmo objeto) para a direção da faca.
+    static void Apontar(Faca faca) => ApontarDesenho(faca.desenho, faca.direcao);
 
     // Solta as facas da mão. Agora elas matam!
     void Arremessar(bool aindaVendo)

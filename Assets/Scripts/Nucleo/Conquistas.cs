@@ -35,6 +35,7 @@ public static class Conquistas
         new Conquista("secreta", "Explorador", "Terminar a fase secreta."),
         new Conquista("expressa", "Passageiro da Expressa", "Ir até o fim na plataforma expressa sem pular."),
         new Conquista("elsa", "Entranhas à mostra", "Levar uma faca da Elsa."),
+        new Conquista("elsa_vencida", "Acenderam a luz", "Derrotar a Elsa, a Caçadora de Entranhas."),
         new Conquista("miasma", "Abraço da Bruxa", "Ser pego pelo miasma da Bruxa da Inveja."),
         new Conquista("rem_brava", "Oni de cabelo azul", "Ser pego pela Rem depois que ela vira oni."),
         new Conquista("rem_vencida", "Faxina cancelada", "Derrotar a Rem (pulando na cabeça dela, coitada)."),

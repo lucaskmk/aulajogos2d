@@ -128,6 +128,7 @@ public static class ConstrutorDeFase
                     case 'X': info.inversores.Add(x); break;
                     case 'r': Criar<Coelho>("Coelho", raiz, pos); break;
                     case 'w': Criar<BaleiaBranca>("BaleiaBranca", raiz, pos); break;
+                    case 'H': Criar<ElsaCacadora>("ElsaCacadora", raiz, pos); break;
                     case 'L': Criar<Emilia>("Emilia", raiz, pos); break;
                     case 's': Criar<PontoDeSave>("PontoDeSave", raiz, chaoDaCelula); break;
                     case 'U':
