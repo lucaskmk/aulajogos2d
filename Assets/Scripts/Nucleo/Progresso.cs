@@ -77,6 +77,14 @@ public static class Progresso
         valida = PlayerPrefs.GetInt(ChaveValida, 0) == 1;
     }
 
+    // Modo de teste (F9 no título ou no mapa): todos os pontos do mapa e a fase secreta ficam liberados.
+    public static void LiberarTudo(int totalDeFases)
+    {
+        PlayerPrefs.SetInt(ChaveFaseMaxima, totalDeFases - 1);
+        PlayerPrefs.SetInt(ChaveSecreta, 1);
+        PlayerPrefs.Save();
+    }
+
     // Zerou: não tem mais o que continuar, mas todas as fases ficam liberadas no mapa.
     public static void Zerou(int totalDeFases)
     {

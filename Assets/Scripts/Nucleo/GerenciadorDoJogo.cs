@@ -526,6 +526,11 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (Controles.CimaApertou()) MudarOpcao(-1);
         if (Controles.BaixoApertou()) MudarOpcao(1);
         if (Controles.Confirmar()) Comecar(opcoesDoMenu[OpcaoSelecionada]);
+        if (Controles.LiberarTudo())
+        {
+            Progresso.LiberarTudo(Fases.Todas.Length);
+            Som("vitoria", 0.6f); // no título só dá o som: o mapa já abre todo liberado
+        }
     }
 
     void MudarOpcao(int direcao)
@@ -574,6 +579,17 @@ public class GerenciadorDoJogo : MonoBehaviour
             return;
         }
         if (Mapa.Andando) return;
+
+        if (Controles.LiberarTudo())
+        {
+            // Modo de teste: abre o mapa inteiro (todas as fases, o chefe e a secreta).
+            // Pular fases assim não vale para o recorde (igual a escolher uma fase lá na frente).
+            Progresso.LiberarTudo(Fases.Todas.Length);
+            Som("vitoria", 0.6f);
+            MostrarMapa(Mapa.Selecionado);
+            MostrarFala(new Textos.Fala { quem = "Puck", sprite = "puck", texto = "Modo de teste! Liberei o mapa inteiro, até a Baleia. Não conta pra ninguém. :3" });
+            return;
+        }
 
         bool direita = Controles.DireitaApertou(), esquerda = Controles.EsquerdaApertou();
         bool cima = Controles.CimaApertou(), baixo = Controles.BaixoApertou();
