@@ -57,6 +57,7 @@ public static class ConstrutorDeFase
 
         var celulasQueCaem = new HashSet<Vector2Int>();
         var celulasQueFogem = new HashSet<Vector2Int>();
+        var celulasDePlataforma = new Dictionary<Vector2Int, char>(); // 'j', 'J' e 'D' (a letra diz o tipo)
         var placas = new List<(Vector3 lugar, bool beatrice)>();
         var portas = new List<Porta>();
 
@@ -108,6 +109,7 @@ public static class ConstrutorDeFase
                     case 'm': Criar<MoedaAssassina>("MoedaAssassina", raiz, pos); break;
                     case 'e': Criar<Inimigo>("InimigoDisfarcado", raiz, pos).espinhoso = true; break;
                     case 'M': celulasQueFogem.Add(new Vector2Int(x, linha)); break;
+                    case 'j': case 'J': case 'D': celulasDePlataforma[new Vector2Int(x, linha)] = c; break; // plataformas móveis
                     case 'W': info.bandeiras.Add(Criar<BandeiraVolta>("BandeiraVolta", raiz, chaoDaCelula).transform); break;
                     case 'X': info.inversores.Add(x); break;
                     case 'r': Criar<Coelho>("Coelho", raiz, pos); break;
@@ -143,6 +145,20 @@ public static class ConstrutorDeFase
             var blocoQueFoge = objeto.AddComponent<BlocoQueFoge>();
             foreach (Vector2Int celula in grupo)
                 blocoQueFoge.AdicionarBloco(Posicao(celula.x, celula.y));
+        }
+
+        // Plataformas móveis: blocos 'j' (ou 'J', ou 'D') encostados NA MESMA LINHA viram uma plataforma só.
+        // Cada plataforma é criada a partir do seu bloco mais à esquerda, no centro do grupo.
+        foreach (KeyValuePair<Vector2Int, char> celula in celulasDePlataforma)
+        {
+            Vector2Int inicio = celula.Key;
+            char letra = celula.Value;
+            if (celulasDePlataforma.TryGetValue(inicio + Vector2Int.left, out char vizinha) && vizinha == letra) continue; // não é a primeira do grupo
+            int blocos = 1;
+            while (celulasDePlataforma.TryGetValue(new Vector2Int(inicio.x + blocos, inicio.y), out char seguinte) && seguinte == letra)
+                blocos++;
+            Vector3 centro = Posicao(inicio.x, inicio.y) + Vector3.right * ((blocos - 1) / 2f);
+            Criar<PlataformaMovel>("PlataformaMovel", raiz, centro).Montar(PlataformaMovel.TipoDaLetra(letra), blocos);
         }
 
         foreach (BandeiraFujona fujona in fujonas)

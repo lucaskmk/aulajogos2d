@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 // Textos "de história": as falas no mapa depois de cada fase e os créditos do final.
 // É só editar aqui.
 public static class Textos
@@ -15,18 +17,23 @@ public static class Textos
     static Fala Emilia(string texto) => new Fala { quem = "Emilia", sprite = "emilia", texto = texto };
     static Fala Beatrice(string texto) => new Fala { quem = "Beatrice", sprite = "beatrice", texto = texto };
 
-    // Uma fala para depois de cada fase (na ordem das fases).
-    static readonly Fala[] DepoisDaFase =
+    // Uma fala para depois de cada fase, pelo NOME da fase (assim dá para reordenar as fases à vontade).
+    static readonly Dictionary<string, Fala> DepoisDaFase = new Dictionary<string, Fala>
     {
-        Puck("Viu só? Tranquilo! Só {0} morte(s)... por enquanto."),
-        Puck("Eu disse \"confia em mim\". Você confiou. {0} vez(es)."),
-        Emilia("Subaru, você estava fugindo de uma SERRA? Toma cuidado, tá?"),
-        Puck("\"O Final (sem pegadinhas)\". Hahaha. Você acreditou mesmo?"),
-        Puck("Pegou TODAS as moedas? Dizem que isso abre um caminho escondido..."),
-        Puck("Esquerda é direita, direita é esquerda. {0} morte(s). Faz sentido."),
-        Beatrice("Hmpf. Você está chegando perto da minha biblioteca, de fato."),
-        Beatrice("Você achou a porta certa. Não que eu estivesse esperando, kashira."),
+        { "Bem-vindo :)", Puck("Viu só? Tranquilo! Só {0} morte(s)... por enquanto.") },
+        { "Confia em mim", Puck("Eu disse \"confia em mim\". Você confiou. {0} vez(es).") },
+        { "Corre!", Emilia("Subaru, você estava fugindo de uma SERRA? Toma cuidado, tá?") },
+        { "O Final (sem pegadinhas)", Puck("\"O Final (sem pegadinhas)\". Hahaha. Você acreditou mesmo?") },
+        { "Eu mudo de ideia", Puck("Pegou TODAS as moedas? Dizem que isso abre um caminho escondido...") },
+        { "Cadê a direita?", Puck("Esquerda é direita, direita é esquerda. {0} morte(s). Faz sentido.") },
+        { "Foge, bloco!", Beatrice("Hmpf. Você está chegando perto da minha biblioteca, de fato.") },
+        { "Ponte para a Capital", Puck("Vermelho cai, amarelo dispara. E você caiu {0} vez(es). Anotou?") },
+        { "Biblioteca Proibida", Beatrice("Você achou a porta certa. Não que eu estivesse esperando, kashira.") },
+        { "O Verdadeiro Final (juro)", Puck("Ops. Esqueci de falar da Baleia Branca. Boa sorte! :)") },
     };
+
+    // Fala genérica para uma fase sem fala própria.
+    static readonly Fala FalaPadrao = Puck("Passou! Com só {0} morte(s). Eu tô impressionado. Um pouco.");
 
     public static readonly Fala SecretaLiberada =
         Puck("Todas as moedas?! Abriu um caminho no lago! Aperte S no ponto 5.");
@@ -45,7 +52,7 @@ public static class Textos
     {
         if (faseConcluida == Fases.IndiceSecreto) return DepoisDaSecreta;
         if (mortes == 0) return SemMorrer[faseConcluida % SemMorrer.Length];
-        return DepoisDaFase[faseConcluida % DepoisDaFase.Length];
+        return DepoisDaFase.TryGetValue(Fases.Dados(faseConcluida).nome, out Fala fala) ? fala : FalaPadrao;
     }
 
     // ------------------------------------------------------------------ créditos

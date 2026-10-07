@@ -1,3 +1,5 @@
+using UnityEngine;
+
 // =====================================================================
 //  AS FASES DO JOGO
 // =====================================================================
@@ -33,6 +35,12 @@
 //      para a 4 e a 4 volta para a 1. É SEMPRE igual (dá para decorar o caminho)
 //   Y  Beatrice (fala como as placas do Puck; os textos entram na mesma lista "placas")
 //   s  ponto de save: encostou, você renasce ali. Mas às vezes ele "muda de lugar"... :)
+//   j  plataforma mágica: vai para a direita e volta (até 6 blocos ou até encostar em algo) e leva você junto.
+//      Blocos 'j' lado a lado na mesma linha = uma plataforma só. Todas começam juntas, indo para a direita
+//   J  IGUAL à 'j'... mas 0,5 s depois que você sobe, o cristal fica VERMELHO, ela treme e DESPENCA
+//      (reaparece no lugar 1,5 s depois, no mesmo ritmo das outras)
+//   D  IGUAL à 'j'... mas o cristal fica AMARELO, ela treme e DISPARA até bater numa parede, freia de
+//      repente e te joga para a frente. Quem pula quando ela treme cai no abismo
 //
 //  As placas (quem fala é o Puck) recebem os textos na ordem da esquerda para a direita.
 //
@@ -52,6 +60,8 @@ public class Fase
     public string[] portas; // pares de portas ligadas, ex.: "1-4" (só na Biblioteca Proibida)
     public bool noite;      // fase de noite: céu escuro com lua e estrelas, luzinhas acesas, vaga-lumes
     public bool escura;     // fase no ESCURO: quase não se vê nada, só em volta do Subaru e das luzinhas
+    public bool petalas;    // pétalas caindo (no lugar do pólen)
+    public Color32? corDoFundo; // cor do céu da fase (tons pastel, como os ímãs de Re:Zero)
 }
 
 public static class Fases
@@ -61,6 +71,7 @@ public static class Fases
         new Fase
         {
             nome = "Bem-vindo :)",
+            corDoFundo = new Color32(150, 215, 235, 255),
             placas = new[]
             {
                 "Bem-vindo ao Re:CILADA!\nA/D ou SETAS para andar, ESPAÇO para pular.",
@@ -90,6 +101,7 @@ public static class Fases
         new Fase
         {
             nome = "Confia em mim",
+            corDoFundo = new Color32(245, 190, 120, 255),
             placas = new[]
             {
                 "Essa fase é tranquila. Juro.",
@@ -119,6 +131,7 @@ public static class Fases
         new Fase
         {
             nome = "Corre!",
+            corDoFundo = new Color32(130, 210, 200, 255),
             placas = new[]
             {
                 "Não olhe para trás.",
@@ -147,6 +160,8 @@ public static class Fases
         new Fase
         {
             nome = "O Final (sem pegadinhas)",
+            corDoFundo = new Color32(240, 150, 205, 255),
+            petalas = true,
             placas = new[]
             {
                 "Última fase. Sem pegadinhas.\nPalavra de escoteiro.",
@@ -175,6 +190,7 @@ public static class Fases
         new Fase
         {
             nome = "Eu mudo de ideia",
+            corDoFundo = new Color32(245, 222, 110, 255),
             placas = new[]
             {
                 "Pegue as moedas! Todas!",
@@ -203,6 +219,7 @@ public static class Fases
         new Fase
         {
             nome = "Cadê a direita?",
+            corDoFundo = new Color32(195, 165, 230, 255),
             placas = new[]
             {
                 "Tudo normal por aqui. Pode andar.",
@@ -231,6 +248,8 @@ public static class Fases
         new Fase
         {
             nome = "Foge, bloco!",
+            corDoFundo = new Color32(245, 185, 195, 255),
+            petalas = true,
             placas = new[]
             {
                 "Esses blocos são meio tímidos...",
@@ -258,7 +277,41 @@ public static class Fases
 
         new Fase
         {
+            nome = "Ponte para a Capital",
+            corDoFundo = new Color32(120, 110, 185, 255),
+            noite = true,
+            placas = new[]
+            {
+                "A ponte para a capital caiu...\nMas o Roswaal mandou plataformas mágicas! Sobe que ela te leva.",
+                "Essa aqui é IGUALZINHA à outra.\nPode subir sem medo!",
+                "Relaxa e curte o passeio.\nNenhuma serra à vista!",
+                "EXPRESSA PARA A CAPITAL!\nSe ela tremer, NÃO PULE. (dessa vez é sério)",
+                "Chegou! Viu só? Era só confiar no Puck. :)",
+            },
+            mapa = new[]
+            {
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "                                                              v",
+                "                                            BBBBB",
+                "                           ?                  T            o",
+                "      ?K?                                                    $ $ $     ?K                  ?                  $$        ?",
+                "                                    $ $  $$               jj                                               JJ",
+                "          $$                $$     jj                                        $$                          $m$           $                         $ $ $",
+                "  P i            $$$    i         $               s  jjj                   i  h    $$$         >B s  jjj                    i      $ $ $ $            i   G",
+                "###############jj      #########JJ      #############               #############jj      ############                #########DDD             ##############",
+                "###############        #########        #############               #############        ############                #########                ##############",
+            },
+        },
+
+        new Fase
+        {
             nome = "Biblioteca Proibida",
+            corDoFundo = new Color32(185, 150, 120, 255),
             placas = new[]
             {
                 "Cada porta tem um número e SEMPRE leva para o mesmo lugar.\nDecore o caminho! (S para entrar)",
@@ -291,10 +344,12 @@ public static class Fases
         new Fase
         {
             nome = "O Verdadeiro Final (juro)",
+            corDoFundo = new Color32(240, 160, 130, 255),
             placas = new[]
             {
                 "Agora sim, a última. Confia.",
                 "A bandeira é logo ali. Corre!",
+                "Pronto, chegou! Pode encostar na bandeira.\nEssa é de verdade. Palavra de Puck.",
             },
             mapa = new[]
             {
@@ -304,15 +359,15 @@ public static class Fases
                 "",
                 "",
                 "                     BBBBB",
-                "                       T",
+                "                       T                                                          BBBB",
+                "                                                                                    v",
                 "",
-                "",
-                "                                                  ?K                  $$$",
-                "                 $$$               $$",
-                "                      U                                U    i R    h       s      w                             *   L",
-                "  P i $m$                r  e           <                 #############################################################",
-                "#############   ############### MM     ########CC######################################################################",
-                "#############   ###############        ########CC######################################################################",
+                "                                                  ?K                  $$$          $$",
+                "                 $$$               $$                                                                        $m$",
+                "                      U                                U    i R    h       s   h        E        i  Z               *",
+                "  P i $m$                r  e           <                 ##################################    #########CCC############",
+                "#############   ############### MM     ########CC###########################################    #########CCC############",
+                "#############   ###############        ########CC###########################################    #########CCC############",
             },
         },
     };
@@ -324,6 +379,7 @@ public static class Fases
     public static readonly Fase Secreta = new Fase
     {
         nome = "Santuário do Puck (secreta)",
+        corDoFundo = new Color32(250, 230, 150, 255), // dourado
         placas = new[]
         {
             "Você achou a fase secreta!\nAqui não tem pegadinha. Juro de verdade.",
@@ -383,5 +439,9 @@ public static class Fases
         "Foi o Mabeast. Ou o chão. Ou os dois.",
         "O Subaru já passou por coisa pior.",
         "Porta errada, kashira.",
+        "Cristal vermelho = pula. Anotou?",
+        "O Roswaal não dá garantia das plataformas.",
+        "Pulou da expressa? Clássico.",
+        "A plataforma tremeu. Você também.",
     };
 }
