@@ -725,25 +725,25 @@ public class VentoDaRam : MonoBehaviour
         FabricaDeSprites.Registrar("ar_do_redemoinho", () => FabricaDeSprites.Procedural(16, 16, FabricaDeSprites.Centro, (x, y) => CorDoAr(x, y, true)));
     }
 
-    // O ícone do mapa: um redemoinho (funil de vento girando), com uma folha e uma pétala rosa
-    // (a cor do cabelo da Ram) voando em volta.
+    // O ícone do mapa: um redemoinho (funil de vento girando, com o lado direito na sombra 's'), com uma
+    // folha e uma pétala rosa (a cor do cabelo da Ram) voando em volta.
     static readonly string[] ArteVento =
     {
         "..kkkkkkkkkkkk..",
-        ".kwwwwwlllllwwk.",
-        ".kllwwwwwwwlllk.",
-        "..kwlllwwwwwwk..",
-        "..kwwwwllllwwk..",
-        "...kllwwwwwwk.kk",
-        "...kwwllllwwkkpk",
-        "....kwwwwwlk.kk.",
-        ".kk.klllwwwk....",
-        "kgak.kwwllk.....",
-        ".kk..kllwwk.....",
-        "......kwwlk.....",
-        "......kllwk.....",
-        ".......kwwk.....",
-        "........kwk.....",
+        ".kwwwwwlllllwsk.",
+        ".kllwwwwwwwllsk.",
+        "..kwlllwwwwwsk..",
+        "..kwwwwllllwsk..",
+        "...kllwwwwwsk.kk",
+        "...kwwllllwskkpk",
+        "....kwwwwwsk.kk.",
+        ".kk.klllwwsk....",
+        "kgak.kwwlsk.....",
+        ".kk..kllwsk.....",
+        "......kwwsk.....",
+        "......kllsk.....",
+        ".......kwsk.....",
+        "........ksk.....",
         "........kk......",
     };
 

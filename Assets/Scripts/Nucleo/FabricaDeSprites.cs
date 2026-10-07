@@ -639,7 +639,6 @@ public static class FabricaDeSprites
             case "porta_aberta": return Procedural(16, 32, Base, (x, y) => CorPorta(x, y, true));
             case "ponto_save": return Procedural(16, 24, Base, (x, y) => CorPontoDeSave(x, y, false));
             case "ponto_save_ativo": return Procedural(16, 24, Base, (x, y) => CorPontoDeSave(x, y, true));
-            case "baleia": return Procedural(64, 24, Centro, CorBaleia);
             case "aviso": return Procedural(16, 16, Centro, CorAviso);
 
             // Mapa do mundo
@@ -950,37 +949,6 @@ public static class FabricaDeSprites
             }
         }
         return y < 5 ? Cor('l') : Cor('w');
-    }
-
-    // Baleia Branca (vista de lado, olhando para a esquerda): corpão, chifre na testa e cauda.
-    static bool DentroDaBaleia(int x, int y)
-    {
-        if (x < 0 || y < 0 || x >= 64 || y >= 24) return false;
-        float dy = y - 11f;
-        if (x <= 30) // cabeça e meio do corpo
-        {
-            float ex = (x - 30f) / 26f, ey = dy / 9f;
-            if (ex * ex + ey * ey <= 1f) return true;
-        }
-        else if (x <= 54 && Mathf.Abs(dy) <= 9f * (1f - (x - 30f) / 30f * 0.75f)) return true; // afina até a cauda
-        if (x > 54 && x <= 58 && Mathf.Abs(dy) <= 2.5f) return true; // "pescoço" da cauda
-        if (x >= 56 && x <= 63 && Mathf.Abs(dy) <= 1f + (x - 56) * 1.2f && !(x >= 61 && Mathf.Abs(dy) <= 1f)) return true; // nadadeira
-        return y >= 17 && y <= 23 && Mathf.Abs(x - 13f) <= (23 - y) * 0.5f; // chifre
-    }
-
-    static Color32 CorBaleia(int x, int y)
-    {
-        if (!DentroDaBaleia(x, y)) return Transparente;
-        bool borda = !DentroDaBaleia(x + 1, y) || !DentroDaBaleia(x - 1, y) || !DentroDaBaleia(x, y + 1) || !DentroDaBaleia(x, y - 1);
-        if (borda) return Cor('k');
-        if (y >= 18 && Mathf.Abs(x - 13f) <= (23 - y) * 0.5f) return Cor('n'); // chifre
-        if (x >= 13 && x <= 15 && y >= 12 && y <= 14)               // olho vermelho
-            return x == 14 && y == 13 ? Cor('k') : Cor('r');
-        if (y == 8 && x >= 5 && x <= 20) return Cor('k');           // boca
-        if (y < 8 && x < 40 && y % 2 == 0) return Cor('S');         // pregas da barriga
-        if (y < 8) return Cor('s');
-        if (y >= 15 && (x * 7 + y * 3) % 23 == 0) return Cor('l');  // cicatrizes
-        return Cor('w');
     }
 
     // Ponto (fase) do mapa: um "botão" branco com contorno. O mapa pinta com a cor do estado

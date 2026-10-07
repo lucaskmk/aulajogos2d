@@ -75,6 +75,7 @@ public class FacasDaElsa : MonoBehaviour
         public Vector2 direcao;
         public float percorrido;
         public float timer;          // cravada: quanto falta para sumir
+        public float timerRastro;    // voando: quanto falta para soltar o próximo pontinho do rastro
         public EstadoDaFaca estado;
     }
 
@@ -83,7 +84,6 @@ public class FacasDaElsa : MonoBehaviour
     Vector2 alvo;                    // onde ela viu o Subaru pela última vez
     bool jaRiu;                      // a 'k' ri na primeira vez que joga o leque
     float abertura;                  // 0 = olhos fechados (sumiu no escuro), 1 = olhos abertos
-    float timerRastro;
 
     Transform silhueta;
     SpriteRenderer desenhoDaSilhueta, desenhoDosOlhos, desenhoDoSorriso;
@@ -345,11 +345,12 @@ public class FacasDaElsa : MonoBehaviour
     }
 
     // Um rastrinho rosado atrás da faca (no escuro, ajuda a ver de onde ela veio e para onde vai).
+    // Cada faca tem o seu timer: no leque, as três deixam rastro.
     void DeixarRastro(Faca faca, float dt)
     {
-        timerRastro -= dt;
-        if (timerRastro > 0f) return;
-        timerRastro = 0.03f;
+        faca.timerRastro -= dt;
+        if (faca.timerRastro > 0f) return;
+        faca.timerRastro = 0.03f;
         Particula.Criar(transform.parent, faca.objeto.position, Vector2.zero, 0.18f, 0.55f, CorDoRastro);
     }
 
