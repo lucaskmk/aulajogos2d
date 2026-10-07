@@ -41,6 +41,20 @@ using UnityEngine;
 //      (reaparece no lugar 1,5 s depois, no mesmo ritmo das outras)
 //   D  IGUAL à 'j'... mas o cristal fica AMARELO, ela treme e DISPARA até bater numa parede, freia de
 //      repente e te joga para a frente. Quem pula quando ela treme cai no abismo
+//   Q  mangual da Rem: eixo de ferro (sólido, dá para subir) com uma bola de espinhos girando na corrente
+//      (raio 2,75). Só a BOLA mata. A COLUNA do 'Q' escolhe onde a bola começa e o sentido do giro
+//      (coluna % 8, tabela Jeitos em MangualDaRem.cs). Com chão em cima ele fica ENTERRADO (parece chão)
+//   q  IGUAL ao 'Q'... mas quando você chega perto a corrente range, a Rem fica brava e a bola volta
+//      girando para o OUTRO lado, 2x mais rápido
+//   y  vento da Ram: células 'y' encostadas = UMA zona (o retângulo em volta delas; pode ter moedas e blocos dentro).
+//      Empurra para a ESQUERDA em rajadas, todas juntas: calmo 1 s, aviso 0,5 s (folhas e riscos começam a passar), rajada 2 s.
+//      Segure para a frente, ou se esconda até 2 blocos à esquerda de um bloco sólido (o vento não atravessa paredes)
+//   n  redemoinho: zona igual à 'y' que levanta o Subaru até o topo dela (ele fica boiando lá). Se a coluna da ESQUERDA
+//      da zona for ÍMPAR, ele é TRAIÇOEIRO: quando você chega perto (4 blocos), engasga (fica cinza) e desliga por 1,5 s
+//   a  bloco do ritmo AZUL (Rem): sólido e apagado se revezam com o 'b' a cada 1,4 s (piscam e fazem tic-tic-TAC antes)
+//   b  bloco do ritmo ROSA (Ram): aceso quando o 'a' está apagado, e vice-versa. Blocos iguais lado a lado = um só
+//   A  IGUAL ao 'a' (pisca e acende junto)... mas nunca fica sólido de verdade
+//   t  esmagador do ritmo: despenca toda vez que os 'a' acendem (treme e fica de olho vermelho antes). Rosa aceso = pode passar
 //
 //  As placas (quem fala é o Puck) recebem os textos na ordem da esquerda para a direita.
 //
@@ -218,6 +232,40 @@ public static class Fases
 
         new Fase
         {
+            nome = "Quem é Rem?",
+            corDoFundo = new Color32(165, 185, 240, 255),
+            placas = new[]
+            {
+                "Mansão Roswaal! A empregada Rem limpa tudo.\nInclusive visitas. Com um MANGUAL.",
+                "Só a BOLA mata. A corrente é enfeite.\nDica: em cima do eixo ela não te alcança.",
+                "Se ouvir a corrente RANGER... corre.\nNão me pergunte por quê. :)",
+                "Save! Agora é pular de eixo em eixo.\nO chão do outro lado? Confia.",
+                "A bandeira! Acabou!\n...Você ainda confia em bandeira?",
+                "O corredor da faxina.\nEla varre o chão. Com você junto.",
+                "Daqui pra frente é só chão.\nChão normal, de terra. Juro pelo Puck.",
+            },
+            mapa = new[]
+            {
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "                                                                                                  BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+                "                                                                                                  BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+                "                                                                    m                    $        BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+                "      ?B?                    Q      Q          q                $       $                         BBBBQBBBBBQBBBBBQBBBBBQBBBBBQBBBBBQBBB    ? K",
+                "            $$   $                                                                                 v",
+                "                                                                  Q       Q                                          $                             $",
+                "  P i      i     Q     E        $$       i    $$$   $ s i     Q       q             i  B Z   s i         $     $     h     $     $        i                G",
+                "###########################################################                   CC#################################################################################",
+                "###########################################################                   CC###################################################################Q#######q#####",
+            },
+        },
+
+        new Fase
+        {
             nome = "Cadê a direita?",
             corDoFundo = new Color32(195, 165, 230, 255),
             placas = new[]
@@ -310,6 +358,38 @@ public static class Fases
 
         new Fase
         {
+            nome = "Voa, Barusu!",
+            corDoFundo = new Color32(245, 195, 215, 255),
+            placas = new[]
+            {
+                "A Ram tá de mau humor hoje.\nQuando as FOLHAS vierem, segure pra frente ou se esconda atrás de um bloco!",
+                "Redemoinho da Ram! Entra que ele te leva lá pra cima.\nDepois é só segurar pra direita.",
+                "Outro redemoinho, igualzinho ao primeiro!\nPode ir direto, sem medo. :)",
+                "Dica de graça: espere o redemoinho te levantar antes de sair.\n(essa é de verdade. A outra... nem tanto)",
+                "Pronto! A Ram cansou e foi tirar um cochilo.\nAcabou o vento. A bandeira é logo ali!",
+            },
+            mapa = new[]
+            {
+                "",
+                "",
+                "",
+                "                                                                                                 nnnnn$$$$nnnnn           yyyy                   yyyyyyyyyyyyyyyyyyyy",
+                "                                                                          yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         $nyyyynnn  n$n           yyyyyyyyy$$$yyyyyyyy",
+                "            $$                                            nnnn$$$$nn      yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         nnyyyynnn  nnn           yyyyyyyyyyyyyyy?yyyy",
+                "                                                          nnnnnnnnnn      yyyyyyy$yyy$m$yyyyyy   nnnnnnnnnnnnnn         nnyy$ynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
+                "                                                          nnnnnnnnnn      yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         nnyyyynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
+                "              yyyyyyyyyyyyyyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn   s  yyyByyyyyyyyyyEyByyyi  nnnnnnnnnnnnnn   s i   nnyyyynnn  nnn      i    yyyyBByyZyyyyByyyyBy  G",
+                "        I ?K  yyyyyyyyy?yyyyyyyy yyyyyyyy?yyyy$yyyyyy?yy  nnnnn$$nnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######CC#####################",
+                "       $$     yyy$$yyyyy$$yyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
+                "              yyyyyyyyyyyyyyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
+                "  P i       S yyyyyyByyyyyyByyyy yy^^yyEyyByyyyyyyyhyyyy innnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
+                "#############################################   #############nnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
+                "#############################################   #############nnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
+            },
+        },
+
+        new Fase
+        {
             nome = "Biblioteca Proibida",
             corDoFundo = new Color32(185, 150, 120, 255),
             placas = new[]
@@ -338,6 +418,39 @@ public static class Fases
                 "# Pi 1  2 3 # 4 h 5 h 6 # 7   E   8 # 9 i e  E  # 0   Y  G  #",
                 "#############################################################",
                 "#############################################################",
+            },
+        },
+
+        new Fase
+        {
+            nome = "Dança das Gêmeas",
+            noite = true,
+            corDoFundo = new Color32(150, 120, 200, 255),
+            placas = new[]
+            {
+                "Blocos da Rem (azul) e da Ram (rosa) se revezam.\nTic, tic, TAC: trocou! Pise no que tá aceso.",
+                "Pule no TIC, caia no TAC.\nAs gêmeas não esperam ninguém.",
+                "Esses aí caem quando o AZUL acende.\nRosa aceso = caminho livre. (dessa vez é sério)",
+                "Agora é só ritmo puro, sem pegadinha.\nPalavra de espírito! :3",
+                "Ufa, chegou! A bandeira tá logo ali.\nPode ir andando, sem pressa. :)",
+            },
+            mapa = new[]
+            {
+                "",
+                "",
+                "                                                      ?",
+                "",
+                "                                                $",
+                "                                                 bb ####",
+                "        $                              v     $      ####                                                                 $$",
+                "                                              aa    ####                                                             $       m",
+                "                                                    ####     BBBBBBBBBBBBBBBBBBBBBBBBBB                      $                   $",
+                "       ?B?                ?                bb       ####      tt      tt      ttt                   ?K?                aa                       $$",
+                "                    $m$         $$                  ####                                      $                aa              bb",
+                "                                        aa          ####                                                           bb      bb",
+                "  P i             h      i                ^^^^^^^^^^#### s i           $       $        i            s     bb                      aaa  i   b Z       G",
+                "############aaaa####bbbb#####aaa  bbb############################bbb####bbbb#######aaa#####aaaAaaa########                             ########aaaa#######",
+                "############^^^^####^^^^#####^^^^^^^^############################^^^####^^^^#######^^^#####^^^^^^^########^^^^^^^^^^^^^^^^^^^^^^^^^^^^^########^^^^#######",
             },
         },
 
@@ -439,6 +552,18 @@ public static class Fases
         "Foi o Mabeast. Ou o chão. Ou os dois.",
         "O Subaru já passou por coisa pior.",
         "Porta errada, kashira.",
+        "Quem é Rem? Agora você sabe.",
+        "A corrente rangeu. Você não ouviu.",
+        "Faxina concluída. O lixo era você.",
+        "Era só pular. Era SÓ pular.",
+        "A Ram soprou. Você voou. Ela nem olhou.",
+        "Barusu, até as folhas sabem para onde ir.",
+        "O redemoinho desligou. Que coincidência, né?",
+        "Segurar pra frente era opcional. Morrer, não.",
+        "Atravessou o compasso. E o bloco.",
+        "A Ram não espera ninguém. Muito menos você.",
+        "Tic, tic, TAC... e tchau.",
+        "Fora do ritmo, fora da vida.",
         "Cristal vermelho = pula. Anotou?",
         "O Roswaal não dá garantia das plataformas.",
         "Pulou da expressa? Clássico.",

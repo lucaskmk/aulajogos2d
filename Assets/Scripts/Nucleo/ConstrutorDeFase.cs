@@ -58,6 +58,9 @@ public static class ConstrutorDeFase
         var celulasQueCaem = new HashSet<Vector2Int>();
         var celulasQueFogem = new HashSet<Vector2Int>();
         var celulasDePlataforma = new Dictionary<Vector2Int, char>(); // 'j', 'J' e 'D' (a letra diz o tipo)
+        var celulasDoRitmo = new Dictionary<Vector2Int, char>();      // 'a', 'b' e 'A' (blocos do ritmo)
+        var celulasDeVento = new HashSet<Vector2Int>();               // 'y' (rajada da Ram)
+        var celulasDeRedemoinho = new HashSet<Vector2Int>();          // 'n' (redemoinho)
         var placas = new List<(Vector3 lugar, bool beatrice)>();
         var portas = new List<Porta>();
 
@@ -110,6 +113,13 @@ public static class ConstrutorDeFase
                     case 'e': Criar<Inimigo>("InimigoDisfarcado", raiz, pos).espinhoso = true; break;
                     case 'M': celulasQueFogem.Add(new Vector2Int(x, linha)); break;
                     case 'j': case 'J': case 'D': celulasDePlataforma[new Vector2Int(x, linha)] = c; break; // plataformas móveis
+                    case 'a': case 'b': case 'A': celulasDoRitmo[new Vector2Int(x, linha)] = c; break; // blocos do ritmo (juntados depois do laço)
+                    case 't': Criar<EsmagadorDoRitmo>("EsmagadorDoRitmo", raiz, pos); break;
+                    case 'y': celulasDeVento.Add(new Vector2Int(x, linha)); break;
+                    case 'n': celulasDeRedemoinho.Add(new Vector2Int(x, linha)); break;
+                    case 'Q': case 'q': // com chão em cima = ENTERRADO (disfarçado de chão)
+                        Criar<MangualDaRem>("Mangual", raiz, pos).Montar(x, c == 'q', PareceChao(Celula(x, linha - 1)) ? SpriteDoChao(x, linha) : null);
+                        break;
                     case 'W': info.bandeiras.Add(Criar<BandeiraVolta>("BandeiraVolta", raiz, chaoDaCelula).transform); break;
                     case 'X': info.inversores.Add(x); break;
                     case 'r': Criar<Coelho>("Coelho", raiz, pos); break;
@@ -137,6 +147,12 @@ public static class ConstrutorDeFase
                 chaoQueCai.AdicionarBloco(Posicao(celula.x, celula.y), FabricaDeSprites.Pegar(SpriteDoChao(celula.x, celula.y)));
         }
 
+        // Vento da Ram: células 'y' (ou 'n') encostadas viram UMA zona (o retângulo em volta delas).
+        foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasDeVento))
+            VentoDaRam.CriarZona(raiz, VentoDaRam.Tipo.Rajada, grupo, altura);
+        foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasDeRedemoinho))
+            VentoDaRam.CriarZona(raiz, VentoDaRam.Tipo.Redemoinho, grupo, altura);
+
         // Bloco que foge: blocos 'M' encostados fogem juntos.
         foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasQueFogem))
         {
@@ -160,6 +176,9 @@ public static class ConstrutorDeFase
             Vector3 centro = Posicao(inicio.x, inicio.y) + Vector3.right * ((blocos - 1) / 2f);
             Criar<PlataformaMovel>("PlataformaMovel", raiz, centro).Montar(PlataformaMovel.TipoDaLetra(letra), blocos);
         }
+
+        // Blocos do ritmo: letras iguais encostadas NA MESMA LINHA viram um bloco só (um colisor só, sem emendas).
+        BlocoDoRitmo.MontarTodos(raiz, celulasDoRitmo, altura);
 
         foreach (BandeiraFujona fujona in fujonas)
             if (destinoDaFujona.HasValue) fujona.destino = destinoDaFujona.Value;
@@ -361,8 +380,9 @@ public static class ConstrutorDeFase
         {
             char c = x < mapa[linha].Length ? mapa[linha][x] : ' ';
             char acima = x < mapa[linha - 1].Length ? mapa[linha - 1][x] : ' ';
-            if (c == '#' && acima == ' ') return linha;
-            if (c != ' ') return -1;
+            bool livre = acima == ' ' || acima == 'y' || acima == 'n'; // vento não é chão: nasce capim embaixo
+            if (c == '#' && livre) return linha;
+            if (c != ' ' && c != 'y' && c != 'n') return -1;
         }
         return -1;
     }

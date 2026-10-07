@@ -49,6 +49,7 @@ public class BaleiaBranca : MonoBehaviour
     static readonly float[] TempoSeguindo = { 1.3f, 1.1f, 0.9f }; // mergulho: quanto tempo a marca segue você
     const float AvisoMinimoRente = 0.55f; // corrente rente ao chão: precisa de tempo para acertar o pulo
     const float TravaDoMergulho = 0.55f;  // a marca do mergulho fica parada (vermelha) antes de ela cair
+    const float TravaMinimaDoChifre = 0.45f; // a mira do chifre fica vermelha pelo menos isso antes do tiro
 
     // Padrões FIXOS, em blocos a partir da borda esquerda da arena.
     // A chuva alterna entre A e B: onde é seguro numa é exatamente onde cai a outra (dê um passo para o lado).
@@ -439,7 +440,7 @@ public class BaleiaBranca : MonoBehaviour
         MostrarBaleia(OrdemDaBaleia);
         livre = true;
         GerenciadorDoJogo.Som("rugido", 0.6f);
-        yield return new WaitForSeconds(1.2f);
+        yield return new WaitForSeconds(1.6f); // um respiro: o 1º ataque não pode pegar quem acabou de nascer
     }
 
     IEnumerator NovaEtapa()
@@ -646,7 +647,7 @@ public class BaleiaBranca : MonoBehaviour
         Dica("Correntes! Fique nos VÃOS!");
         bool rente = false;
         foreach (float altura in deitadas) if (altura < 1f) rente = true;
-        if (rente) Dica("Corrente no chão! PULE na hora!");
+        if (rente) Dica("Corrente no chão! PULE na hora!", ateAEtapa: 1); // ela só aparece a partir da etapa 2
         float aviso = rente ? Mathf.Max(Aviso, AvisoMinimoRente) : Aviso;
         if (livre) poseFixa = spriteCarga;
 
@@ -765,7 +766,8 @@ public class BaleiaBranca : MonoBehaviour
             Vector2 alvo = jogador;
             var linha = Desenho("Mira", "baleia_linha", baleia.position, OrdemDosAvisos);
             const float mirando = 0.45f;
-            for (float t = 0f; t < mirando + Aviso; t += Time.deltaTime)
+            float trava = Mathf.Max(Aviso, TravaMinimaDoChifre);
+            for (float t = 0f; t < mirando + trava; t += Time.deltaTime)
             {
                 bool travou = t >= mirando;
                 if (!travou && GerenciadorDoJogo.JogadorVivo(out Vector2 agora))
@@ -774,7 +776,7 @@ public class BaleiaBranca : MonoBehaviour
                     Olhar(alvo.x);
                 }
                 Esticar(linha.transform, PontaDoChifre, AteOndeVai(PontaDoChifre, alvo), travou ? 1f : 0.6f);
-                linha.color = !travou ? Lilas : Piscando(t - mirando, Aviso) ? Vermelho : VermelhoFraco;
+                linha.color = !travou ? Lilas : Piscando(t - mirando, trava) ? Vermelho : VermelhoFraco;
                 yield return null;
             }
             Destroy(linha.gameObject);
@@ -858,7 +860,8 @@ public class BaleiaBranca : MonoBehaviour
         Dica("Mergulho! Saia de baixo da marca!");
         yield return SairPorCima();
 
-        float minimo = esquerda + 3.2f, maximo = direita - 3.2f;
+        // ela nunca cai colada na parede: assim os cantinhos da arena são SEMPRE seguros no mergulho
+        float minimo = esquerda + 3.7f, maximo = direita - 3.7f;
         float x = GerenciadorDoJogo.JogadorVivo(out Vector2 jogador) ? Mathf.Clamp(jogador.x, minimo, maximo) : meio;
         var marca = Desenho("MarcaDoMergulho", "baleia_alvo", new Vector3(x, chao + 0.15f, 0f), OrdemDosAvisos);
         marca.transform.localScale = new Vector3(3f, 1.3f, 1f);
@@ -1067,10 +1070,10 @@ public class BaleiaBranca : MonoBehaviour
     // Avisos piscam, e piscam mais rápido no finalzinho (como no Helltaker: "vai disparar AGORA").
     static bool Piscando(float t, float total) => Mathf.Repeat(t * (total - t < 0.2f ? 22f : 9f), 1f) < 0.6f;
 
-    // Dicas do Puck: só na etapa 1, e cada uma só uma vez por tentativa.
-    void Dica(string texto)
+    // Dicas do Puck: só na etapa 1 (ou até "ateAEtapa"), e cada uma só uma vez por tentativa.
+    void Dica(string texto, int ateAEtapa = 0)
     {
-        if (etapa > 0 || !dicasMostradas.Add(texto)) return;
+        if (etapa > ateAEtapa || !dicasMostradas.Add(texto)) return;
         GerenciadorDoJogo.Instancia.Avisar(texto, 1.3f);
     }
 
