@@ -123,6 +123,7 @@ public static class ConstrutorDeFase
                     case 'Q': case 'q': // com chão em cima = ENTERRADO (disfarçado de chão)
                         Criar<MangualDaRem>("Mangual", raiz, pos).Montar(x, c == 'q', PareceChao(Celula(x, linha - 1)) ? SpriteDoChao(x, linha) : null);
                         break;
+                    case 'u': Criar<ChefeRem>("ChefeRem", raiz, pos); break; // a Rem (chefe da fase 6)
                     case 'W': info.bandeiras.Add(Criar<BandeiraVolta>("BandeiraVolta", raiz, chaoDaCelula).transform); break;
                     case 'X': info.inversores.Add(x); break;
                     case 'r': Criar<Coelho>("Coelho", raiz, pos); break;

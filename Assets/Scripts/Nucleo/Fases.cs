@@ -30,6 +30,9 @@ using UnityEngine;
 //   w  Baleia Branca (CHEFE): começo da arena de 24 blocos, na linha em que o jogador anda. O chão da arena precisa
 //      ter buracos (vazios) nas colunas 7-8 e 15-16 contadas a partir do 'w': a Baleia tampa com blocos frágeis
 //      que desmoronam na etapa 3. Entrou, a arena fecha e a luta começa (3 etapas; pule na cabeça dela quando ela cair)
+//   u  REM (CHEFE): começo da arena de 20 blocos, na linha em que o jogador anda (chão LISO, sem buracos).
+//      Entrou, a arena fecha e a luta começa (3 etapas; quando a bola dela ficar PRESA no chão, pule na cabeça dela).
+//      Na etapa 3 ela vira ONI. Veja ChefeRem.cs
 //   L  Emilia (esperando no fim da última fase)
 //   0-9  porta da Beatrice (2 de altura), com o número em cima: aperte S/seta para baixo na frente dela.
 //      Para onde cada porta leva fica na lista "portas" da fase, em pares de ida e volta: "1-4" = a 1 leva
@@ -239,17 +242,15 @@ public static class Fases
 
         new Fase
         {
-            nome = "Quem é Rem?",
+            nome = "Oni de Cabelo Azul",
             corDoFundo = new Color32(165, 185, 240, 255),
             placas = new[]
             {
                 "Mansão Roswaal! A empregada Rem limpa tudo.\nInclusive visitas. Com um MANGUAL.",
                 "Só a BOLA mata. A corrente é enfeite.\nDica: em cima do eixo ela não te alcança.",
-                "Se ouvir a corrente RANGER... corre.\nNão me pergunte por quê. :)",
-                "Save! Agora é pular de eixo em eixo.\nO chão do outro lado? Confia.",
-                "A bandeira! Acabou!\n...Você ainda confia em bandeira?",
-                "O corredor da faxina.\nEla varre o chão. Com você junto.",
-                "Daqui pra frente é só chão.\nChão normal, de terra. Juro pelo Puck.",
+                "Ouviu esse barulho de corrente? É a Rem.\nVai lá dar oi. Eu espero aqui. Bem aqui. Longe.",
+                "A sala de faxina. Só a BOLA mata.\nBola PRESA no chão = pula na CABEÇA dela! Morreu? Volta na mesma ETAPA.",
+                "Você venceu a Rem! Ela vai lembrar disso.\nEla lembra de TUDO. Corre pra bandeira.",
             },
             mapa = new[]
             {
@@ -259,15 +260,15 @@ public static class Fases
                 "",
                 "",
                 "",
-                "                                                                                                  BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
-                "                                                                                                  BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
-                "                                                                    m                    $        BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
-                "      ?B?                    Q      Q          q                $       $                         BBBBQBBBBBQBBBBBQBBBBBQBBBBBQBBBBBQBBB    ? K",
-                "            $$   $                                                                                 v",
-                "                                                                  Q       Q                                          $                             $",
-                "  P i      i     Q     E        $$       i    $$$   $ s i     Q       q             i  B Z   s i         $     $     h     $     $        i                G",
-                "###########################################################                   CC#################################################################################",
-                "###########################################################                   CC###################################################################Q#######q#####",
+                "",
+                "",
+                "",
+                "      ?B?                    Q      Q",
+                "            $$   $",
+                "",
+                "  P i      i     Q     E        $$       i    s i   u                      i     G",
+                "######################################################################################",
+                "######################################################################################",
             },
         },
 
@@ -670,6 +671,10 @@ public static class Fases
         "Quem é Rem? Agora você sabe.",
         "A corrente rangeu. Você não ouviu.",
         "Faxina concluída. O lixo era você.",
+        "A bola ficou presa no chão. Você também. Embaixo dela.",
+        "Linha baixa é pra PULAR. Linha alta é pra NÃO pular. Anota.",
+        "Dentro do anel, colado nela, era seguro. Era. Até você pular.",
+        "A Rem virou oni. Você virou faxina.",
         "Era só pular. Era SÓ pular.",
         "A Ram soprou. Você voou. Ela nem olhou.",
         "Barusu, até as folhas sabem para onde ir.",
