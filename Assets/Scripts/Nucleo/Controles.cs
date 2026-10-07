@@ -85,6 +85,13 @@ public static class Controles
     public static bool EsquerdaApertou() => Apertou(t => t.leftArrowKey, t => t.aKey, c => c.dpad.left);
     public static bool DireitaApertou() => Apertou(t => t.rightArrowKey, t => t.dKey, c => c.dpad.right);
 
+    // F9: libera todas as fases do mapa (atalho para testar as fases e o chefe sem jogar tudo de novo).
+    public static bool LiberarTudo()
+    {
+        var teclado = Keyboard.current;
+        return teclado != null && teclado.f9Key.wasPressedThisFrame;
+    }
+
     static bool Apertou(System.Func<Keyboard, KeyControl> seta, System.Func<Keyboard, KeyControl> letra, System.Func<Gamepad, ButtonControl> direcional)
     {
         var teclado = Keyboard.current;
