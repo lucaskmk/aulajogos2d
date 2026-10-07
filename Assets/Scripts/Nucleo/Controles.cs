@@ -85,7 +85,7 @@ public static class Controles
     public static bool EsquerdaApertou() => Apertou(t => t.leftArrowKey, t => t.aKey, c => c.dpad.left);
     public static bool DireitaApertou() => Apertou(t => t.rightArrowKey, t => t.dKey, c => c.dpad.right);
 
-    // F9: libera todas as fases do mapa (atalho para testar as fases e o chefe sem jogar tudo de novo).
+    // F9 (no mapa): libera todas as fases SÓ na partida atual (atalho para testar as fases e os chefes).
     public static bool LiberarTudo()
     {
         var teclado = Keyboard.current;
