@@ -28,7 +28,7 @@ public class Jogador : MonoBehaviour
     // Posições x das linhas 'X' da fase. Cada linha cruzada inverte os controles,
     // mas só depois de uma contagem (dá tempo de se preparar; se voltar antes, cancela).
     public List<float> inversores = new List<float>();
-    public float tempoParaInverter = 2f;
+    public float tempoParaInverter = 1.2f;
     bool controlesInvertidos;
     float timerInversao = -1f; // contando até inverter (-1 = nada pendente)
 

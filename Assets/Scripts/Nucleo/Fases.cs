@@ -23,7 +23,7 @@ using UnityEngine;
 //   e  inimigo disfarçado (igual ao normal, mas tem espinhos: NÃO pise!)
 //   M  bloco que foge quando você pula perto dele
 //   W  bandeira que te manda de volta pro começo
-//   X  linha invisível que inverte os controles depois de uma contagem de 2 s (cruzou de novo, desinverte).
+//   X  linha invisível que inverte os controles depois de uma contagem curta (1,2 s) (cruzou de novo, desinverte).
 //      Só UMA fase usa isso, e só num trecho (é difícil demais para usar sempre)
 //   U  cano (2 de largura, desce até o chão): de tempos em tempos sai uma MÃO dele. Encostou, morreu
 //   r  coelho (Grande Coelho): pula atrás de você e se MULTIPLICA. Pise em cima para derrotar
@@ -237,11 +237,11 @@ public static class Fases
                 "",
                 "",
                 "                    ?     ?",
-                "                                                     $$",
-                "          $$$                                                   U",
-                "  P i           e                e   E       is X           X      G",
-                "#####################   #################CCC########    ################",
-                "#####################   #################CCC########    ################",
+                "                                                                            $$",
+                "          $$$",
+                "  P i           e                e   E       is X                   ^               X   G",
+                "#####################   #################CCC##################   ######   ##################",
+                "#####################   #################CCC##################   ######   ##################",
             },
         },
 
@@ -364,7 +364,7 @@ public static class Fases
                 "",
                 "                                                  ?K                  $$$          $$",
                 "                 $$$               $$                                                                        $m$",
-                "                      U                                U    i R    h       s   h        E        i  Z               *",
+                "                      U                                U    i R    h       s   h        E        iB Z               *",
                 "  P i $m$                r  e           <                 ##################################    #########CCC############",
                 "#############   ############### MM     ########CC###########################################    #########CCC############",
                 "#############   ###############        ########CC###########################################    #########CCC############",
