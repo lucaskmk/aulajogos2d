@@ -63,6 +63,9 @@ using UnityEngine;
 //      ela ARREMESSA uma faca em linha reta em você a cada 1,6 s. Olhos VERMELHOS = vai jogar (0,4 s).
 //      A faca tem luz própria e crava no que for sólido (esconder atrás de um tijolo funciona). A Elsa não mata, a faca sim
 //   k  IGUAL à 'l'... mas joga TRÊS facas em LEQUE. Colocada no alto, joga para baixo em qualquer ângulo: não pare embaixo dela
+//   H  ELSA (CHEFE): começo da arena de 24 blocos, na linha em que o jogador anda (chão reto; o resto da arena
+//      vazio: os dois degraus de dentro ela mesma cria). Luta no ESCURO (use com escura = true): só os olhos aparecem.
+//      3 etapas; ache o CRISTAL DE LUZ, e no clarão pule na cabeça dela (veja ElsaCacadora.cs)
 //   N  MIASMA DA BRUXA: parede de sombra com mãos que PERSEGUE você a partir desta coluna (acorda quando você se
 //      afasta 4 blocos; anda 5,2 b/s e acelera se você abrir vantagem). Encostou, morreu. No checkpoint ela nasce 9 blocos atrás
 //
@@ -464,16 +467,15 @@ public static class Fases
 
         new Fase
         {
-            nome = "Quem apagou a luz?",
+            nome = "A Caçadora de Entranhas",
             escura = true,
-            corDoFundo = new Color32(70, 55, 95, 255),
+            corDoFundo = new Color32(55, 35, 80, 255),
             placas = new[]
             {
-                "Quem apagou a luz?! Aqui mora a Elsa, a Caçadora de Entranhas.\nOlhos VERMELHOS = faca vindo. PULA!",
-                "No escuro, siga o que brilha.\nMoeda brilha... faca também. Escolha bem.",
-                "Essa joga TRÊS? Relaxa: se esconde atrás do caixote.\nO chão ali aguenta. Palavra de espírito!",
-                "A Elsa lá no alto só quer conversar.\nPara um pouquinho embaixo dela. :)",
-                "Reta final! Siga a trilha de moedas até a bandeira.\nTodas brilham igualzinho. Né?",
+                "Aqui mora a Elsa, a Caçadora de Entranhas.\nNo escuro, viu OLHOS VERMELHOS? PULA. Ou corre. Ou reza.",
+                "Esse caixote é à prova de faca. Se esconde atrás dele!\nE a moeda ali em cima também é de confiança. :)",
+                "A sala da Elsa. Tá um BREU. Ache o CRISTAL DE LUZ,\ndepois pule na CABEÇA dela. Morreu? Volta na mesma ETAPA.",
+                "Você venceu a Elsa! Ela fugiu rindo, mas conta.\nA bandeira é logo ali. Essa não tem faca. Eu acho.",
             },
             mapa = new[]
             {
@@ -481,17 +483,17 @@ public static class Fases
                 "",
                 "",
                 "",
-                "                                       BBB",
-                "                                        v                                                                           ?",
-                "                                                                                                                                k",
-                "                                     $         $",
-                "                                                                I",
-                "           ?                      $        h                          $                               $$          #####                                 $m$",
-                "       $$            $$             #########  ###          $$     $                                              #####            $             $$    $   $",
-                "                                 ############  ###                                                             ########",
-                "  P i                     B    l ############  ###  i                           l B     s    i     B         k ########  i  h           s    i        l          G   l",
-                "#############################################  ##########   ###   ###   #########################CC###############################   ############FF####   ############",
-                "#############################################  ##########   ###   ###   #########################CC###############################   ############FF####   ############",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "       $$     $$    m          $$",
+                "                         l",
+                "                         B",
+                "  P i           l  i  B  B       s i    H                          i      G",
+                "##########  ################  ##################################################",
+                "##########  ################  ##################################################",
             },
         },
 
@@ -688,5 +690,9 @@ public static class Fases
         "O Roswaal não dá garantia das plataformas.",
         "Pulou da expressa? Clássico.",
         "A plataforma tremeu. Você também.",
+        "Era só pegar o cristal. Brilhando. No escuro. Era SÓ isso.",
+        "A Elsa riu. Ela sempre ri. Você não.",
+        "Olho roxo: tudo bem. Olho vermelho: tchau.",
+        "A faca voltou. Bumerangue, sabe? Ela avisou.",
     };
 }

@@ -48,7 +48,7 @@ A ordem final das 16 fases:
 | 10 | Voa, Barusu! | Vento da Ram `y` / redemoinho `n` | pronta |
 | 11 | Biblioteca Proibida | portas | pronta |
 | 12 | Dança das Gêmeas (noite) | blocos do ritmo `a`/`b`/`A`, esmagador `t` | pronta |
-| 13 | Quem apagou a luz? (escura) | Facas da Elsa `l` / leque `k` | pronta |
+| 13 | A Caçadora de Entranhas (escura) | CHEFE Elsa `H` em 3 etapas no escuro (`ElsaCacadora.cs`): só os olhos aparecem; cristal de luz -> clarão -> pule na cabeça. Aquecimento com Elsas `l` | pronta (ainda não testada dentro da Unity) |
 | 14 | Eu Te Amo (CORRE!) (noite) | Miasma da Bruxa `N` (só correr e parkour) | pronta |
 | 15 | O Verdadeiro Final (juro) | — | pronta |
 | 16 | A Baleia Branca (noite) | chefe em 3 etapas (`BaleiaBranca.cs`) | pronta (ainda não testada dentro da Unity) |
