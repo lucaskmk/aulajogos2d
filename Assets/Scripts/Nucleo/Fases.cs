@@ -27,8 +27,9 @@ using UnityEngine;
 //      Só UMA fase usa isso, e só num trecho (é difícil demais para usar sempre)
 //   U  cano (2 de largura, desce até o chão): de tempos em tempos sai uma MÃO dele. Encostou, morreu
 //   r  coelho (Grande Coelho): pula atrás de você e se MULTIPLICA. Pise em cima para derrotar
-//   w  Baleia Branca (CHEFE): começo da arena de 26 blocos, na linha em que o jogador anda.
-//      Entrou, a arena fecha e a luta começa (3 de vida: pule na cabeça dela quando ela cair)
+//   w  Baleia Branca (CHEFE): começo da arena de 24 blocos, na linha em que o jogador anda. O chão da arena precisa
+//      ter buracos (vazios) nas colunas 7-8 e 15-16 contadas a partir do 'w': a Baleia tampa com blocos frágeis
+//      que desmoronam na etapa 3. Entrou, a arena fecha e a luta começa (3 etapas; pule na cabeça dela quando ela cair)
 //   L  Emilia (esperando no fim da última fase)
 //   0-9  porta da Beatrice (2 de altura), com o número em cima: aperte S/seta para baixo na frente dela.
 //      Para onde cada porta leva fica na lista "portas" da fase, em pares de ida e volta: "1-4" = a 1 leva
@@ -55,6 +56,12 @@ using UnityEngine;
 //   b  bloco do ritmo ROSA (Ram): aceso quando o 'a' está apagado, e vice-versa. Blocos iguais lado a lado = um só
 //   A  IGUAL ao 'a' (pisca e acende junto)... mas nunca fica sólido de verdade
 //   t  esmagador do ritmo: despenca toda vez que os 'a' acendem (treme e fica de olho vermelho antes). Rosa aceso = pode passar
+//   l  Elsa nas sombras (de longe, só dois olhos que brilham e somem). Chegou perto (14 blocos) e na mesma altura,
+//      ela ARREMESSA uma faca em linha reta em você a cada 1,6 s. Olhos VERMELHOS = vai jogar (0,4 s).
+//      A faca tem luz própria e crava no que for sólido (esconder atrás de um tijolo funciona). A Elsa não mata, a faca sim
+//   k  IGUAL à 'l'... mas joga TRÊS facas em LEQUE. Colocada no alto, joga para baixo em qualquer ângulo: não pare embaixo dela
+//   N  MIASMA DA BRUXA: parede de sombra com mãos que PERSEGUE você a partir desta coluna (acorda quando você se
+//      afasta 4 blocos; anda 5,2 b/s e acelera se você abrir vantagem). Encostou, morreu. No checkpoint ela nasce 9 blocos atrás
 //
 //  As placas (quem fala é o Puck) recebem os textos na ordem da esquerda para a direita.
 //
@@ -456,6 +463,71 @@ public static class Fases
 
         new Fase
         {
+            nome = "Quem apagou a luz?",
+            escura = true,
+            corDoFundo = new Color32(70, 55, 95, 255),
+            placas = new[]
+            {
+                "Quem apagou a luz?! Aqui mora a Elsa, a Caçadora de Entranhas.\nOlhos VERMELHOS = faca vindo. PULA!",
+                "No escuro, siga o que brilha.\nMoeda brilha... faca também. Escolha bem.",
+                "Essa joga TRÊS? Relaxa: se esconde atrás do caixote.\nO chão ali aguenta. Palavra de espírito!",
+                "A Elsa lá no alto só quer conversar.\nPara um pouquinho embaixo dela. :)",
+                "Reta final! Siga a trilha de moedas até a bandeira.\nTodas brilham igualzinho. Né?",
+            },
+            mapa = new[]
+            {
+                "",
+                "",
+                "",
+                "",
+                "                                       BBB",
+                "                                        v                                                                           ?",
+                "                                                                                                                                k",
+                "                                     $         $",
+                "                                                                I",
+                "           ?                      $        h                          $                               $$          #####                                 $m$",
+                "       $$            $$             #########  ###          $$     $                                              #####            $             $$    $   $",
+                "                                 ############  ###                                                             ########",
+                "  P i                     B    l ############  ###  i                           l B     s    i     B         k ########  i  h           s    i        l          G   l",
+                "#############################################  ##########   ###   ###   #########################CC###############################   ############FF####   ############",
+                "#############################################  ##########   ###   ###   #########################CC###############################   ############FF####   ############",
+            },
+        },
+
+        new Fase
+        {
+            nome = "Eu Te Amo (CORRE!)",
+            noite = true,
+            corDoFundo = new Color32(95, 60, 110, 255),
+            placas = new[]
+            {
+                "Ouviu isso? É a Bruxa da Inveja.\nNão olha para trás. Só CORRE e PULA!",
+                "Buraquinho de nada!\nPula bem na beiradinha. :)",
+                "Mola para o alto! Lá em cima tem moedas...\ne nuvens fofinhas. MUITO fofinhas.",
+                "Reta final! A bandeira tá logo ali.\nDessa vez ela não foge. Juro pela Emilia.",
+            },
+            mapa = new[]
+            {
+                "",
+                "",
+                "",
+                "                                                                                               o",
+                "",
+                "                                                                                       $$$",
+                "",
+                "                                                    ?                                   BBBBBB    $m$                                                ?",
+                "                                                                                                                            $",
+                "                 ?         $                 $$                  $       $$                      BBBBBB                                                 $$",
+                "         $$           $$              $$                    $$      $$                                      $$                         $$$",
+                "                                                  ######                                                                    h                        ##                *",
+                " N  P i             ######     i             ^^   ######                       s i  S                                  > #######  s i           ##   ##    ##  R $  ######",
+                "##############  ##########   ########CC  ###################CC##CCC#CC##CCCC#########                    ##############################FFF###   ##   ##    ######C  ######",
+                "##############  ##########   ########CC  ###################CC##CCC#CC##CCCC#########                    ##############################FFF###   ##   ##    ######C  ######",
+            },
+        },
+
+        new Fase
+        {
             nome = "O Verdadeiro Final (juro)",
             corDoFundo = new Color32(240, 160, 130, 255),
             placas = new[]
@@ -483,6 +555,37 @@ public static class Fases
                 "#############   ###############        ########CC###########################################    #########CCC############",
             },
         },
+        new Fase
+        {
+            nome = "A Baleia Branca",
+            noite = true,
+            corDoFundo = new Color32(70, 60, 120, 255),
+            placas = new[]
+            {
+                "O Covil da Baleia Branca.\nA névoa dela apaga até a memória. Não esquece de mim, tá?",
+                "É agora. Respira.\nMorreu? Volta na mesma ETAPA. Decora os padrões!",
+                "Você venceu a Baleia Branca!\nA Emilia tá logo ali. Dessa vez é de verdade. Palavra de Puck.",
+            },
+            mapa = new[]
+            {
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "           o      o          BBBBBBBBB",
+                "                               v   v",
+                "                                         o",
+                "  P i           ^  ^^                  h     E  h  s i  w                             i       L",
+                "###########   ##########CCC##############  ####################  ######  ###########################",
+                "###########   ##########CCC##############  ####################  ######  ###########################",
+            },
+        },
+
     };
 
     // A fase secreta: aparece no mapa (numa ilha do lago) se você pegar TODAS as moedas da fase do segredo.
@@ -552,6 +655,18 @@ public static class Fases
         "Foi o Mabeast. Ou o chão. Ou os dois.",
         "O Subaru já passou por coisa pior.",
         "Porta errada, kashira.",
+        "A Elsa adorou suas entranhas. Quer ver de novo.",
+        "Olho vermelho era pra PULAR, Subaru.",
+        "Três facas. Você pulou direto na de cima. Clássico.",
+        "Quem apagou a luz? Spoiler: foi a Elsa. Em você.",
+        "A Satella só queria um abraço.",
+        "Eu te amo. Eu te amo. Eu te amo. Eu te amo.",
+        "Parou para respirar? A Bruxa agradece.",
+        "Retorno pela Morte, patrocinado pela Inveja.",
+        "A Baleia Branca te apagou da memória.",
+        "Pula na CABEÇA dela, não na boca.",
+        "O Wilhelm levou 14 anos caçando ela. Calma.",
+        "Decorou o padrão? Ela também decorou você.",
         "Quem é Rem? Agora você sabe.",
         "A corrente rangeu. Você não ouviu.",
         "Faxina concluída. O lixo era você.",
