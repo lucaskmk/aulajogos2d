@@ -3,7 +3,7 @@ using UnityEngine;
 // Tudo o que fica salvo entre uma partida e outra (PlayerPrefs):
 //  - a partida em andamento, para "Continuar" do título (onde o Subaru está no mapa,
 //    até onde ele chegou, mortes, moedas e tempo);
-//  - a fase mais longe que você já chegou em qualquer partida (libera os pontos do mapa);
+//  - a fase mais longe que você já chegou em qualquer partida (só informativo: o mapa usa a da partida);
 //  - o recorde (zerar com menos mortes).
 public static class Progresso
 {
@@ -77,11 +77,9 @@ public static class Progresso
         valida = PlayerPrefs.GetInt(ChaveValida, 0) == 1;
     }
 
-    // Modo de teste (F9 no título ou no mapa): todos os pontos do mapa e a fase secreta ficam liberados.
-    public static void LiberarTudo(int totalDeFases)
+    public static void ApagarSecreta()
     {
-        PlayerPrefs.SetInt(ChaveFaseMaxima, totalDeFases - 1);
-        PlayerPrefs.SetInt(ChaveSecreta, 1);
+        PlayerPrefs.SetInt(ChaveSecreta, 0);
         PlayerPrefs.Save();
     }
 

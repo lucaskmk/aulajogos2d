@@ -118,8 +118,9 @@ public class GerenciadorDoJogo : MonoBehaviour
     // Mortes em cada fase nesta partida (as caveiras do mapa). A última posição é a da fase secreta.
     readonly int[] mortesPorFase = new int[Fases.Todas.Length + 1];
     static int Posicao(int fase) => fase == Fases.IndiceSecreto ? Fases.Todas.Length : fase;
-    // Até que ponto do mapa dá para andar: o que você já alcançou em qualquer partida.
-    public int FaseLiberada => Mathf.Clamp(Mathf.Max(Progresso.FaseMaxima, FaseMaisLonge, faseInicial), 0, Fases.Todas.Length - 1);
+    // Até que ponto do mapa dá para andar: o que você já alcançou NESTA partida.
+    // (Novo Jogo começa com o mapa todo na névoa de novo; o F9 libera tudo só na partida atual.)
+    public int FaseLiberada => Mathf.Clamp(Mathf.Max(FaseMaisLonge, faseInicial), 0, Fases.Todas.Length - 1);
 
     // ------------------------------------------------------------------ interno
 
@@ -527,11 +528,6 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (Controles.CimaApertou()) MudarOpcao(-1);
         if (Controles.BaixoApertou()) MudarOpcao(1);
         if (Controles.Confirmar()) Comecar(opcoesDoMenu[OpcaoSelecionada]);
-        if (Controles.LiberarTudo())
-        {
-            Progresso.LiberarTudo(Fases.Todas.Length);
-            Som("vitoria", 0.6f); // no título só dá o som: o mapa já abre todo liberado
-        }
     }
 
     void MudarOpcao(int direcao)
@@ -560,6 +556,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         {
             fase = Mathf.Clamp(faseInicial, 0, Fases.Todas.Length - 1);
             partidaValida = fase == 0;
+            Progresso.ApagarSecreta(); // partida nova: a fase secreta precisa ser achada de novo
         }
         Trocar(() => MostrarMapa(fase));
     }
@@ -583,9 +580,12 @@ public class GerenciadorDoJogo : MonoBehaviour
 
         if (Controles.LiberarTudo())
         {
-            // Modo de teste: abre o mapa inteiro (todas as fases, o chefe e a secreta).
-            // Pular fases assim não vale para o recorde (igual a escolher uma fase lá na frente).
-            Progresso.LiberarTudo(Fases.Todas.Length);
+            // Modo de teste: abre o mapa inteiro (todas as fases, os chefes e a secreta), SÓ nesta partida.
+            // Um Novo Jogo volta tudo para a névoa. Não vale para o recorde.
+            FaseMaisLonge = Fases.Todas.Length - 1;
+            partidaValida = false;
+            Progresso.LiberarSecreta();
+            SalvarProgresso();
             Som("vitoria", 0.6f);
             MostrarMapa(Mapa.Selecionado);
             MostrarFala(new Textos.Fala { quem = "Puck", sprite = "puck", texto = "Modo de teste! Liberei o mapa inteiro, até a Baleia. Não conta pra ninguém. :3" });
