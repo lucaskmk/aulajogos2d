@@ -41,7 +41,7 @@ A ordem final das 16 fases:
 | 3 | Corre! | — | pronta |
 | 4 | O Final (sem pegadinhas) | — | pronta |
 | 5 | Eu mudo de ideia (libera a secreta) | — | pronta |
-| 6 | Quem é Rem? | Mangual da Rem `Q`/`q` | pronta |
+| 6 | Oni de Cabelo Azul | CHEFE: a Rem com o mangual (`ChefeRem.cs`, letra `u`), 3 etapas; aquecimento com `Q` | pronta (ainda não testada dentro da Unity) |
 | 7 | Cadê a direita? | inversão (um trecho) | pronta |
 | 8 | Foge, bloco! | — | pronta |
 | 9 | Ponte para a Capital | plataformas `j` `J` `D` | pronta |
