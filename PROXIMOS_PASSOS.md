@@ -18,7 +18,8 @@ Tudo o que está listado como "pronto" já está na `main`.
   - `GerenciadorDoJogo.EtapaDoChefe`: lembra a etapa da luta entre uma morte e outra.
   - Pontos do mapa de `1` a `9` e de `A` a `G` (fases 10 a 16).
   - Checador de fases: `Ferramentas/checar_fase.py`.
-- **Inversão:** "Cadê a direita?" agora só tem um trecho invertido, depois do checkpoint.
+- **Inversão:** "Cadê a direita?" agora só tem um trecho invertido, depois do checkpoint. O trecho tem 36 blocos e a contagem é de 1,2 s: antes, quem corria cruzava os dois `X` e a inversão era cancelada.
+- **Bandeira falsa da fase 10:** agora tem um tijolo antes dela para pular por cima. A bandeira tem 3 de altura e o pulo alcança só 2,8.
 - **Fase "Ponte para a Capital"** (`PlataformaMovel.cs`, letras `j` / `J` / `D`):
   - `j` normal; `J` com cristal vermelho, que despenca; `D` com cristal amarelo, que dispara.
   - Já está integrada em `Fases.cs` e `ConstrutorDeFase.cs`, com a conquista "expressa".
@@ -44,11 +45,11 @@ A ordem final das 16 fases:
 | 7 | Cadê a direita? | (inversão, um trecho só) | pronta |
 | 8 | Foge, bloco! | — | pronta |
 | 9 | Ponte para a Capital | plataformas `j` `J` `D` | **pronta** |
-| 10 | (Ram) | **Vento da Ram** `y` (rajadas para trás) e `n` (redemoinho para cima) | falta |
+| 10 | (Ram) | **Vento da Ram** `y` (rajadas para trás) e `n` (redemoinho para cima) | código existe (`VentoDaRam.cs`); falta revisar e fazer a fase |
 | 11 | Biblioteca Proibida | portas | pronta |
 | 12 | (ritmo) | **Blocos do ritmo** `a`/`b` (alternam a cada 1,4 s e piscam antes) | falta |
 | 13 | (Elsa, `escura = true`) | **Facas da Elsa** `l` (lançador com aviso nos olhos; a faca tem luz própria) | falta |
-| 14 | (miasma) | **Miasma da Bruxa** `N` (parede que persegue; renasce atrás do checkpoint) | falta |
+| 14 | (miasma) | **Miasma da Bruxa** `N` (parede com mãos que persegue; renasce atrás do checkpoint). A fase é **só correr e parkour** (pedido do dono do jogo): nada de pegadinha que obriga a parar | código existe (`MiasmaDaBruxa.cs`); falta a fase |
 | 15 | O Verdadeiro Final (juro) | — | pronta |
 | 16 | A Baleia Branca (`noite = true`) | **Chefe** (reescrever `BaleiaBranca.cs`) | arte pronta; falta a luta e a fase |
 
