@@ -33,6 +33,7 @@ public static class Conquistas
         new Conquista("biblioteca", "Kashira!", "Encontrar a Beatrice na Biblioteca Proibida."),
         new Conquista("save_mudou", "Mudaram meu save!", "Ver o ponto de save mudar de lugar."),
         new Conquista("secreta", "Explorador", "Terminar a fase secreta."),
+        new Conquista("expressa", "Passageiro da Expressa", "Ir até o fim na plataforma expressa sem pular."),
         new Conquista("zerou", "Começando do zero", "Zerar o jogo."),
     };
 

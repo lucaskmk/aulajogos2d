@@ -18,7 +18,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     public static bool Pausado => Instancia != null && Instancia.Estado == EstadoDoJogo.Pausado;
 
     [Header("Configuração")]
-    [Tooltip("Cor de fundo de cada fase (tons pastel, como os ímãs de Re:Zero). Se faltar cor, repete do começo.")]
+    [Tooltip("Cor de fundo das fases que não têm corDoFundo em Fases.cs. Se faltar cor, repete do começo.")]
     public Color[] coresDoFundo =
     {
         new Color32(150, 215, 235, 255), // azul claro
@@ -237,7 +237,10 @@ public class GerenciadorDoJogo : MonoBehaviour
         Mapa = null;
 
         raizDaFase = new GameObject(indice == Fases.IndiceSecreto ? "Fase secreta" : "Fase " + (indice + 1)).transform;
-        Color corDoFundo = indice == Fases.IndiceSecreto ? corDaFaseSecreta
+        // a cor do céu vem da própria fase (Fases.cs); se ela não disser, usa a lista de cores daqui
+        Color32? corDaFase = Fases.Dados(indice).corDoFundo;
+        Color corDoFundo = corDaFase.HasValue ? (Color)corDaFase.Value
+            : indice == Fases.IndiceSecreto ? corDaFaseSecreta
             : coresDoFundo.Length > 0 ? coresDoFundo[indice % coresDoFundo.Length] : Color.cyan;
         if (Camera.main != null) Camera.main.backgroundColor = corDoFundo;
         // a luz da fase vem ANTES de montar: assim as luzinhas só são criadas se a fase for escura
@@ -268,14 +271,14 @@ public class GerenciadorDoJogo : MonoBehaviour
     }
 
     // Partículas de cada fase (a luz é ajustada em CarregarFase, antes de montar a fase): noite com vaga-lumes, biblioteca com poeira dourada,
-    // fases rosadas com pétalas, a secreta com brilhos e as outras com pólen.
+    // fases com "petalas" (Fases.cs) com pétalas, a secreta com brilhos e as outras com pólen.
     void PrepararClima(int indice, bool noite)
     {
         Ambiente.Tipo tipo = Ambiente.Tipo.Polen;
         if (noite) tipo = Ambiente.Tipo.VagaLumes;
         else if (naBiblioteca) tipo = Ambiente.Tipo.Poeira;
         else if (indice == Fases.IndiceSecreto) tipo = Ambiente.Tipo.Brilhos;
-        else if (indice == 3 || indice == 6) tipo = Ambiente.Tipo.Petalas;
+        else if (Fases.Dados(indice).petalas) tipo = Ambiente.Tipo.Petalas;
         Ambiente.Criar(raizDaFase, tipo, tipo == Ambiente.Tipo.VagaLumes ? 16 : tipo == Ambiente.Tipo.Poeira ? 40 : 26);
     }
 
