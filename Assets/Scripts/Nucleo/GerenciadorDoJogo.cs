@@ -90,8 +90,9 @@ public class GerenciadorDoJogo : MonoBehaviour
     public readonly List<Placa> placas = new List<Placa>();
     public readonly List<Porta> portas = new List<Porta>();
     public Emilia Emilia { get; set; }
-    public BaleiaBranca Chefe { get; set; }
-    // Já venceu a Baleia nesta fase? (se morrer depois, ela não volta)
+    // O chefe da fase (a Baleia Branca, a Elsa...), null se a fase não tem chefe. Veja Chefe.cs.
+    public Chefe Chefe { get; set; }
+    // Já venceu o chefe nesta fase? (se morrer depois, ele não volta)
     public bool ChefeDerrotado { get; private set; }
     // Em que etapa da luta o jogador chegou (como os checkpoints do chefe final do Helltaker):
     // morreu na etapa 2? Renasce já na etapa 2. Zera ao entrar na fase pelo mapa.
@@ -622,7 +623,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (Mortes >= 100) Conquistas.Desbloquear("cem_mortes");
 
         // Às vezes o ponto de save "muda de lugar" e você volta para o começo. :)
-        // (menos na fase da Baleia Branca: aí já seria maldade demais)
+        // (menos nas fases de chefe: aí já seria maldade demais)
         bool saveMudou = pontoDeSave.HasValue && Chefe == null && Random.value < chanceDoSaveMudar;
         if (saveMudou)
         {
@@ -668,7 +669,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     public void GanharMoeda() => moedasNaFase++;
 
-    // Chamados pela Baleia Branca.
+    // Chamados pelos chefes (Baleia Branca, Elsa...).
     public void TocarMusicaDoChefe() => musica.TocarDaFase(FabricaDeMusica.MusicaDoChefe);
 
     public void ChefeVencido(Vector3 renascerEm)

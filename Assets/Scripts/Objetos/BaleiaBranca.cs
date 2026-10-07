@@ -27,12 +27,12 @@ using UnityEngine;
 // Os perigos daqui não usam colisores: cada ataque cria uma "Zona" (um segmento com grossura, tipo uma
 // salsicha) e a própria Baleia testa, a cada quadro, se o Subaru encostou em alguma. Assim um raio
 // inclinado, uma bola e uma onda usam a MESMA regra. O corpo dela usa retângulos (CaixasDoCorpo).
-public class BaleiaBranca : MonoBehaviour
+public class BaleiaBranca : Chefe
 {
-    public const int Etapas = 3;
-    public const int GolpesPorEtapa = 2;
+    const int EtapasDaLuta = 3;
+    const int GolpesDaEtapa = 2;
 
-    public int vidaMaxima = Etapas * GolpesPorEtapa;
+    public int vidaMaxima = EtapasDaLuta * GolpesDaEtapa;
     public float larguraDaArena = 24f;
     public float tamanho = 1f; // escala do desenho (96 x 40 pixels = 6 x 2,5 blocos)
 
@@ -87,10 +87,19 @@ public class BaleiaBranca : MonoBehaviour
 
     // ------------------------------------------------------------------ estado
 
-    public int Vida { get; private set; }
-    public float VidaMostrada { get; private set; } // a barra de vida "escorre" até a vida de verdade
-    public bool EmCombate { get; private set; }
-    public int EtapaAtual => etapa + 1;             // 1, 2 ou 3 (para a barra de vida)
+    // O que a barra de vida (Interface) lê. Tudo isso vem da classe base Chefe (veja Chefe.cs).
+    public override string Nome => "BALEIA BRANCA";
+    public override int Vida => vida;
+    public override float VidaMostrada => vidaMostrada; // a barra de vida "escorre" até a vida de verdade
+    public override bool EmCombate => emCombate;
+    public override int VidaMaxima => vidaMaxima;
+    public override int EtapaAtual => etapa;            // 0, 1 ou 2
+    public override int Etapas => EtapasDaLuta;
+    public override int GolpesPorEtapa => GolpesDaEtapa;
+
+    int vida;
+    float vidaMostrada;
+    bool emCombate;
 
     enum Estado { Esperando, Lutando, Atordoada, Derrotada }
     Estado estado;
@@ -132,8 +141,8 @@ public class BaleiaBranca : MonoBehaviour
         direita = esquerda + larguraDaArena;
         meio = (esquerda + direita) / 2f;
         descanso = new Vector2(meio, chao + 9f);
-        Vida = vidaMaxima;
-        VidaMostrada = Vida;
+        vida = vidaMaxima;
+        vidaMostrada = vida;
 
         quadros = new Sprite[ArteDaBaleia.QuadrosDoRabo];
         for (int i = 0; i < quadros.Length; i++) quadros[i] = FabricaDeSprites.Pegar("baleia_" + i);
@@ -184,7 +193,7 @@ public class BaleiaBranca : MonoBehaviour
 
     void Update()
     {
-        VidaMostrada = Mathf.MoveTowards(VidaMostrada, Vida, 1.5f * Time.deltaTime);
+        vidaMostrada = Mathf.MoveTowards(vidaMostrada, vida, 1.5f * Time.deltaTime);
         relogio += Time.deltaTime; // Time.deltaTime é 0 na pausa: tudo congela sozinho
 
         if (estado == Estado.Esperando)
@@ -249,15 +258,15 @@ public class BaleiaBranca : MonoBehaviour
     IEnumerator Lutar(bool renasceu)
     {
         estado = Estado.Lutando;
-        EmCombate = true;
+        emCombate = true;
         FecharArena();
         CameraSeguir.Travar(esquerda - 1f, direita + 1f);
         GerenciadorDoJogo.Instancia.TocarMusicaDoChefe();
         GerenciadorDoJogo.Instancia.SalvarPonto(PontoDeRenascer); // morreu? renasce aqui, no começo da arena
 
         etapa = Mathf.Clamp(GerenciadorDoJogo.Instancia.EtapaDoChefe, 0, Etapas - 1);
-        Vida = vidaMaxima - etapa * GolpesPorEtapa;
-        VidaMostrada = Vida;
+        vida = vidaMaxima - etapa * GolpesPorEtapa;
+        vidaMostrada = vida;
 
         if (renasceu) yield return Pronto();
         else yield return Introducao();
@@ -435,7 +444,7 @@ public class BaleiaBranca : MonoBehaviour
     // Depois de morrer: 1 segundo de "PRONTO?" e a luta volta na etapa em que estava.
     IEnumerator Pronto()
     {
-        GerenciadorDoJogo.Instancia.Avisar($"ETAPA {EtapaAtual}/{Etapas} - PRONTO?", 1.3f);
+        GerenciadorDoJogo.Instancia.Avisar($"ETAPA {etapa + 1}/{Etapas} - PRONTO?", 1.3f);
         baleia.position = new Vector3(meio, chao + 16f, 0f);
         MostrarBaleia(OrdemDaBaleia);
         livre = true;
@@ -541,7 +550,7 @@ public class BaleiaBranca : MonoBehaviour
 
         AbrirArena();
         CameraSeguir.Destravar();
-        EmCombate = false;
+        emCombate = false;
     }
 
     // ------------------------------------------------------------------ os ataques
@@ -960,7 +969,7 @@ public class BaleiaBranca : MonoBehaviour
 
     void LevarGolpe(Jogador jogador)
     {
-        Vida--;
+        vida--;
         golpeada = true;
         timerPiscar = 0.8f;
         jogador.Quicar(14f, true);

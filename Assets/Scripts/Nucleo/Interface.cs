@@ -421,34 +421,34 @@ public class Interface : MonoBehaviour
         GUI.color = corOriginal;
     }
 
-    // Barra de vida da Baleia Branca, no topo da tela (no lugar da barra de progresso).
+    // Barra de vida do chefe (a Baleia Branca, a Elsa...), no topo da tela (no lugar da barra de progresso).
     // Mostra a ETAPA da luta e a barra dividida: cada etapa é um bloco de 2 golpes, separado por uma
     // divisão mais grossa, com uma bolinha embaixo (cheia = etapa vencida, piscando = etapa atual).
-    void DesenharVidaDoChefe(BaleiaBranca chefe)
+    void DesenharVidaDoChefe(Chefe chefe)
     {
         float largura = Mathf.Min(Screen.width * 0.4f, 560f * escala), altura = 16f * escala;
         var barra = new Rect((Screen.width - largura) / 2f, 52f * escala, largura, altura);
-        Texto($"BALEIA BRANCA - ETAPA {chefe.EtapaAtual}/{BaleiaBranca.Etapas}", Screen.width / 2f, 12f * escala, 2.5f, 0.5f, Branco);
+        Texto($"{chefe.Nome} - ETAPA {chefe.EtapaAtual + 1}/{chefe.Etapas}", Screen.width / 2f, 12f * escala, 2.5f, 0.5f, Branco);
 
         Color corOriginal = GUI.color;
         GUI.color = Color.black;
         GUI.DrawTexture(new Rect(barra.x - 3f * escala, barra.y - 3f * escala, barra.width + 6f * escala, barra.height + 6f * escala), Texture2D.whiteTexture);
         GUI.color = new Color(0.25f, 0.05f, 0.1f);
         GUI.DrawTexture(barra, Texture2D.whiteTexture);
-        float vida = chefe.VidaMostrada / chefe.vidaMaxima;
+        float vida = chefe.VidaMostrada / chefe.VidaMaxima;
         GUI.color = new Color(1f, 0.85f, 0.85f); // a parte que "escorre" fica clarinha
         GUI.DrawTexture(new Rect(barra.x, barra.y, barra.width * vida, barra.height), Texture2D.whiteTexture);
         GUI.color = new Color(0.9f, 0.15f, 0.25f);
-        GUI.DrawTexture(new Rect(barra.x, barra.y, barra.width * chefe.Vida / chefe.vidaMaxima, barra.height), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(barra.x, barra.y, barra.width * chefe.Vida / chefe.VidaMaxima, barra.height), Texture2D.whiteTexture);
         GUI.color = Color.black; // divisões entre os pedaços de vida (mais grossas entre uma etapa e outra)
-        for (int i = 1; i < chefe.vidaMaxima; i++)
+        for (int i = 1; i < chefe.VidaMaxima; i++)
         {
-            float grossura = i % BaleiaBranca.GolpesPorEtapa == 0 ? 5f : 2f;
-            GUI.DrawTexture(new Rect(barra.x + barra.width * i / chefe.vidaMaxima - grossura * escala / 2f, barra.y, grossura * escala, barra.height), Texture2D.whiteTexture);
+            float grossura = i % chefe.GolpesPorEtapa == 0 ? 5f : 2f;
+            GUI.DrawTexture(new Rect(barra.x + barra.width * i / chefe.VidaMaxima - grossura * escala / 2f, barra.y, grossura * escala, barra.height), Texture2D.whiteTexture);
         }
 
         // uma bolinha por etapa, embaixo do meio de cada bloco: vencida, atual (piscando) ou ainda não
-        int etapas = chefe.vidaMaxima / BaleiaBranca.GolpesPorEtapa;
+        int etapas = chefe.VidaMaxima / chefe.GolpesPorEtapa;
         float lado = 8f * escala;
         for (int i = 0; i < etapas; i++)
         {
@@ -457,7 +457,7 @@ public class Interface : MonoBehaviour
             var bolinha = new Rect(centro - lado / 2f, barra.yMax + 6f * escala, lado, lado);
             GUI.color = Color.black;
             GUI.DrawTexture(new Rect(bolinha.x - escala, bolinha.y - escala, bolinha.width + 2f * escala, bolinha.height + 2f * escala), Texture2D.whiteTexture);
-            bool vencida = i < chefe.EtapaAtual - 1, atual = i == chefe.EtapaAtual - 1;
+            bool vencida = i < chefe.EtapaAtual, atual = i == chefe.EtapaAtual;
             GUI.color = vencida ? new Color(1f, 0.85f, 0.3f)
                 : atual && Mathf.Repeat(Time.unscaledTime * 2f, 1f) < 0.6f ? new Color(0.9f, 0.15f, 0.25f)
                 : new Color(0.25f, 0.05f, 0.1f);
