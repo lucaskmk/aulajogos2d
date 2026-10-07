@@ -11,6 +11,8 @@ using UnityEngine;
 //  - O jeito de girar (onde a bola começa e para que lado gira) depende da COLUNA do 'Q' no mapa
 //    (veja a tabela "Jeitos" abaixo). Assim quem desenha a fase escolhe tudo só mudando o 'Q' de lugar,
 //    e a fase é igual em toda tentativa (dá para decorar o ritmo).
+//  - ENTERRADO: um 'Q' colocado DENTRO do chão (com chão em cima dele) se disfarça de bloco de chão.
+//    Não dá para ver nada... até a bola pular para fora do chão, como a barbatana de um tubarão. :)
 //
 // 'q' - igualzinho... até você chegar perto. Aí a Rem fica BRAVA (vira oni, com chifre e tudo):
 //       a corrente range, a bola freia e treme por um instante (esse é o aviso!) e depois volta
@@ -27,7 +29,7 @@ public class MangualDaRem : MonoBehaviour
 
     [Header("Variante troll ('q')")]
     public bool troll;
-    public float distanciaParaIrritar = 4f; // distância na horizontal em que a Rem percebe você
+    public float distanciaParaIrritar = 4.5f; // distância na horizontal em que a Rem percebe você (a bola alcança uns 3,5)
     public float tempoDeAviso = 0.4f;       // quanto tempo ela fica rangendo e freando antes de virar
     public float multiplicadorDaRaiva = 2f; // brava, ela gira esse tanto de vezes mais rápido
 
@@ -105,13 +107,31 @@ public class MangualDaRem : MonoBehaviour
     }
 
     // Chamado pelo ConstrutorDeFase: a coluna do mapa escolhe o jeito de girar; ehTroll = é um 'q'.
-    public void Montar(int coluna, bool ehTroll)
+    // disfarce = nome do desenho de chão, quando o mangual está ENTERRADO (null = eixo de ferro normal).
+    public void Montar(int coluna, bool ehTroll, string disfarce = null)
     {
         var jeito = Jeitos[Mathf.Abs(coluna) % Jeitos.Length];
         angulo = jeito.angulo;
         sentido = jeito.sentido;
         troll = ehTroll;
+
+        if (disfarce != null)
+        {
+            // O eixo vira um bloco de chão igualzinho aos vizinhos (mesma ordem de desenho do chão).
+            desenhoDoEixo.sprite = FabricaDeSprites.Pegar(disfarce);
+            desenhoDoEixo.sortingOrder = 0;
+            // O chifre e o "!" saem lá na superfície (um bloco acima), não no meio da terra.
+            chifre.position += Vector3.up;
+            aviso.position += Vector3.up;
+        }
         Posicionar(Vector3.zero);
+    }
+
+    void Start()
+    {
+        // A bola já começa dentro do chão? Anota sem fazer poeira nem barulho
+        // (senão todo mangual enterrado daria um "tum" quando a fase começa).
+        bolaDentroDoChao = BolaDentroDeAlgo();
     }
 
     void Update()
@@ -209,16 +229,10 @@ public class MangualDaRem : MonoBehaviour
     }
 
     // A bola acabou de entrar no chão (ou no teto)? Poeira e um "tum" (só se o jogador estiver perto, senão vira barulheira).
+    // Acabou de SAIR? Só um pouquinho de poeira (é o aviso do mangual enterrado: "olha a terra pulando ali!").
     void ChecarChao()
     {
-        bool dentro = false;
-        int quantidade = Physics2D.OverlapCircle(bola.position, 0.15f, filtroSolido, encostados);
-        for (int i = 0; i < quantidade; i++)
-        {
-            Collider2D outro = encostados[i];
-            if (outro.GetComponent<Jogador>() == null && !Inimigo.EhBicho(outro)) dentro = true;
-        }
-
+        bool dentro = BolaDentroDeAlgo();
         if (dentro && !bolaDentroDoChao)
         {
             Efeitos.Poeira(transform.parent, bola.position, 5, 2.5f);
@@ -228,7 +242,23 @@ public class MangualDaRem : MonoBehaviour
                 if (estado == Estado.Brava) CameraSeguir.Tremer(0.06f, 0.1f);
             }
         }
+        else if (!dentro && bolaDentroDoChao)
+        {
+            Efeitos.Poeira(transform.parent, bola.position, 3, 2f);
+        }
         bolaDentroDoChao = dentro;
+    }
+
+    // O meio da bola está dentro de algo sólido (chão, tijolo...)? O jogador e os bichos não contam.
+    bool BolaDentroDeAlgo()
+    {
+        int quantidade = Physics2D.OverlapCircle(bola.position, 0.15f, filtroSolido, encostados);
+        for (int i = 0; i < quantidade; i++)
+        {
+            Collider2D outro = encostados[i];
+            if (outro.GetComponent<Jogador>() == null && !Inimigo.EhBicho(outro)) return true;
+        }
+        return false;
     }
 
     // ------------------------------------------------------------------ desenhos

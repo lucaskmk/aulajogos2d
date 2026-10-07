@@ -46,6 +46,9 @@ public class PlataformaMovel : MonoBehaviour
     // A ponta de pedra e o cristal pendurados embaixo são só enfeite.
     const float AlturaDoColisor = 0.75f;
     const float AlturaDoCristal = -0.62f;    // onde o cristal fica pendurado (em relação ao centro)
+    // O quanto o corpo do Subaru pode passar da borda: o pé dele ainda "pisa" até 0.3 para fora (veja
+    // JogadorEmCima) e ele tem 0.36 de meia largura. Arredondado para cima.
+    const float MargemDoJogador = 0.7f;
 
     enum Estado { VaiEVolta, Caindo, Escondida, Disparando, Parada }
     Estado estado = Estado.VaiEVolta;
@@ -371,6 +374,8 @@ public class PlataformaMovel : MonoBehaviour
 
     // Quanto a plataforma pode andar para um lado (direcao 1 ou -1) até encostar em algo sólido.
     // Olha na altura dela E na altura de quem está em cima (assim ela nunca espreme o Subaru numa parede).
+    // Na altura do Subaru a parede conta como se estivesse MargemDoJogador mais perto: ele pode ficar
+    // em pé bem na beirada, com metade do corpo para fora da plataforma.
     // Ignora o Subaru, os bichos e as outras plataformas (elas se atravessam).
     float EspacoLivre(int direcao, float maximo)
     {
@@ -379,6 +384,7 @@ public class PlataformaMovel : MonoBehaviour
         float[] alturas = { -0.15f, 0.15f, 0.4f, 0.7f, 1.3f }; // 3 no corpo dela, 2 no corpo do Subaru
         foreach (float altura in alturas)
         {
+            float folga = altura > 0.5f ? MargemDoJogador : 0f; // acima de 0.5 = acima do topo = corpo do Subaru
             Vector2 inicio = new Vector2(borda, posicao.y + altura);
             int quantidade = Physics2D.Raycast(inicio, Vector2.right * direcao, filtroSolido, acertos, maximo);
             for (int i = 0; i < quantidade; i++)
@@ -386,10 +392,10 @@ public class PlataformaMovel : MonoBehaviour
                 Collider2D outro = acertos[i].collider;
                 if (outro == colisor || outro.GetComponent<Jogador>() != null || Inimigo.EhBicho(outro)
                     || outro.GetComponent<PlataformaMovel>() != null) continue;
-                menor = Mathf.Min(menor, acertos[i].distance);
+                menor = Mathf.Min(menor, acertos[i].distance - folga);
             }
         }
-        return menor;
+        return Mathf.Max(0f, menor);
     }
 
     // ------------------------------------------------------------------ desenho (a cada quadro)
