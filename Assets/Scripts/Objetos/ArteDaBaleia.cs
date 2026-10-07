@@ -2,7 +2,8 @@ using UnityEngine;
 
 // Os desenhos da BALEIA BRANCA (o chefe final), feitos por código como o resto do jogo.
 // Ela é uma ORCA gigante com um CHIFRE de osso espiralado na testa:
-//  - corpo preto-azulado por cima e barriga branca, com a "mancha" branca atrás do olho (a marca da orca);
+//  - corpo BRANCO (é a Baleia BRANCA) com sombras lilás, e o desenho de orca em branco mais quente:
+//    barriga e a "mancha" atrás do olho (a marca da orca) aparecem pelo contorno e pelo tom;
 //  - nadadeira dorsal alta (com um rasgo de batalha), nadadeira peitoral grande e o rabo em "V";
 //  - olho vermelho brilhando, cicatrizes de garra e um pouco de névoa em volta.
 // Ela sempre é desenhada olhando para a ESQUERDA, com o pivô no centro (o mapa do mundo também usa "baleia").
@@ -36,18 +37,18 @@ public static class ArteDaBaleia
     // ------------------------------------------------------------------ cores
 
     static readonly Color32 Contorno = FabricaDeSprites.Cor('k');
-    // corpo preto-azulado
-    static readonly Color32 CorpoSombra = new Color32(20, 22, 38, 255);
-    static readonly Color32 Corpo = new Color32(34, 38, 62, 255);
-    static readonly Color32 CorpoLuz = new Color32(58, 66, 104, 255);
-    static readonly Color32 CorpoBrilho = new Color32(110, 124, 180, 255);
-    // barriga e manchas brancas
-    static readonly Color32 Branco = new Color32(240, 242, 252, 255);
-    static readonly Color32 BrancoSombra = new Color32(196, 202, 230, 255);
-    static readonly Color32 BrancoSombraForte = new Color32(150, 156, 198, 255);
+    // corpo branco com sombras frias (lilás-acinzentado)
+    static readonly Color32 CorpoSombra = new Color32(146, 150, 194, 255);
+    static readonly Color32 Corpo = new Color32(208, 212, 236, 255);
+    static readonly Color32 CorpoLuz = new Color32(232, 235, 250, 255);
+    static readonly Color32 CorpoBrilho = new Color32(255, 255, 255, 255);
+    // barriga e manchas: um branco mais quente (marfim), para o desenho de orca aparecer no corpo branco
+    static readonly Color32 Branco = new Color32(255, 250, 236, 255);
+    static readonly Color32 BrancoSombra = new Color32(232, 222, 204, 255);
+    static readonly Color32 BrancoSombraForte = new Color32(196, 184, 172, 255);
     // "sela" cinza atrás da nadadeira dorsal
-    static readonly Color32 Sela = new Color32(84, 90, 122, 255);
-    static readonly Color32 SelaLuz = new Color32(112, 118, 150, 255);
+    static readonly Color32 Sela = new Color32(186, 190, 220, 255);
+    static readonly Color32 SelaLuz = new Color32(214, 216, 238, 255);
     // chifre de osso
     static readonly Color32 OssoClaro = new Color32(244, 236, 210, 255);
     static readonly Color32 Osso = new Color32(214, 198, 160, 255);
@@ -64,8 +65,8 @@ public static class ArteDaBaleia
     static readonly Color32 Goela = new Color32(96, 16, 36, 255);
     static readonly Color32 Lingua = new Color32(222, 92, 118, 255);
     static readonly Color32 Dente = new Color32(252, 250, 238, 255);
-    static readonly Color32 Cicatriz = new Color32(150, 112, 138, 255);
-    static readonly Color32 CicatrizClara = new Color32(196, 160, 182, 255);
+    static readonly Color32 Cicatriz = new Color32(186, 118, 152, 255);
+    static readonly Color32 CicatrizClara = new Color32(222, 170, 196, 255);
     static readonly Color32 CicatrizNoBranco = new Color32(206, 150, 172, 255);
     static readonly Color32 Tonta = new Color32(255, 222, 90, 255);
 
