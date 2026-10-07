@@ -29,6 +29,9 @@ public static class Textos
         { "Foge, bloco!", Beatrice("Hmpf. Você está chegando perto da minha biblioteca, de fato.") },
         { "Ponte para a Capital", Puck("Vermelho cai, amarelo dispara. E você caiu {0} vez(es). Anotou?") },
         { "Biblioteca Proibida", Beatrice("Você achou a porta certa. Não que eu estivesse esperando, kashira.") },
+        { "Quem é Rem?", Puck("A Rem mandou pedir desculpas pelas {0} vez(es). Mentira, ela não mandou.") },
+        { "Voa, Barusu!", Puck("A Ram mandou dizer: \"Barusu voou {0} vez(es). Previsível.\"") },
+        { "Dança das Gêmeas", Puck("Tic, tic, TAC... e você caiu {0} vez(es). A Ram mandou dizer que você dança muito mal.") },
         { "O Verdadeiro Final (juro)", Puck("Ops. Esqueci de falar da Baleia Branca. Boa sorte! :)") },
     };
 

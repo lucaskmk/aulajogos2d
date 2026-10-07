@@ -39,6 +39,8 @@ public class EsmagadorDoRitmo : MonoBehaviour
         spriteCalmo = FabricaDeSprites.Pegar("esmagador_ritmo");
         spriteBravo = FabricaDeSprites.Pegar("esmagador_ritmo_bravo");
 
+        Luzes.Ponto(transform, Luzes.Lilas, 1.6f, 0.4f); // no escuro, um brilho roxo (de dia devolve null: tudo bem)
+
         Perigo.Adicionar(gameObject, new Vector2(0.95f, 0.95f), Vector2.zero);
         Perigo.TornarMovel(gameObject);
         filtroSolido = new ContactFilter2D { useTriggers = false };
