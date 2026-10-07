@@ -34,6 +34,8 @@ public static class Conquistas
         new Conquista("save_mudou", "Mudaram meu save!", "Ver o ponto de save mudar de lugar."),
         new Conquista("secreta", "Explorador", "Terminar a fase secreta."),
         new Conquista("expressa", "Passageiro da Expressa", "Ir até o fim na plataforma expressa sem pular."),
+        new Conquista("elsa", "Entranhas à mostra", "Levar uma faca da Elsa."),
+        new Conquista("miasma", "Abraço da Bruxa", "Ser pego pelo miasma da Bruxa da Inveja."),
         new Conquista("rem_brava", "Oni de cabelo azul", "Ser pego pelo mangual da Rem brava."),
         new Conquista("vento_da_ram", "Levado pelo vento", "Morrer empurrado por uma rajada da Ram (ou largado por um redemoinho)."),
         new Conquista("fora_do_ritmo", "Fora do Ritmo", "Pisar no bloco do ritmo que não era do ritmo."),

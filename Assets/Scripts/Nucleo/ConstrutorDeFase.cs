@@ -115,6 +115,9 @@ public static class ConstrutorDeFase
                     case 'j': case 'J': case 'D': celulasDePlataforma[new Vector2Int(x, linha)] = c; break; // plataformas móveis
                     case 'a': case 'b': case 'A': celulasDoRitmo[new Vector2Int(x, linha)] = c; break; // blocos do ritmo (juntados depois do laço)
                     case 't': Criar<EsmagadorDoRitmo>("EsmagadorDoRitmo", raiz, pos); break;
+                    case 'l': Criar<FacasDaElsa>("Elsa", raiz, pos); break;
+                    case 'k': Criar<FacasDaElsa>("ElsaDoLeque", raiz, pos).Montar(true); break;
+                    case 'N': Criar<MiasmaDaBruxa>("MiasmaDaBruxa", raiz, pos); break;
                     case 'y': celulasDeVento.Add(new Vector2Int(x, linha)); break;
                     case 'n': celulasDeRedemoinho.Add(new Vector2Int(x, linha)); break;
                     case 'Q': case 'q': // com chão em cima = ENTERRADO (disfarçado de chão)

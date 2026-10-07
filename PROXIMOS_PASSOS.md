@@ -34,24 +34,26 @@ Tudo o que está listado como "pronto" já está na `main`.
 ## Em andamento / falta fazer
 A ordem final das 16 fases:
 
-| # | Fase | Mecânica nova | Situação |
+| # | Fase | Mecânica | Situação |
 |---|---|---|---|
 | 1 | Bem-vindo :) | — | pronta |
 | 2 | Confia em mim | — | pronta |
 | 3 | Corre! | — | pronta |
 | 4 | O Final (sem pegadinhas) | — | pronta |
 | 5 | Eu mudo de ideia (libera a secreta) | — | pronta |
-| 6 | (Rem) | **Mangual da Rem** `Q`/`q` | `MangualDaRem.cs` existe, mas falta revisar e desenhar a fase |
-| 7 | Cadê a direita? | (inversão, um trecho só) | pronta |
+| 6 | Quem é Rem? | Mangual da Rem `Q`/`q` | pronta |
+| 7 | Cadê a direita? | inversão (um trecho) | pronta |
 | 8 | Foge, bloco! | — | pronta |
-| 9 | Ponte para a Capital | plataformas `j` `J` `D` | **pronta** |
-| 10 | (Ram) | **Vento da Ram** `y` (rajadas para trás) e `n` (redemoinho para cima) | código existe (`VentoDaRam.cs`); falta revisar e fazer a fase |
+| 9 | Ponte para a Capital | plataformas `j` `J` `D` | pronta |
+| 10 | Voa, Barusu! | Vento da Ram `y` / redemoinho `n` | pronta |
 | 11 | Biblioteca Proibida | portas | pronta |
-| 12 | (ritmo) | **Blocos do ritmo** `a`/`b` (alternam a cada 1,4 s e piscam antes) | falta |
-| 13 | (Elsa, `escura = true`) | **Facas da Elsa** `l` (lançador com aviso nos olhos; a faca tem luz própria) | falta |
-| 14 | (miasma) | **Miasma da Bruxa** `N` (parede com mãos que persegue; renasce atrás do checkpoint). A fase é **só correr e parkour** (pedido do dono do jogo): nada de pegadinha que obriga a parar | código existe (`MiasmaDaBruxa.cs`); falta a fase |
+| 12 | Dança das Gêmeas (noite) | blocos do ritmo `a`/`b`/`A`, esmagador `t` | pronta |
+| 13 | Quem apagou a luz? (escura) | Facas da Elsa `l` / leque `k` | pronta |
+| 14 | Eu Te Amo (CORRE!) (noite) | Miasma da Bruxa `N` (só correr e parkour) | pronta |
 | 15 | O Verdadeiro Final (juro) | — | pronta |
-| 16 | A Baleia Branca (`noite = true`) | **Chefe** (reescrever `BaleiaBranca.cs`) | arte pronta; falta a luta e a fase |
+| 16 | A Baleia Branca (noite) | chefe em 3 etapas (`BaleiaBranca.cs`) | pronta (ainda não testada dentro da Unity) |
+
+**Todas as 16 fases estão integradas.** O checador estático não entende plataformas, vento e portas (fases 9, 10 e 11). Elas foram testadas com simuladores próprios dos agentes, em `/tmp/claude-0/teste_*`.
 
 Cada mecânica nova é **um arquivo novo** em `Assets/Scripts/Armadilhas/` (com `.meta`). Os sprites são registrados com `FabricaDeSprites.Registrar` num método `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]`. Integrar uma fase nova é:
 1. Pôr um `case` no `switch` de `ConstrutorDeFase.Construir`.
