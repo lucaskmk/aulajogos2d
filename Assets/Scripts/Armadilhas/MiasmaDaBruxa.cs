@@ -6,7 +6,8 @@ using UnityEngine;
 //  - O 'N' marca a coluna de onde ela começa, atrás do jogador. Ela fica "dormindo" (olhos fechados)
 //    até o jogador se afastar uns 4 blocos; aí ela RI, a tela treme e ela começa a andar para a direita.
 //  - Ela anda a 5,2 blocos por segundo e o Subaru anda 7: correndo sem parar você abre vantagem.
-//    Mas cada pegadinha que te faz PARAR (bloco invisível, inimigo, esmagador...) é tempo que ela recupera.
+//    Mas cada vez que você PARA para pensar (ou erra um pulo e tem que voltar) é tempo que ela recupera:
+//    ficou uns 2 segundos parado, ela te pega. Por isso a fase dela é só CORRER e PULAR (parkour).
 //  - "Elástico": se você abrir vantagem demais, ela acelera. Correndo perfeito ela fica uns 11 blocos atrás
 //    (bem na beirada da tela) e NUNCA mais de 14. Não dá para "guardar" vantagem para depois.
 //  - Quando você fica perto dela (3,5 blocos), uma das MÃOS se estica para te agarrar. O aviso é a mão
