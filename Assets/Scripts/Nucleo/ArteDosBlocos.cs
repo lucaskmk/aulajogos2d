@@ -189,23 +189,83 @@ public static class ArteDosBlocos
 
     // ---------------------------------------------------------------- quem pede os desenhos
 
+    // ---------------------------------------------------------------- o "atlas" do chão
+
+    // Todas as combinações de bloco de chão (3 tipos x 4 versões x 8 jeitos de borda = 96) são pintadas
+    // numa imagem SÓ (um "atlas", como uma folha de figurinhas), e cada bloco é um recorte dela.
+    // Por quê? A placa de vídeo desenha de uma vez só ("batching") os sprites que usam a MESMA imagem.
+    // Com 96 imagens separadas, uma fase com 300 blocos viraria centenas de desenhos; com o atlas, poucos.
+    // Cada recorte tem 1 pixel de folga em volta, repetindo a beirada (para nunca "vazar" o vizinho).
+    static readonly string[] Tipos = { "topo", "terra", "pedra" };
+    const int ColunasDoAtlas = 12, CelulaLargura = 18, CelulaAltura = 21; // 16 x 19 + a folga
+    static Texture2D atlas;
+
+    // Necessário porque o projeto está com "Enter Play Mode Options" (sem recarregar o domínio).
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void Limpar() => atlas = null;
+
+    // Qual célula do atlas guarda essa combinação.
+    static int Celula(int tipo, int versao, int bordas) => (tipo * Versoes + versao) * 8 + bordas;
+
+    static Tela Desenhar(int tipo, int versao, int bordas)
+    {
+        bool e = (bordas & 1) != 0, d = (bordas & 2) != 0, b = (bordas & 4) != 0;
+        if (tipo == 0) return ChaoComGrama(versao, e, d, b, versao == 3);
+        if (tipo == 1) return ChaoDeTerra(versao, e, d, b);
+        return ChaoDePedra(versao, e, d, b);
+    }
+
+    static Texture2D Atlas()
+    {
+        if (atlas != null) return atlas;
+        int total = Tipos.Length * Versoes * 8;
+        int linhas = (total + ColunasDoAtlas - 1) / ColunasDoAtlas;
+        int largura = ColunasDoAtlas * CelulaLargura, altura = linhas * CelulaAltura;
+        var pixels = new Color32[largura * altura];
+        for (int tipo = 0; tipo < Tipos.Length; tipo++)
+            for (int versao = 0; versao < Versoes; versao++)
+                for (int bordas = 0; bordas < 8; bordas++)
+                {
+                    Tela t = Desenhar(tipo, versao, bordas);
+                    int c = Celula(tipo, versao, bordas);
+                    int x0 = (c % ColunasDoAtlas) * CelulaLargura, y0 = (c / ColunasDoAtlas) * CelulaAltura;
+                    // o desenho vai de (1, 1) até (16, altura) dentro da célula; a folga copia a beirada mais perto
+                    for (int y = 0; y < t.altura + 2; y++)
+                        for (int x = 0; x < CelulaLargura; x++)
+                        {
+                            int sx = Mathf.Clamp(x - 1, 0, t.largura - 1), sy = Mathf.Clamp(y - 1, 0, t.altura - 1);
+                            pixels[(y0 + y) * largura + x0 + x] = t.CorFinal(sx, sy);
+                        }
+                }
+        atlas = new Texture2D(largura, altura, TextureFormat.RGBA32, false)
+        {
+            name = "Atlas do chao",
+            filterMode = FilterMode.Point,
+            wrapMode = TextureWrapMode.Clamp,
+        };
+        atlas.SetPixels32(pixels);
+        atlas.Apply();
+        return atlas;
+    }
+
     // Chamado pela FabricaDeSprites para nomes que ela não conhece. Devolve false se não for um bloco daqui.
+    // Ex.: "chao_topo_2_eb" = grama em cima, versão 2, aberto à esquerda e embaixo.
     public static bool TentarCriar(string nome, out Sprite sprite)
     {
         sprite = null;
         if (!nome.StartsWith("chao_")) return false;
         string[] partes = nome.Split('_'); // "chao", tipo, versão, bordas (opcional)
-        if (partes.Length < 3 || !int.TryParse(partes[2], out int versao)) return false;
-        string bordas = partes.Length > 3 ? partes[3] : "";
-        bool esquerda = bordas.Contains("e"), direita = bordas.Contains("d"), baixo = bordas.Contains("b");
-        versao = Volta(versao, Versoes);
-        switch (partes[1])
-        {
-            case "topo": sprite = ChaoComGrama(versao, esquerda, direita, baixo, versao == 3); return true;
-            case "terra": sprite = ChaoDeTerra(versao, esquerda, direita, baixo); return true;
-            case "pedra": sprite = ChaoDePedra(versao, esquerda, direita, baixo); return true;
-        }
-        return false;
+        int tipo = partes.Length >= 3 ? System.Array.IndexOf(Tipos, partes[1]) : -1;
+        if (tipo < 0 || !int.TryParse(partes[2], out int versao)) return false;
+        string letras = partes.Length > 3 ? partes[3] : "";
+        int bordas = (letras.Contains("e") ? 1 : 0) | (letras.Contains("d") ? 2 : 0) | (letras.Contains("b") ? 4 : 0);
+        int c = Celula(tipo, Volta(versao, Versoes), bordas);
+        int altura = tipo == 0 ? 19 : 16;
+        var recorte = new Rect((c % ColunasDoAtlas) * CelulaLargura + 1, (c / ColunasDoAtlas) * CelulaAltura + 1, 16, altura);
+        sprite = Sprite.Create(Atlas(), recorte, tipo == 0 ? PivoDaGrama : FabricaDeSprites.Centro,
+            FabricaDeSprites.PixelsPorUnidade, 0, SpriteMeshType.FullRect);
+        sprite.name = nome;
+        return true;
     }
 
     // O nome do bloco de chão (o ConstrutorDeFase usa). profundidade = quantos blocos de chão tem em cima dele.
@@ -330,7 +390,7 @@ public static class ArteDosBlocos
 
     // ---------------------------------------------------------------- chão com grama (topo)
 
-    static Sprite ChaoComGrama(int versao, bool esquerda, bool direita, bool baixo, bool flores)
+    static Tela ChaoComGrama(int versao, bool esquerda, bool direita, bool baixo, bool flores)
     {
         var t = new Tela(16, 19);
         int semente = 100 + versao;
@@ -413,7 +473,7 @@ public static class ArteDosBlocos
         }
         Bordas(t, esquerda, direita, baixo, 4);
         if (esquerda) t.Pintar(0, 5, Capim, 0);
-        return t.Criar(PivoDaGrama);
+        return t;
     }
 
     static void Flor(Tela t, int x, Color32 petala)
@@ -431,7 +491,7 @@ public static class ArteDosBlocos
 
     // Metade de cima é terra (com raízes e pedrinhas), e embaixo a rocha começa a aparecer: as "camadas"
     // de um barranco de verdade. A divisa entre as duas é ondulada.
-    static Sprite ChaoDeTerra(int versao, bool esquerda, bool direita, bool baixo)
+    static Tela ChaoDeTerra(int versao, bool esquerda, bool direita, bool baixo)
     {
         var t = new Tela(16, 16);
         PintarPedra(t, versao, false);
@@ -448,7 +508,7 @@ public static class ArteDosBlocos
             t.Mudar(x, divisa - 2, -1);
         }
         Bordas(t, esquerda, direita, baixo, 15);
-        return t.Criar(FabricaDeSprites.Centro);
+        return t;
     }
 
     // ---------------------------------------------------------------- pedra (mais fundo)
@@ -478,12 +538,12 @@ public static class ArteDosBlocos
         return indice;
     }
 
-    static Sprite ChaoDePedra(int versao, bool esquerda, bool direita, bool baixo)
+    static Tela ChaoDePedra(int versao, bool esquerda, bool direita, bool baixo)
     {
         var t = new Tela(16, 16);
         PintarPedra(t, versao, true);
         Bordas(t, esquerda, direita, baixo, 15);
-        return t.Criar(FabricaDeSprites.Centro);
+        return t;
     }
 
     static void PintarPedra(Tela t, int versao, bool musgo)
