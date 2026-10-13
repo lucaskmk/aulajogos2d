@@ -121,8 +121,8 @@ public class Paralaxe : MonoBehaviour
         if (clima == Clima.Dia || clima == Clima.Noite)
         {
             Color frente = Color.Lerp(corDoFundo, Escuro, noite ? 0.9f : 0.82f);
-            frente.a = 0.92f;
-            PrimeiroPlano.Criar(raiz, "capim", "hd2d_frente_capim", -0.55f, false, frente, 1.05f);
+            frente.a = 0.8f; // meio transparente e mais baixo: nunca pode esconder um espinho do chão
+            PrimeiroPlano.Criar(raiz, "capim", "hd2d_frente_capim", -0.55f, false, frente, 1.35f);
             frente.a = 0.7f;
             PrimeiroPlano.Criar(raiz, "galho", "hd2d_frente_galho", -0.75f, true, frente, 1f, 5f);
         }
