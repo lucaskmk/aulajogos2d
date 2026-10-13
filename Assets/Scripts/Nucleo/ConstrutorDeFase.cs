@@ -363,15 +363,21 @@ public static class ConstrutorDeFase
                 Luzes.Ponto(lampiao.transform, Luzes.Quente, 4.5f, 0.85f, Vector3.up * 2.15f);
                 ultimoLampiao = x;
             }
-            else if (sorte < 18 && chaoDosLados) Visual("Arbusto", decoracao, base_, "arbusto", -7, parado: true);
+            else if (sorte < 18 && chaoDosLados)
+            {
+                // o arbusto balança pouquinho no vento (veja Vento.cs)
+                var arbusto = Visual("Arbusto", decoracao, base_, "arbusto", -7, parado: true);
+                Vento.Plantar(arbusto.GetComponent<SpriteRenderer>(), "arbusto", decoracao, rigidez: 0.7f);
+            }
             else if (sorte < 26 && chaoDosLados) Visual("Cerca", decoracao, base_, "cerca", -7, parado: true);
             else if (sorte < 35) Visual("Pedra", decoracao, base_, "pedra", -7, parado: true);
             else if (sorte < 42) Visual("Cogumelo", decoracao, base_, "cogumelo", -7, parado: true);
             else
             {
-                // (a sombra é "filha" do enfeite: gira junto com ele sem precisar copiar nada)
-                var enfeite = Visual("Enfeite", decoracao, base_, sorte < 65 ? "flor" : "tufo", -8, parado: true);
-                Animacao.Adicionar(enfeite, Animacao.Tipo.Balancar, 2.5f, 6f);
+                // flores e capim balançam no vento: o topo mexe mais e a base fica presa no chão (Vento.cs)
+                string planta = sorte < 65 ? "flor" : "tufo";
+                var enfeite = Visual("Enfeite", decoracao, base_, planta, -8, parado: true);
+                Vento.Plantar(enfeite.GetComponent<SpriteRenderer>(), planta, decoracao);
             }
         }
 

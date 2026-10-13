@@ -47,6 +47,8 @@ public class PrimeiroPlano : MonoBehaviour
             visual.color = cor;
             visual.sortingOrder = 40; // na frente de tudo (menos da interface)
             plano.pedacos[i] = pedaco.transform;
+            // balança no vento, todos os pedaços na MESMA pose (senão a emenda entre eles apareceria)
+            Vento.Plantar(visual, sprite, objeto.transform, xFixo: deslocamentoX);
         }
         plano.deslocamentoX = deslocamentoX;
         return plano;
