@@ -174,6 +174,8 @@ public class GerenciadorDoJogo : MonoBehaviour
             return;
         }
         Instancia = this;
+        // Diagnóstico: confirma no Console qual versão do visual está rodando (veja AjustesVisuais.Versao).
+        Debug.Log($"[Re:CILADA] {AjustesVisuais.Versao} rodando. {AjustesVisuais.Resumo()}");
 
         PrepararCamera();
         Luzes.PrepararGlobal();

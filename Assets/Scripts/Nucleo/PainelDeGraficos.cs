@@ -75,7 +75,7 @@ public class PainelDeGraficos : MonoBehaviour
         GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(escala, escala, 1f));
         GUI.color = Color.white;
 
-        GUI.Box(new Rect(8f, 8f, Largura + 16f, 532f), "Painel de gráficos (F10 fecha)");
+        GUI.Box(new Rect(8f, 8f, Largura + 16f, 532f), "Painel de gráficos (F10 fecha) - " + AjustesVisuais.Versao);
         x = 16f;
         y = 32f;
 

@@ -9,6 +9,12 @@ using UnityEngine;
 // no Simples, os efeitos pesados ficam desligados mesmo que estejam ligados aqui.
 public static class AjustesVisuais
 {
+    // Qual versão do visual está rodando. Aparece no Console da Unity quando o jogo começa e no topo do painel F10.
+    // Se o Console NÃO mostrar esta linha ao apertar Play, a Unity está rodando scripts velhos: quase sempre é
+    // um erro de compilação (mensagem vermelha no Console). Enquanto existir um erro, a Unity continua usando
+    // a última versão que compilou, e parece que "nada mudou".
+    public const string Versao = "visual v3 (HD-2D escuro)";
+
     // Tela em baixa resolução (16 pixels por bloco), aumentada com escala inteira: pixel nítido (TelaPixelada).
     public static bool pixelNitido;
     // true = só aumenta 2x, 3x, 4x... (pode sobrar uma faixa em cima e embaixo); false = estica até preencher.
