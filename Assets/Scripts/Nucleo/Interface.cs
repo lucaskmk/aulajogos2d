@@ -78,6 +78,7 @@ public class Interface : MonoBehaviour
 
         DesenharAvisoDeConquista();
         DesenharTransicao(); // por cima de tudo
+        PainelDeGraficos.Desenhar(); // o painel de testes do visual (F10), por cima até da transição
     }
 
     void PrepararEstilos()

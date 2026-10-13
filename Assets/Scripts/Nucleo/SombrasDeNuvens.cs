@@ -5,7 +5,7 @@ using UnityEngine;
 //
 // O desenho é um "ruído" (manchas aleatórias que se repetem sem emenda na horizontal, veja ArteHD2D)
 // esticado para cobrir a tela de cima a baixo. Os pedaços são postos lado a lado e andam com o vento.
-// Na parte de cima da tela a mancha some aos poucos: é o céu, e o céu não recebe sombra.
+// Ela é forte só na parte de baixo da tela (o chão) e some até a metade: o céu não recebe sombra.
 //
 // Com o shader SombraMultiplicada a tela é MULTIPLICADA (escurece uns 30% onde a nuvem é cheia).
 // Se o shader não estiver disponível, um azul-escuro meio transparente faz quase o mesmo papel.
@@ -109,6 +109,7 @@ public class SombrasDeNuvens : MonoBehaviour
         // O sol fica no alto, à direita: tem nuvem passando por lá?
         float xDoSol = posCam.x + meiaTela * 0.55f;
         float u = Mathf.Repeat((xDoSol - origem) / largura, 1f); // (cada pedaço começa em origem + n * largura)
-        LuzDoDia.Cobertura = Mathf.Clamp01(ArteHD2D.DensidadeDaNuvem(u, 0.55f) * Mathf.Min(1f, f));
+        // (a mesma nuvem, só que lá no alto: a densidade "crua", sem o sumiço do céu)
+        LuzDoDia.Cobertura = Mathf.Clamp01(ArteHD2D.DensidadeDaNuvem(u, 0.8f) * Mathf.Min(1f, f));
     }
 }

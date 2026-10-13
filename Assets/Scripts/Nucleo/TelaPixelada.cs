@@ -40,10 +40,15 @@ public class TelaPixelada : MonoBehaviour
     Camera apresentacao;                  // uma câmera que não desenha nada, só limpa a tela (veja CriarApresentacao)
     int largura, altura;                  // tamanho da imagem pequena
     Rect area;                            // onde a imagem aparece na tela (em coordenadas da interface: y para baixo)
+    float escalaUsada;                    // quantas vezes a imagem foi aumentada
     bool falhou;
 
     // A imagem pequena está ligada agora?
     public static bool Ativa => instancia != null && instancia.camAlvo != null && instancia.principal != null;
+
+    // Para o painel F10: o tamanho da imagem e a escala (ex.: "427 x 240, 4x").
+    public static string Descricao => !Ativa ? "desligada (desenhando direto na tela)"
+        : $"{instancia.largura} x {instancia.altura}, {instancia.escalaUsada:0.##}x" + (instancia.falhou ? " (falhou)" : "");
 
     void Awake() => instancia = this;
 
@@ -81,8 +86,10 @@ public class TelaPixelada : MonoBehaviour
         }
 
         // Onde a imagem aparece: centralizada (a sobra de cada lado é igual).
+        escalaUsada = escala;
         float w = largura * escala, h = altura * escala;
-        area = new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f, w, h);
+        // (arredondado para pixels inteiros da tela: meio pixel de deslocamento deixaria as bordas tortas)
+        area = new Rect(Mathf.Floor((Screen.width - w) / 2f), Mathf.Floor((Screen.height - h) / 2f), w, h);
 
         if (apresentacao == null) CriarApresentacao();
         apresentacao.enabled = true;

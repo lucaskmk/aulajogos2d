@@ -251,7 +251,9 @@ public static class ArteHD2D
     static Color32 CorDaSombraDeNuvem(int x, int y)
     {
         float v = (y + 0.5f) / AlturaDaNuvem;  // 0 = base da tela, 1 = topo
-        float ceu = Mathf.Clamp01((0.9f - v) / 0.45f); // vai sumindo na metade de cima (o céu não recebe sombra)
+        // Num jogo visto de LADO, quase metade da tela é céu, e céu não recebe sombra: a mancha é cheia
+        // só na parte de baixo (o chão e as plataformas baixas) e some até a metade da tela.
+        float ceu = Mathf.Clamp01((0.6f - v) / 0.35f);
         float a = Densidade()[y * LarguraDaNuvem + x] * ceu * ceu * (3f - 2f * ceu);
         return new Color32(255, 255, 255, Byte(a));
     }

@@ -184,6 +184,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         gameObject.AddComponent<Interface>();
         gameObject.AddComponent<EfeitosDeTela>();
         gameObject.AddComponent<TelaPixelada>(); // pixel nítido: a câmera desenha em baixa resolução (e fica mais leve)
+        gameObject.AddComponent<PainelDeGraficos>(); // F10: liga/desliga e ajusta cada efeito visual, e mostra o FPS
 
         VoltarAoTitulo();
     }

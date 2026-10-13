@@ -35,8 +35,6 @@ public static class AjustesVisuais
     public static bool corPorHora;       // fases de dia: manhã no começo, entardecer dourado no fim
     public static float horaManual;      // -1 = automática (pela posição do Subaru); 0 a 1 = força uma hora
 
-    public static bool mostrarFPS;       // contador de quadros por segundo (no painel)
-
     // Os valores de fábrica. Necessário também porque o projeto está com "Enter Play Mode Options"
     // (sem recarregar o domínio): sem isso, o que mudou no painel ficaria para o próximo Play.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -50,7 +48,6 @@ public static class AjustesVisuais
         bloom = true; forcaDoBloom = 1f; limiteDoBloom = 0f;
         tiltShift = true; tamanhoDoTilt = 0.22f; forcaDoTilt = 0.85f;
         corPorHora = true; horaManual = -1f;
-        mostrarFPS = false;
     }
 
     static AjustesVisuais() => ValoresDeFabrica();
