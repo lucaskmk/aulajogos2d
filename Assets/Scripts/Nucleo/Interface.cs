@@ -1,9 +1,11 @@
 using UnityEngine;
 
-// Tudo o que é desenhado "por cima" do jogo: HUD, título com menu, conquistas, mapa, pausa (com volume),
-// tela de morte, fase concluída, vitória, créditos, falas dos personagens e a transição entre fases.
+// Tudo o que é desenhado "por cima" do jogo: HUD, título com menu, opções, como jogar, conquistas, mapa,
+// pausa, tela de morte, fase concluída, vitória, créditos, falas dos personagens e a transição entre fases.
 // Usa o OnGUI (IMGUI) do Unity. Os textos usam a fonte pixel de FabricaDeSprites.TextoEmPixel.
-// Ela só LÊ o estado do GerenciadorDoJogo; quem decide as coisas é ele.
+// Ela só LÊ o estado do GerenciadorDoJogo; quem decide as coisas é ele. A única "conversa" no outro
+// sentido é o mouse: só a Interface sabe ONDE cada opção foi desenhada, então ela avisa o
+// GerenciadorDoJogo quando o mouse passa por cima de uma opção ou clica nela (veja "mouse nos menus").
 public class Interface : MonoBehaviour
 {
     static readonly Color32 CorMarinho = new Color32(44, 52, 130, 255);
@@ -14,6 +16,7 @@ public class Interface : MonoBehaviour
     static readonly Color32 Vermelho = new Color32(255, 102, 102, 255);
     static readonly Color32 Rosa = new Color32(255, 153, 255, 255);
     static readonly Color32 Lilas = new Color32(215, 170, 245, 255);
+    static readonly Color32 CorDoRodape = new Color32(200, 190, 220, 255); // cinza-lilás: discreto
 
     GerenciadorDoJogo jogo;
     GUIStyle estiloFala, estiloFalaEsquerda;
@@ -24,7 +27,13 @@ public class Interface : MonoBehaviour
     // Textos do HUD guardados: só são montados de novo quando o número muda.
     // (montar "Mortes: " + número a cada quadro cria lixo na memória; veja FabricaDeSprites.TextoEmPixel)
     struct TextoComNumero { public int valor; public string texto; }
-    TextoComNumero textoMortes, textoMoedas, textoTempo, textoDaFase, textoDoMapa, textoDoChefe;
+    TextoComNumero textoMortes, textoMoedas, textoTempo, textoDaFase, textoDoMapa, textoDoChefe, textoDaPagina;
+
+    // Mouse nos menus (veja Mouse(), lá embaixo).
+    Vector2 mouseAntes;
+    bool mouseConhecido; // já sabemos onde o mouse estava? (no 1º quadro não dá para saber se ele "mexeu")
+    bool mouseMexeu;     // o mouse se mexeu desde o último quadro? Só aí ele seleciona (senão brigaria com o teclado)
+    bool usarMouse;      // falso com o painel F10 aberto (os cliques são dele)
 
     static string ComNumero(ref TextoComNumero guardado, int valor, System.Func<int, string> montar)
     {
@@ -49,6 +58,8 @@ public class Interface : MonoBehaviour
         // Primeiro a imagem do jogo (quando a câmera desenha em baixa resolução: veja TelaPixelada),
         // depois todo o resto por cima, nítido.
         TelaPixelada.DesenharNaTela();
+        PrepararMouse();
+        bool submenu = jogo.SubmenuAberto != GerenciadorDoJogo.Submenu.Nenhum; // Opções ou Como Jogar abertos
 
         DesenharFalaDoPuck();
         DesenharDicaDasPortas();
@@ -56,9 +67,9 @@ public class Interface : MonoBehaviour
         bool lutando = jogo.Chefe != null && jogo.Chefe.EmCombate;
         if ((estado == EstadoDoJogo.Jogando || estado == EstadoDoJogo.Morreu || estado == EstadoDoJogo.FaseConcluida) && !lutando)
             DesenharBarraDeProgresso();
-        if (lutando && estado != EstadoDoJogo.Titulo) DesenharVidaDoChefe(jogo.Chefe);
+        if (lutando && estado != EstadoDoJogo.Titulo && !submenu) DesenharVidaDoChefe(jogo.Chefe);
         if (estado != EstadoDoJogo.Titulo && estado != EstadoDoJogo.Vitoria
-            && estado != EstadoDoJogo.Conquistas && estado != EstadoDoJogo.Creditos)
+            && estado != EstadoDoJogo.Conquistas && estado != EstadoDoJogo.Creditos && !submenu)
             DesenharHud();
 
         if (estado == EstadoDoJogo.Jogando && jogo.Aviso != "")
@@ -66,14 +77,30 @@ public class Interface : MonoBehaviour
 
         switch (estado)
         {
-            case EstadoDoJogo.Titulo: DesenharTitulo(); break;
+            case EstadoDoJogo.Titulo:
+                if (submenu) DesenharSubmenu();
+                else DesenharTitulo();
+                break;
             case EstadoDoJogo.Conquistas: DesenharConquistas(); break;
             case EstadoDoJogo.Creditos: DesenharCreditos(); break;
             case EstadoDoJogo.Mapa: DesenharMapa(); break;
-            case EstadoDoJogo.Pausado: DesenharPausa(); break;
+            case EstadoDoJogo.Pausado:
+                if (submenu) DesenharSubmenu();
+                else DesenharPausa();
+                break;
             case EstadoDoJogo.Morreu: DesenharMorte(); break;
             case EstadoDoJogo.FaseConcluida: DesenharFaseConcluida(); break;
             case EstadoDoJogo.Vitoria: DesenharVitoria(); break;
+        }
+
+        // botão direito do mouse = ESC (volta uma tela), em qualquer menu
+        bool emMenu = estado == EstadoDoJogo.Titulo || estado == EstadoDoJogo.Pausado
+                      || estado == EstadoDoJogo.Conquistas || estado == EstadoDoJogo.Creditos;
+        Event evento = Event.current;
+        if (usarMouse && emMenu && evento.type == EventType.MouseDown && evento.button == 1)
+        {
+            jogo.MouseClicou(GerenciadorDoJogo.BotaoVoltar, 0);
+            evento.Use();
         }
 
         DesenharAvisoDeConquista();
@@ -123,7 +150,8 @@ public class Interface : MonoBehaviour
             Texto(mortes, margem, linha2, pixel, 0f, Branco);
         }
         Texto(ComNumero(ref textoMoedas, jogo.Moedas, n => "Moedas: " + n), w - margem, 10f * escala, pixel, 1f, Amarelo);
-        Texto(ComNumero(ref textoTempo, Mathf.FloorToInt(jogo.TempoTotal), t => FormatarTempo(t)), w - margem, linha2, pixel, 1f, Branco);
+        if (Opcoes.MostrarTempo) // o cronômetro pode ser escondido em Opções
+            Texto(ComNumero(ref textoTempo, Mathf.FloorToInt(jogo.TempoTotal), t => FormatarTempo(t)), w - margem, linha2, pixel, 1f, Branco);
     }
 
     void DesenharTitulo()
@@ -131,24 +159,24 @@ public class Interface : MonoBehaviour
         float w = Screen.width, h = Screen.height;
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         // logo no estilo "Re:ZERO": letras azul-marinho com borda branca
-        DesenharTextoEmPixel(FabricaDeSprites.TextoEmPixel("Re:CILADA!", CorMarinho, Color.white, CorMarinho), w / 2f, h * 0.12f, 130f * escala);
-        Texto("começando a vida do zero (de novo, e de novo...)", w / 2f, h * 0.12f + 140f * escala, 2.5f, 0.5f, Branco, w * 0.9f);
+        DesenharTextoEmPixel(FabricaDeSprites.TextoEmPixel("Re:CILADA!", CorMarinho, Color.white, CorMarinho), w / 2f, h * 0.07f, 130f * escala);
+        Texto("começando a vida do zero (de novo, e de novo...)", w / 2f, h * 0.07f + 140f * escala, 2.5f, 0.5f, Branco, w * 0.9f);
 
-        float y = h * 0.47f;
+        // até 7 opções: Continuar, Novo jogo, Opções, Como jogar, Conquistas, Créditos, Sair
+        float passo = 40f * escala, y = h * 0.36f;
         for (int i = 0; i < jogo.opcoesDoMenu.Count; i++)
         {
-            bool selecionada = i == jogo.OpcaoSelecionada;
-            string texto = TextoDaOpcao(jogo.opcoesDoMenu[i]);
-            if (selecionada && Time.unscaledTime % 0.8f < 0.55f) texto = "> " + texto + " <";
-            Texto(texto, w / 2f, y, 3.5f, 0.5f, selecionada ? Amarelo : Branco, w * 0.9f);
-            y += 52f * escala;
+            OpcaoDeMenu(TextoDaOpcao(jogo.opcoesDoMenu[i]), y, 3f, passo, i, i == jogo.OpcaoSelecionada);
+            y += passo;
         }
 
-        Texto("A/D ou SETAS: andar    ESPAÇO/W: pular (segure para ir mais alto)", w / 2f, h * 0.8f, 2f, 0.5f, Branco, w * 0.95f);
-        Texto("R: reiniciar fase    ESC: pausa    ENTER: confirmar", w / 2f, h * 0.8f + 32f * escala, 2f, 0.5f, Branco, w * 0.95f);
         int recorde = Progresso.Recorde;
         if (recorde >= 0)
-            Texto($"Recorde: zerou com {recorde} mortes", w / 2f, h * 0.91f, 2f, 0.5f, Verde);
+            Texto($"Recorde: zerou com {recorde} mortes", w / 2f, h * 0.8f, 2f, 0.5f, Verde, w * 0.9f);
+
+        // rodapé discreto com os controles básicos (a lista completa fica em "Como jogar")
+        Texto("A/D ou SETAS: andar    ESPAÇO/W: pular    R: reiniciar    ESC: pausa", w / 2f, h * 0.88f, 1.8f, 0.5f, CorDoRodape, w * 0.95f);
+        Rodape("SETAS ou MOUSE: escolher    ENTER: confirmar    ESC: voltar");
     }
 
     static string TextoDaOpcao(GerenciadorDoJogo.OpcaoDoMenu opcao)
@@ -159,6 +187,10 @@ public class Interface : MonoBehaviour
                 return Progresso.FaseSalva == Fases.IndiceSecreto ? "Continuar (fase secreta)" : $"Continuar (fase {Progresso.FaseSalva + 1})";
             case GerenciadorDoJogo.OpcaoDoMenu.Conquistas:
                 return $"Conquistas ({Conquistas.Quantidade}/{Conquistas.Todas.Length})";
+            case GerenciadorDoJogo.OpcaoDoMenu.Opcoes: return "Opções";
+            case GerenciadorDoJogo.OpcaoDoMenu.ComoJogar: return "Como jogar";
+            case GerenciadorDoJogo.OpcaoDoMenu.Creditos: return "Créditos";
+            case GerenciadorDoJogo.OpcaoDoMenu.Sair: return "Sair";
             default:
                 return "Novo jogo";
         }
@@ -179,7 +211,7 @@ public class Interface : MonoBehaviour
             Texto(c.descricao, w * 0.5f, y, 2.2f, 0f, tem ? Branco : new Color32(130, 130, 145, 255), w * 0.47f);
             y += passo;
         }
-        Texto("ENTER ou ESC: voltar", w / 2f, h - 50f * escala, 2.2f, 0.5f, Branco);
+        BotaoDeTexto("Voltar (ENTER ou ESC)", w / 2f, h - 50f * escala, 2.2f, 0.5f, GerenciadorDoJogo.BotaoVoltar);
     }
 
     // Aviso de conquista nova: aparece em cima, no meio, por uns segundos.
@@ -227,6 +259,8 @@ public class Interface : MonoBehaviour
             float pulo = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f + i)) * 20f * escala;
             GUI.DrawTexture(new Rect(w / 2f + (i - 1.5f) * 120f * escala - largura / 2f, h - altura - 20f * escala - pulo, largura, altura), desenho);
         }
+
+        BotaoDeTexto("Voltar (ESC)", w - 20f * escala, 16f * escala, 2f, 1f, GerenciadorDoJogo.BotaoVoltar);
     }
 
     // Mapa do mundo: o nome da fase escolhida e os comandos, numa faixa escura embaixo.
@@ -269,30 +303,118 @@ public class Interface : MonoBehaviour
         if (Time.unscaledTime % 1f < 0.65f) Texto("ENTER", w - 30f * escala, h - 30f * escala, 1.8f, 1f, Branco);
     }
 
-    static readonly string[] NomesDaPausa = { "Música", "Efeitos", "Gráficos" };
+    // Na mesma ordem de GerenciadorDoJogo.ItemDaPausa.
+    static readonly string[] NomesDaPausa = { "Continuar", "Reiniciar fase", "Opções", "Como jogar", "Voltar ao mapa", "Voltar ao título" };
 
     void DesenharPausa()
     {
         float w = Screen.width, h = Screen.height;
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
-        Texto("PAUSA", w / 2f, h * 0.18f, 9f, 0.5f, Lilas);
+        Texto("PAUSA", w / 2f, h * 0.15f, 7f, 0.5f, Lilas); // (abaixo da barra de vida do chefe, se tiver)
 
-        // volume da música e dos efeitos e os gráficos (cima/baixo escolhe, esquerda/direita muda)
-        for (int i = 0; i < 3; i++)
+        float passo = 46f * escala, y = h * 0.34f;
+        for (int i = 0; i < NomesDaPausa.Length; i++)
         {
-            bool escolhida = jogo.OpcaoDaPausa == i;
-            float valor = i == 0 ? Opcoes.Musica : Opcoes.Efeitos;
-            string barra = i < 2 ? new string('*', Mathf.RoundToInt(valor * 10f)).PadRight(10, '-')
-                : Opcoes.GraficosHD2D ? "HD-2D" : "Simples";
-            string texto = $"{NomesDaPausa[i]}: < {barra} >";
-            if (escolhida && Time.unscaledTime % 0.8f < 0.55f) texto = "> " + texto;
-            Texto(texto, w / 2f, h * 0.42f + i * 46f * escala, 3f, 0.5f, escolhida ? Amarelo : Branco);
+            OpcaoDeMenu(NomesDaPausa[i], y, 3f, passo, i, i == jogo.OpcaoDaPausa);
+            y += passo;
         }
 
-        Texto("ESC: continuar", w / 2f, h * 0.65f, 3f, 0.5f, Branco);
-        Texto("Q: voltar ao mapa", w / 2f, h * 0.65f + 46f * escala, 3f, 0.5f, Branco);
-        Texto("(o progresso fica salvo)", w / 2f, h * 0.85f, 2f, 0.5f, Branco, w * 0.9f);
+        Texto("(o progresso fica salvo)    Q: voltar ao mapa", w / 2f, h * 0.84f, 2f, 0.5f, Branco, w * 0.9f);
+        Rodape("SETAS ou MOUSE: escolher    ENTER: confirmar    ESC: continuar");
     }
+
+    // ------------------------------------------------------------------ submenus: Opções e Como Jogar
+
+    // Os submenus abrem por cima do título OU da pausa (é a mesma tela nos dois).
+    void DesenharSubmenu()
+    {
+        float w = Screen.width, h = Screen.height;
+        GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
+        GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
+        if (jogo.SubmenuAberto == GerenciadorDoJogo.Submenu.Opcoes) DesenharOpcoes();
+        else DesenharComoJogar();
+    }
+
+    // Na mesma ordem de GerenciadorDoJogo.ItemDasOpcoes.
+    static readonly string[] ExplicacaoDasOpcoes =
+    {
+        "Volume da música de fundo.",
+        "Volume dos efeitos: pulo, moedas, armadilhas...",
+        "HD-2D: fundo desfocado, luzes e névoa. Simples: mais leve.",
+        "Liga ou desliga a tela cheia.",
+        "Mostra o tempo da partida no canto da tela.",
+        "Volta para o menu anterior. (as opções já ficam salvas)",
+    };
+
+    void DesenharOpcoes()
+    {
+        float w = Screen.width, h = Screen.height;
+        Texto("OPÇÕES", w / 2f, h * 0.08f, 7f, 0.5f, Lilas);
+
+        float passo = 50f * escala, y = h * 0.3f;
+        for (int i = 0; i < GerenciadorDoJogo.TotalDasOpcoes; i++)
+        {
+            OpcaoDeMenu(TextoDaConfiguracao((GerenciadorDoJogo.ItemDasOpcoes)i), y, 3f, passo, i, i == jogo.OpcaoDasOpcoes);
+            y += passo;
+        }
+
+        int escolhida = Mathf.Clamp(jogo.OpcaoDasOpcoes, 0, ExplicacaoDasOpcoes.Length - 1);
+        Texto(ExplicacaoDasOpcoes[escolhida], w / 2f, h * 0.78f, 2.2f, 0.5f, Lilas, w * 0.9f);
+        Rodape("SETAS: escolher e mudar    ENTER ou CLIQUE: mudar    ESC: voltar");
+    }
+
+    // O texto de cada linha das opções, com o valor atual: "Música: < ********-- >".
+    static string TextoDaConfiguracao(GerenciadorDoJogo.ItemDasOpcoes item)
+    {
+        switch (item)
+        {
+            case GerenciadorDoJogo.ItemDasOpcoes.Musica: return "Música: < " + Barra(Opcoes.Musica) + " >";
+            case GerenciadorDoJogo.ItemDasOpcoes.Efeitos: return "Efeitos: < " + Barra(Opcoes.Efeitos) + " >";
+            case GerenciadorDoJogo.ItemDasOpcoes.Graficos: return Opcoes.GraficosHD2D ? "Gráficos: < HD-2D >" : "Gráficos: < Simples >";
+            case GerenciadorDoJogo.ItemDasOpcoes.TelaCheia: return Opcoes.TelaCheia ? "Tela cheia: < Sim >" : "Tela cheia: < Não >";
+            case GerenciadorDoJogo.ItemDasOpcoes.Cronometro: return Opcoes.MostrarTempo ? "Cronômetro: < Sim >" : "Cronômetro: < Não >";
+            default: return "Voltar";
+        }
+    }
+
+    // Volume de 0 a 1 vira uma barrinha de 10 pedaços: "******----".
+    static readonly string[] Barras = new string[11];
+    static string Barra(float volume)
+    {
+        int cheios = Mathf.Clamp(Mathf.RoundToInt(volume * 10f), 0, 10);
+        if (Barras[cheios] == null) Barras[cheios] = new string('*', cheios).PadRight(10, '-'); // guardada: não cria lixo
+        return Barras[cheios];
+    }
+
+    // Como Jogar: título, a página atual (tecla à esquerda, o que faz à direita) e os botões embaixo.
+    void DesenharComoJogar()
+    {
+        float w = Screen.width, h = Screen.height;
+        int total = Textos.ComoJogar.Length;
+        int p = Mathf.Clamp(jogo.PaginaDoComoJogar, 0, total - 1);
+        Textos.PaginaDeAjuda pagina = Textos.ComoJogar[p];
+
+        Texto("COMO JOGAR", w / 2f, h * 0.04f, 5f, 0.5f, Lilas);
+        Texto(ComNumero(ref textoDaPagina, p, n => $"{Textos.ComoJogar[n].titulo}  ({n + 1}/{Textos.ComoJogar.Length})"),
+            w / 2f, h * 0.04f + 80f * escala, 3f, 0.5f, Amarelo, w * 0.9f);
+
+        float y = h * 0.24f, passo = Mathf.Min(54f * escala, h * 0.6f / Mathf.Max(1, pagina.linhas.Length));
+        foreach (Textos.LinhaDeAjuda linha in pagina.linhas)
+        {
+            Texto(linha.tecla, w * 0.05f, y, 2.2f, 0f, Rosa, w * 0.33f);
+            Texto(linha.texto, w * 0.40f, y, 2.2f, 0f, Branco, w * 0.56f);
+            y += passo;
+        }
+
+        float yBotoes = h * 0.86f;
+        if (p > 0) BotaoDeTexto("< anterior", w * 0.2f, yBotoes, 2.5f, 0.5f, GerenciadorDoJogo.BotaoAnterior);
+        BotaoDeTexto("Voltar", w * 0.5f, yBotoes, 2.5f, 0.5f, GerenciadorDoJogo.BotaoVoltar);
+        if (p < total - 1) BotaoDeTexto("próxima >", w * 0.8f, yBotoes, 2.5f, 0.5f, GerenciadorDoJogo.BotaoProxima);
+        Rodape("ESQUERDA/DIREITA: trocar página    ENTER: próxima    ESC: voltar");
+    }
+
+    // Linha de ajuda bem embaixo da tela, pequena e discreta.
+    void Rodape(string texto) => Texto(texto, Screen.width / 2f, Screen.height * 0.93f, 1.8f, 0.5f, CorDoRodape, Screen.width * 0.95f);
 
     void DesenharMorte()
     {
@@ -547,11 +669,27 @@ public class Interface : MonoBehaviour
     // Escreve com a fonte pixel. pixel = tamanho de cada "pixel" da letra (em telas de 720p);
     // alinhamento: 0 = x é a esquerda do texto, 0.5 = o centro, 1 = a direita.
     // Se passar de larguraMaxima, o texto encolhe para caber.
-    void Texto(string texto, float x, float y, float pixel, float alinhamento, Color32 cor, float larguraMaxima = 0f)
+    // Devolve o retângulo onde o texto foi desenhado (útil para saber se o mouse está em cima).
+    Rect Texto(string texto, float x, float y, float pixel, float alinhamento, Color32 cor, float larguraMaxima = 0f)
     {
-        if (string.IsNullOrEmpty(texto)) return;
+        if (string.IsNullOrEmpty(texto)) return new Rect(x, y, 0f, 0f);
         // (a conversão para MAIÚSCULAS acontece lá dentro, só na primeira vez: aqui não cria nenhuma string nova)
         Texture2D textura = FabricaDeSprites.TextoEmPixel(texto, cor, Preto, Preto, comAcentos: true, maiusculas: true);
+        Rect area = AreaDoTexto(textura, x, y, pixel, alinhamento, larguraMaxima);
+        GUI.DrawTexture(area, textura);
+        return area;
+    }
+
+    // Onde um texto FICARIA, sem desenhar (o tamanho não depende da cor, então mede com a textura branca).
+    Rect MedirTexto(string texto, float x, float y, float pixel, float alinhamento, float larguraMaxima = 0f)
+    {
+        if (string.IsNullOrEmpty(texto)) return new Rect(x, y, 0f, 0f);
+        Texture2D textura = FabricaDeSprites.TextoEmPixel(texto, Branco, Preto, Preto, comAcentos: true, maiusculas: true);
+        return AreaDoTexto(textura, x, y, pixel, alinhamento, larguraMaxima);
+    }
+
+    Rect AreaDoTexto(Texture2D textura, float x, float y, float pixel, float alinhamento, float larguraMaxima)
+    {
         float tamanho = pixel * escala;
         float largura = textura.width * tamanho;
         if (larguraMaxima > 0f && largura > larguraMaxima)
@@ -559,7 +697,74 @@ public class Interface : MonoBehaviour
             tamanho *= larguraMaxima / largura;
             largura = larguraMaxima;
         }
-        GUI.DrawTexture(new Rect(x - largura * alinhamento, y, largura, textura.height * tamanho), textura);
+        return new Rect(x - largura * alinhamento, y, largura, textura.height * tamanho);
+    }
+
+    // ------------------------------------------------------------------ menus e mouse
+
+    // Uma opção de menu (título, pausa, opções), centralizada. A selecionada fica amarela, com "> <" piscando
+    // e uma faixa lilás pulsando atrás. alturaDaLinha = a distância até a próxima opção (é a área do mouse).
+    void OpcaoDeMenu(string texto, float y, float pixel, float alturaDaLinha, int indice, bool selecionada)
+    {
+        float w = Screen.width;
+        Rect medida = MedirTexto(texto, w / 2f, y, pixel, 0.5f, w * 0.9f);
+        // área do mouse: a linha toda, mais larga que o texto (fácil de acertar) e sem buraco entre as linhas
+        var area = new Rect(w / 2f - medida.width / 2f - 50f * escala, y + (medida.height - alturaDaLinha) / 2f,
+            medida.width + 100f * escala, alturaDaLinha);
+        if (selecionada) DesenharFaixa(area);
+        string mostrado = selecionada && Time.unscaledTime % 0.8f < 0.55f ? "> " + texto + " <" : texto;
+        Texto(mostrado, w / 2f, y, pixel, 0.5f, selecionada ? Amarelo : Branco, w * 0.9f);
+        Mouse(area, indice, true);
+    }
+
+    // Botão de texto (Voltar, página anterior/próxima): fica amarelo com o mouse em cima; o clique vai para o
+    // GerenciadorDoJogo como "botao" (GerenciadorDoJogo.BotaoVoltar...). O teclado tem as próprias teclas.
+    void BotaoDeTexto(string texto, float x, float y, float pixel, float alinhamento, int botao)
+    {
+        Rect medida = MedirTexto(texto, x, y, pixel, alinhamento, Screen.width * 0.9f);
+        var area = new Rect(medida.x - 12f * escala, medida.y, medida.width + 24f * escala, medida.height);
+        bool emCima = Mouse(area, botao, false);
+        if (emCima) DesenharFaixa(area);
+        Texto(texto, x, y, pixel, alinhamento, emCima ? Amarelo : Branco, Screen.width * 0.9f);
+    }
+
+    // Faixa lilás translúcida que "respira" atrás da opção escolhida.
+    static void DesenharFaixa(Rect area)
+    {
+        Color corOriginal = GUI.color;
+        float pulso = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 5f);
+        GUI.color = new Color(0.84f, 0.67f, 0.96f, 0.12f + 0.12f * pulso);
+        GUI.DrawTexture(area, Texture2D.whiteTexture);
+        GUI.color = corOriginal;
+    }
+
+    // Uma vez por OnGUI: o mouse mexeu desde a última vez? (o OnGUI roda várias vezes por quadro, uma por "evento")
+    void PrepararMouse()
+    {
+        Event e = Event.current;
+        usarMouse = !PainelDeGraficos.Aberto;
+        mouseMexeu = false;
+        if (e.type != EventType.Repaint && e.type != EventType.MouseMove && e.type != EventType.MouseDrag) return;
+        if (mouseConhecido && (e.mousePosition - mouseAntes).sqrMagnitude > 1f) mouseMexeu = true;
+        mouseAntes = e.mousePosition;
+        mouseConhecido = true;
+    }
+
+    // O mouse está em cima de "area"? Se ele MEXEU, seleciona a opção (só quando selecionarAoPassar);
+    // clique com o botão esquerdo escolhe. O lado do clique (-1 = metade esquerda, +1 = direita) serve para
+    // diminuir/aumentar nas opções. Use() "gasta" o clique, para nada mais embaixo pegar o mesmo clique.
+    bool Mouse(Rect area, int opcao, bool selecionarAoPassar)
+    {
+        if (!usarMouse) return false;
+        Event e = Event.current;
+        if (!area.Contains(e.mousePosition)) return false;
+        if (selecionarAoPassar && mouseMexeu) jogo.MouseEmCima(opcao);
+        if (e.type == EventType.MouseDown && e.button == 0)
+        {
+            jogo.MouseClicou(opcao, e.mousePosition.x < area.center.x ? -1 : 1);
+            e.Use();
+        }
+        return true;
     }
 
     // Desenha um texto de FabricaDeSprites.TextoEmPixel centralizado em (centroX, topo), com a altura pedida.
