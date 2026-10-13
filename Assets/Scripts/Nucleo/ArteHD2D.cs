@@ -33,6 +33,14 @@ public static class ArteHD2D
         // e bem borrado. Capim embaixo; galho com folhas pendurado em cima.
         FabricaDeSprites.Registrar("hd2d_frente_capim", () => Desfocado(LarguraDaFrente, AlturaDoCapim, CorCapim, FabricaDeSprites.Base, 1, 3, true, 8));
         FabricaDeSprites.Registrar("hd2d_frente_galho", () => Desfocado(LarguraDaFrente, AlturaDoGalho, CorGalho, new Vector2(0.5f, 1f), 2, 3, false, 8));
+
+        // Sombras de nuvens (SombrasDeNuvens): manchas brancas com transparência, bem grandes
+        // (4 pixels por bloco) e com filtragem suave. A cor da sombra vem de quem desenha.
+        FabricaDeSprites.Registrar("hd2d_nuvens", () => Suave(FabricaDeSprites.Procedural(LarguraDaNuvem, AlturaDaNuvem, FabricaDeSprites.Base, CorDaSombraDeNuvem, 4)));
+
+        // Um pixel branco: a poeira dos raios de sol e as partículas pequenas. Com a tela em baixa
+        // resolução (TelaPixelada), um grão precisa ter pelo menos 1 pixel inteiro, senão ele pisca e some.
+        FabricaDeSprites.Registrar("hd2d_pixel", () => FabricaDeSprites.Procedural(1, 1, FabricaDeSprites.Centro, (x, y) => Cheio));
     }
 
     // ---------------------------------------------------------------- o blur (desfoque)
@@ -179,6 +187,73 @@ public static class ArteHD2D
         float d = Mathf.Sqrt((x - 31.5f) * (x - 31.5f) + (y - 31.5f) * (y - 31.5f)) / 32f;
         float a = Mathf.Pow(Mathf.Clamp01(1f - d), 2.4f);
         return new Color32(255, 255, 255, Byte(a * 0.75f));
+    }
+
+    // ---------------------------------------------------------------- sombras de nuvens
+
+    const int LarguraDaNuvem = 128, AlturaDaNuvem = 64; // a 4 pixels por bloco: 32 x 16 blocos
+    static float[] densidade; // 0 a 1 em cada pixel (guardado: os raios de sol consultam a cada quadro)
+
+    // "Ruído de valor": sorteia um número em cada canto de uma grade e mistura suavemente entre eles.
+    // Somando 3 grades (grossa, média e fina) saem manchas com jeito de nuvem ("ruído fractal").
+    // As células são mais largas que altas (nuvem é mais comprida que alta).
+    // Na horizontal a grade dá a volta (o fim encosta no começo): os pedaços se repetem sem emenda.
+    static float Sorteio(int x, int y)
+    {
+        unchecked
+        {
+            uint h = (uint)x * 374761393u + (uint)y * 668265263u; // "embaralha" os bits (um hash)
+            h = (h ^ (h >> 13)) * 1274126177u;
+            h ^= h >> 16;
+            return (h & 0xFFFF) / 65535f;
+        }
+    }
+
+    static float RuidoDeValor(float x, float y, int largura, int altura, int periodo)
+    {
+        int cx = Mathf.FloorToInt(x / largura), cy = Mathf.FloorToInt(y / altura);
+        float fx = x / largura - cx, fy = y / altura - cy;
+        fx = fx * fx * (3f - 2f * fx); // curva suave: sem "quinas" entre as células
+        fy = fy * fy * (3f - 2f * fy);
+        int colunas = periodo / largura;
+        int x0 = ((cx % colunas) + colunas) % colunas, x1 = (x0 + 1) % colunas;
+        float a = Mathf.Lerp(Sorteio(x0, cy), Sorteio(x1, cy), fx);
+        float b = Mathf.Lerp(Sorteio(x0, cy + 1), Sorteio(x1, cy + 1), fx);
+        return Mathf.Lerp(a, b, fy);
+    }
+
+    static float[] Densidade()
+    {
+        if (densidade != null) return densidade;
+        densidade = new float[LarguraDaNuvem * AlturaDaNuvem];
+        for (int y = 0; y < AlturaDaNuvem; y++)
+            for (int x = 0; x < LarguraDaNuvem; x++)
+            {
+                float n = 0.55f * RuidoDeValor(x, y, 32, 20, LarguraDaNuvem)
+                        + 0.3f * RuidoDeValor(x, y + 100, 16, 10, LarguraDaNuvem)
+                        + 0.15f * RuidoDeValor(x, y + 200, 8, 6, LarguraDaNuvem);
+                // só as partes mais "altas" do ruído viram nuvem, com a borda bem suave
+                float t = Mathf.Clamp01((n - 0.43f) / 0.18f);
+                densidade[y * LarguraDaNuvem + x] = t * t * (3f - 2f * t);
+            }
+        return densidade;
+    }
+
+    // A densidade da nuvem num ponto do desenho (u e v de 0 a 1). Sem o "sumiço" do céu em cima.
+    public static float DensidadeDaNuvem(float u, float v)
+    {
+        float[] d = Densidade();
+        int x = Mathf.Clamp((int)(u * LarguraDaNuvem), 0, LarguraDaNuvem - 1);
+        int y = Mathf.Clamp((int)(v * AlturaDaNuvem), 0, AlturaDaNuvem - 1);
+        return d[y * LarguraDaNuvem + x];
+    }
+
+    static Color32 CorDaSombraDeNuvem(int x, int y)
+    {
+        float v = (y + 0.5f) / AlturaDaNuvem;  // 0 = base da tela, 1 = topo
+        float ceu = Mathf.Clamp01((0.9f - v) / 0.45f); // vai sumindo na metade de cima (o céu não recebe sombra)
+        float a = Densidade()[y * LarguraDaNuvem + x] * ceu * ceu * (3f - 2f * ceu);
+        return new Color32(255, 255, 255, Byte(a));
     }
 
     // ---------------------------------------------------------------- primeiro plano

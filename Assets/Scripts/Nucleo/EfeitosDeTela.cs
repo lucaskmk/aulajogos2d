@@ -10,7 +10,8 @@ using UnityEngine.Rendering.Universal;
 //    no renascimento a imagem dá um "soco" de distorção de lente;
 //  - Pausa: tudo meio sem cor.
 //
-// Com os gráficos em HD-2D (Opcoes.GraficosHD2D) entra a "correção de cor de cinema", que muda com o clima da fase:
+// Com os gráficos em HD-2D (Opcoes.GraficosHD2D) entra a "correção de cor de cinema", que muda com o clima da fase
+// (e, nas fases de dia, com a HORA: manhã no começo da fase, entardecer dourado no fim; veja LuzDoDia):
 //  - SplitToning: pinta as SOMBRAS de azul-arroxeado (frio) e as partes CLARAS de dourado (quente).
 //    É o truque mais usado em filme e em Octopath Traveler: o contraste quente/frio dá "volume" à imagem;
 //  - ShadowsMidtonesHighlights: escurece e esfria só as sombras, esquenta só as luzes;
@@ -57,6 +58,14 @@ public class EfeitosDeTela : MonoBehaviour
         sombrasSMH = new Vector4(0.95f, 0.97f, 1.07f, -0.03f), luzesSMH = new Vector4(1.05f, 1.01f, 0.93f, 0.02f),
         temperatura = 8f, matiz = 0f, saturacaoExtra = 4f,
     };
+    // O fim de tarde das fases de dia: tudo mais quente e dourado, sombras arroxeadas (o "golden hour").
+    static readonly Visual Entardecer = new Visual
+    {
+        limiteDoBloom = 1.0f, forcaDoBloom = 0.55f, corDoBloom = new Color(1f, 0.75f, 0.45f),
+        sombras = new Color(0.46f, 0.38f, 0.6f), luzes = new Color(0.72f, 0.52f, 0.32f), equilibrio = 20f,
+        sombrasSMH = new Vector4(0.96f, 0.92f, 1.08f, -0.04f), luzesSMH = new Vector4(1.1f, 0.99f, 0.84f, 0.03f),
+        temperatura = 26f, matiz = 6f, saturacaoExtra = 10f,
+    };
     static readonly Visual Noite = new Visual
     {
         limiteDoBloom = 0.92f, forcaDoBloom = 0.65f, corDoBloom = new Color(0.75f, 0.85f, 1f),
@@ -78,6 +87,25 @@ public class EfeitosDeTela : MonoBehaviour
         sombrasSMH = new Vector4(0.96f, 0.94f, 1f, -0.03f), luzesSMH = new Vector4(1.06f, 1f, 0.88f, 0.02f),
         temperatura = 20f, matiz = 2f, saturacaoExtra = -14f,
     };
+
+    // Mistura dois visuais (t = 0: o primeiro; t = 1: o segundo). Usado para passar da manhã ao entardecer.
+    static Visual Misturar(Visual a, Visual b, float t)
+    {
+        return new Visual
+        {
+            limiteDoBloom = Mathf.Lerp(a.limiteDoBloom, b.limiteDoBloom, t),
+            forcaDoBloom = Mathf.Lerp(a.forcaDoBloom, b.forcaDoBloom, t),
+            corDoBloom = Color.Lerp(a.corDoBloom, b.corDoBloom, t),
+            sombras = Color.Lerp(a.sombras, b.sombras, t),
+            luzes = Color.Lerp(a.luzes, b.luzes, t),
+            equilibrio = Mathf.Lerp(a.equilibrio, b.equilibrio, t),
+            sombrasSMH = Vector4.Lerp(a.sombrasSMH, b.sombrasSMH, t),
+            luzesSMH = Vector4.Lerp(a.luzesSMH, b.luzesSMH, t),
+            temperatura = Mathf.Lerp(a.temperatura, b.temperatura, t),
+            matiz = Mathf.Lerp(a.matiz, b.matiz, t),
+            saturacaoExtra = Mathf.Lerp(a.saturacaoExtra, b.saturacaoExtra, t),
+        };
+    }
 
     void Awake()
     {
@@ -125,7 +153,12 @@ public class EfeitosDeTela : MonoBehaviour
 
         // O clima: no mapa (e no título, que mostra o mapa) é sempre "dia".
         Clima clima = jogo.Mapa != null ? Clima.Dia : Paralaxe.ClimaDa(jogo.DadosDaFase);
-        Visual v = clima == Clima.Noite ? Noite : clima == Clima.Escuro ? NoEscuro : clima == Clima.Biblioteca ? Biblioteca : Dia;
+        LuzDoDia.Atualizar(jogo, clima); // a hora do dia (manhã -> entardecer) e o sol atrás das nuvens
+        Visual v = clima == Clima.Noite ? Noite : clima == Clima.Escuro ? NoEscuro : clima == Clima.Biblioteca ? Biblioteca
+            : Misturar(Dia, Entardecer, LuzDoDia.Entardecer);
+
+        // Bloom: pode ser desligado ou ajustado no painel F10 (AjustesVisuais).
+        bloom.active = AjustesVisuais.bloom;
 
         cor.saturation.value = Mathf.Lerp(saturacao + (hd ? v.saturacaoExtra : 0f), -75f, morte) - (pausa ? 55f : 0f);
         cor.contrast.value = contraste + morte * 15f;
@@ -147,16 +180,16 @@ public class EfeitosDeTela : MonoBehaviour
         balancoDeBranco.active = hd;
         if (!hd)
         {
-            bloom.threshold.value = 0.97f;
-            bloom.intensity.value = 0.25f;
+            bloom.threshold.value = 0.97f + AjustesVisuais.limiteDoBloom;
+            bloom.intensity.value = 0.25f * AjustesVisuais.forcaDoBloom;
             bloom.scatter.value = 0.65f;
             bloom.tint.value = Color.white;
             return;
         }
 
         float forca = (1f - morte) * (pausa ? 0.5f : 1f);
-        bloom.threshold.value = v.limiteDoBloom;
-        bloom.intensity.value = v.forcaDoBloom * (1f - morte * 0.5f);
+        bloom.threshold.value = v.limiteDoBloom + AjustesVisuais.limiteDoBloom;
+        bloom.intensity.value = v.forcaDoBloom * (1f - morte * 0.5f) * AjustesVisuais.forcaDoBloom;
         bloom.scatter.value = 0.72f;
         bloom.tint.value = v.corDoBloom;
 

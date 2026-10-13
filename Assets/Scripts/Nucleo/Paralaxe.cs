@@ -142,7 +142,8 @@ public class Paralaxe : MonoBehaviour
         }
 
         // ---- só no HD-2D ----
-        FeixesDeLuz.Criar(raiz, clima); // god rays e poeira dourada (no escuro não cria nada)
+        FeixesDeLuz.Criar(raiz, clima); // raios de sol e poeira dourada (no escuro não cria nada)
+        SombrasDeNuvens.Criar(raiz, clima); // manchas de sombra das nuvens passando (só de dia e de noite)
 
         // Primeiro plano desfocado: escuro (contra a luz) e meio transparente nas bordas borradas.
         // Na biblioteca (dentro de casa) não tem capim; no escuro nem daria para ver.
@@ -225,7 +226,10 @@ public class Paralaxe : MonoBehaviour
             var aureola = ConstrutorDeFase.Visual("Aureola", ceu, Vector3.zero, "hd2d_aureola", -28, false);
             aureola.transform.localPosition = new Vector3(8f, 11.3f, 0f);
             aureola.transform.localScale = Vector3.one * (noite ? 2.2f : 3.2f);
-            aureola.GetComponent<SpriteRenderer>().color = noite ? new Color(0.7f, 0.8f, 1f, 0.35f) : new Color(1f, 0.85f, 0.55f, 0.55f);
+            var brilho = aureola.GetComponent<SpriteRenderer>();
+            brilho.color = noite ? new Color(0.7f, 0.8f, 1f, 0.35f) : new Color(1f, 0.85f, 0.55f, 0.55f);
+            // luz ADITIVA (soma com o céu): o miolo passa do branco e o bloom faz o sol brilhar de verdade
+            if (MateriaisHD2D.UsarLuzAditiva(brilho)) brilho.color *= new Color(1f, 1f, 1f, 0.8f);
             aureola.AddComponent<Pulsar>().velocidade = 0.35f;
         }
 

@@ -1,18 +1,22 @@
 using UnityEngine;
 
-// GOD RAYS ("raios de Deus"): feixes de luz diagonais e bem transparentes, como o sol entrando por entre
-// as nuvens, e grãozinhos de poeira dourada flutuando DENTRO deles (igual poeira num raio de sol na janela).
-//  - de dia: feixes dourados;
+// RAIOS DE SOL ("god rays"): feixes de luz diagonais, como o sol entrando por entre as nuvens, e
+// grãozinhos de poeira dourada flutuando DENTRO deles (igual poeira num raio de sol na janela).
+//  - de dia: feixes dourados de manhã, que vão ficando alaranjados no entardecer (LuzDoDia.Entardecer);
 //  - na biblioteca: feixes cor de sépia (luz velha entrando pelas janelas);
 //  - de noite: poucos feixes de luar azulados, bem fracos;
 //  - no escuro: nada (nem é criado).
 //
-// Os feixes "respiram" (a transparência e a largura sobem e descem devagar) e andam com paralaxe lenta:
-// como estão longe, mexem bem pouco na tela quando a câmera anda.
+// A luz é ADITIVA (shader LuzAditiva): ela SOMA com a cor da tela, como luz de verdade, em vez de pintar
+// por cima. Onde passa do branco, o bloom do pós-processamento faz brilhar. (Se o shader não estiver
+// disponível, os feixes são desenhados do jeito antigo, meio transparentes, um pouco mais fortes.)
+//
+// Os feixes "respiram" (a força e a largura sobem e descem devagar), balançam um tiquinho, andam com
+// paralaxe lenta e SOMEM quando uma nuvem passa na frente do sol (LuzDoDia.Cobertura, das SombrasDeNuvens).
 // Para não precisar de um feixe a cada pedaço da fase, eles "dão a volta" em torno da câmera
 // (quem sai por um lado da tela volta pelo outro), como as partículas do Ambiente.
 // Nada é criado durante o jogo: tudo é montado uma vez em Criar() e só reposicionado no LateUpdate.
-[DefaultExecutionOrder(105)] // depois da câmera (CameraSeguir) e da paralaxe
+[DefaultExecutionOrder(105)] // depois da câmera (CameraSeguir), da paralaxe e das SombrasDeNuvens
 public class FeixesDeLuz : MonoBehaviour
 {
     const float Fator = 0.85f;         // paralaxe: 1 = parado na tela, 0 = anda junto com a fase
@@ -20,17 +24,22 @@ public class FeixesDeLuz : MonoBehaviour
     const float Comprimento = 8f;      // comprimento do desenho do feixe, em blocos (128 pixels / 16)
     const int OrdemDosFeixes = -12;    // na frente das árvores e da neblina, atrás das nuvens e da fase
 
+    // A cor do sol no entardecer (as fases de dia vão da cor normal até esta).
+    static readonly Color CorDoEntardecer = new Color(1f, 0.6f, 0.3f);
+
     Transform[] feixes;
     SpriteRenderer[] desenhos;
-    float[] baseX, fase, alfa, largura;
+    float[] baseX, fase, alfa, largura, intensidade;
     Color corDoFeixe;
+    bool dia;          // só de dia o sol muda de cor com a hora
+    bool aditivo;      // está usando o shader LuzAditiva?
+    bool visivel = true;
 
     Transform[] graos;
     SpriteRenderer[] desenhosDosGraos;
     int[] feixeDoGrao;
     float[] aoLongo, deLado, faseDoGrao, velocidadeDoGrao;
     Color corDoGrao;
-
 
     public static FeixesDeLuz Criar(Transform raiz, Clima clima)
     {
@@ -48,7 +57,7 @@ public class FeixesDeLuz : MonoBehaviour
                 quantosGraos = 24; corDoGrao = new Color(1f, 0.85f, 0.55f);
                 break;
             default: // Dia
-                quantidade = 6; forca = 1f; cor = new Color(1f, 0.88f, 0.58f);
+                quantidade = 6; forca = 1f; cor = new Color(1f, 0.9f, 0.66f);
                 quantosGraos = 30; corDoGrao = new Color(1f, 0.92f, 0.6f);
                 break;
         }
@@ -58,6 +67,7 @@ public class FeixesDeLuz : MonoBehaviour
         var luz = objeto.AddComponent<FeixesDeLuz>();
         luz.corDoFeixe = cor;
         luz.corDoGrao = corDoGrao;
+        luz.dia = clima == Clima.Dia;
         luz.Montar(quantidade, forca, quantosGraos);
         return luz;
     }
@@ -69,7 +79,7 @@ public class FeixesDeLuz : MonoBehaviour
         feixes = new Transform[quantidade];
         desenhos = new SpriteRenderer[quantidade];
         baseX = new float[quantidade]; fase = new float[quantidade];
-        alfa = new float[quantidade]; largura = new float[quantidade];
+        alfa = new float[quantidade]; largura = new float[quantidade]; intensidade = new float[quantidade];
         for (int i = 0; i < quantidade; i++)
         {
             var feixe = new GameObject("Feixe");
@@ -77,6 +87,7 @@ public class FeixesDeLuz : MonoBehaviour
             var visual = feixe.AddComponent<SpriteRenderer>();
             visual.sprite = desenho;
             visual.sortingOrder = OrdemDosFeixes;
+            aditivo = MateriaisHD2D.UsarLuzAditiva(visual); // (se não der, fica o material normal)
             feixes[i] = feixe.transform;
             desenhos[i] = visual;
             // espalhados pelo vão (0 = começo, 1 = fim), com um tremidinho para não ficarem certinhos demais
@@ -86,8 +97,9 @@ public class FeixesDeLuz : MonoBehaviour
             alfa[i] = forca * (0.32f + (float)sorteio.NextDouble() * 0.25f) * (largura[i] > 2f ? 0.75f : 1f);
         }
 
-        // poeira dourada: cada grão "mora" num feixe, numa posição ao longo dele e um pouco para o lado
-        Sprite poeira = FabricaDeSprites.Pegar("poeira");
+        // poeira dourada: cada grão "mora" num feixe, numa posição ao longo dele e um pouco para o lado.
+        // Cada grão é 1 ou 2 pixels de verdade (com a tela em baixa resolução, menos que isso pisca e some).
+        Sprite pixel = FabricaDeSprites.Pegar("hd2d_pixel");
         graos = new Transform[quantosGraos];
         desenhosDosGraos = new SpriteRenderer[quantosGraos];
         feixeDoGrao = new int[quantosGraos];
@@ -97,9 +109,9 @@ public class FeixesDeLuz : MonoBehaviour
         {
             var grao = new GameObject("Grao de poeira");
             grao.transform.SetParent(transform, false);
-            grao.transform.localScale = Vector3.one * (0.15f + (float)sorteio.NextDouble() * 0.2f);
+            grao.transform.localScale = Vector3.one * (sorteio.NextDouble() < 0.7 ? 1f : 2f);
             var visual = grao.AddComponent<SpriteRenderer>();
-            visual.sprite = poeira;
+            visual.sprite = pixel;
             visual.sortingOrder = OrdemDosFeixes + 1;
             graos[i] = grao.transform;
             desenhosDosGraos[i] = visual;
@@ -111,10 +123,22 @@ public class FeixesDeLuz : MonoBehaviour
         }
     }
 
+    // Liga/desliga todos os desenhos (pelo painel F10 ou pela opção Simples), sem destruir nada.
+    void Mostrar(bool sim)
+    {
+        visivel = sim;
+        foreach (SpriteRenderer d in desenhos) d.enabled = sim;
+        foreach (SpriteRenderer d in desenhosDosGraos) d.enabled = sim;
+    }
+
     void LateUpdate()
     {
         Camera cam = Camera.main;
         if (cam == null || feixes == null) return;
+        bool ligado = AjustesVisuais.RaiosLigados;
+        if (ligado != visivel) Mostrar(ligado);
+        if (!ligado) return;
+
         Vector3 posCam = cam.transform.position;
         float meiaTela = cam.orthographicSize * cam.aspect;
         float topo = posCam.y + cam.orthographicSize + 1.5f; // os feixes nascem um pouco acima da tela
@@ -135,6 +159,12 @@ public class FeixesDeLuz : MonoBehaviour
         float inicio = posCam.x - meiaTela - 2f;
         float deslocamento = posCam.x * Fator; // paralaxe
 
+        // A cor e a força de agora: de dia o sol fica alaranjado no entardecer; nuvem na frente do sol apaga os raios.
+        Color cor = dia ? Color.Lerp(corDoFeixe, CorDoEntardecer, LuzDoDia.Entardecer) : corDoFeixe;
+        float nuvem = 1f - 0.85f * LuzDoDia.Cobertura;
+        // luz aditiva soma com a tela: precisa de bem menos força que a pintura transparente para o mesmo brilho
+        float forca = AjustesVisuais.forcaDosRaios * nuvem * (aditivo ? 0.6f : 1f);
+
         for (int i = 0; i < feixes.Length; i++)
         {
             // Repeat = "dá a volta": fica sempre entre o começo e o fim do vão
@@ -144,8 +174,9 @@ public class FeixesDeLuz : MonoBehaviour
             feixes[i].position = new Vector3(x, topo, 0f);
             feixes[i].localRotation = Quaternion.Euler(0f, 0f, Angulo + 1.5f * Mathf.Sin(t * 0.2f + fase[i]));
             feixes[i].localScale = new Vector3(largo, escalaY, 1f);
-            Color c = corDoFeixe;
-            c.a = alfa[i] * (0.45f + 0.55f * respira);
+            intensidade[i] = alfa[i] * (0.45f + 0.55f * respira);
+            Color c = cor;
+            c.a = Mathf.Clamp01(intensidade[i] * forca);
             desenhos[i].color = c;
         }
 
@@ -163,9 +194,10 @@ public class FeixesDeLuz : MonoBehaviour
             graos[i].position = p;
 
             // pisca de leve e some perto das pontas do feixe (sin vai a 0 no começo e no fim)
-            Color c = corDoGrao;
+            Color c = Color.Lerp(corDoGrao, cor, 0.5f);
             float pontas = Mathf.Sin(Mathf.PI * (aoLongo[i] - 0.12f) / 0.78f);
-            c.a = Mathf.Clamp01(pontas) * (0.35f + 0.5f * Mathf.Abs(Mathf.Sin(t * 1.3f + faseDoGrao[i]))) * (desenhos[k].color.a * 2.2f);
+            c.a = Mathf.Clamp01(pontas) * (0.35f + 0.5f * Mathf.Abs(Mathf.Sin(t * 1.3f + faseDoGrao[i])))
+                  * Mathf.Clamp01(intensidade[k] * 2.2f * nuvem * AjustesVisuais.forcaDosRaios);
             desenhosDosGraos[i].color = c;
         }
     }
