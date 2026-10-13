@@ -70,13 +70,20 @@ public static class Controles
             || (controle != null && (controle.selectButton.wasPressedThisFrame || controle.startButton.wasPressedThisFrame));
     }
 
-    // Q: na pausa, volta para o título (no controle, o botão B / bolinha).
-    public static bool SairParaOTitulo()
+    // Esc: nos menus, volta uma tela (no controle, o botão B / bolinha ou Select).
+    public static bool Voltar()
     {
         var teclado = Keyboard.current;
         var controle = Gamepad.current;
-        return (teclado != null && teclado.qKey.wasPressedThisFrame)
-            || (controle != null && controle.buttonEast.wasPressedThisFrame);
+        return (teclado != null && (teclado.escapeKey.wasPressedThisFrame || teclado.backspaceKey.wasPressedThisFrame))
+            || (controle != null && (controle.buttonEast.wasPressedThisFrame || controle.selectButton.wasPressedThisFrame));
+    }
+
+    // Q: atalho da pausa para voltar ao mapa (o progresso fica salvo).
+    public static bool VoltarAoMapa()
+    {
+        var teclado = Keyboard.current;
+        return teclado != null && teclado.qKey.wasPressedThisFrame;
     }
 
     // Setas, WASD ou o direcional do controle, para andar nos menus (só no quadro em que apertou).

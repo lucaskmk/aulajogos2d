@@ -56,6 +56,9 @@ public class PainelDeGraficos : MonoBehaviour
         }
     }
 
+    // O painel está aberto? (a Interface não usa o mouse nos menus enquanto ele está aberto, para não brigar com ele)
+    public static bool Aberto => instancia != null && instancia.aberto;
+
     // Chamado pela Interface, no fim do OnGUI.
     public static void Desenhar()
     {
@@ -82,7 +85,7 @@ public class PainelDeGraficos : MonoBehaviour
         Linha($"FPS: {fps:0}   pior quadro: {piorMostrado:0.0} ms   GC: {coletas}");
         Linha("Tela: " + TelaPixelada.Descricao);
 
-        if (GUI.Button(new Rect(x, y, Largura, AlturaDaLinha - 2f), "Gráficos (menu de pausa): " + (Opcoes.GraficosHD2D ? "HD-2D" : "Simples")))
+        if (GUI.Button(new Rect(x, y, Largura, AlturaDaLinha - 2f), "Gráficos (Opções): " + (Opcoes.GraficosHD2D ? "HD-2D" : "Simples")))
         {
             Opcoes.GraficosHD2D = !Opcoes.GraficosHD2D;
             Paralaxe.Recriar();

@@ -6,6 +6,9 @@ public enum EstadoDoJogo { Titulo, Conquistas, Mapa, Jogando, Pausado, Morreu, F
 // O "cérebro" do jogo: carrega as fases e o mapa, conta mortes e moedas e cuida dos estados
 // (título, conquistas, mapa do mundo, jogando, pausa, morte, fase concluída, vitória, créditos).
 // Caminho normal: Título -> Mapa -> Fase -> (passou) -> Mapa -> próxima fase ... -> Vitória -> Créditos.
+// O título e a pausa têm "submenus" (Opções e Como Jogar) que abrem por cima deles, sem mudar o estado:
+// assim a pausa continua sendo pausa (o jogo parado) enquanto você mexe no volume.
+// Regra dos menus: ESC sempre volta UM nível (submenu -> menu; pausa -> jogo; mapa -> título).
 // Quem desenha a tela é a Interface; os sons da morte ficam em SonsDaMorte e a música em Musica.
 // Falas e créditos ficam em Textos; conquistas em Conquistas; o que é salvo, em Progresso.
 //
@@ -100,17 +103,41 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     // Fala de um personagem no mapa (depois de passar de fase). null = nenhuma.
     public Textos.Fala? Fala { get; private set; }
-    // Menu de pausa: 0 = volume da música, 1 = volume dos efeitos, 2 = gráficos (HD-2D / Simples).
-    public int OpcaoDaPausa { get; private set; }
-    // Créditos: quantos segundos já rolaram.
+    // Créditos: quantos segundos já rolaram. A duração cresce com o número de linhas (Textos.Creditos),
+    // assim a velocidade da rolagem fica parecida mesmo se vocês acrescentarem mais nomes.
     public float TempoDosCreditos { get; private set; }
-    public const float DuracaoDosCreditos = 24f;
+    public static float DuracaoDosCreditos => 8f + Textos.Creditos.Length * 0.8f;
+    // Os créditos foram abertos pelo menu do título? (aí ENTER/ESC volta para o título, sem recomeçar nada)
+    public bool CreditosDoTitulo { get; private set; }
 
-    // ------------------------------------------------------------------ menu do título e mapa
+    // ------------------------------------------------------------------ menus
 
-    public enum OpcaoDoMenu { Continuar, NovoJogo, Conquistas }
+    // Menu do título. "Continuar" só aparece se tiver jogo salvo; "Sair" some no navegador (WebGL).
+    public enum OpcaoDoMenu { Continuar, NovoJogo, Opcoes, ComoJogar, Conquistas, Creditos, Sair }
     public readonly List<OpcaoDoMenu> opcoesDoMenu = new List<OpcaoDoMenu>();
     public int OpcaoSelecionada { get; private set; }
+
+    // Menu de pausa (a ordem aqui é a ordem na tela).
+    public enum ItemDaPausa { Continuar, ReiniciarFase, Opcoes, ComoJogar, VoltarAoMapa, VoltarAoTitulo }
+    public static readonly int TotalDaPausa = System.Enum.GetValues(typeof(ItemDaPausa)).Length;
+    public int OpcaoDaPausa { get; private set; }
+
+    // Submenus que abrem por cima do título ou da pausa.
+    public enum Submenu { Nenhum, Opcoes, ComoJogar }
+    public Submenu SubmenuAberto { get; private set; }
+
+    // Tela de opções (a ordem aqui é a ordem na tela). "Voltar" também é uma opção, para quem usa só o teclado.
+    public enum ItemDasOpcoes { Musica, Efeitos, Graficos, TelaCheia, Cronometro, Voltar }
+    public static readonly int TotalDasOpcoes = System.Enum.GetValues(typeof(ItemDasOpcoes)).Length;
+    public int OpcaoDasOpcoes { get; private set; }
+
+    // Como Jogar: em que página está (as páginas ficam em Textos.ComoJogar).
+    public int PaginaDoComoJogar { get; private set; }
+
+    // Mouse: a Interface (que sabe ONDE cada opção foi desenhada) avisa quando o mouse passa por cima
+    // de uma opção ou clica nela. Além do número da opção, o clique pode ser num destes "botões":
+    public const int BotaoVoltar = -2, BotaoAnterior = -3, BotaoProxima = -4;
+    const int SemClique = -1;
 
     public MapaDoMundo Mapa { get; private set; }
     // Fases já passadas nesta partida (os pontos verdes do mapa).
@@ -180,6 +207,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         PrepararCamera();
         Luzes.PrepararGlobal();
         fonteDeAudio = gameObject.AddComponent<AudioSource>();
+        fonteDeAudio.ignoreListenerPause = true; // os sons dos menus tocam até com o jogo pausado
         sons = FabricaDeSons.CriarTodos();
         sonsDaMorte = gameObject.AddComponent<SonsDaMorte>();
         musica = gameObject.AddComponent<Musica>();
@@ -201,8 +229,13 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     void OnApplicationQuit()
     {
-        if (Estado != EstadoDoJogo.Titulo && Estado != EstadoDoJogo.Vitoria) SalvarProgresso();
+        if (EmPartida) SalvarProgresso();
     }
+
+    // Tem uma partida acontecendo (mapa ou fase)? No título, nas conquistas, na vitória e nos créditos NÃO:
+    // ali os números (mortes, tempo...) já foram zerados ou a partida acabou, e salvar apagaria o "Continuar".
+    bool EmPartida => Estado == EstadoDoJogo.Mapa || Estado == EstadoDoJogo.Jogando || Estado == EstadoDoJogo.Pausado
+                      || Estado == EstadoDoJogo.Morreu || Estado == EstadoDoJogo.FaseConcluida;
 
     // Onde o Subaru está: no mapa, o ponto escolhido; numa fase, a própria fase.
     int FaseDoSubaru => Estado == EstadoDoJogo.Mapa && Mapa != null ? Mapa.Selecionado : FaseAtual;
@@ -295,6 +328,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         Time.timeScale = 1f;
         AudioListener.pause = false;
+        SubmenuAberto = Submenu.Nenhum;
         if (raizDaFase != null) Destroy(raizDaFase.gameObject);
 
         raizDaFase = new GameObject("Mapa").transform;
@@ -354,6 +388,8 @@ public class GerenciadorDoJogo : MonoBehaviour
         timerRenascer -= Time.deltaTime;
         timerEntrada -= Time.unscaledDeltaTime; // tempo real: a transição funciona até com o jogo pausado
         AjustarMusica();
+        // O clique do mouse é pego (e apagado) ANTES da transição: um clique no meio dela é ignorado.
+        int clique = PegarClique(out int lado);
         if (Fala.HasValue)
         {
             timerFala -= Time.unscaledDeltaTime;
@@ -374,11 +410,16 @@ public class GerenciadorDoJogo : MonoBehaviour
         switch (Estado)
         {
             case EstadoDoJogo.Titulo:
-                AtualizarMenu();
+                if (SubmenuAberto != Submenu.Nenhum) AtualizarSubmenu(clique, lado);
+                else AtualizarMenu(clique);
                 break;
 
             case EstadoDoJogo.Conquistas:
-                if (Controles.Confirmar() || Controles.Pausar()) Estado = EstadoDoJogo.Titulo;
+                if (Controles.Confirmar() || Controles.Pausar() || Controles.Voltar() || clique == BotaoVoltar)
+                {
+                    Estado = EstadoDoJogo.Titulo;
+                    Som("bloco", 0.4f);
+                }
                 break;
 
             case EstadoDoJogo.Mapa:
@@ -393,17 +434,8 @@ public class GerenciadorDoJogo : MonoBehaviour
                 break;
 
             case EstadoDoJogo.Pausado:
-                AtualizarOpcoes();
-                if (Controles.Pausar() || Controles.Confirmar()) Pausar(false);
-                else if (Controles.SairParaOTitulo())
-                {
-                    int fase = FaseAtual;
-                    Trocar(() =>
-                    {
-                        MostrarMapa(fase); // volta para o mapa, no ponto desta fase
-                        SalvarProgresso();
-                    });
-                }
+                if (SubmenuAberto != Submenu.Nenhum) AtualizarSubmenu(clique, lado);
+                else AtualizarPausa(clique);
                 break;
 
             case EstadoDoJogo.Morreu:
@@ -425,17 +457,14 @@ public class GerenciadorDoJogo : MonoBehaviour
 
             case EstadoDoJogo.Vitoria:
                 if (Controles.Confirmar())
-                    Trocar(() =>
-                    {
-                        Estado = EstadoDoJogo.Creditos;
-                        TempoDosCreditos = 0f;
-                    });
+                    Trocar(() => AbrirCreditos(false));
                 break;
 
             case EstadoDoJogo.Creditos:
                 TempoDosCreditos += Time.deltaTime;
-                if (Controles.Confirmar() || Controles.Pausar() || TempoDosCreditos > DuracaoDosCreditos)
-                    Trocar(VoltarAoTitulo);
+                if (Controles.Confirmar() || Controles.Pausar() || Controles.Voltar() || clique == BotaoVoltar
+                    || TempoDosCreditos > DuracaoDosCreditos)
+                    FecharCreditos();
                 break;
         }
     }
@@ -481,6 +510,8 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     void Pausar(bool pausar)
     {
+        if (pausar) OpcaoDaPausa = 0; // a pausa sempre abre em "Continuar"
+        SubmenuAberto = Submenu.Nenhum;
         Estado = pausar ? EstadoDoJogo.Pausado : EstadoDoJogo.Jogando;
         Time.timeScale = pausar ? 0f : 1f;
         AudioListener.pause = pausar; // a música de fundo ignora isso e só fica mais baixa
@@ -498,29 +529,267 @@ public class GerenciadorDoJogo : MonoBehaviour
         timerFala = 7f;
     }
 
-    // Menu de pausa: cima/baixo escolhe a opção, esquerda/direita muda o volume (ou troca os gráficos).
-    void AtualizarOpcoes()
-    {
-        if (Controles.CimaApertou()) OpcaoDaPausa = (OpcaoDaPausa + 2) % 3;
-        if (Controles.BaixoApertou()) OpcaoDaPausa = (OpcaoDaPausa + 1) % 3;
-        int mudanca = Controles.DireitaApertou() ? 1 : Controles.EsquerdaApertou() ? -1 : 0;
-        if (mudanca == 0) return;
-        if (OpcaoDaPausa == 0) Opcoes.Musica = Mathf.Round(Opcoes.Musica * 10f + mudanca) / 10f;
-        else if (OpcaoDaPausa == 1) Opcoes.Efeitos = Mathf.Round(Opcoes.Efeitos * 10f + mudanca) / 10f;
-        else
-        {
-            Opcoes.GraficosHD2D = !Opcoes.GraficosHD2D;
-            Paralaxe.Recriar(); // monta o fundo de novo com o visual novo (o pós-processamento muda sozinho)
-        }
-        Som("moeda", 0.6f);
-    }
-
     void AjustarMusica()
     {
         float volume = 1f;
         if (Estado == EstadoDoJogo.Morreu || sonsDaMorte.OstTocando) volume = 0.15f; // a OST do Retorno pela Morte aparece
-        else if (Estado == EstadoDoJogo.Pausado) volume = 0.35f;
+        else if (Estado == EstadoDoJogo.Pausado && SubmenuAberto != Submenu.Opcoes) volume = 0.35f; // nas opções: volume de verdade, para ajustar
         musica.Abafar(volume);
+    }
+
+    // ------------------------------------------------------------------ menu de pausa
+
+    // Cima/baixo escolhe, ENTER (ou clique) confirma, ESC continua o jogo. Q é atalho para voltar ao mapa.
+    void AtualizarPausa(int clique)
+    {
+        if (Controles.Pausar() || Controles.Voltar() || clique == BotaoVoltar)
+        {
+            Pausar(false);
+            return;
+        }
+        if (Controles.VoltarAoMapa())
+        {
+            EscolherNaPausa(ItemDaPausa.VoltarAoMapa);
+            return;
+        }
+        if (Controles.CimaApertou()) OpcaoDaPausa = Girar(OpcaoDaPausa, -1, TotalDaPausa);
+        if (Controles.BaixoApertou()) OpcaoDaPausa = Girar(OpcaoDaPausa, 1, TotalDaPausa);
+
+        if (clique >= 0 && clique < TotalDaPausa)
+        {
+            OpcaoDaPausa = clique;
+            EscolherNaPausa((ItemDaPausa)clique);
+        }
+        else if (Controles.Confirmar()) EscolherNaPausa((ItemDaPausa)OpcaoDaPausa);
+    }
+
+    void EscolherNaPausa(ItemDaPausa item)
+    {
+        int fase = FaseAtual;
+        switch (item)
+        {
+            case ItemDaPausa.Continuar:
+                Pausar(false);
+                break;
+            case ItemDaPausa.ReiniciarFase:
+                // recomeça a fase do ZERO (sem ponto de save e com o chefe inteiro), como se entrasse pelo mapa
+                Som("vitoria", 0.4f);
+                Trocar(() =>
+                {
+                    Pausar(false);
+                    JogarFase(fase);
+                });
+                break;
+            case ItemDaPausa.Opcoes:
+                AbrirSubmenu(Submenu.Opcoes);
+                break;
+            case ItemDaPausa.ComoJogar:
+                AbrirSubmenu(Submenu.ComoJogar);
+                break;
+            case ItemDaPausa.VoltarAoMapa:
+                Som("vitoria", 0.4f);
+                Trocar(() =>
+                {
+                    MostrarMapa(fase); // volta para o mapa, no ponto desta fase (MostrarMapa tira a pausa)
+                    SalvarProgresso();
+                });
+                break;
+            case ItemDaPausa.VoltarAoTitulo:
+                Som("vitoria", 0.4f);
+                Trocar(() =>
+                {
+                    SalvarProgresso(); // salva ANTES: o VoltarAoTitulo zera as mortes, o tempo...
+                    VoltarAoTitulo();
+                });
+                break;
+        }
+    }
+
+    // ------------------------------------------------------------------ submenus (Opções e Como Jogar)
+
+    void AbrirSubmenu(Submenu qual)
+    {
+        SubmenuAberto = qual;
+        OpcaoDasOpcoes = 0;
+        PaginaDoComoJogar = 0;
+        Som("moeda", 0.5f);
+    }
+
+    void FecharSubmenu()
+    {
+        SubmenuAberto = Submenu.Nenhum; // volta para o menu de onde veio (título ou pausa)
+        Som("bloco", 0.4f);
+    }
+
+    void AtualizarSubmenu(int clique, int lado)
+    {
+        if (SubmenuAberto == Submenu.Opcoes) AtualizarOpcoes(clique, lado);
+        else AtualizarComoJogar(clique);
+    }
+
+    // Opções: cima/baixo escolhe; esquerda/direita muda; ENTER também muda (o volume dá a volta: 100% -> 0%).
+    // Com o mouse: clicar na metade ESQUERDA da linha diminui, na metade DIREITA aumenta.
+    void AtualizarOpcoes(int clique, int lado)
+    {
+        if (Controles.Voltar() || clique == BotaoVoltar)
+        {
+            FecharSubmenu();
+            return;
+        }
+        if (Controles.CimaApertou()) OpcaoDasOpcoes = Girar(OpcaoDasOpcoes, -1, TotalDasOpcoes);
+        if (Controles.BaixoApertou()) OpcaoDasOpcoes = Girar(OpcaoDasOpcoes, 1, TotalDasOpcoes);
+
+        int mudanca = Controles.DireitaApertou() ? 1 : Controles.EsquerdaApertou() ? -1 : 0;
+        bool confirmou = Controles.Confirmar();
+        if (clique >= 0 && clique < TotalDasOpcoes)
+        {
+            OpcaoDasOpcoes = clique;
+            mudanca = lado;
+            confirmou = false;
+        }
+        else if (clique >= 0) return;
+
+        var item = (ItemDasOpcoes)OpcaoDasOpcoes;
+        if (item == ItemDasOpcoes.Voltar)
+        {
+            if (confirmou || clique >= 0) FecharSubmenu();
+            return;
+        }
+        if (mudanca == 0 && !confirmou) return;
+
+        switch (item)
+        {
+            case ItemDasOpcoes.Musica:
+                Opcoes.Musica = MudarVolume(Opcoes.Musica, mudanca, confirmou);
+                break;
+            case ItemDasOpcoes.Efeitos:
+                Opcoes.Efeitos = MudarVolume(Opcoes.Efeitos, mudanca, confirmou);
+                break;
+            case ItemDasOpcoes.Graficos:
+                Opcoes.GraficosHD2D = !Opcoes.GraficosHD2D;
+                Paralaxe.Recriar(); // monta o fundo de novo com o visual novo (o pós-processamento muda sozinho)
+                break;
+            case ItemDasOpcoes.TelaCheia:
+                Opcoes.AlternarTelaCheia();
+                break;
+            case ItemDasOpcoes.Cronometro:
+                Opcoes.MostrarTempo = !Opcoes.MostrarTempo;
+                break;
+        }
+        Som("moeda", 0.6f); // já toca no volume novo dos efeitos: serve de "teste"
+    }
+
+    // Volume de 10 em 10%. "darAVolta": com ENTER, depois de 100% vem 0%.
+    static float MudarVolume(float volume, int mudanca, bool darAVolta)
+    {
+        if (darAVolta) return volume >= 0.95f ? 0f : Mathf.Round(volume * 10f + 1f) / 10f;
+        return Mathf.Round(volume * 10f + mudanca) / 10f; // (Opcoes já segura entre 0 e 1)
+    }
+
+    // Como Jogar: esquerda/direita troca de página; ENTER vai para a próxima (na última, fecha); ESC fecha.
+    void AtualizarComoJogar(int clique)
+    {
+        if (Controles.Voltar() || clique == BotaoVoltar)
+        {
+            FecharSubmenu();
+            return;
+        }
+        int ultima = Textos.ComoJogar.Length - 1;
+        int mudanca = Controles.DireitaApertou() || clique == BotaoProxima ? 1
+                    : Controles.EsquerdaApertou() || clique == BotaoAnterior ? -1 : 0;
+        if (Controles.Confirmar())
+        {
+            if (PaginaDoComoJogar >= ultima)
+            {
+                FecharSubmenu();
+                return;
+            }
+            mudanca = 1;
+        }
+        int nova = Mathf.Clamp(PaginaDoComoJogar + mudanca, 0, ultima);
+        if (nova == PaginaDoComoJogar) return;
+        PaginaDoComoJogar = nova;
+        Som("bloco", 0.5f);
+    }
+
+    // ------------------------------------------------------------------ créditos
+
+    void AbrirCreditos(bool peloTitulo)
+    {
+        Estado = EstadoDoJogo.Creditos;
+        TempoDosCreditos = 0f;
+        CreditosDoTitulo = peloTitulo;
+    }
+
+    void FecharCreditos()
+    {
+        if (CreditosDoTitulo)
+        {
+            Estado = EstadoDoJogo.Titulo; // abriu pelo título: só volta para ele
+            Som("bloco", 0.4f);
+        }
+        else Trocar(VoltarAoTitulo); // depois de zerar: título "de verdade" (zera a partida)
+    }
+
+    // ------------------------------------------------------------------ mouse nos menus
+
+    int cliquePendente = SemClique, ladoDoClique;
+    EstadoDoJogo estadoDoClique;
+    Submenu submenuDoClique;
+
+    // Chamado pela Interface quando o mouse passa por cima de uma opção: ela fica selecionada.
+    // (a Interface só chama isso quando o mouse MEXE: o mouse parado não "rouba" a seleção do teclado)
+    public void MouseEmCima(int opcao)
+    {
+        if (trocaPendente != null || opcao < 0) return;
+        int antes;
+        if (SubmenuAberto == Submenu.Opcoes)
+        {
+            antes = OpcaoDasOpcoes;
+            if (opcao < TotalDasOpcoes) OpcaoDasOpcoes = opcao;
+            if (OpcaoDasOpcoes != antes) Som("bloco", 0.5f);
+        }
+        else if (SubmenuAberto != Submenu.Nenhum) return;
+        else if (Estado == EstadoDoJogo.Titulo)
+        {
+            antes = OpcaoSelecionada;
+            if (opcao < opcoesDoMenu.Count) OpcaoSelecionada = opcao;
+            if (OpcaoSelecionada != antes) Som("bloco", 0.5f);
+        }
+        else if (Estado == EstadoDoJogo.Pausado)
+        {
+            antes = OpcaoDaPausa;
+            if (opcao < TotalDaPausa) OpcaoDaPausa = opcao;
+            if (OpcaoDaPausa != antes) Som("bloco", 0.5f);
+        }
+    }
+
+    // Chamado pela Interface no clique. O clique fica GUARDADO e é tratado no próximo Update, junto com o
+    // teclado (assim toda a lógica dos menus fica num lugar só). lado: -1 = metade esquerda, +1 = direita.
+    public void MouseClicou(int opcao, int lado)
+    {
+        cliquePendente = opcao;
+        ladoDoClique = lado;
+        estadoDoClique = Estado;
+        submenuDoClique = SubmenuAberto;
+    }
+
+    // Pega o clique guardado (e apaga). Se a tela mudou desde o clique, ele não vale mais.
+    int PegarClique(out int lado)
+    {
+        int clique = cliquePendente;
+        lado = ladoDoClique;
+        cliquePendente = SemClique;
+        if (clique == SemClique || estadoDoClique != Estado || submenuDoClique != SubmenuAberto || trocaPendente != null)
+            return SemClique;
+        return clique;
+    }
+
+    // Anda "direcao" casas numa lista de "total" opções, dando a volta nas pontas. Toca o som de mover.
+    static int Girar(int atual, int direcao, int total)
+    {
+        Som("bloco", 0.5f);
+        return (atual + direcao + total) % total;
     }
 
     // ------------------------------------------------------------------ menu do título
@@ -530,32 +799,64 @@ public class GerenciadorDoJogo : MonoBehaviour
         opcoesDoMenu.Clear();
         if (Progresso.TemJogoSalvo) opcoesDoMenu.Add(OpcaoDoMenu.Continuar);
         opcoesDoMenu.Add(OpcaoDoMenu.NovoJogo);
+        opcoesDoMenu.Add(OpcaoDoMenu.Opcoes);
+        opcoesDoMenu.Add(OpcaoDoMenu.ComoJogar);
         opcoesDoMenu.Add(OpcaoDoMenu.Conquistas);
+        opcoesDoMenu.Add(OpcaoDoMenu.Creditos);
+        if (Opcoes.PodeSair) opcoesDoMenu.Add(OpcaoDoMenu.Sair); // no navegador não existe "sair do jogo"
         OpcaoSelecionada = 0;
+        SubmenuAberto = Submenu.Nenhum;
     }
 
-    void AtualizarMenu()
+    // Cima/baixo escolhe, ENTER (ou clique) confirma. ESC no título não sai do jogo: só pula para "Sair".
+    void AtualizarMenu(int clique)
     {
-        if (Controles.CimaApertou()) MudarOpcao(-1);
-        if (Controles.BaixoApertou()) MudarOpcao(1);
-        if (Controles.Confirmar()) Comecar(opcoesDoMenu[OpcaoSelecionada]);
-    }
+        if (Controles.Voltar() || clique == BotaoVoltar)
+        {
+            int sair = opcoesDoMenu.IndexOf(OpcaoDoMenu.Sair);
+            if (sair >= 0 && sair != OpcaoSelecionada)
+            {
+                OpcaoSelecionada = sair;
+                Som("bloco", 0.5f);
+            }
+            return;
+        }
+        if (Controles.CimaApertou()) OpcaoSelecionada = Girar(OpcaoSelecionada, -1, opcoesDoMenu.Count);
+        if (Controles.BaixoApertou()) OpcaoSelecionada = Girar(OpcaoSelecionada, 1, opcoesDoMenu.Count);
 
-    void MudarOpcao(int direcao)
-    {
-        OpcaoSelecionada = (OpcaoSelecionada + direcao + opcoesDoMenu.Count) % opcoesDoMenu.Count;
-        Som("bloco", 0.5f);
+        if (clique >= 0 && clique < opcoesDoMenu.Count)
+        {
+            OpcaoSelecionada = clique;
+            Comecar(opcoesDoMenu[clique]);
+        }
+        else if (Controles.Confirmar()) Comecar(opcoesDoMenu[OpcaoSelecionada]);
     }
 
     void Comecar(OpcaoDoMenu opcao)
     {
-        if (opcao == OpcaoDoMenu.Conquistas)
+        switch (opcao)
         {
-            Estado = EstadoDoJogo.Conquistas;
-            return;
+            case OpcaoDoMenu.Conquistas:
+                Estado = EstadoDoJogo.Conquistas;
+                Som("moeda", 0.5f);
+                return;
+            case OpcaoDoMenu.Opcoes:
+                AbrirSubmenu(Submenu.Opcoes);
+                return;
+            case OpcaoDoMenu.ComoJogar:
+                AbrirSubmenu(Submenu.ComoJogar);
+                return;
+            case OpcaoDoMenu.Creditos:
+                AbrirCreditos(true);
+                Som("moeda", 0.5f);
+                return;
+            case OpcaoDoMenu.Sair:
+                Opcoes.SairDoJogo();
+                return;
         }
+        Som("vitoria", 0.4f);
         int fase;
-        if (opcao == OpcaoDoMenu.Continuar)
+        if (opcao == OpcaoDoMenu.Continuar && Progresso.TemJogoSalvo) // (confere de novo: sem save, vira "Novo jogo")
         {
             Progresso.Carregar(out fase, out int maisLonge, out int mortesSalvas, out moedas, out float tempoSalvo, out partidaValida);
             Progresso.CarregarMortesPorFase(mortesPorFase);
