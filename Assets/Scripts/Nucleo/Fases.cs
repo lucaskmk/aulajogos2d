@@ -23,7 +23,7 @@ using UnityEngine;
 //   e  inimigo disfarçado (igual ao normal, mas tem espinhos: NÃO pise!)
 //   M  bloco que foge quando você pula perto dele
 //   W  bandeira que te manda de volta pro começo
-//   X  linha invisível que inverte os controles depois de uma contagem curta (1,2 s) (cruzou de novo, desinverte).
+//   X  linha invisível que inverte os controles quase na hora (0,4 s) (cruzou de novo, desinverte).
 //      Só UMA fase usa isso, e só num trecho (é difícil demais para usar sempre)
 //   U  cano (2 de largura, desce até o chão): de tempos em tempos sai uma MÃO dele. Encostou, morreu
 //   r  coelho (Grande Coelho): pula atrás de você e se MULTIPLICA. Pise em cima para derrotar

@@ -71,6 +71,8 @@ public class ChefeRem : Chefe
 
     // A "caixa" do Subaru que conta para morrer (um tiquinho menor que o desenho: é mais justo).
     const float MeiaLarguraDoJogador = 0.27f, MeiaAlturaDoJogador = 0.42f;
+    // Folga: o perigo só mata se encostar DE VERDADE (de raspão, perto da borda dos espinhos, não conta). Mais justo.
+    const float FolgaDoAcerto = 0.15f;
     // O corpo da Rem (só machuca quando ela cai de um salto) e o topo da cabeça (onde se pisa).
     const float MeiaLarguraDoCorpo = 0.45f, AlturaDoCorpo = 1.55f, TopoDaCabeca = 1.625f;
 
@@ -963,7 +965,7 @@ public class ChefeRem : Chefe
             for (int k = -1; k <= 1 && !encostou; k++)
             {
                 Vector2 ponto = p + new Vector2(0f, k * (MeiaAlturaDoJogador - MeiaLarguraDoJogador));
-                if (DistanciaAoSegmento(ponto, zonas[i].a, zonas[i].b) < zonas[i].raio + MeiaLarguraDoJogador) encostou = true;
+                if (DistanciaAoSegmento(ponto, zonas[i].a, zonas[i].b) < zonas[i].raio + MeiaLarguraDoJogador - FolgaDoAcerto) encostou = true;
             }
         if (!encostou) return;
         jogador.Morrer();
