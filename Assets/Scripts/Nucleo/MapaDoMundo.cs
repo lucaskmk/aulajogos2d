@@ -395,7 +395,7 @@ public class MapaDoMundo : MonoBehaviour
         float sombrio = Sombrio(c);
         Color tom = Color.Lerp(Color.white, TomDaSombra, sombrio); // cor dos enfeites (mais escura na região sombria)
         // um "tremidinho" de até 2 pixels: a floresta não fica enfileirada demais (sempre o mesmo em cada célula)
-        Vector3 tremido = new Vector3(Mathf.Round((Variacao(c, 5, 7) - 2) * 0.5f) / 16f, 0f, 0f);
+        Vector3 tremido = new Vector3((Variacao(c, 5, 7) - 2) / 16f, 0f, 0f);
 
         if (EhPonto(tipo))
         {
