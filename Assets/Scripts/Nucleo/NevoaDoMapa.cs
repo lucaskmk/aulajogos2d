@@ -23,20 +23,22 @@ public class NevoaDoMapa : MonoBehaviour
 {
     const int PixelsPorCelula = 8;   // metade dos 16 do mapa: o filtro Bilinear deixa macio na tela
     const float TempoParaSumir = 0.6f;
-    const float Ruido = 0.55f;       // quanto o ruído entorta a borda
-    const float Inchaco = 0.07f;     // quanto as camadas que "respiram" passam da principal
+    const float Ruido = 0.7f;        // quanto o ruído entorta a borda
+    const float Avanco = 0.06f;      // a névoa passa um tiquinho da borda das células cobertas (nunca deixa um buraco nelas)
+    const float Inchaco = 0.08f;     // quanto as camadas que "respiram" passam da principal
 
     // As cores da névoa, da sombra mais funda (lilás-azulada) até a luz do sol (branco quentinho).
     static readonly Color32[] Cores =
     {
-        new Color32(64, 54, 104, 255), new Color32(92, 84, 136, 255), new Color32(124, 118, 166, 255), new Color32(160, 158, 196, 255),
-        new Color32(196, 196, 222, 255), new Color32(226, 226, 240, 255), new Color32(246, 242, 240, 255), new Color32(255, 250, 232, 255),
+        new Color32(70, 60, 112, 255), new Color32(98, 90, 142, 255), new Color32(128, 122, 170, 255), new Color32(158, 156, 196, 255),
+        new Color32(186, 186, 216, 255), new Color32(212, 212, 232, 255), new Color32(234, 232, 240, 255), new Color32(252, 246, 232, 255),
     };
     static readonly Color32 CorDaSombra = new Color32(28, 20, 66, 255);
 
     int largura, altura, linhasDeCeu;      // em células
     int texLargura, texAltura;             // em pixels da imagem
     float[] densidade;                     // por célula (linha 0 = a de cima do desenho)
+    float[] suave;                         // a densidade "borrada" com as vizinhas (a borda fica redonda, sem degraus)
     bool[] sumindo;
     readonly List<int> celulasSumindo = new List<int>();
     readonly List<float> inicioDoSumico = new List<float>();
@@ -73,6 +75,7 @@ public class NevoaDoMapa : MonoBehaviour
         linhasDeCeu = ceu;
         inicioDaSombria = sombria;
         densidade = new float[largura * altura];
+        suave = new float[largura * altura];
         sumindo = new bool[largura * altura];
         for (int y = 0; y < altura; y++)
             for (int x = 0; x < largura; x++)
@@ -138,8 +141,8 @@ public class NevoaDoMapa : MonoBehaviour
     // Ruído "de nuvem": rolinhos grandes + médios + pequenos (o mesmo truque do chão do mapa).
     static float Fractal(int x, int y, int semente)
     {
-        return 0.5f * RuidoSuave(x / 13f, y / 11f, semente) + 0.32f * RuidoSuave(x / 5.5f, y / 5f, semente + 1)
-             + 0.18f * RuidoSuave(x / 2.4f, y / 2.4f, semente + 2);
+        return 0.56f * RuidoSuave(x / 14f, y / 11f, semente) + 0.32f * RuidoSuave(x / 6f, y / 5f, semente + 1)
+             + 0.12f * RuidoSuave(x / 3f, y / 3f, semente + 2);
     }
 
     static float RuidoSuave(float x, float y, int semente)
@@ -167,6 +170,22 @@ public class NevoaDoMapa : MonoBehaviour
         return densidade[y * largura + x];
     }
 
+    float Suave(int x, int y) => suave[Mathf.Clamp(y, 0, altura - 1) * largura + Mathf.Clamp(x, 0, largura - 1)];
+
+    // Borra a densidade das células do retângulo (cada uma vira a média com as 8 vizinhas, o meio pesando mais).
+    void Borrar(int x0, int y0, int x1, int y1)
+    {
+        for (int y = Mathf.Max(0, y0); y <= Mathf.Min(altura - 1, y1); y++)
+            for (int x = Mathf.Max(0, x0); x <= Mathf.Min(largura - 1, x1); x++)
+            {
+                float soma = 0f;
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++)
+                        soma += Densidade(x + dx, y + dy) * (dx == 0 ? 2f : 1f) * (dy == 0 ? 2f : 1f);
+                suave[y * largura + x] = soma / 16f;
+            }
+    }
+
     // A densidade num ponto qualquer da imagem (mistura suave das 4 células mais perto).
     float DensidadeEm(float u, float v)
     {
@@ -175,8 +194,8 @@ public class NevoaDoMapa : MonoBehaviour
         float tx = u - x0, ty = v - v0;
         tx = tx * tx * (3f - 2f * tx);
         ty = ty * ty * (3f - 2f * ty);
-        float a = Mathf.Lerp(Densidade(x0, altura - 1 - v0), Densidade(x0 + 1, altura - 1 - v0), tx);
-        float b = Mathf.Lerp(Densidade(x0, altura - 2 - v0), Densidade(x0 + 1, altura - 2 - v0), tx);
+        float a = Mathf.Lerp(Suave(x0, altura - 1 - v0), Suave(x0 + 1, altura - 1 - v0), tx);
+        float b = Mathf.Lerp(Suave(x0, altura - 2 - v0), Suave(x0 + 1, altura - 2 - v0), tx);
         return Mathf.Lerp(a, b, ty);
     }
 
@@ -188,6 +207,8 @@ public class NevoaDoMapa : MonoBehaviour
         // (na imagem, y = 0 é embaixo; no desenho do mapa, a linha 0 é a de cima)
         int py0 = Mathf.Max(0, (altura - 1 - (y1 + Folga)) * PixelsPorCelula), py1 = Mathf.Min(texAltura - 1, (altura - (y0 - Folga)) * PixelsPorCelula - 1);
         const float Passo = 1f / PixelsPorCelula;
+
+        Borrar(x0 - Folga - 2, y0 - Folga - 2, x1 + Folga + 2, y1 + Folga + 2);
 
         // 0) a densidade "macia" de cada pixel (a mesma para as 3 camadas), com 4 pixels a mais em volta
         int ex0 = Mathf.Max(0, px0 - 4), ex1 = Mathf.Min(texLargura - 1, px1 + 4);
@@ -209,7 +230,7 @@ public class NevoaDoMapa : MonoBehaviour
                 for (int px = Mathf.Max(0, px0 - 1); px <= Mathf.Min(texLargura - 1, px1 + 1); px++)
                 {
                     int i = py * texLargura + px;
-                    alturaDaNevoa[i] = densidadeMacia[i] + (ruido[i] - 0.5f) * Ruido + extra;
+                    alturaDaNevoa[i] = densidadeMacia[i] + (ruido[i] - 0.5f) * Ruido + Avanco + extra;
                 }
             // 2) a cor
             for (int py = py0; py <= py1; py++)
@@ -232,16 +253,17 @@ public class NevoaDoMapa : MonoBehaviour
                     // luz de cima-esquerda: onde a nuvem "sobe" para a direita e para baixo, a face olha para o sol
                     float hx = alturaDaNevoa[py * texLargura + Mathf.Min(texLargura - 1, px + 1)] - alturaDaNevoa[py * texLargura + Mathf.Max(0, px - 1)];
                     float hy = alturaDaNevoa[Mathf.Min(texAltura - 1, py + 1) * texLargura + px] - alturaDaNevoa[Mathf.Max(0, py - 1) * texLargura + px];
-                    float luz = 0.62f + (0.62f * hx - 0.78f * hy) * 2.2f + (h - 0.5f) * 0.25f + (k == 0 ? 0f : 0.06f);
-                    // na beirada a nuvem é mais fina (mais clara); no miolo, mais funda
-                    luz += (1f - alfa) * 0.15f;
+                    // (e os "rolinhos" do ruído: o alto de cada um é mais claro, os vales entre eles mais escuros)
+                    float luz = 0.46f + (0.62f * hx - 0.78f * hy) * 2.4f + (ruido[i] - 0.5f) * 0.6f + (k == 0 ? 0f : 0.08f);
+                    // na beirada a nuvem é mais fina (mais clara)
+                    luz += (1f - alfa) * 0.2f;
                     float x = (px + 0.5f) * Passo;
                     float escura = Mathf.Clamp01((x - inicioDaSombria) / 6f); // na região sombria o miasma é mais escuro
-                    luz -= escura * 0.3f;
+                    luz -= escura * 0.35f;
                     float limiar = (ArteDosBlocos.Bayer[(py & 3) * 4 + (px & 3)] + 0.5f) / 16f - 0.5f;
                     int tom = Mathf.Clamp(Mathf.RoundToInt(luz * (Cores.Length - 1) + limiar * 0.7f), 0, Cores.Length - 1);
                     Color32 c = Cores[tom];
-                    if (escura > 0f) c = Color32.Lerp(c, new Color32(84, 52, 120, 255), escura * 0.35f);
+                    if (escura > 0f) c = Color32.Lerp(c, new Color32(84, 52, 120, 255), escura * 0.45f);
 
                     // junta a nuvem com a sombra embaixo dela
                     float total = alfa + sombra * (1f - alfa);

@@ -50,6 +50,10 @@ public static partial class ArteDoMapa
         C(8, 4, 14), C(14, 9, 24), C(22, 15, 36), C(32, 23, 50), C(46, 34, 66),
     };
     static readonly Color32 Espuma = C(236, 248, 244);
+    static readonly Color32[] Estrada = // a terra batida do caminho (mais clara que a terra seca, para aparecer bem)
+    {
+        C(70, 44, 44), C(118, 82, 62), C(164, 124, 86), C(198, 162, 112), C(224, 194, 142), C(244, 222, 174),
+    };
 
     // ---------------------------------------------------------------- ruído
 
@@ -198,6 +202,13 @@ public static partial class ArteDoMapa
                     celFlores[i] = c == 'f' ? 1f : 0f;
                     andavel[i] = c == '+' || EhPonto(c);
                 }
+            // o céu "continua" o que tem embaixo dele (o rio e o abismo vêm lá do horizonte, sem uma margem reta)
+            for (int l = 0; l < linhasDeCeu && linhasDeCeu < H; l++)
+                for (int x = 0; x < W; x++)
+                {
+                    celAgua[l * W + x] = celAgua[linhasDeCeu * W + x];
+                    celAbismo[l * W + x] = celAbismo[linhasDeCeu * W + x];
+                }
             celProfundo = Borrar(Borrar(Borrar(celAgua)));
             celMata = Borrar(celMata);
             celRocha = Borrar(celRocha);
@@ -305,9 +316,9 @@ public static partial class ArteDoMapa
                 }
 
             // distâncias até a margem (o "x3" é do método: 3 por passo reto, 4 na diagonal)
-            Distancias(AguaT, true, dAgua);    // água: até a margem
+            Distancias(AguaT, true, dAgua, true); // água: até a margem (o rio continua "para dentro" do horizonte)
             Distancias(AguaT, false, dPraia);  // chão: até a água mais perto
-            Distancias(Abismo, true, dAbismo);
+            Distancias(Abismo, true, dAbismo, true); // (o abismo continua "para dentro" do horizonte)
             Distancias(Abismo, false, dBorda);
 
             // quantos pixels de água (ou de abismo) seguidos tem em cima de cada um: a margem "de cima" vira barranco
@@ -328,10 +339,11 @@ public static partial class ArteDoMapa
         // "Chamfer distance": duas passadas (de cima para baixo e de baixo para cima) acham, para cada pixel
         // de dentro, a distância até o pixel de fora mais perto. É bem rápido e quase igual à distância de verdade.
         // (dentro = os pixels do tipo "qual" se igual for true; os que NÃO são dele, se for false)
-        void Distancias(byte qual, bool igual, ushort[] saida)
+        void Distancias(byte qual, bool igual, ushort[] saida, bool ceuDentro = false)
         {
             const ushort Longe = 3000;
-            for (int i = 0; i < saida.Length; i++) saida[i] = (tipo[i] == qual) == igual && tipo[i] != Ceu ? Longe : (ushort)0;
+            for (int i = 0; i < saida.Length; i++)
+                saida[i] = tipo[i] == Ceu ? (ceuDentro ? Longe : (ushort)0) : (tipo[i] == qual) == igual ? Longe : (ushort)0;
             for (int py = A - 1; py >= 0; py--)
                 for (int px = 0; px < L; px++)
                 {
@@ -467,14 +479,14 @@ public static partial class ArteDoMapa
         {
             int emCima = acima[i];
             bool beiraEmCima = TipoEm(px, py + emCima + 1) == Chao;
-            int altura = 7 + Mathf.RoundToInt(Fractal(px, 0, 5f, 31) * 5f);
+            int altura = 9 + Mathf.RoundToInt(Fractal(px, 0, 5f, 31) * 6f);
             float lado = dAbismo[i] / 3f;
             if (beiraEmCima && emCima < altura)
             {
                 // camadas da rocha: faixas que ondulam um pouco; a de cima pega luz
                 int camada = (emCima + Mathf.RoundToInt(Fractal(px, py, 7f, 37) * 3f)) / 3;
                 Color32[] r = camada % 2 == 0 ? Terra : Pedra;
-                float v = 0.62f - emCima / (float)altura * 0.5f + (Fractal(px, py, 3f, 41) - 0.5f) * 0.2f;
+                float v = 0.72f - emCima / (float)altura * 0.45f + (Fractal(px, py, 3f, 41) - 0.5f) * 0.2f;
                 if (emCima == 0) v = 0.85f;
                 int t = Tom(v, r.Length, px, py);
                 if (emCima >= altura - 3) // o pé da parede some no escuro (com dithering)
@@ -508,7 +520,13 @@ public static partial class ArteDoMapa
                 bool abismoEmbaixo = TipoEm(px, py - 1) == Abismo || TipoEm(px, py - 2) == Abismo;
                 bool abismoEmCima = TipoEm(px, py + 1) == Abismo;
                 if (abismoEmCima && borda <= 1.01f) { Por(i, Terra, 0); return; }
-                if (abismoEmbaixo) { Por(i, escuro ? CapimSombrio : Capim, borda <= 1.01f ? 6 : 5); return; }
+                if (abismoEmbaixo)
+                {
+                    // a beirada do penhasco pega o sol (na cor do chão daquele lugar)
+                    Color32[] beira = FatorSeco(px, py) > 0.5f ? Terra : escuro ? CapimSombrio : Capim;
+                    Por(i, beira, borda <= 1.01f ? 6 : 5);
+                    return;
+                }
             }
 
             // a areia da praia (na região sombria, cascalho cinza)
@@ -545,7 +563,7 @@ public static partial class ArteDoMapa
             if (rocha > 0.25f && rocha + (Fractal(px, py, 5f, 87) - 0.5f) * 0.5f + limiar * 0.25f > 0.62f)
             {
                 // chão de pedra solta (pé das montanhas e das ruínas)
-                Color32[] r = Fractal(px, py, 3f, 89) > 0.55f ? Pedra : Terra;
+                Color32[] r = Fractal(px, py, 4f, 89) > 0.42f ? Pedra : Terra;
                 float v = (r == Pedra ? 0.62f : 0.55f) + (Fractal(px, py, 3f, 91) - 0.5f) * 0.3f;
                 if (escuro) v -= 0.18f;
                 Por(i, r, Tom(v, r.Length, px, py));
@@ -720,7 +738,7 @@ public static partial class ArteDoMapa
 
     // Um recorte por "jeito": quais lados do caminho continuam (4 bits: direita, esquerda, cima, baixo),
     // 4 versões de cada (pedrinhas e beiradas em lugares diferentes) e a "praça" redonda das fases.
-    // A largura do caminho na beirada da célula é SEMPRE a mesma (8 pixels): qualquer versão encaixa em
+    // A largura do caminho na beirada da célula é SEMPRE a mesma (10 pixels): qualquer versão encaixa em
     // qualquer outra. No meio da célula a beirada ondula, e o capim avança um pouquinho por cima da terra.
     public const int Direita = 1, Esquerda = 2, Cima = 4, Baixo = 8;
     const int VersoesDoCaminho = 4;
@@ -777,15 +795,15 @@ public static partial class ArteDoMapa
     static bool NoCaminho(int lados, int versao, bool praca, int x, int y)
     {
         float cx = x + 0.5f - 8f, cy = y + 0.5f - 8f;
-        float raio = praca ? 7.6f : 4.3f + (Sorteio(versao, 0, 151) - 0.5f) * 0.8f;
+        float raio = praca ? 7.6f : 5.3f + (Sorteio(versao, 0, 151) - 0.5f) * 0.8f;
         if (cx * cx + cy * cy <= raio * raio) return true;
-        // os "braços" que vão até a beirada: meia largura 4 na beirada, ondulando no meio
+        // os "braços" que vão até a beirada: meia largura 5 na beirada, ondulando no meio
         bool Braco(float aoLongo, float deLado, int semente)
         {
             if (aoLongo < 0f) return false;
             float ateABeira = 8f - aoLongo;                          // 0 na beirada da célula
             float ondula = Mathf.Clamp01(ateABeira / 4f) * (Ruido(aoLongo * 0.45f, versao * 3.7f, semente) - 0.5f) * 2.4f;
-            return Mathf.Abs(deLado - ondula * 0.5f) <= 4f + ondula * 0.5f;
+            return Mathf.Abs(deLado - ondula * 0.5f) <= 5f + ondula * 0.5f;
         }
         return ((lados & Direita) != 0 && Braco(cx, cy, 161)) || ((lados & Esquerda) != 0 && Braco(-cx, cy, 163))
             || ((lados & Cima) != 0 && Braco(cy, cx, 167)) || ((lados & Baixo) != 0 && Braco(-cy, cx, 169));
@@ -801,7 +819,7 @@ public static partial class ArteDoMapa
             if (x >= P && (lados & Direita) == 0) return false;
             if (y < 0 && (lados & Baixo) == 0) return false;
             if (y >= P && (lados & Cima) == 0) return false;
-            if (x < 0 || x >= P || y < 0 || y >= P) return Mathf.Abs(Mathf.Clamp(x, 0, P - 1) + 0.5f - 8f) <= 4f || Mathf.Abs(Mathf.Clamp(y, 0, P - 1) + 0.5f - 8f) <= 4f;
+            if (x < 0 || x >= P || y < 0 || y >= P) return Mathf.Abs(Mathf.Clamp(x, 0, P - 1) + 0.5f - 8f) <= 5f || Mathf.Abs(Mathf.Clamp(y, 0, P - 1) + 0.5f - 8f) <= 5f;
             return NoCaminho(lados, versao, praca, x, y);
         }
         int semente = 200 + lados * 7 + versao * 31;
@@ -810,16 +828,20 @@ public static partial class ArteDoMapa
             {
                 if (!Dentro(x, y)) continue;
                 // terra batida: clara, com manchas e grãozinhos
-                float v = 0.74f + (ArteDosBlocos.Sorteio(x, y, semente) - 0.5f) * 0.12f + (Ruido(x / 3f, y / 3f, semente) - 0.5f) * 0.22f;
-                int tom = Tom(v, Terra.Length, x, y);
-                // beiradas: a de cima e a da esquerda ficam na sombra do capim; a de baixo pega luz
+                float v = 0.72f + (ArteDosBlocos.Sorteio(x, y, semente) - 0.5f) * 0.14f + (Ruido(x / 3f, y / 3f, semente) - 0.5f) * 0.24f;
+                // as marcas das rodas das carroças: duas faixas um pouco mais escuras ao longo do caminho
+                bool deitado = (lados & (Direita | Esquerda)) != 0, emPe = (lados & (Cima | Baixo)) != 0;
+                float trilha = deitado && !emPe ? Mathf.Abs(Mathf.Abs(y + 0.5f - 8f) - 2.5f) : emPe && !deitado ? Mathf.Abs(Mathf.Abs(x + 0.5f - 8f) - 2.5f) : 9f;
+                if (trilha < 0.6f && Sorteio(x, y, semente + 3) < 0.7f) v -= 0.16f;
+                int tom = Tom(v, Estrada.Length, x, y);
+                // beiradas: a de cima e a da esquerda ficam na sombra do barranco de capim; a de baixo pega luz
                 bool foraEmCima = !Dentro(x, y + 1), foraEsq = !Dentro(x - 1, y), foraEmbaixo = !Dentro(x, y - 1), foraDir = !Dentro(x + 1, y);
-                if (foraEmCima) tom = 3;
-                else if (!Dentro(x, y + 2)) tom = Mathf.Min(tom, 4);
-                if (foraEsq) tom = Mathf.Min(tom, 4);
-                if (foraEmbaixo) tom = 6;
-                if (foraDir && !foraEmbaixo) tom = Mathf.Min(tom, 4);
-                t.Pintar(x, y, Terra, tom);
+                if (foraEmCima) tom = 0;
+                else if (!Dentro(x, y + 2)) tom = Mathf.Min(tom, 2);
+                if (foraEsq) tom = Mathf.Min(tom, 1);
+                if (foraEmbaixo) tom = 5;
+                if (foraDir && !foraEmbaixo) tom = Mathf.Min(tom, 1);
+                t.Pintar(x, y, Estrada, tom);
                 if (praca && !foraEmCima && !foraEmbaixo && !foraEsq && !foraDir)
                 {
                     // a praça das fases: um anel de pedrinhas em volta (o ponto da fase fica no meio)
@@ -833,7 +855,7 @@ public static partial class ArteDoMapa
         for (int y = 0; y < P; y++)
             for (int x = 0; x < P; x++)
             {
-                if (!t.Cheio(x, y) || t.RampaEm(x, y) != Terra) continue;
+                if (!t.Cheio(x, y) || t.RampaEm(x, y) != Estrada) continue;
                 bool beira = !Dentro(x, y + 1) || !Dentro(x - 1, y) || !Dentro(x + 1, y) || !Dentro(x, y - 1);
                 float s = Sorteio(x, y, semente + 2);
                 if (beira && s < 0.3f) t.Pintar(x, y, Capim, s < 0.12f ? 4 : 3);
@@ -841,7 +863,7 @@ public static partial class ArteDoMapa
                 {
                     // pedrinha: clara em cima-esquerda, sombrinha embaixo-direita
                     t.Pintar(x, y, Pedra, 5);
-                    if (Dentro(x + 1, y - 1) && t.RampaEm(x + 1, y - 1) == Terra) t.Mudar(x + 1, y - 1, -2);
+                    if (Dentro(x + 1, y - 1) && t.RampaEm(x + 1, y - 1) == Estrada) t.Mudar(x + 1, y - 1, -2);
                     if (s > 0.985f && Dentro(x + 1, y)) t.Pintar(x + 1, y, Pedra, 3);
                 }
             }

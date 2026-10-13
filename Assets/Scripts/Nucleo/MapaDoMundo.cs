@@ -410,6 +410,7 @@ public class MapaDoMundo : MonoBehaviour
             case '=':
             case '#':
                 terra[c] = Ponte(c, p, tipo == '#');
+                terra[c].color = CorDoCaminho(c);
                 break;
             case 'a':
                 if (sorteio.Next(14) == 0) // de vez em quando passa uma rajada de vento no abismo (a fase 10 é a do vento)
@@ -461,7 +462,7 @@ public class MapaDoMundo : MonoBehaviour
                 break;
             case 'Y':
                 // a Grande Árvore Flügel: enorme, com a copa verde-dourada (mexe pouco no vento)
-                Planta("ArvoreFlugel", p + Vector3.down * 0.5f, "mapa_arvore_grande", linha - 4, Color.Lerp(Color.white, tom, 0.4f), 0.35f);
+                Planta("ArvoreFlugel", p + Vector3.down * 0.5f, "mapa_arvore_grande", linha - 4, Color.Lerp(Color.white, tom, 0.6f), 0.35f);
                 SombraNoChao(p + new Vector3(0.6f, -0.55f, 0f), "mapa_sombra_arvore_grande");
                 break;
             case 'f':
@@ -512,7 +513,7 @@ public class MapaDoMundo : MonoBehaviour
     }
 
     // A cor do caminho: na região sombria a terra fica um pouco mais escura.
-    static Color CorDoCaminho(Vector2Int c) => Color.Lerp(Color.white, TomDaSombra, Sombrio(c) * 0.5f);
+    static Color CorDoCaminho(Vector2Int c) => Color.Lerp(Color.white, TomDaSombra, Sombrio(c) * 0.8f);
 
     // Um desenho simples (sem sombra), com o sprite pelo nome.
     SpriteRenderer NovoDesenho(string nome, Vector3 lugar, string sprite, int ordem) => NovoDesenho(nome, lugar, FabricaDeSprites.Pegar(sprite), ordem);

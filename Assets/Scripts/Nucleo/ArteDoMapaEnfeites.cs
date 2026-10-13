@@ -287,7 +287,7 @@ public static partial class ArteDoMapa
             float altura = pico * (1f - Mathf.Pow(Mathf.Abs(dx), 1.15f)) + (Ruido(x * 0.6f, 3f, semente + 1) - 0.5f) * 3f;
             return y + 0.5f <= altura;
         }
-        float neve = versao == 2 ? 99f : pico * 0.66f;
+        float neve = versao == 2 ? 99f : pico * 0.52f;
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
@@ -300,15 +300,15 @@ public static partial class ArteDoMapa
                     int tom = sol ? (camada > 0.6f ? 5 : 4) : (camada > 0.55f ? 3 : 2);
                     t.Pintar(x, y, Neve, tom);
                 }
-                else if (versao == 2 && y < pico * 0.55f && Ruido(x * 0.5f, y * 0.5f, semente + 4) > 0.45f)
+                else if (versao == 2 && y < 4 + Ruido(x * 0.5f, 0f, semente + 4) * 3f && Ruido(x * 0.5f, y * 0.5f, semente + 4) > 0.4f)
                 {
-                    // morro mais baixo: grama subindo pela encosta
+                    // morro mais baixo: o capim sobe um pouco pelo pé
                     float v = (sol ? 0.55f : 0.3f) + (camada - 0.5f) * 0.2f;
                     t.Pintar(x, y, Capim, Tom(v, Capim.Length, x, y));
                 }
                 else
                 {
-                    float v = (sol ? 0.66f : 0.28f) + (camada - 0.5f) * 0.3f - (y < 3 ? 0.12f : 0f);
+                    float v = (sol ? 0.68f : 0.36f) + (camada - 0.5f) * 0.22f - (y < 3 ? 0.1f : 0f);
                     t.Pintar(x, y, Pedra, Tom(v, Pedra.Length, x, y));
                 }
             }
@@ -360,11 +360,11 @@ public static partial class ArteDoMapa
         t.Pintar(10, 4, Ouro, 3);
         foreach (int jx in new[] { 5, 12 })
         {
-            for (int y = 4; y <= 6; y++)
-                for (int x = jx; x <= jx + 1; x++)
-                    t.Pintar(x, y, Ouro, y == 6 ? 4 : x == jx ? 3 : 2);
-            t.Cor(jx - 1, 7, ContornoEscuro); t.Cor(jx + 2, 7, ContornoEscuro);
-            for (int x = jx - 1; x <= jx + 2; x++) { t.Pintar(x, 3, Madeira, 3); t.Pintar(x, 7, Madeira, 1); }
+            // janelinha 2 x 2 com a luz quente lá de dentro, moldura de madeira e floreira embaixo
+            t.Pintar(jx, 5, Ouro, 4); t.Pintar(jx + 1, 5, Ouro, 3);
+            t.Pintar(jx, 4, Ouro, 3); t.Pintar(jx + 1, 4, Ouro, 2);
+            for (int x = jx - 1; x <= jx + 2; x++) t.Pintar(x, 6, Madeira, 1);
+            t.Pintar(jx - 1, 3, Capim, 4); t.Pintar(jx, 3, Capim, 3); t.Cor(jx + 1, 3, ArteDosBlocos.PetalaRosa); t.Pintar(jx + 2, 3, Capim, 2);
         }
         // telhado: duas águas, a de trás pega sol (mais clara), a da frente fica de "frente" para nós
         for (int y = 9; y <= 17; y++)
@@ -577,12 +577,12 @@ public static partial class ArteDoMapa
         Parede(t, Reboco, meio + 13, w - 5, 0, 18, 0.66f);
         Telhado(t, TelhaLilas, meio + 12, w - 4, 19, 26);
         // janelas (algumas acesas) e a porta grande
-        for (int k = 0; k < 4; k++)
+        for (int k = 0; k < 3; k++)
         {
-            Janela(t, 7 + k * 6, 10, 2, 4, k == 2);
-            Janela(t, 7 + k * 6, 3, 2, 4, false);
-            Janela(t, meio + 16 + k * 6, 10, 2, 4, k == 0);
-            Janela(t, meio + 16 + k * 6, 3, 2, 4, k == 3);
+            Janela(t, 8 + k * 7, 10, 2, 4, k == 2);
+            Janela(t, 8 + k * 7, 3, 2, 4, false);
+            Janela(t, meio + 17 + k * 7, 10, 2, 4, k == 0);
+            Janela(t, meio + 17 + k * 7, 3, 2, 4, k == 2);
         }
         for (int k = 0; k < 3; k++) Janela(t, meio - 9 + k * 8, 17, 3, 5, k != 1);
         Janela(t, meio - 1, 33, 3, 4, true); // o relógio... ou a janela do escritório do Roswaal
