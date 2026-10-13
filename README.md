@@ -57,10 +57,14 @@ Os controles abaixo são os de `Assets/Scripts/Nucleo/Controles.cs`. Teclado e c
 | Entrar numa porta da Beatrice | **S** ou **↓** | direcional para baixo |
 | No mapa: andar pelo caminho / entrar na fase | **setas** / **Enter** | direcional / botão de baixo |
 | No mapa: voltar ao título | **Esc** | Start |
+| Voltar um nível nos menus | **Esc** ou **Backspace** | botão da direita (B / ◯) |
+| Na pausa: ir direto para o mapa | **Q** | — |
+| Menus com mouse | passar o mouse escolhe, **clique** confirma, **botão direito** volta | — |
 
 ### Menus
-- **Título:** Continuar (a partida salva), Novo jogo, Conquistas, Opções, Como Jogar, Créditos e Sair (o Sair não aparece no navegador).
-- **Pausa:** Continuar, Reiniciar fase, Opções (volume da música, volume dos efeitos, gráficos **HD-2D** ou **Simples**) e Voltar ao mapa. O progresso fica salvo.
+- **Título:** Continuar (só se houver partida salva), Novo jogo, Opções, Como jogar, Conquistas, Créditos e Sair (o Sair não aparece no navegador).
+- **Pausa:** Continuar, Reiniciar fase (do começo, sem contar morte), Opções, Como jogar, Voltar ao mapa e Voltar ao título. O progresso fica salvo.
+- **Opções** (a mesma tela no título e na pausa): volume da música, volume dos efeitos, gráficos **HD-2D** ou **Simples**, tela cheia e cronômetro no HUD.
 - **Mapa do mundo:** cada ponto é uma fase. Verde = já passou nesta partida, amarelo = liberada. A caveira embaixo do ponto mostra quantas vezes você morreu ali.
   O mapa começa coberto pela névoa da Bruxa, que vai sumindo conforme você avança.
 
