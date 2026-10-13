@@ -248,13 +248,14 @@ public class Interface : MonoBehaviour
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         Texto("PAUSA", w / 2f, h * 0.18f, 9f, 0.5f, Lilas);
 
-        // volume da música e dos efeitos (cima/baixo escolhe, esquerda/direita muda)
-        string[] nomes = { "Música", "Efeitos" };
+        // volume da música e dos efeitos e os gráficos (cima/baixo escolhe, esquerda/direita muda)
+        string[] nomes = { "Música", "Efeitos", "Gráficos" };
         float[] valores = { Opcoes.Musica, Opcoes.Efeitos };
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 3; i++)
         {
             bool escolhida = jogo.OpcaoDaPausa == i;
-            string barra = new string('*', Mathf.RoundToInt(valores[i] * 10f)).PadRight(10, '-');
+            string barra = i < 2 ? new string('*', Mathf.RoundToInt(valores[i] * 10f)).PadRight(10, '-')
+                : Opcoes.GraficosHD2D ? "HD-2D" : "Simples";
             string texto = $"{nomes[i]}: < {barra} >";
             if (escolhida && Time.unscaledTime % 0.8f < 0.55f) texto = "> " + texto;
             Texto(texto, w / 2f, h * 0.42f + i * 46f * escala, 3f, 0.5f, escolhida ? Amarelo : Branco);

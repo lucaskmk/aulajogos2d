@@ -100,7 +100,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     // Fala de um personagem no mapa (depois de passar de fase). null = nenhuma.
     public Textos.Fala? Fala { get; private set; }
-    // Menu de pausa: 0 = volume da música, 1 = volume dos efeitos.
+    // Menu de pausa: 0 = volume da música, 1 = volume dos efeitos, 2 = gráficos (HD-2D / Simples).
     public int OpcaoDaPausa { get; private set; }
     // Créditos: quantos segundos já rolaram.
     public float TempoDosCreditos { get; private set; }
@@ -493,14 +493,20 @@ public class GerenciadorDoJogo : MonoBehaviour
         timerFala = 7f;
     }
 
-    // Menu de pausa: cima/baixo escolhe música ou efeitos, esquerda/direita muda o volume.
+    // Menu de pausa: cima/baixo escolhe a opção, esquerda/direita muda o volume (ou troca os gráficos).
     void AtualizarOpcoes()
     {
-        if (Controles.CimaApertou() || Controles.BaixoApertou()) OpcaoDaPausa = 1 - OpcaoDaPausa;
+        if (Controles.CimaApertou()) OpcaoDaPausa = (OpcaoDaPausa + 2) % 3;
+        if (Controles.BaixoApertou()) OpcaoDaPausa = (OpcaoDaPausa + 1) % 3;
         int mudanca = Controles.DireitaApertou() ? 1 : Controles.EsquerdaApertou() ? -1 : 0;
         if (mudanca == 0) return;
         if (OpcaoDaPausa == 0) Opcoes.Musica = Mathf.Round(Opcoes.Musica * 10f + mudanca) / 10f;
-        else Opcoes.Efeitos = Mathf.Round(Opcoes.Efeitos * 10f + mudanca) / 10f;
+        else if (OpcaoDaPausa == 1) Opcoes.Efeitos = Mathf.Round(Opcoes.Efeitos * 10f + mudanca) / 10f;
+        else
+        {
+            Opcoes.GraficosHD2D = !Opcoes.GraficosHD2D;
+            Paralaxe.Recriar(); // monta o fundo de novo com o visual novo (o pós-processamento muda sozinho)
+        }
         Som("moeda", 0.6f);
     }
 
