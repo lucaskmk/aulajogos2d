@@ -30,7 +30,12 @@ public static class ArteDoVento
         public bool deCabeca;   // preso EM CIMA (galho pendurado): quem balança é a parte de baixo
     }
 
-    static readonly string[] Plantas = { "flor", "tufo", "arbusto", "arvore", "mapa_pinheiro", "hd2d_frente_capim", "hd2d_frente_galho" };
+    static readonly string[] Plantas =
+    {
+        "flor", "tufo", "arbusto", "arvore", "mapa_pinheiro", "hd2d_frente_capim", "hd2d_frente_galho",
+        // as plantas do mapa do mundo (ArteDoMapaEnfeites)
+        "mapa_arvore_0", "mapa_arvore_1", "mapa_arvore_2", "mapa_arvore_grande", "mapa_flores_0", "mapa_flores_1", "mapa_flores_2", "mapa_flores_3",
+    };
 
     static Jeito JeitoDe(string planta)
     {
@@ -41,6 +46,14 @@ public static class ArteDoVento
             case "arbusto": return new Jeito { amplitude = 1f, presa = 0.35f };
             case "arvore": return new Jeito { amplitude = 1.5f, presa = 0.38f };        // o tronco não mexe, só a copa
             case "mapa_pinheiro": return new Jeito { amplitude = 1.5f, presa = 0.25f };
+            case "mapa_arvore_grande": return new Jeito { amplitude = 2f, presa = 0.42f };  // a Flügel: só a copa enorme mexe
+            case "mapa_arvore_0":
+            case "mapa_arvore_1":
+            case "mapa_arvore_2": return new Jeito { amplitude = 1.5f, presa = 0.36f };
+            case "mapa_flores_0":
+            case "mapa_flores_1":
+            case "mapa_flores_2":
+            case "mapa_flores_3": return new Jeito { amplitude = 1.5f, presa = 0.2f };
             case "hd2d_frente_capim": return new Jeito { amplitude = 2f, presa = 0.3f, daVolta = true };
             case "hd2d_frente_galho": return new Jeito { amplitude = 1.5f, presa = 0.3f, daVolta = true, deCabeca = true };
             default: return new Jeito { amplitude = 1f, presa = 0.3f };

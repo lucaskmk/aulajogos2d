@@ -33,54 +33,55 @@ public static class ArteDosBlocos
     public const int Versoes = 4;
 
     // ---------------------------------------------------------------- paletas (escuro -> claro)
+    // (internal: o ArteDoMapa usa as mesmas rampas, a mesma luz e o mesmo dithering, para o mapa combinar com as fases)
 
-    static Color32 C(int r, int g, int b) => new Color32((byte)r, (byte)g, (byte)b, 255);
+    internal static Color32 C(int r, int g, int b) => new Color32((byte)r, (byte)g, (byte)b, 255);
 
-    static readonly Color32[] Capim =
+    internal static readonly Color32[] Capim =
     {
         C(18, 40, 38), C(28, 66, 44), C(44, 96, 46), C(70, 128, 50), C(106, 158, 56), C(152, 188, 70), C(206, 214, 112),
     };
-    static readonly Color32[] Terra =
+    internal static readonly Color32[] Terra =
     {
         C(30, 18, 28), C(50, 30, 36), C(74, 46, 42), C(100, 64, 50), C(128, 86, 60), C(160, 114, 78), C(194, 150, 104),
     };
-    static readonly Color32[] Pedra =
+    internal static readonly Color32[] Pedra =
     {
         C(26, 26, 42), C(44, 44, 64), C(66, 66, 86), C(92, 92, 110), C(122, 120, 134), C(156, 152, 158), C(194, 188, 182),
     };
-    static readonly Color32[] Madeira =
+    internal static readonly Color32[] Madeira =
     {
         C(38, 20, 24), C(70, 38, 32), C(106, 62, 40), C(144, 90, 50), C(180, 124, 66), C(216, 168, 100),
     };
-    static readonly Color32[] Ferro =
+    internal static readonly Color32[] Ferro =
     {
         C(22, 22, 34), C(52, 54, 72), C(92, 96, 116), C(144, 148, 164), C(206, 206, 210),
     };
-    static readonly Color32[] Magia =
+    internal static readonly Color32[] Magia =
     {
         C(28, 12, 44), C(56, 24, 86), C(90, 42, 136), C(128, 68, 178), C(168, 108, 218), C(210, 158, 244), C(240, 214, 255),
     };
-    static readonly Color32[] Ouro =
+    internal static readonly Color32[] Ouro =
     {
         C(70, 34, 22), C(150, 88, 28), C(214, 146, 38), C(248, 204, 76), C(255, 240, 168),
     };
-    static readonly Color32[] Aco =
+    internal static readonly Color32[] Aco =
     {
         C(22, 24, 40), C(52, 58, 82), C(92, 100, 124), C(140, 148, 168), C(194, 200, 212), C(238, 238, 232),
     };
-    static readonly Color32[] Cano =
+    internal static readonly Color32[] Cano =
     {
         C(12, 32, 30), C(22, 62, 44), C(36, 96, 54), C(58, 132, 62), C(98, 170, 78), C(162, 208, 112), C(222, 240, 176),
     };
-    static readonly Color32 PetalaRosa = C(232, 96, 122), PetalaAmarela = C(250, 206, 84), PetalaBranca = C(240, 236, 226), Miolo = C(255, 230, 140);
+    internal static readonly Color32 PetalaRosa = C(232, 96, 122), PetalaAmarela = C(250, 206, 84), PetalaBranca = C(240, 236, 226), Miolo = C(255, 230, 140);
 
     // Direção de onde vem a luz (para cima e para a esquerda).
-    const float LuzX = -0.62f, LuzY = 0.78f;
+    internal const float LuzX = -0.62f, LuzY = 0.78f;
 
     // ---------------------------------------------------------------- sorteios e ruído
 
     // Um número "aleatório" de 0 a 1, mas sempre o mesmo para os mesmos (x, y, semente): um hash.
-    static float Sorteio(int x, int y, int semente)
+    internal static float Sorteio(int x, int y, int semente)
     {
         unchecked
         {
@@ -110,10 +111,10 @@ public static class ArteDosBlocos
     static int Volta(int v, int n) => ((v % n) + n) % n;
 
     // Matriz de Bayer 4x4 (o padrão clássico de dithering).
-    static readonly int[] Bayer = { 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 };
+    internal static readonly int[] Bayer = { 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 };
 
     // Converte uma claridade de 0 a 1 no índice de um tom da rampa, com dithering nas passagens.
-    static int Tom(float claridade, int tons, int x, int y, float mistura = 0.6f)
+    internal static int Tom(float claridade, int tons, int x, int y, float mistura = 0.6f)
     {
         float limiar = (Bayer[(y & 3) * 4 + (x & 3)] + 0.5f) / 16f - 0.5f;
         return Mathf.Clamp(Mathf.RoundToInt(claridade * (tons - 1) + limiar * mistura), 0, tons - 1);
@@ -123,7 +124,7 @@ public static class ArteDosBlocos
 
     // Guarda, para cada pixel, QUAL rampa (material) e QUAL tom dela. Assim dá para escurecer ou clarear
     // um pixel depois (sombra, borda, oclusão) sem trocar de material: é só andar na rampa.
-    sealed class Tela
+    internal sealed class Tela
     {
         public readonly int largura, altura;
         readonly Color32[][] rampa;

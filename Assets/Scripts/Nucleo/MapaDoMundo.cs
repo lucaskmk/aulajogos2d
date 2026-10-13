@@ -14,6 +14,12 @@ using UnityEngine;
 // Embaixo de cada ponto, uma caveira com quantas vezes você morreu nela nesta partida.
 // Tem também uma fase SECRETA numa ilha do lago (aparece quando você pega todas as moedas da fase 5).
 // Quem lê as teclas é o GerenciadorDoJogo; aqui só tem o desenho, a névoa e a caminhada.
+//
+// A ARTE (visual v3, o mesmo acabamento das fases) fica em outros arquivos:
+//  - ArteDoMapa: o chão inteiro numa imagem só (grama, praias, água funda, abismo), o caminho e as pontes;
+//  - ArteDoMapaEnfeites: árvores, casas, castelo, montanhas... e as sombras deles no chão;
+//  - NevoaDoMapa: a névoa macia que respira; VidaDoMapa: água, fumaça, bandeiras, bichinhos e folhas;
+//  - Vento: árvores, flores e capim balançando.
 public class MapaDoMundo : MonoBehaviour
 {
     // O mapa é desenhado em texto, igual às fases. Cada caractere é um bloco.
@@ -78,16 +84,14 @@ public class MapaDoMundo : MonoBehaviour
 
     public static int Largura => Desenho[0].Length;
     public static int Altura => Desenho.Length;
-    public static readonly Color CorDoChao = new Color32(140, 205, 115, 255);
+    // A cor "média" da grama (o fundo da câmera no mapa e o tom das árvores lá longe, no horizonte).
+    public static readonly Color CorDoChao = new Color32(92, 146, 60, 255);
 
-    // Regiões com o chão de outra cor (números = colunas do Desenho). A grama normal é só a cor
-    // de fundo da câmera (CorDoChao); nas regiões, cada célula ganha um quadradinho de chão pintado.
+    // Regiões com o chão de outro jeito (números = colunas do Desenho): a ArteDoMapa pinta a terra seca
+    // e a terra sombria a partir daqui, com a borda ondulada.
     const int InicioDoDesfiladeiro = 64, FimDoDesfiladeiro = 79; // terra seca em volta do abismo
     const int InicioDaSombra = 88;                                 // daqui para a direita: a terra morta da região sombria
-    static readonly Color CorDoDesfiladeiro = new Color32(206, 182, 132, 255);
-    static readonly Color CorDaSombra = new Color32(84, 70, 104, 255);
     static readonly Color TomDaSombra = new Color(0.62f, 0.55f, 0.78f); // os enfeites da região sombria ficam mais escuros
-    static readonly Color TomDoMarSombrio = new Color(0.42f, 0.45f, 0.68f); // e a água fica azul-marinho
 
     static readonly Color CorConcluida = new Color(0.45f, 0.95f, 0.45f);
     static readonly Color CorLiberada = new Color(1f, 0.85f, 0.25f);
@@ -100,7 +104,8 @@ public class MapaDoMundo : MonoBehaviour
     const float VelocidadeDaOnda = 70f; // blocos por segundo da "onda" que leva a névoa embora no fim
     const int OrdemDaNevoa = 30;
     // O chão (água, ponte, terra) fica ATRÁS das sombras (Sombra.Ordem = -9), para tudo projetar sombra nele.
-    const int OrdemDoChao = -16, OrdemDaAgua = -14, OrdemDoCaminho = -13;
+    // As sombras dos enfeites (árvores, casas...) ficam embaixo de TODOS os enfeites: uma sombra nunca cobre a árvore da frente.
+    const int OrdemDoChao = -16, OrdemDaAgua = -14, OrdemDoCaminho = -13, OrdemDasSombras = -11;
 
     public float velocidade = 7f; // blocos por segundo andando no mapa
 
@@ -112,9 +117,9 @@ public class MapaDoMundo : MonoBehaviour
     int concluidas;  // fases já passadas nesta partida
     readonly List<Vector2Int> pontos = new List<Vector2Int>();               // célula de cada fase
     readonly List<List<Vector2Int>> caminhos = new List<List<Vector2Int>>(); // caminhos[i]: do ponto i até o i+1
-    readonly Dictionary<Vector2Int, SpriteRenderer> terra = new Dictionary<Vector2Int, SpriteRenderer>(); // desenho de cada célula de caminho (terra ou ponte)
-    SpriteRenderer[,] nevoa;
-    float[,] tamanhoDaNevoa;
+    readonly Dictionary<Vector2Int, SpriteRenderer> terra = new Dictionary<Vector2Int, SpriteRenderer>(); // desenho de cada célula de caminho (terra, ponte ou a praça de uma fase)
+    NevoaDoMapa nevoa;  // null = sem névoa (o mapa todo descoberto)
+    VidaDoMapa vida;    // quem anima a água, a fumaça, as bandeiras, os bichinhos...
     SpriteRenderer[] desenhosDosPontos;
     Transform[] personagens;
     Vector3[] ladoDoPersonagem; // onde cada personagem fica, em relação ao ponto dele
@@ -234,6 +239,16 @@ public class MapaDoMundo : MonoBehaviour
 
     void Montar(int andarPara, bool caminhoNovo, bool mostrarSecreta, int[] mortes)
     {
+        // O chão inteiro (uma imagem só, pintada uma vez e guardada) e as ondinhas da água por cima dele.
+        vida = VidaDoMapa.Criar(transform, Largura, Altura, Altura - LinhasDeCeu() - 0.5f, InicioDaSombra);
+        var terreno = ArteDoMapa.PegarTerreno(Desenho, new ArteDoMapa.Regioes
+        {
+            inicioDoDesfiladeiro = InicioDoDesfiladeiro, fimDoDesfiladeiro = FimDoDesfiladeiro, inicioDaSombra = InicioDaSombra,
+        });
+        NovoDesenho("Chao", new Vector3(-0.5f, -0.5f, 0f), terreno.chao, OrdemDoChao); // (o pivô da imagem é o canto de baixo-esquerda)
+        for (int i = 0; i < terreno.celulasDaAgua.Length; i++)
+            vida.Agua(NovoDesenho("Agua", Mundo(terreno.celulasDaAgua[i]), terreno.quadrosDaAgua[i][0], OrdemDaAgua), terreno.quadrosDaAgua[i]);
+
         var sorteio = new System.Random(2024);
         for (int y = 0; y < Altura; y++)
             for (int x = 0; x < Desenho[y].Length; x++)
@@ -294,23 +309,18 @@ public class MapaDoMundo : MonoBehaviour
             Descobrir(descoberto, pontoSecreto.Value, RaioDoPonto - 1f);
             foreach (Vector2Int c in caminhoSecreto) Descobrir(descoberto, c, RaioDoCaminho);
         }
-        if (!tudoDescoberto) CriarNevoa(descoberto);
-        else
-        {
-            nevoa = new SpriteRenderer[Largura, Altura];
-            tamanhoDaNevoa = new float[Largura, Altura];
-        }
+        if (!tudoDescoberto) nevoa = NevoaDoMapa.Criar(transform, descoberto, LinhasDeCeu(), InicioDaSombra, OrdemDaNevoa);
 
         if (caminhoNovo)
         {
             foreach (Vector2Int c in caminhos[andarPara - 1])
-                if (terra.TryGetValue(c, out SpriteRenderer t)) t.color = new Color(1f, 1f, 1f, 0f);
+                if (terra.TryGetValue(c, out SpriteRenderer t)) t.color = CorDoCaminho(c) * new Color(1f, 1f, 1f, 0f);
             nascendo = andarPara;
             desenhosDosPontos[andarPara].transform.localScale = Vector3.zero;
         }
 
         DecorarCeu();
-        SombrasDeNuvem();
+        vida.SombrasDeNuvens(Mathf.Max(4, Largura / 14), Altura - LinhasDeCeu() - 3f); // passando devagar pelo chão, com o vento
 
         // O Subaru.
         desenhoSubaru = ConstrutorDeFase.Visual("Subaru", transform, PosicaoNoPonto(Selecionado), "jogador", 10).GetComponent<SpriteRenderer>();
@@ -380,87 +390,94 @@ public class MapaDoMundo : MonoBehaviour
         int linha = c.y; // quanto mais embaixo, mais "na frente"
         char tipo = Celula(c);
         if (tipo == 'c') return; // o céu é desenhado no DecorarCeu
+        // (o chão, a água e o abismo já estão pintados na imagem do chão: aqui só vão os enfeites)
 
-        // O chão das regiões (embaixo de tudo). A água e o abismo já cobrem a célula inteira.
         float sombrio = Sombrio(c);
-        if (tipo != '~' && tipo != '=' && tipo != 'a' && tipo != '#')
-        {
-            if (sombrio > 0f) Chao(p, Color.Lerp(CorDoChao, CorDaSombra, sombrio));
-            else if (NoDesfiladeiro(c)) Chao(p, CorDoDesfiladeiro);
-        }
         Color tom = Color.Lerp(Color.white, TomDaSombra, sombrio); // cor dos enfeites (mais escura na região sombria)
+        // um "tremidinho" de até 2 pixels: a floresta não fica enfileirada demais (sempre o mesmo em cada célula)
+        Vector3 tremido = new Vector3(Mathf.Round((Variacao(c, 5, 7) - 2) * 0.5f) / 16f, 0f, 0f);
+
+        if (EhPonto(tipo))
+        {
+            // a "praça" de terra com pedrinhas embaixo do ponto da fase (aparece junto com o caminho)
+            terra[c] = NovoDesenho("Praca", p, ArteDoMapa.NomeDoCaminho(LadosDoCaminho(c), 0, true), OrdemDoCaminho);
+            terra[c].color = CorDoCaminho(c);
+            return;
+        }
 
         switch (tipo)
         {
-            case '~':
-                Agua(p, sorteio, Color.Lerp(Color.white, TomDoMarSombrio, sombrio));
-                break;
             case '=':
-                Agua(p, sorteio, Color.Lerp(Color.white, TomDoMarSombrio, sombrio));
-                terra[c] = Ponte(c, p);
-                break;
             case '#':
-                Abismo(c, p, sorteio);
-                terra[c] = Ponte(c, p);
+                terra[c] = Ponte(c, p, tipo == '#');
                 break;
             case 'a':
-                Abismo(c, p, sorteio);
-                break;
-            case '+':
-                terra[c] = ConstrutorDeFase.Visual("Caminho", transform, p, "terra", OrdemDoCaminho, false).GetComponent<SpriteRenderer>();
-                break;
-            case 'T':
-                var arvore = ConstrutorDeFase.Visual("Arvore", transform, p + Vector3.down * 0.5f, "arvore", linha - 4, parado: true);
-                arvore.GetComponent<SpriteRenderer>().color = tom;
-                Vento.Plantar(arvore.GetComponent<SpriteRenderer>(), "arvore", transform, rigidez: 0.8f); // balançando no vento (Vento.cs)
-                break;
-            case 'p':
-                var pinheiro = ConstrutorDeFase.Visual("Pinheiro", transform, p + Vector3.down * 0.5f, "mapa_pinheiro", linha - 4, parado: true);
-                Vento.Plantar(pinheiro.GetComponent<SpriteRenderer>(), "mapa_pinheiro", transform, rigidez: 0.6f);
-                break;
-            case '^':
-                ConstrutorDeFase.Visual("Montanha", transform, p, "montanha", linha - 6, parado: true).GetComponent<SpriteRenderer>().color = tom;
-                break;
-            case 'h':
-                ConstrutorDeFase.Visual("Casa", transform, p, "casa", linha - 6, parado: true).GetComponent<SpriteRenderer>().color = tom;
-                break;
-            case 'o':
-                ConstrutorDeFase.Visual("Pedra", transform, p + Vector3.down * 0.4f, "pedra", linha - 6, parado: true).GetComponent<SpriteRenderer>().color = tom;
-                break;
-            case 'R':
-                ConstrutorDeFase.Visual("Ruina", transform, p + Vector3.down * 0.45f, "mapa_ruina", linha - 6, parado: true).GetComponent<SpriteRenderer>().color = tom;
-                break;
-            case '*':
-                ConstrutorDeFase.Visual("Cristal", transform, p + Vector3.down * 0.45f, "mapa_cristal", linha - 6, parado: true).GetComponent<SpriteRenderer>().color = tom;
-                if (sorteio.Next(3) == 0) // um brilhinho piscando em alguns cristais
+                if (sorteio.Next(14) == 0) // de vez em quando passa uma rajada de vento no abismo (a fase 10 é a do vento)
                 {
-                    var brilho = ConstrutorDeFase.Visual("Brilho", transform, p + new Vector3(0.15f, 0.1f, 0f), "brilho", linha - 5, false);
-                    brilho.transform.localScale = Vector3.one * 0.6f;
-                    Animacao.Adicionar(brilho, Animacao.Tipo.Piscar, 2.5f, 1f);
+                    var rajada = ConstrutorDeFase.Visual("Vento", transform, p, "mapa_rajada", OrdemDoCaminho + 1, false);
+                    Animacao.Adicionar(rajada, Animacao.Tipo.Flutuar, 1.6f, 1.2f);
                 }
                 break;
+            case '+':
+                terra[c] = NovoDesenho("Caminho", p, ArteDoMapa.NomeDoCaminho(LadosDoCaminho(c), Variacao(c, 4, 3), false), OrdemDoCaminho);
+                terra[c].color = CorDoCaminho(c);
+                break;
+            case 'T':
+                string arvore = "mapa_arvore_" + Variacao(c, ArteDoMapa.VersoesDaArvore, 1);
+                Planta("Arvore", p + Vector3.down * 0.5f + tremido, arvore, linha - 4, tom, 0.8f);
+                SombraNoChao(p + tremido + new Vector3(0.28f, -0.42f, 0f), "mapa_sombra_m");
+                break;
+            case 'p':
+                Planta("Pinheiro", p + Vector3.down * 0.5f + tremido, "mapa_pinheiro", linha - 4, Color.white, 0.6f);
+                SombraNoChao(p + tremido + new Vector3(0.22f, -0.44f, 0f), "mapa_sombra_p");
+                break;
+            case '^':
+                Enfeite("Montanha", p + Vector3.down * 0.5f + tremido, "mapa_montanha_" + Variacao(c, ArteDoMapa.VersoesDaMontanha, 2), linha - 6, tom);
+                SombraNoChao(p + tremido + new Vector3(0.45f, -0.4f, 0f), "mapa_sombra_m");
+                break;
+            case 'h':
+                string casa = "mapa_casa_" + Variacao(c, ArteDoMapa.VersoesDaCasa, 4);
+                Enfeite("Casa", p + Vector3.down * 0.45f, casa, linha - 6, tom);
+                SombraNoChao(p + new Vector3(0.3f, -0.45f, 0f), "mapa_sombra_m");
+                vida.Fumaca(p + Vector3.down * 0.45f + ArteDoMapa.Chamine); // fumaça saindo da chaminé
+                break;
+            case 'o':
+                Enfeite("Pedra", p + Vector3.down * 0.4f, "pedra", linha - 6, tom);
+                SombraNoChao(p + new Vector3(0.2f, -0.42f, 0f), "mapa_sombra_p");
+                break;
+            case 'R':
+                Enfeite("Ruina", p + Vector3.down * 0.45f, "mapa_ruina", linha - 6, tom);
+                SombraNoChao(p + new Vector3(0.25f, -0.45f, 0f), "mapa_sombra_p");
+                break;
+            case '*':
+                Enfeite("Cristal", p + Vector3.down * 0.45f, "mapa_cristal", linha - 6, tom);
+                SombraNoChao(p + new Vector3(0.2f, -0.45f, 0f), "mapa_sombra_p");
+                Brilho(p + new Vector3(0f, 0.05f, 0f), 1.4f, new Color(0.8f, 0.55f, 1f, 0.55f), linha - 5);
+                break;
             case 'L':
-                ConstrutorDeFase.Visual("Biblioteca", transform, p + Vector3.down * 0.5f, "mapa_biblioteca", linha - 6, parado: true);
+                Enfeite("Biblioteca", p + Vector3.down * 0.5f, "mapa_biblioteca", linha - 6, Color.white);
+                SombraNoChao(p + new Vector3(0.35f, -0.5f, 0f), "mapa_sombra_m");
+                Brilho(p + new Vector3(0f, 1.05f, 0f), 2.2f, new Color(0.75f, 0.5f, 1f, 0.45f), linha - 5); // a cúpula mágica
                 break;
             case 'Y':
-                // a Grande Árvore Flügel: a árvore normal, só que ENORME (e meio escurecida pela região)
-                var flugel = ConstrutorDeFase.Visual("ArvoreFlugel", transform, p + Vector3.down * 0.5f, "arvore", linha - 4, parado: true);
-                flugel.transform.localScale = Vector3.one * 2.6f;
-                flugel.GetComponent<SpriteRenderer>().color = Color.Lerp(Color.white, tom, 0.6f);
-                Vento.Plantar(flugel.GetComponent<SpriteRenderer>(), "arvore", transform, rigidez: 0.4f); // enorme: mexe pouco
+                // a Grande Árvore Flügel: enorme, com a copa verde-dourada (mexe pouco no vento)
+                Planta("ArvoreFlugel", p + Vector3.down * 0.5f, "mapa_arvore_grande", linha - 4, Color.Lerp(Color.white, tom, 0.4f), 0.35f);
+                SombraNoChao(p + new Vector3(0.6f, -0.55f, 0f), "mapa_sombra_arvore_grande");
                 break;
             case 'f':
                 for (int i = 0; i < 2; i++)
                 {
-                    var flor = ConstrutorDeFase.Visual("Flor", transform, p + new Vector3((float)sorteio.NextDouble() - 0.5f, (float)sorteio.NextDouble() * 0.5f - 0.5f, 0f), "flor", -7, parado: true);
-                    Vento.Plantar(flor.GetComponent<SpriteRenderer>(), "flor", transform);
+                    var lugar = p + new Vector3((float)sorteio.NextDouble() - 0.5f, (float)sorteio.NextDouble() * 0.5f - 0.5f, 0f);
+                    Planta("Flores", lugar, "mapa_flores_" + Variacao(c, ArteDoMapa.VersoesDasFlores, 5 + i), -7, Color.white, 1f);
                 }
+                if (Variacao(c, 3, 6) == 0) // uma borboleta voando em volta de algumas moitas
+                    vida.Bichinho(p, CoresDasBorboletas[Variacao(c, CoresDasBorboletas.Length, 8)]);
                 break;
             case 'M':
-                Castelo("Mansao", p, linha, 0.28f, new Color(0.82f, 0.74f, 0.95f));
+                Palacio("Mansao", p, "mapa_mansao", linha, ArteDoMapa.TorresDaMansao, new Color(0.8f, 0.55f, 1f), 0.85f);
                 break;
             case 'K':
-                Castelo("CasteloReal", p, linha, 0.26f, new Color(0.9f, 0.94f, 1f));
+                Palacio("CasteloReal", p, "mapa_castelo", linha, ArteDoMapa.TorresDoCastelo, new Color(1f, 0.35f, 0.35f), 1f);
                 break;
             case '.':
                 if (sombrio >= 0.75f && sorteio.Next(9) == 0)
@@ -469,67 +486,109 @@ public class MapaDoMundo : MonoBehaviour
                     var olhos = ConstrutorDeFase.Visual("Olhos", transform, p + new Vector3(0.1f, 0.15f, 0f), "mapa_olhos", -7, false);
                     Animacao.Adicionar(olhos, Animacao.Tipo.Piscar, 1.1f + (float)sorteio.NextDouble(), 1f);
                 }
+                else if (sombrio >= 0.75f && Variacao(c, 7, 9) == 0)
+                    vida.Bichinho(p, null); // vaga-lume
                 else if (sorteio.Next(8) == 0)
-                {
-                    var tufo = ConstrutorDeFase.Visual("Tufo", transform, p + Vector3.down * 0.3f, "tufo", -8, parado: true).GetComponent<SpriteRenderer>();
-                    tufo.color = tom;
-                    Vento.Plantar(tufo, "tufo", transform);
-                }
+                    Planta("Tufo", p + Vector3.down * 0.3f, "tufo", -8, tom, 1f);
                 break;
         }
     }
 
-    // Um quadradinho de chão pintado com a cor da região.
-    void Chao(Vector3 p, Color cor)
+    static readonly Color[] CoresDasBorboletas =
     {
-        ConstrutorDeFase.Visual("Chao", transform, p, "mapa_chao", OrdemDoChao, false).GetComponent<SpriteRenderer>().color = cor;
+        new Color(1f, 0.95f, 0.6f), new Color(1f, 0.7f, 0.85f), new Color(0.7f, 0.85f, 1f), new Color(1f, 1f, 1f), new Color(1f, 0.65f, 0.35f),
+    };
+
+    // Um número de 0 a n-1 que depende só da célula (e da "semente"): a mesma célula sempre ganha a mesma versão.
+    static int Variacao(Vector2Int c, int n, int semente) => Mathf.Min(n - 1, (int)(ArteDosBlocos.Sorteio(c.x, c.y, semente * 101) * n));
+
+    // Quais lados do caminho continuam (os vizinhos onde dá para andar).
+    static int LadosDoCaminho(Vector2Int c)
+    {
+        return (DaPraAndar(Celula(c + Vector2Int.right)) ? ArteDoMapa.Direita : 0)
+             | (DaPraAndar(Celula(c + Vector2Int.left)) ? ArteDoMapa.Esquerda : 0)
+             | (DaPraAndar(Celula(c + Vector2Int.down)) ? ArteDoMapa.Cima : 0)   // (linha de cima no texto = y menor)
+             | (DaPraAndar(Celula(c + Vector2Int.up)) ? ArteDoMapa.Baixo : 0);
     }
 
-    void Agua(Vector3 p, System.Random sorteio, Color tom)
+    // A cor do caminho: na região sombria a terra fica um pouco mais escura.
+    static Color CorDoCaminho(Vector2Int c) => Color.Lerp(Color.white, TomDaSombra, Sombrio(c) * 0.5f);
+
+    // Um desenho simples (sem sombra), com o sprite pelo nome.
+    SpriteRenderer NovoDesenho(string nome, Vector3 lugar, string sprite, int ordem) => NovoDesenho(nome, lugar, FabricaDeSprites.Pegar(sprite), ordem);
+
+    SpriteRenderer NovoDesenho(string nome, Vector3 lugar, Sprite sprite, int ordem)
     {
-        var agua = ConstrutorDeFase.Visual("Agua", transform, p, "agua_0", OrdemDaAgua, false).GetComponent<SpriteRenderer>();
-        agua.color = tom; // o mar da região sombria é bem mais escuro
-        AnimacaoDeQuadros.Adicionar(agua, FabricaDeSprites.Quadros("agua", FabricaDeSprites.QuadrosDaAgua), 3f);
-        if (sorteio.Next(6) == 0) // brilhinho do sol na água
+        var objeto = new GameObject(nome);
+        objeto.transform.SetParent(transform, false);
+        objeto.transform.position = lugar;
+        var desenho = objeto.AddComponent<SpriteRenderer>();
+        desenho.sprite = sprite;
+        desenho.sortingOrder = ordem;
+        return desenho;
+    }
+
+    // Um enfeite parado (casa, montanha, pedra...). A sombra dele é outro desenho, no chão (SombraNoChao).
+    SpriteRenderer Enfeite(string nome, Vector3 lugar, string sprite, int ordem, Color cor)
+    {
+        SpriteRenderer desenho = NovoDesenho(nome, lugar, sprite, ordem);
+        desenho.color = cor;
+        return desenho;
+    }
+
+    // Uma planta que balança no vento (Vento.cs troca as poses dela).
+    void Planta(string nome, Vector3 lugar, string sprite, int ordem, Color cor, float rigidez)
+    {
+        SpriteRenderer desenho = Enfeite(nome, lugar, sprite, ordem, cor);
+        Vento.Plantar(desenho, sprite, transform, rigidez: rigidez);
+    }
+
+    // A sombra de um enfeite: uma mancha azul-arroxeada no chão, para baixo e para a direita (o sol fica
+    // no alto, à esquerda), desenhada embaixo de todos os enfeites.
+    void SombraNoChao(Vector3 lugar, string sprite, float escala = 1f)
+    {
+        SpriteRenderer sombra = NovoDesenho("Sombra", lugar, sprite, OrdemDasSombras);
+        sombra.transform.localScale = Vector3.one * escala;
+    }
+
+    // Um brilho mágico redondo que pulsa (cristais, a cúpula da Biblioteca). Se der, a luz "soma" com a tela.
+    void Brilho(Vector3 lugar, float tamanho, Color cor, int ordem)
+    {
+        SpriteRenderer brilho = NovoDesenho("Brilho", lugar, "mapa_brilho", ordem);
+        brilho.transform.localScale = Vector3.one * tamanho;
+        brilho.color = cor;
+        MateriaisHD2D.UsarLuzAditiva(brilho);
+        vida.Pulsar(brilho, 1.6f, 0.35f);
+    }
+
+    // O castelo real e a mansão do Roswaal, com a sombra grande e as bandeirinhas tremulando nas torres.
+    void Palacio(string nome, Vector3 p, string sprite, int linha, Vector3[] torres, Color corDaBandeira, float tamanhoDaSombra)
+    {
+        Vector3 pe = p + Vector3.down * 0.5f;
+        NovoDesenho(nome, pe, sprite, linha - 6);
+        SombraNoChao(pe + new Vector3(0.6f, 0.05f, 0f), "mapa_sombra_castelo", tamanhoDaSombra);
+        var quadros = FabricaDeSprites.Quadros("mapa_bandeira", ArteDoMapa.QuadrosDaBandeira);
+        foreach (Vector3 torre in torres)
         {
-            var brilho = ConstrutorDeFase.Visual("Brilho", transform, p + new Vector3(0.2f, 0.2f, 0f), "brilho", OrdemDaAgua + 2, false);
-            brilho.transform.localScale = Vector3.one * 0.6f;
-            brilho.GetComponent<SpriteRenderer>().color = tom;
-            Animacao.Adicionar(brilho, Animacao.Tipo.Piscar, 3f, 0.9f);
+            SpriteRenderer bandeira = NovoDesenho("Bandeira", pe + torre, "mapa_bandeira_0", linha - 6);
+            bandeira.color = corDaBandeira;
+            vida.Animar(bandeira, quadros, 7f);
         }
     }
 
-    // O fundo do desfiladeiro. Onde a célula de cima é chão, aparece a parede de pedra (o mapa é visto
-    // "de cima e de frente", então a gente vê a parede do outro lado do buraco).
-    // De vez em quando passa uma rajada de vento (a fase 10 é a do vento).
-    void Abismo(Vector2Int c, Vector3 p, System.Random sorteio)
+    // Ponte (de madeira na água, de corda no abismo). Se o caminho passa por ela de cima para baixo, ela fica "em pé".
+    SpriteRenderer Ponte(Vector2Int c, Vector3 p, bool corda)
     {
-        char deCima = Celula(c + Vector2Int.down); // (linha de cima no texto = y menor)
-        string desenho = deCima == 'a' || deCima == '#' ? "mapa_abismo" : "mapa_abismo_borda";
-        ConstrutorDeFase.Visual("Abismo", transform, p, desenho, OrdemDaAgua, false);
-        if (sorteio.Next(14) == 0)
-        {
-            var rajada = ConstrutorDeFase.Visual("Vento", transform, p, "mapa_rajada", OrdemDoCaminho + 1, false);
-            Animacao.Adicionar(rajada, Animacao.Tipo.Flutuar, 1.6f, 1.2f);
-        }
-    }
-
-    // Ponte (de madeira na água, de corda no abismo). O desenho é deitado: se o caminho passa
-    // por ela de cima para baixo, ela gira 90 graus.
-    SpriteRenderer Ponte(Vector2Int c, Vector3 p)
-    {
-        var ponte = ConstrutorDeFase.Visual("Ponte", transform, p, "ponte", OrdemDoCaminho, false);
         bool emPe = !DaPraAndar(Celula(c + Vector2Int.left)) && !DaPraAndar(Celula(c + Vector2Int.right));
-        if (emPe) ponte.transform.rotation = Quaternion.Euler(0f, 0f, 90f);
-        return ponte.GetComponent<SpriteRenderer>();
+        return NovoDesenho("Ponte", p, (corda ? "mapa_ponte_corda" : "mapa_ponte") + (emPe ? "_empe" : ""), OrdemDoCaminho);
     }
 
-    // Mansão do Roswaal e castelo real: o castelo do fundo das fases, bem pequenininho e pintado.
-    void Castelo(string nome, Vector3 p, int linha, float escala, Color cor)
+    // Quantas linhas de cima do desenho são céu.
+    static int LinhasDeCeu()
     {
-        var castelo = ConstrutorDeFase.Visual(nome, transform, p + Vector3.down * 0.5f, "fundo_castelo", linha - 6, false);
-        castelo.transform.localScale = Vector3.one * escala;
-        castelo.GetComponent<SpriteRenderer>().color = cor;
+        int linhas = 0;
+        while (linhas < Altura && Desenho[linhas][0] == 'c') linhas++;
+        return linhas;
     }
 
     // -1, 0 ou 1 conforme a linha: a borda das regiões fica "serrilhada", e não uma linha reta.
@@ -537,12 +596,6 @@ public class MapaDoMundo : MonoBehaviour
 
     // Quanto a célula está dentro da região sombria: 0 = nada, 1 = totalmente (a borda vai escurecendo em 4 colunas).
     static float Sombrio(Vector2Int c) => Mathf.Clamp01((c.x + Serrilhado(c.y) - InicioDaSombra + 1) / 4f);
-
-    static bool NoDesfiladeiro(Vector2Int c)
-    {
-        int x = c.x + Serrilhado(c.y);
-        return x >= InicioDoDesfiladeiro && x <= FimDoDesfiladeiro;
-    }
 
     // Marca como descoberto tudo que está a até "raio" blocos do centro.
     static void Descobrir(bool[,] descoberto, Vector2Int centro, float raio)
@@ -553,35 +606,10 @@ public class MapaDoMundo : MonoBehaviour
                 if (Vector2Int.Distance(new Vector2Int(x, y), centro) <= raio) descoberto[x, y] = true;
     }
 
-    void CriarNevoa(bool[,] descoberto)
-    {
-        nevoa = new SpriteRenderer[Largura, Altura];
-        tamanhoDaNevoa = new float[Largura, Altura];
-        var sorteio = new System.Random(77);
-        for (int y = 0; y < Altura; y++)
-            for (int x = 0; x < Largura; x++)
-            {
-                if (descoberto[x, y] || Celula(new Vector2Int(x, y)) == 'c') continue;
-                var bolota = ConstrutorDeFase.Visual("Nevoa", transform, Mundo(new Vector2Int(x, y)), "nevoa", OrdemDaNevoa, false);
-                tamanhoDaNevoa[x, y] = 1.6f + (float)sorteio.NextDouble() * 0.4f;
-                bolota.transform.localScale = Vector3.one * tamanhoDaNevoa[x, y];
-                bolota.transform.rotation = Quaternion.Euler(0f, 0f, sorteio.Next(4) * 90f);
-                nevoa[x, y] = bolota.GetComponent<SpriteRenderer>();
-            }
-    }
-
-    // A névoa em volta de "centro" vai embora (com animação). Só olha o quadrado em volta do centro.
+    // A névoa em volta de "centro" vai embora (com animação: veja NevoaDoMapa).
     void Revelar(Vector2Int centro, float raio)
     {
-        int r = Mathf.CeilToInt(raio);
-        for (int y = Mathf.Max(0, centro.y - r); y <= Mathf.Min(Altura - 1, centro.y + r); y++)
-            for (int x = Mathf.Max(0, centro.x - r); x <= Mathf.Min(Largura - 1, centro.x + r); x++)
-            {
-                SpriteRenderer bolota = nevoa[x, y];
-                if (bolota == null || Vector2Int.Distance(new Vector2Int(x, y), centro) > raio) continue;
-                nevoa[x, y] = null;
-                StartCoroutine(Sumir(bolota));
-            }
+        if (nevoa != null) nevoa.Revelar(centro, raio);
     }
 
     // No fim, a névoa do mapa INTEIRO vai embora numa onda que sai do covil da Baleia.
@@ -592,19 +620,6 @@ public class MapaDoMundo : MonoBehaviour
             Revelar(centro, raio);
             yield return null;
         }
-    }
-
-    static IEnumerator Sumir(SpriteRenderer bolota)
-    {
-        Vector3 escala = bolota.transform.localScale;
-        for (float t = 0f; t < 0.5f; t += Time.deltaTime)
-        {
-            float p = t / 0.5f;
-            bolota.color = new Color(1f, 1f, 1f, 1f - p);
-            bolota.transform.localScale = escala * (1f + p * 0.6f);
-            yield return null;
-        }
-        Destroy(bolota.gameObject);
     }
 
     // O horizonte lá em cima, igual ao fundo das fases: céu, floresta e árvores ao longe com paralaxe
@@ -650,23 +665,6 @@ public class MapaDoMundo : MonoBehaviour
         var ceuSombrio = ConstrutorDeFase.Visual("CeuSombrio", transform, new Vector3(inicio, horizonte - 0.2f, 0f), "mapa_ceu_sombrio", -20, false);
         Vector3 tamanho = FabricaDeSprites.Pegar("mapa_ceu_sombrio").bounds.size;
         ceuSombrio.transform.localScale = new Vector3((Largura + 30f - inicio) / tamanho.x, (linhasDeCeu + 1f) / tamanho.y, 1f);
-    }
-
-    // Sombras de nuvem passando devagar pelo chão (escurecem tudo, até o Subaru).
-    // Uma a cada 14 colunas, cada uma numa altura e numa velocidade.
-    void SombrasDeNuvem()
-    {
-        int quantas = Mathf.Max(4, Largura / 14);
-        float metade = Largura / 2f;
-        for (int i = 0; i < quantas; i++)
-        {
-            float y = 3.5f + (i * 5.3f) % 12f; // fora da faixa da interface (lá embaixo)
-            var sombra = ConstrutorDeFase.Visual("SombraDeNuvem", transform, new Vector3(metade, y, 0f), "sombra_nuvem", 25, false);
-            sombra.GetComponent<SpriteRenderer>().color = new Color(0f, 0f, 0f, 0.12f);
-            sombra.transform.localScale = Vector3.one * (1.4f + (i % 4) * 0.2f);
-            // vai de uma ponta à outra do mapa a uns 1 a 2 blocos por segundo
-            Animacao.Adicionar(sombra, Animacao.Tipo.Flutuar, (1.1f + (i % 4) * 0.3f) / metade, metade);
-        }
     }
 
     Vector2Int CelulaDoPonto(int fase) => fase == Fases.IndiceSecreto ? pontoSecreto.Value : pontos[fase];
@@ -778,7 +776,7 @@ public class MapaDoMundo : MonoBehaviour
         {
             foreach (Vector2Int c in caminhos[destino - 1])
             {
-                if (terra.TryGetValue(c, out SpriteRenderer t)) t.color = Color.white;
+                if (terra.TryGetValue(c, out SpriteRenderer t)) t.color = CorDoCaminho(c);
                 Revelar(c, RaioDoCaminho);
                 if (c != pontos[destino]) GerenciadorDoJogo.Som("moeda", 0.12f);
                 yield return new WaitForSeconds(0.07f);
@@ -842,85 +840,22 @@ public class MapaDoMundo : MonoBehaviour
             else desenhoSecreto.transform.localScale = Vector3.one;
         }
 
-        RespirarNevoa();
-
         // parado, o Subaru respira
         if (!Andando) Subaru.localScale = new Vector3(1f, 1f + 0.04f * Mathf.Sin(Time.time * 3f), 1f);
     }
 
-    // A névoa "respira" devagar. O mapa tem umas 2000 bolotas, então só mexe nas colunas que
-    // aparecem na tela (mais uma folga de 2 de cada lado); as outras ninguém está vendo.
-    void RespirarNevoa()
-    {
-        if (nevoa == null) return;
-        int de = 0, ate = Largura - 1;
-        Camera cam = Camera.main;
-        if (cam != null)
-        {
-            float meiaLargura = cam.orthographicSize * cam.aspect + 2f;
-            de = Mathf.Max(0, Mathf.FloorToInt(cam.transform.position.x - meiaLargura));
-            ate = Mathf.Min(Largura - 1, Mathf.CeilToInt(cam.transform.position.x + meiaLargura));
-        }
-        float tempo = Time.time * 1.3f;
-        for (int x = de; x <= ate; x++)
-            for (int y = 0; y < Altura; y++)
-                if (nevoa[x, y] != null)
-                    nevoa[x, y].transform.localScale = Vector3.one * tamanhoDaNevoa[x, y] * (1f + 0.06f * Mathf.Sin(tempo + x * 0.7f + y * 1.1f));
-    }
-
-    // ------------------------------------------------------------------ desenhos novos do mapa
+    // ------------------------------------------------------------------ desenhos que só o mapa usa
 
     // Ficam registrados na FabricaDeSprites (como os das armadilhas), então Pegar("mapa_...") funciona.
+    // (Os desenhos grandes do mapa, como o chão, as árvores e o castelo, ficam em ArteDoMapa e ArteDoMapaEnfeites.)
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void RegistrarDesenhos()
     {
-        Vector2 centro = FabricaDeSprites.Centro, baseDoDesenho = FabricaDeSprites.Base;
-        FabricaDeSprites.Registrar("mapa_chao", () => FabricaDeSprites.Procedural(16, 16, centro, CorDoChaoDaRegiao));
-        FabricaDeSprites.Registrar("mapa_abismo", () => FabricaDeSprites.Procedural(16, 16, centro, (x, y) => CorDoAbismo(x, y, false)));
-        FabricaDeSprites.Registrar("mapa_abismo_borda", () => FabricaDeSprites.Procedural(16, 16, centro, (x, y) => CorDoAbismo(x, y, true)));
+        Vector2 centro = FabricaDeSprites.Centro;
         FabricaDeSprites.Registrar("mapa_rajada", () => FabricaDeSprites.Procedural(16, 5, centro, CorDaRajada));
-        FabricaDeSprites.Registrar("mapa_pinheiro", () => FabricaDeSprites.Procedural(16, 24, baseDoDesenho, CorDoPinheiro));
-        FabricaDeSprites.Registrar("mapa_biblioteca", () => FabricaDeSprites.Procedural(24, 32, baseDoDesenho, CorDaBiblioteca));
-        FabricaDeSprites.Registrar("mapa_ruina", () => FabricaDeSprites.DeArte(ArteRuina, baseDoDesenho));
-        FabricaDeSprites.Registrar("mapa_cristal", () => FabricaDeSprites.DeArte(ArteCristal, baseDoDesenho));
         FabricaDeSprites.Registrar("mapa_olhos", () => FabricaDeSprites.DeArte(ArteOlhos, centro));
         FabricaDeSprites.Registrar("mapa_ceu_sombrio", () => FabricaDeSprites.Procedural(128, 32, Vector2.zero, CorDoCeuSombrio));
     }
-
-    static Color32 Cor(char letra) => FabricaDeSprites.Cor(letra); // atalho: cor da paleta
-
-    // Coluna quebrada (das ruínas antigas) com um pedaço caído do lado.
-    static readonly string[] ArteRuina =
-    {
-        "....kk.kk.......",
-        "...kZmkMMk......",
-        "...kZmmmMk......",
-        "...kZmmmMk......",
-        "...kZmzmMk......",
-        "...kZmmmMk......",
-        "...kZmmmMk......",
-        "...kZmmmMk...kk.",
-        "...kZmmmMk..kZMk",
-        "..kkkkkkkkk.kmMk",
-        "..kZmmmmmMk..kk.",
-        "..kkkkkkkkk.....",
-    };
-
-    // Três cristais mágicos (brilho lilás à esquerda, roxo à direita).
-    static readonly string[] ArteCristal =
-    {
-        ".......k........",
-        "......kPk.......",
-        "......kPVk......",
-        "......kPVk......",
-        "..k...kPVk......",
-        ".kPk..kPVk..k...",
-        ".kPVk.kPVk.kPk..",
-        ".kPVk.kPVk.kPVk.",
-        ".kPVk.kPVk.kPVk.",
-        "..kVkkkPVkkkVk..",
-        "..kkkkkkkkkkkk..",
-    };
 
     // Olhos vermelhos (bravos) no escuro.
     static readonly string[] ArteOlhos =
@@ -929,80 +864,11 @@ public class MapaDoMundo : MonoBehaviour
         ".rr.rr.",
     };
 
-    // Chão das regiões: branco (o mapa pinta com a cor da região), com uns pontinhos para não ficar liso.
-    static Color32 CorDoChaoDaRegiao(int x, int y)
-    {
-        int r = (x * 7 + y * 13 + x * y * 5) % 19;
-        if (r == 0) return new Color32(228, 228, 228, 255);
-        if (r == 7) return new Color32(242, 242, 242, 255);
-        return new Color32(255, 255, 255, 255);
-    }
-
-    // Abismo visto de cima: escuridão com uns pontinhos (pedras lá no fundo).
-    // borda = true: a parede de pedra do desfiladeiro aparece na parte de cima do bloco.
-    static Color32 CorDoAbismo(int x, int y, bool borda)
-    {
-        var fundo = new Color32(26, 18, 34, 255);
-        int a = 15 - y; // 0 = linha de cima do bloco (na textura, y = 0 é embaixo)
-        if (borda)
-        {
-            int fimDaPedra = 6 + (x * 5 % 7 == 0 ? 1 : 0);    // a parte de baixo da parede é irregular
-            if (a == 0) return Cor('k');                          // a beirada
-            if (a <= fimDaPedra) return a == 3 || (a == 5 && x % 5 == 1) ? Cor('d') : Cor('b'); // camadas de rocha
-            if (a <= fimDaPedra + 3) return Color32.Lerp(Cor('d'), fundo, (a - fimDaPedra) / 3f); // a parede some no escuro
-        }
-        return (x * 5 + y * 3) % 13 == 0 && (x + y) % 3 == 0 ? new Color32(48, 34, 60, 255) : fundo;
-    }
-
     // Rajada de vento: um risco branco ondulado que vai ficando mais forte para a direita.
     static Color32 CorDaRajada(int x, int y)
     {
         int altura = Mathf.RoundToInt(2f + 1.5f * Mathf.Sin(x / 15f * Mathf.PI * 2f));
         return y == altura ? new Color32(255, 255, 255, (byte)(90 + x * 9)) : FabricaDeSprites.Transparente;
-    }
-
-    // Pinheiro sombrio: três "andares" de folhas escuras, contorno preto e tronco marrom.
-    static bool DentroDoPinheiro(int x, int y)
-    {
-        float dx = Mathf.Abs(x - 7.5f);
-        return (y >= 3 && y <= 11 && dx <= (11 - y) * 0.85f + 1f)
-            || (y >= 9 && y <= 17 && dx <= (17 - y) * 0.7f + 0.5f)
-            || (y >= 15 && y <= 23 && dx <= (23 - y) * 0.55f);
-    }
-
-    static Color32 CorDoPinheiro(int x, int y)
-    {
-        if (DentroDoPinheiro(x, y))
-        {
-            bool borda = !DentroDoPinheiro(x + 1, y) || !DentroDoPinheiro(x - 1, y) || !DentroDoPinheiro(x, y + 1) || !DentroDoPinheiro(x, y - 1);
-            if (borda) return Cor('k');
-            return x < 7 ? new Color32(96, 80, 128, 255) : new Color32(60, 50, 88, 255); // luz à esquerda, sombra à direita
-        }
-        if (y < 3 && x >= 7 && x <= 8) return Cor('d'); // tronco
-        return FabricaDeSprites.Transparente;
-    }
-
-    // Torre da Biblioteca Proibida: pedra clara, porta e janelas com a luz roxa da magia e uma cúpula.
-    static bool DentroDaCupula(int x, int y) => y >= 21 && (x - 11.5f) * (x - 11.5f) / 49f + (y - 21f) * (y - 21f) / 64f <= 1f;
-    static bool DentroDaTorre(int x, int y) =>
-        (x >= 5 && x <= 18 && y >= 0 && y <= 19) || (x >= 4 && x <= 19 && y >= 19 && y <= 21) || DentroDaCupula(x, y);
-
-    static bool DentroDaPorta(int x, int y) => y >= 1 && ((x >= 10 && x <= 13 && y <= 6) || (x >= 11 && x <= 12 && y <= 7));
-
-    static Color32 CorDaBiblioteca(int x, int y)
-    {
-        if (x >= 11 && x <= 12 && y >= 29) return Cor('y'); // a estrelinha na ponta da cúpula
-        if (!DentroDaTorre(x, y)) return FabricaDeSprites.Transparente;
-        bool borda = !DentroDaTorre(x + 1, y) || !DentroDaTorre(x - 1, y) || !DentroDaTorre(x, y + 1) || y == 0;
-        if (borda) return Cor('k');
-        if (y > 21) return x - 11.5f + (y - 25f) * 0.4f < -2f ? Cor('P') : Cor('V'); // cúpula roxa com brilho
-        if (y >= 19) return y == 19 ? Cor('k') : Cor('S');                         // a beirada embaixo da cúpula
-        if (DentroDaPorta(x, y)) return Cor('v');                                   // a porta, com a escuridão mágica
-        if (DentroDaPorta(x - 1, y) || DentroDaPorta(x + 1, y) || DentroDaPorta(x, y - 1)) return Cor('k'); // o batente
-        if (y >= 11 && y <= 14 && (x == 7 || x == 8 || x == 15 || x == 16)) return Cor('P'); // janelas acesas
-        bool rejunte = y % 5 == 0 || (y / 5 % 2 == 0 ? x % 6 == 2 : x % 6 == 5);
-        if (x >= 15) return rejunte ? Cor('z') : Cor('M');                         // lado da sombra
-        return rejunte ? Cor('M') : x <= 6 ? Cor('Z') : Cor('m');
     }
 
     // Céu escuro da região sombria: roxo, transparente na ponta esquerda (para ir escurecendo aos poucos).
