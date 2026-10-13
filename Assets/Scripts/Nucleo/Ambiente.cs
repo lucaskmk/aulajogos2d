@@ -31,7 +31,9 @@ public class Ambiente : MonoBehaviour
         float cx = cam != null ? cam.transform.position.x : 0f;
         for (int i = 0; i < quantidade; i++)
         {
-            string sprite = tipo == Tipo.Brilhos ? "brilho" : "poeira";
+            // Pólen, poeira e vaga-lumes são 1 ou 2 pixels de verdade ("hd2d_pixel"): com a tela em baixa
+            // resolução (TelaPixelada), um pontinho menor que 1 pixel pisca e some.
+            string sprite = tipo == Tipo.Brilhos ? "brilho" : tipo == Tipo.Petalas ? "poeira" : "hd2d_pixel";
             var p = ConstrutorDeFase.Visual("Particula", ambiente.transform, new Vector3(cx + Random.Range(-15f, 15f), Random.Range(0f, 15f), 0f), sprite, 15, false);
             ambiente.particulas[i] = p.transform;
             ambiente.desenhos[i] = p.GetComponent<SpriteRenderer>();
@@ -50,17 +52,17 @@ public class Ambiente : MonoBehaviour
         {
             case Tipo.Petalas:
                 velocidades[i] = new Vector2(Random.Range(0.4f, 1.2f), Random.Range(-1.2f, -0.6f));
-                tamanho = Random.Range(0.35f, 0.55f);
+                tamanho = Random.Range(0.6f, 0.8f); // (pelo menos uns 3 pixels: menor que isso some na tela pixelada)
                 cor = new Color(1f, 0.7f, 0.8f, 0.9f);
                 break;
             case Tipo.VagaLumes:
                 velocidades[i] = Random.insideUnitCircle * 0.4f;
-                tamanho = 0.3f;
+                tamanho = 2f; // 2 x 2 pixels
                 cor = new Color(1f, 0.95f, 0.5f);
                 break;
             case Tipo.Poeira:
                 velocidades[i] = new Vector2(Random.Range(-0.1f, 0.1f), Random.Range(-0.05f, 0.1f));
-                tamanho = Random.Range(0.15f, 0.3f);
+                tamanho = Random.value < 0.75f ? 1f : 2f; // 1 ou 2 pixels
                 cor = new Color(1f, 0.9f, 0.6f, 0.7f);
                 break;
             case Tipo.Brilhos:
@@ -70,7 +72,7 @@ public class Ambiente : MonoBehaviour
                 break;
             default: // Polen
                 velocidades[i] = new Vector2(Random.Range(-0.2f, 0.2f), Random.Range(0.15f, 0.4f));
-                tamanho = Random.Range(0.15f, 0.3f);
+                tamanho = Random.value < 0.75f ? 1f : 2f; // 1 ou 2 pixels
                 cor = new Color(1f, 1f, 0.85f, 0.65f);
                 break;
         }

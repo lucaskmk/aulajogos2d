@@ -46,6 +46,10 @@ public class Interface : MonoBehaviour
         float w = Screen.width, h = Screen.height;
         EstadoDoJogo estado = jogo.Estado;
 
+        // Primeiro a imagem do jogo (quando a câmera desenha em baixa resolução: veja TelaPixelada),
+        // depois todo o resto por cima, nítido.
+        TelaPixelada.DesenharNaTela();
+
         DesenharFalaDoPuck();
         DesenharDicaDasPortas();
         DesenharRetornoPelaMorte();
@@ -348,7 +352,7 @@ public class Interface : MonoBehaviour
         {
             if (placa == null || Vector2.Distance(placa.transform.position, jogador.transform.position) > 3.5f) continue;
 
-            Vector3 tela = cam.WorldToScreenPoint(placa.transform.position + Vector3.up * 1.2f);
+            Vector3 tela = TelaPixelada.MundoParaTela(cam, placa.transform.position + Vector3.up * 1.2f);
             float largura = 420f * escala, altura = 80f * escala;
             float x = Mathf.Clamp(tela.x - largura / 2f, 10f * escala, Screen.width - largura - 10f * escala); // não sai da tela
             var caixa = new Rect(x, Screen.height - tela.y - altura, largura, altura);
@@ -366,7 +370,7 @@ public class Interface : MonoBehaviour
         foreach (Porta porta in jogo.portas)
         {
             if (porta == null || !Porta.PodeEntrar || !porta.JogadorNaFrente()) continue;
-            Vector3 tela = cam.WorldToScreenPoint(porta.transform.position + Vector3.up * 2.3f);
+            Vector3 tela = TelaPixelada.MundoParaTela(cam, porta.transform.position + Vector3.up * 2.3f);
             if (Time.unscaledTime % 0.8f < 0.55f)
                 Texto("S: entrar", tela.x, Screen.height - tela.y - 30f * escala, 2.2f, 0.5f, Lilas);
         }
@@ -376,7 +380,7 @@ public class Interface : MonoBehaviour
     {
         Camera cam = Camera.main;
         if (cam == null || jogo.Emilia == null) return;
-        Vector3 tela = cam.WorldToScreenPoint(jogo.Emilia.transform.position + Vector3.up * 2.2f);
+        Vector3 tela = TelaPixelada.MundoParaTela(cam, jogo.Emilia.transform.position + Vector3.up * 2.2f);
         float y = Screen.height - tela.y;
         Texto("Subaru! Você voltou!", tela.x, y - 50f * escala, 3f, 0.5f, Lilas, Screen.width * 0.6f);
     }

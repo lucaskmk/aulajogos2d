@@ -183,6 +183,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         musica = gameObject.AddComponent<Musica>();
         gameObject.AddComponent<Interface>();
         gameObject.AddComponent<EfeitosDeTela>();
+        gameObject.AddComponent<TelaPixelada>(); // pixel nítido: a câmera desenha em baixa resolução (e fica mais leve)
 
         VoltarAoTitulo();
     }
