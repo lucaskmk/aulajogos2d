@@ -1317,7 +1317,28 @@ public static class FabricaDeSprites
         { 'Ú', ('U', '\'') }, { 'Ç', ('C', ',') },
     };
 
-    static readonly Dictionary<string, Texture2D> cacheDeTextos = new Dictionary<string, Texture2D>();
+    // A "chave" do cache de textos: o texto e as cores. É uma struct (e não uma string montada com $"...")
+    // para não criar lixo na memória a cada quadro: o HUD pede os mesmos textos 60 vezes por segundo,
+    // e cada string nova vira trabalho para o "coletor de lixo" (GC), que de vez em quando PARA o jogo
+    // para limpar a memória. Esses engasgos são um dos motivos de um jogo parecer "travado".
+    struct ChaveDeTexto : IEquatable<ChaveDeTexto>
+    {
+        public string texto;
+        public uint letra, contorno, sombra; // cada cor guardada num número só (r, g, b, a = 4 bytes)
+        public int opcoes;                   // 1 = tem sombra, 2 = com acentos, 4 = em maiúsculas
+
+        public bool Equals(ChaveDeTexto outra) =>
+            letra == outra.letra && contorno == outra.contorno && sombra == outra.sombra && opcoes == outra.opcoes && texto == outra.texto;
+        public override bool Equals(object outra) => outra is ChaveDeTexto c && Equals(c);
+        public override int GetHashCode()
+        {
+            unchecked { return ((((texto.GetHashCode() * 31 + (int)letra) * 31 + (int)contorno) * 31 + (int)sombra) * 31) + opcoes; }
+        }
+    }
+
+    static uint Numero(Color32 c) => (uint)(c.r << 24 | c.g << 16 | c.b << 8 | c.a);
+
+    static readonly Dictionary<ChaveDeTexto, Texture2D> cacheDeTextos = new Dictionary<ChaveDeTexto, Texture2D>();
 
     // Texto como Sprite, para colocar no mundo (ex.: o número de cada ponto do mapa).
     // Fica no cache de sprites, que nunca é limpo durante o jogo.
@@ -1336,16 +1357,24 @@ public static class FabricaDeSprites
     // Desenha o texto com as letrinhas acima, contorno de 1 pixel e (se quiser) uma sombra para baixo.
     // Devolve uma textura pequena: desenhe ela grande na tela (o filtro "Point" mantém os pixels nítidos).
     // comAcentos = true reserva espaço para acentos e cedilha (o HUD usa assim, para todas as linhas terem a mesma altura).
-    public static Texture2D TextoEmPixel(string texto, Color32 corLetra, Color32 corContorno, Color32? corSombra = null, bool comAcentos = false)
+    // maiusculas = true escreve tudo em MAIÚSCULAS (a conversão só acontece na primeira vez: depois vem do cache).
+    public static Texture2D TextoEmPixel(string texto, Color32 corLetra, Color32 corContorno, Color32? corSombra = null, bool comAcentos = false, bool maiusculas = false)
     {
-        string chave = $"{texto}|{corLetra}|{corContorno}|{corSombra}|{comAcentos}";
+        var chave = new ChaveDeTexto
+        {
+            texto = texto,
+            letra = Numero(corLetra),
+            contorno = Numero(corContorno),
+            sombra = corSombra.HasValue ? Numero(corSombra.Value) : 0u,
+            opcoes = (corSombra.HasValue ? 1 : 0) | (comAcentos ? 2 : 0) | (maiusculas ? 4 : 0),
+        };
         if (cacheDeTextos.TryGetValue(chave, out Texture2D pronta) && pronta != null) return pronta;
         if (cacheDeTextos.Count > MaximoDeTextosGuardados)
         {
             foreach (Texture2D velha in cacheDeTextos.Values) UnityEngine.Object.Destroy(velha);
             cacheDeTextos.Clear();
         }
-        Texture2D textura = GerarTexto(texto, corLetra, corContorno, corSombra, comAcentos);
+        Texture2D textura = GerarTexto(maiusculas ? texto.ToUpperInvariant() : texto, corLetra, corContorno, corSombra, comAcentos);
         cacheDeTextos[chave] = textura;
         return textura;
     }

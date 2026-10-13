@@ -20,11 +20,12 @@ public class Inimigo : MonoBehaviour
     readonly List<Collider2D> encostados = new List<Collider2D>();
 
     // Inimigo ou coelho? (o jogador não "pisa no chão" em cima deles, e armadilhas não batem neles como se fossem parede)
-    public static bool EhBicho(Collider2D outro) => outro.GetComponent<Inimigo>() != null || outro.GetComponent<Coelho>() != null;
+    public static bool EhBicho(Collider2D outro) => outro.TryGetComponent<Inimigo>(out _) || outro.TryGetComponent<Coelho>(out _);
 
     void Awake()
     {
         corpo = gameObject.AddComponent<Rigidbody2D>();
+        corpo.interpolation = RigidbodyInterpolation2D.Interpolate; // desenho liso entre os passos da física (50 por segundo)
         corpo.gravityScale = 3.5f;
         corpo.freezeRotation = true;
 
@@ -73,7 +74,7 @@ public class Inimigo : MonoBehaviour
         for (int i = 0; i < quantidade; i++)
         {
             GameObject outro = encostados[i].gameObject;
-            if (outro != gameObject && outro.GetComponent<Jogador>() == null) return true;
+            if (outro != gameObject && !outro.TryGetComponent<Jogador>(out _)) return true;
         }
         return false;
     }

@@ -224,6 +224,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     void CarregarFase(int indice)
     {
+        Paralaxe.Soltar(); // o fundo (céu, montanhas, luz...) é reaproveitado se for a mesma fase de novo
         if (raizDaFase != null) Destroy(raizDaFase.gameObject);
 
         if (indice != faseDasMarcas)

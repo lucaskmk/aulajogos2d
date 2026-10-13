@@ -126,7 +126,7 @@ public class EsmagadorDoRitmo : MonoBehaviour
         for (int i = 0; i < quantidade; i++)
         {
             Collider2D outro = acertos[i].collider;
-            if (outro.GetComponent<Jogador>() != null || Inimigo.EhBicho(outro)) continue;
+            if (outro.TryGetComponent<Jogador>(out _) || Inimigo.EhBicho(outro)) continue;
             menor = Mathf.Min(menor, acertos[i].distance);
         }
         return menor;

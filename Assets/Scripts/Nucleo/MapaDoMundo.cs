@@ -410,28 +410,28 @@ public class MapaDoMundo : MonoBehaviour
                 terra[c] = ConstrutorDeFase.Visual("Caminho", transform, p, "terra", OrdemDoCaminho, false).GetComponent<SpriteRenderer>();
                 break;
             case 'T':
-                var arvore = ConstrutorDeFase.Visual("Arvore", transform, p + Vector3.down * 0.5f, "arvore", linha - 4);
+                var arvore = ConstrutorDeFase.Visual("Arvore", transform, p + Vector3.down * 0.5f, "arvore", linha - 4, parado: true);
                 arvore.GetComponent<SpriteRenderer>().color = tom;
                 Animacao.Adicionar(arvore, Animacao.Tipo.Balancar, 1.5f, 2.5f); // balançando no vento
                 break;
             case 'p':
-                var pinheiro = ConstrutorDeFase.Visual("Pinheiro", transform, p + Vector3.down * 0.5f, "mapa_pinheiro", linha - 4);
+                var pinheiro = ConstrutorDeFase.Visual("Pinheiro", transform, p + Vector3.down * 0.5f, "mapa_pinheiro", linha - 4, parado: true);
                 Animacao.Adicionar(pinheiro, Animacao.Tipo.Balancar, 0.8f, 1.5f);
                 break;
             case '^':
-                ConstrutorDeFase.Visual("Montanha", transform, p, "montanha", linha - 6).GetComponent<SpriteRenderer>().color = tom;
+                ConstrutorDeFase.Visual("Montanha", transform, p, "montanha", linha - 6, parado: true).GetComponent<SpriteRenderer>().color = tom;
                 break;
             case 'h':
-                ConstrutorDeFase.Visual("Casa", transform, p, "casa", linha - 6).GetComponent<SpriteRenderer>().color = tom;
+                ConstrutorDeFase.Visual("Casa", transform, p, "casa", linha - 6, parado: true).GetComponent<SpriteRenderer>().color = tom;
                 break;
             case 'o':
-                ConstrutorDeFase.Visual("Pedra", transform, p + Vector3.down * 0.4f, "pedra", linha - 6).GetComponent<SpriteRenderer>().color = tom;
+                ConstrutorDeFase.Visual("Pedra", transform, p + Vector3.down * 0.4f, "pedra", linha - 6, parado: true).GetComponent<SpriteRenderer>().color = tom;
                 break;
             case 'R':
-                ConstrutorDeFase.Visual("Ruina", transform, p + Vector3.down * 0.45f, "mapa_ruina", linha - 6).GetComponent<SpriteRenderer>().color = tom;
+                ConstrutorDeFase.Visual("Ruina", transform, p + Vector3.down * 0.45f, "mapa_ruina", linha - 6, parado: true).GetComponent<SpriteRenderer>().color = tom;
                 break;
             case '*':
-                ConstrutorDeFase.Visual("Cristal", transform, p + Vector3.down * 0.45f, "mapa_cristal", linha - 6).GetComponent<SpriteRenderer>().color = tom;
+                ConstrutorDeFase.Visual("Cristal", transform, p + Vector3.down * 0.45f, "mapa_cristal", linha - 6, parado: true).GetComponent<SpriteRenderer>().color = tom;
                 if (sorteio.Next(3) == 0) // um brilhinho piscando em alguns cristais
                 {
                     var brilho = ConstrutorDeFase.Visual("Brilho", transform, p + new Vector3(0.15f, 0.1f, 0f), "brilho", linha - 5, false);
@@ -440,11 +440,11 @@ public class MapaDoMundo : MonoBehaviour
                 }
                 break;
             case 'L':
-                ConstrutorDeFase.Visual("Biblioteca", transform, p + Vector3.down * 0.5f, "mapa_biblioteca", linha - 6);
+                ConstrutorDeFase.Visual("Biblioteca", transform, p + Vector3.down * 0.5f, "mapa_biblioteca", linha - 6, parado: true);
                 break;
             case 'Y':
                 // a Grande Árvore Flügel: a árvore normal, só que ENORME (e meio escurecida pela região)
-                var flugel = ConstrutorDeFase.Visual("ArvoreFlugel", transform, p + Vector3.down * 0.5f, "arvore", linha - 4);
+                var flugel = ConstrutorDeFase.Visual("ArvoreFlugel", transform, p + Vector3.down * 0.5f, "arvore", linha - 4, parado: true);
                 flugel.transform.localScale = Vector3.one * 2.6f;
                 flugel.GetComponent<SpriteRenderer>().color = Color.Lerp(Color.white, tom, 0.6f);
                 Animacao.Adicionar(flugel, Animacao.Tipo.Balancar, 0.7f, 1f);
@@ -452,7 +452,7 @@ public class MapaDoMundo : MonoBehaviour
             case 'f':
                 for (int i = 0; i < 2; i++)
                 {
-                    var flor = ConstrutorDeFase.Visual("Flor", transform, p + new Vector3((float)sorteio.NextDouble() - 0.5f, (float)sorteio.NextDouble() * 0.5f - 0.5f, 0f), "flor", -7);
+                    var flor = ConstrutorDeFase.Visual("Flor", transform, p + new Vector3((float)sorteio.NextDouble() - 0.5f, (float)sorteio.NextDouble() * 0.5f - 0.5f, 0f), "flor", -7, parado: true);
                     Animacao.Adicionar(flor, Animacao.Tipo.Balancar, 2.5f, 6f);
                 }
                 break;
@@ -470,7 +470,7 @@ public class MapaDoMundo : MonoBehaviour
                     Animacao.Adicionar(olhos, Animacao.Tipo.Piscar, 1.1f + (float)sorteio.NextDouble(), 1f);
                 }
                 else if (sorteio.Next(8) == 0)
-                    ConstrutorDeFase.Visual("Tufo", transform, p + Vector3.down * 0.3f, "tufo", -8).GetComponent<SpriteRenderer>().color = tom;
+                    ConstrutorDeFase.Visual("Tufo", transform, p + Vector3.down * 0.3f, "tufo", -8, parado: true).GetComponent<SpriteRenderer>().color = tom;
                 break;
         }
     }

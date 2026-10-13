@@ -35,6 +35,10 @@ public static class ConstrutorDeFase
         }
         Vector3 Posicao(int x, int linha) => new Vector3(x, altura - 1 - linha, 0f);
         bool PareceChao(char c) => c == '#' || c == 'C' || c == 'F'; // falso e o que cai são IGUAIS ao chão de verdade
+        // A sombra de um bloco cai 2 pixels para a direita e para baixo. Se à direita, embaixo e na diagonal
+        // também tem bloco firme, ela fica toda escondida atrás deles: nem precisa existir (economiza um desenho).
+        bool Firme(char c) => c == '#' || c == 'B';
+        bool SombraEscondida(int x, int linha) => Firme(Celula(x + 1, linha)) && Firme(Celula(x, linha + 1)) && Firme(Celula(x + 1, linha + 1));
         // De vez em quando um bloco com rachadura ou com florzinha, para o chão não ficar repetitivo.
         // (escolhido pela posição: o chão falso e o que cai continuam IGUAIS ao de verdade)
         string SpriteDoChao(int x, int linha)
@@ -85,9 +89,9 @@ public static class ConstrutorDeFase
 
                 switch (c)
                 {
-                    case '#': BlocoSolido(chaoSolido.transform, pos, SpriteDoChao(x, linha)); break;
-                    case 'B': BlocoSolido(chaoSolido.transform, pos, "tijolo"); break;
-                    case 'F': Visual("ChaoFalso", raiz, pos, SpriteDoChao(x, linha), 0); break;
+                    case '#': BlocoSolido(chaoSolido.transform, pos, SpriteDoChao(x, linha), !SombraEscondida(x, linha)); break;
+                    case 'B': BlocoSolido(chaoSolido.transform, pos, "tijolo", !SombraEscondida(x, linha)); break;
+                    case 'F': Visual("ChaoFalso", raiz, pos, SpriteDoChao(x, linha), 0, parado: true); break;
                     case 'C': celulasQueCaem.Add(new Vector2Int(x, linha)); break;
                     case 'P': info.inicio = pos; break;
                     case '?': Criar<BlocoSurpresa>("BlocoMoeda", raiz, pos); info.totalDeMoedas++; break;
@@ -269,7 +273,9 @@ public static class ConstrutorDeFase
     }
 
     // Cria um objeto só com desenho. Com sombra = true ele ganha a sombrinha projetada (veja Sombra.cs).
-    public static GameObject Visual(string nome, Transform pai, Vector3 posicao, string sprite, int ordem, bool sombra = true)
+    // parado = true: o objeto nunca anda nem troca de desenho (bloco, pedra, casa...), então a sombra
+    // é copiada uma vez só e depois fica desligada (bem mais leve: veja Sombra.cs).
+    public static GameObject Visual(string nome, Transform pai, Vector3 posicao, string sprite, int ordem, bool sombra = true, bool parado = false)
     {
         var objeto = new GameObject(nome);
         objeto.transform.SetParent(pai, false);
@@ -277,13 +283,13 @@ public static class ConstrutorDeFase
         var visual = objeto.AddComponent<SpriteRenderer>();
         visual.sprite = FabricaDeSprites.Pegar(sprite);
         visual.sortingOrder = ordem;
-        if (sombra) Sombra.Adicionar(visual);
+        if (sombra) Sombra.Adicionar(visual, parado);
         return objeto;
     }
 
-    static void BlocoSolido(Transform chao, Vector3 posicao, string sprite)
+    static void BlocoSolido(Transform chao, Vector3 posicao, string sprite, bool sombra)
     {
-        var bloco = Visual("Bloco", chao, posicao, sprite, 0);
+        var bloco = Visual("Bloco", chao, posicao, sprite, 0, sombra, parado: true);
         var colisor = bloco.AddComponent<BoxCollider2D>();
         colisor.size = Vector2.one;
         colisor.compositeOperation = Collider2D.CompositeOperation.Merge;
@@ -353,17 +359,18 @@ public static class ConstrutorDeFase
             int sorte = sorteio.Next(100);
             if (sorte < 5 && x - ultimoLampiao > 10 && chaoDosLados)
             {
-                var lampiao = Visual("Lampiao", decoracao, base_, "lampiao", -7);
+                var lampiao = Visual("Lampiao", decoracao, base_, "lampiao", -7, parado: true);
                 Luzes.Ponto(lampiao.transform, Luzes.Quente, 4.5f, 0.85f, Vector3.up * 2.15f);
                 ultimoLampiao = x;
             }
-            else if (sorte < 18 && chaoDosLados) Visual("Arbusto", decoracao, base_, "arbusto", -7);
-            else if (sorte < 26 && chaoDosLados) Visual("Cerca", decoracao, base_, "cerca", -7);
-            else if (sorte < 35) Visual("Pedra", decoracao, base_, "pedra", -7);
-            else if (sorte < 42) Visual("Cogumelo", decoracao, base_, "cogumelo", -7);
+            else if (sorte < 18 && chaoDosLados) Visual("Arbusto", decoracao, base_, "arbusto", -7, parado: true);
+            else if (sorte < 26 && chaoDosLados) Visual("Cerca", decoracao, base_, "cerca", -7, parado: true);
+            else if (sorte < 35) Visual("Pedra", decoracao, base_, "pedra", -7, parado: true);
+            else if (sorte < 42) Visual("Cogumelo", decoracao, base_, "cogumelo", -7, parado: true);
             else
             {
-                var enfeite = Visual("Enfeite", decoracao, base_, sorte < 65 ? "flor" : "tufo", -8);
+                // (a sombra é "filha" do enfeite: gira junto com ele sem precisar copiar nada)
+                var enfeite = Visual("Enfeite", decoracao, base_, sorte < 65 ? "flor" : "tufo", -8, parado: true);
                 Animacao.Adicionar(enfeite, Animacao.Tipo.Balancar, 2.5f, 6f);
             }
         }

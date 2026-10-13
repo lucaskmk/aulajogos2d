@@ -312,7 +312,7 @@ public class VentoDaRam : MonoBehaviour
         for (int i = 0; i < quantidade; i++)
         {
             Collider2D outro = acertos[i].collider;
-            if (outro.GetComponent<Jogador>() == null && !Inimigo.EhBicho(outro)) return true;
+            if (!outro.TryGetComponent<Jogador>(out _) && !Inimigo.EhBicho(outro)) return true;
         }
         return false;
     }
@@ -620,7 +620,7 @@ public class VentoDaRam : MonoBehaviour
                 for (int i = 0; i < quantidade; i++)
                 {
                     Collider2D outro = encostados[i];
-                    if (outro.GetComponent<Jogador>() == null && !Inimigo.EhBicho(outro)) solida[x, y] = true;
+                    if (!outro.TryGetComponent<Jogador>(out _) && !Inimigo.EhBicho(outro)) solida[x, y] = true;
                 }
             }
         }

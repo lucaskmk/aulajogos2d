@@ -15,6 +15,7 @@ public class AnimacaoDeQuadros : MonoBehaviour
 
     SpriteRenderer desenho;
     float fase;
+    int quadroAtual = -2; // o quadro que está na tela (-1 = o "normal"; -2 = nenhum ainda)
 
     public static AnimacaoDeQuadros Adicionar(SpriteRenderer desenho, Sprite[] quadros, float quadrosPorSegundo, float pausa = 0f)
     {
@@ -32,6 +33,9 @@ public class AnimacaoDeQuadros : MonoBehaviour
     {
         float duracao = quadros.Length / quadrosPorSegundo;
         float t = Mathf.Repeat(Time.time + fase, duracao + pausa);
-        desenho.sprite = t < duracao ? quadros[Mathf.Min(quadros.Length - 1, (int)(t * quadrosPorSegundo))] : normal;
+        int quadro = t < duracao ? Mathf.Min(quadros.Length - 1, (int)(t * quadrosPorSegundo)) : -1;
+        if (quadro == quadroAtual) return; // só troca o desenho quando o quadro muda (trocar à toa custa)
+        quadroAtual = quadro;
+        desenho.sprite = quadro >= 0 ? quadros[quadro] : normal;
     }
 }

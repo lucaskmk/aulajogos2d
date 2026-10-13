@@ -30,6 +30,7 @@ public class Coelho : MonoBehaviour
     void Awake()
     {
         corpo = gameObject.AddComponent<Rigidbody2D>();
+        corpo.interpolation = RigidbodyInterpolation2D.Interpolate; // desenho liso entre os passos da física (50 por segundo)
         corpo.gravityScale = 3.5f;
         corpo.freezeRotation = true;
 
@@ -112,7 +113,7 @@ public class Coelho : MonoBehaviour
         for (int i = 0; i < quantidade; i++)
         {
             Collider2D outro = encostados[i];
-            if (outro != colisor && !Inimigo.EhBicho(outro) && outro.GetComponent<Jogador>() == null) return true;
+            if (outro != colisor && !Inimigo.EhBicho(outro) && !outro.TryGetComponent<Jogador>(out _)) return true;
         }
         return false;
     }

@@ -42,7 +42,7 @@ public class SombraNoChao : MonoBehaviour
         {
             Collider2D outro = acertos[i].collider;
             if (outro.transform == transform || outro.transform.IsChildOf(transform) || Inimigo.EhBicho(outro)
-                || outro.GetComponent<Jogador>() != null) continue;
+                || outro.TryGetComponent<Jogador>(out _)) continue;
             if (acertos[i].distance < maisPerto)
             {
                 maisPerto = acertos[i].distance;

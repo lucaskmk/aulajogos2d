@@ -198,7 +198,7 @@ public class MiasmaDaBruxa : MonoBehaviour
             if (bandeira == null) continue;
             var fujona = bandeira.GetComponent<BandeiraFujona>();
             if (fujona != null && fujona.destino.HasValue) maisLonge = Mathf.Max(maisLonge, fujona.destino.Value.x);
-            else if (bandeira.GetComponent<Bandeira>() != null) maisLonge = Mathf.Max(maisLonge, bandeira.position.x);
+            else if (bandeira.TryGetComponent<Bandeira>(out _)) maisLonge = Mathf.Max(maisLonge, bandeira.position.x);
         }
         return maisLonge > float.MinValue ? maisLonge - 1.5f : float.MaxValue;
     }

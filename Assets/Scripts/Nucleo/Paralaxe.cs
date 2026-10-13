@@ -22,7 +22,11 @@ public class Paralaxe : MonoBehaviour
     static Transform fundoAtual;
     static int ultimaLargura;
     static Color ultimaCor;
-    static bool ultimaNoite;
+    static bool ultimaNoite, ultimoHD;
+    static Clima ultimoClima;
+
+    // A largura da fase atual (em blocos): os efeitos de luz usam para saber a "hora do dia" (LuzDoDia).
+    public static int LarguraDaFase => ultimaLargura;
 
     // Necessário porque o projeto está com "Enter Play Mode Options" (sem recarregar o domínio).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -44,10 +48,18 @@ public class Paralaxe : MonoBehaviour
         return jogo != null ? ClimaDa(jogo.DadosDaFase) : Clima.Dia;
     }
 
+    // Quando o Subaru morre, a fase INTEIRA é destruída e montada de novo (GerenciadorDoJogo.CarregarFase).
+    // O fundo é igualzinho ao de antes, então não precisa ser refeito: Soltar() tira ele de dentro da fase
+    // que vai ser destruída, e o Criar() logo em seguida pega ele de volta (se nada mudou).
+    public static void Soltar()
+    {
+        if (fundoAtual != null) fundoAtual.SetParent(null, false);
+    }
+
     // Monta o fundo de novo (com o visual escolhido agora nas opções). Não faz nada fora de uma fase.
     public static void Recriar()
     {
-        if (fundoAtual == null) return;
+        if (fundoAtual == null || fundoAtual.parent == null) return;
         Transform raiz = fundoAtual.parent;
         Destroy(fundoAtual.gameObject);
         fundoAtual = null;
@@ -61,15 +73,31 @@ public class Paralaxe : MonoBehaviour
     // e um primeiro plano desfocado passa na frente da fase. Veja ArteHD2D, FeixesDeLuz e PrimeiroPlano.
     public static void Criar(Transform raiz, int larguraFase, Color corDoFundo, bool noite = false)
     {
+        bool hd = Opcoes.GraficosHD2D;
+        Clima clima = ClimaAtual();
+
+        // Sobrou o fundo da tentativa anterior (veja Soltar)? Se é da mesma fase, com o mesmo visual, reaproveita.
+        if (fundoAtual != null && fundoAtual.parent == null)
+        {
+            bool igual = larguraFase == ultimaLargura && corDoFundo == ultimaCor && noite == ultimaNoite
+                         && hd == ultimoHD && clima == ultimoClima;
+            if (igual)
+            {
+                fundoAtual.SetParent(raiz, false);
+                return;
+            }
+            Destroy(fundoAtual.gameObject);
+        }
+
         ultimaLargura = larguraFase;
         ultimaCor = corDoFundo;
         ultimaNoite = noite;
+        ultimoHD = hd;
+        ultimoClima = clima;
         fundoAtual = new GameObject("Cenario de fundo").transform;
         fundoAtual.SetParent(raiz, false);
         raiz = fundoAtual;
 
-        bool hd = Opcoes.GraficosHD2D;
-        Clima clima = ClimaAtual();
         Color claro = noite ? new Color(0.45f, 0.45f, 0.75f) : Color.white;
 
         // céu em degradê: mais forte em cima, mais claro perto do horizonte

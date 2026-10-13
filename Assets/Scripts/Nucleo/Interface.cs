@@ -17,8 +17,24 @@ public class Interface : MonoBehaviour
 
     GerenciadorDoJogo jogo;
     GUIStyle estiloFala, estiloFalaEsquerda;
+    float escalaDosEstilos = -1f; // os estilos só são refeitos quando o tamanho da tela muda
     Texture2D fundoEscuro;
     float escala;
+
+    // Textos do HUD guardados: só são montados de novo quando o número muda.
+    // (montar "Mortes: " + número a cada quadro cria lixo na memória; veja FabricaDeSprites.TextoEmPixel)
+    struct TextoComNumero { public int valor; public string texto; }
+    TextoComNumero textoMortes, textoMoedas, textoTempo, textoDaFase, textoDoMapa, textoDoChefe;
+
+    static string ComNumero(ref TextoComNumero guardado, int valor, System.Func<int, string> montar)
+    {
+        if (guardado.texto == null || guardado.valor != valor)
+        {
+            guardado.valor = valor;
+            guardado.texto = montar(valor);
+        }
+        return guardado.texto;
+    }
 
     void Awake() => jogo = GetComponent<GerenciadorDoJogo>();
 
@@ -68,6 +84,8 @@ public class Interface : MonoBehaviour
             fundoEscuro.SetPixel(0, 0, new Color(0f, 0f, 0f, 0.65f));
             fundoEscuro.Apply();
         }
+        if (estiloFala != null && Mathf.Approximately(escala, escalaDosEstilos)) return;
+        escalaDosEstilos = escala;
         estiloFala = new GUIStyle(GUI.skin.label)
         {
             fontSize = Mathf.RoundToInt(22 * escala),
@@ -87,18 +105,20 @@ public class Interface : MonoBehaviour
         Fase fase = jogo.DadosDaFase;
         const float pixel = 2.5f;
         float margem = 20f * escala, linha2 = 46f * escala;
+        string mortes = ComNumero(ref textoMortes, jogo.Mortes, n => "Mortes: " + n);
         if (jogo.Estado == EstadoDoJogo.Mapa)
         {
-            Texto($"Mortes: {jogo.Mortes}", margem, 10f * escala, pixel, 0f, Branco);
+            Texto(mortes, margem, 10f * escala, pixel, 0f, Branco);
         }
         else
         {
-            string nome = jogo.NaSecreta ? fase.nome : $"Fase {jogo.FaseAtual + 1}/{Fases.Todas.Length}: {fase.nome}";
+            string nome = jogo.NaSecreta ? fase.nome
+                : ComNumero(ref textoDaFase, jogo.FaseAtual, f => $"Fase {f + 1}/{Fases.Todas.Length}: {Fases.Dados(f).nome}");
             Texto(nome, margem, 10f * escala, pixel, 0f, Branco, w * 0.3f);
-            Texto($"Mortes: {jogo.Mortes}", margem, linha2, pixel, 0f, Branco);
+            Texto(mortes, margem, linha2, pixel, 0f, Branco);
         }
-        Texto($"Moedas: {jogo.Moedas}", w - margem, 10f * escala, pixel, 1f, Amarelo);
-        Texto(FormatarTempo(jogo.TempoTotal), w - margem, linha2, pixel, 1f, Branco);
+        Texto(ComNumero(ref textoMoedas, jogo.Moedas, n => "Moedas: " + n), w - margem, 10f * escala, pixel, 1f, Amarelo);
+        Texto(ComNumero(ref textoTempo, Mathf.FloorToInt(jogo.TempoTotal), t => FormatarTempo(t)), w - margem, linha2, pixel, 1f, Branco);
     }
 
     void DesenharTitulo()
@@ -173,6 +193,8 @@ public class Interface : MonoBehaviour
         Texto(c.nome, caixa.center.x, caixa.y + 38f * escala, 2.2f, 0.5f, Branco, largura - 20f * escala);
     }
 
+    static readonly string[] Turma = { "jogador", "emilia", "puck", "beatrice" };
+
     // Créditos subindo devagar, com o pessoal pulando embaixo.
     void DesenharCreditos()
     {
@@ -193,10 +215,9 @@ public class Interface : MonoBehaviour
         }
 
         // Subaru, Emilia, Puck e Beatrice pulando na parte de baixo
-        string[] turma = { "jogador", "emilia", "puck", "beatrice" };
-        for (int i = 0; i < turma.Length; i++)
+        for (int i = 0; i < Turma.Length; i++)
         {
-            Texture desenho = FabricaDeSprites.Pegar(turma[i]).texture;
+            Texture desenho = FabricaDeSprites.Pegar(Turma[i]).texture;
             float altura = desenho.height * 4f * escala, largura = desenho.width * 4f * escala;
             float pulo = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f + i)) * 20f * escala;
             GUI.DrawTexture(new Rect(w / 2f + (i - 1.5f) * 120f * escala - largura / 2f, h - altura - 20f * escala - pulo, largura, altura), desenho);
@@ -219,7 +240,8 @@ public class Interface : MonoBehaviour
 
         int fase = mapa.Selecionado;
         bool secreta = fase == Fases.IndiceSecreto;
-        Texto(secreta ? Fases.Secreta.nome : $"Fase {fase + 1}: {Fases.Todas[fase].nome}", w / 2f, h - 125f * escala, 3.5f, 0.5f, Amarelo, w * 0.9f);
+        string nome = secreta ? Fases.Secreta.nome : ComNumero(ref textoDoMapa, fase, f => $"Fase {f + 1}: {Fases.Todas[f].nome}");
+        Texto(nome, w / 2f, h - 125f * escala, 3.5f, 0.5f, Amarelo, w * 0.9f);
         string situacao = secreta ? "a fase secreta!" : fase < jogo.FaseMaisLonge ? "já passou (dá para jogar de novo)" : "ainda não passou nesta partida";
         Texto(situacao, w / 2f, h - 78f * escala, 2f, 0.5f, secreta ? Rosa : fase < jogo.FaseMaisLonge ? Verde : Lilas, w * 0.9f);
         string comandos = mapa.Andando ? "..." : "SETAS: andar     ENTER: jogar     ESC: título";
@@ -242,6 +264,8 @@ public class Interface : MonoBehaviour
         if (Time.unscaledTime % 1f < 0.65f) Texto("ENTER", w - 30f * escala, h - 30f * escala, 1.8f, 1f, Branco);
     }
 
+    static readonly string[] NomesDaPausa = { "Música", "Efeitos", "Gráficos" };
+
     void DesenharPausa()
     {
         float w = Screen.width, h = Screen.height;
@@ -249,14 +273,13 @@ public class Interface : MonoBehaviour
         Texto("PAUSA", w / 2f, h * 0.18f, 9f, 0.5f, Lilas);
 
         // volume da música e dos efeitos e os gráficos (cima/baixo escolhe, esquerda/direita muda)
-        string[] nomes = { "Música", "Efeitos", "Gráficos" };
-        float[] valores = { Opcoes.Musica, Opcoes.Efeitos };
         for (int i = 0; i < 3; i++)
         {
             bool escolhida = jogo.OpcaoDaPausa == i;
-            string barra = i < 2 ? new string('*', Mathf.RoundToInt(valores[i] * 10f)).PadRight(10, '-')
+            float valor = i == 0 ? Opcoes.Musica : Opcoes.Efeitos;
+            string barra = i < 2 ? new string('*', Mathf.RoundToInt(valor * 10f)).PadRight(10, '-')
                 : Opcoes.GraficosHD2D ? "HD-2D" : "Simples";
-            string texto = $"{nomes[i]}: < {barra} >";
+            string texto = $"{NomesDaPausa[i]}: < {barra} >";
             if (escolhida && Time.unscaledTime % 0.8f < 0.55f) texto = "> " + texto;
             Texto(texto, w / 2f, h * 0.42f + i * 46f * escala, 3f, 0.5f, escolhida ? Amarelo : Branco);
         }
@@ -429,7 +452,14 @@ public class Interface : MonoBehaviour
     {
         float largura = Mathf.Min(Screen.width * 0.4f, 560f * escala), altura = 16f * escala;
         var barra = new Rect((Screen.width - largura) / 2f, 52f * escala, largura, altura);
-        Texto($"{chefe.Nome} - ETAPA {chefe.EtapaAtual + 1}/{chefe.Etapas}", Screen.width / 2f, 12f * escala, 2.5f, 0.5f, Branco);
+        int etapa = chefe.EtapaAtual * 100 + chefe.Etapas; // muda quando a etapa muda (ou quando o chefe é outro)
+        if (textoDoChefe.texto == null || textoDoChefe.valor != etapa || !textoDoChefe.texto.StartsWith(chefe.Nome, System.StringComparison.Ordinal))
+        {
+            textoDoChefe.valor = etapa;
+            textoDoChefe.texto = $"{chefe.Nome} - ETAPA {chefe.EtapaAtual + 1}/{chefe.Etapas}";
+        }
+        string titulo = textoDoChefe.texto;
+        Texto(titulo, Screen.width / 2f, 12f * escala, 2.5f, 0.5f, Branco);
 
         Color corOriginal = GUI.color;
         GUI.color = Color.black;
@@ -515,7 +545,8 @@ public class Interface : MonoBehaviour
     void Texto(string texto, float x, float y, float pixel, float alinhamento, Color32 cor, float larguraMaxima = 0f)
     {
         if (string.IsNullOrEmpty(texto)) return;
-        Texture2D textura = FabricaDeSprites.TextoEmPixel(texto.ToUpperInvariant(), cor, Preto, Preto, comAcentos: true);
+        // (a conversão para MAIÚSCULAS acontece lá dentro, só na primeira vez: aqui não cria nenhuma string nova)
+        Texture2D textura = FabricaDeSprites.TextoEmPixel(texto, cor, Preto, Preto, comAcentos: true, maiusculas: true);
         float tamanho = pixel * escala;
         float largura = textura.width * tamanho;
         if (larguraMaxima > 0f && largura > larguraMaxima)
@@ -533,9 +564,6 @@ public class Interface : MonoBehaviour
         GUI.DrawTexture(new Rect(centroX - largura / 2f, topo, largura, altura), texto);
     }
 
-    static string FormatarTempo(float segundos)
-    {
-        int total = Mathf.FloorToInt(segundos);
-        return $"{total / 60:00}:{total % 60:00}";
-    }
+    static string FormatarTempo(float segundos) => FormatarTempo(Mathf.FloorToInt(segundos));
+    static string FormatarTempo(int total) => $"{total / 60:00}:{total % 60:00}";
 }

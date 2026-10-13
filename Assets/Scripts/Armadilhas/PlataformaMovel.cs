@@ -390,8 +390,8 @@ public class PlataformaMovel : MonoBehaviour
             for (int i = 0; i < quantidade; i++)
             {
                 Collider2D outro = acertos[i].collider;
-                if (outro == colisor || outro.GetComponent<Jogador>() != null || Inimigo.EhBicho(outro)
-                    || outro.GetComponent<PlataformaMovel>() != null) continue;
+                if (outro == colisor || outro.TryGetComponent<Jogador>(out _) || Inimigo.EhBicho(outro)
+                    || outro.TryGetComponent<PlataformaMovel>(out _)) continue;
                 menor = Mathf.Min(menor, acertos[i].distance - folga);
             }
         }

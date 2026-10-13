@@ -256,7 +256,7 @@ public class MangualDaRem : MonoBehaviour
         for (int i = 0; i < quantidade; i++)
         {
             Collider2D outro = encostados[i];
-            if (outro.GetComponent<Jogador>() == null && !Inimigo.EhBicho(outro)) return true;
+            if (!outro.TryGetComponent<Jogador>(out _) && !Inimigo.EhBicho(outro)) return true;
         }
         return false;
     }

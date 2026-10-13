@@ -66,7 +66,7 @@ public class Serra : MonoBehaviour
         int quantidade = Physics2D.OverlapCircle(frente, 0.15f, filtroSolido, encostados);
         for (int i = 0; i < quantidade; i++)
         {
-            if (encostados[i].GetComponent<Jogador>() == null && !Inimigo.EhBicho(encostados[i]))
+            if (!encostados[i].TryGetComponent<Jogador>(out _) && !Inimigo.EhBicho(encostados[i]))
             {
                 GerenciadorDoJogo.Som("pancada");
                 Destroy(gameObject);
