@@ -64,6 +64,8 @@ public static class FabricaDeSprites
 
     // Cor da paleta pelo caractere (as letras usadas nos desenhos em texto).
     public static Color32 Cor(char c) => paleta[c];
+    // Igual, mas uma letra que não está na paleta vira transparente (em vez de dar erro).
+    public static Color32 CorOuTransparente(char c) => paleta.TryGetValue(c, out Color32 cor) ? cor : Transparente;
     public static readonly Color32 Transparente = new Color32(0, 0, 0, 0);
 
     // Sprites "de fora": cada armadilha/personagem novo pode registrar os próprios desenhos no seu arquivo

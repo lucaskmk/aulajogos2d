@@ -637,7 +637,7 @@ public static class ArteDosBlocos
                 t.Pintar(x, y, Madeira, t2);
             }
         // oclusão nas frestas (embaixo de cada tábua fica mais escuro) e sombra da moldura sobre o miolo
-        for (int x = 3; x <= 12; x++) { t.Mudar(x, 12, -1); t.Mudar(x, 7, -1); t.Mudar(x, 11, 0); }
+        for (int x = 3; x <= 12; x++) { t.Mudar(x, 12, -1); t.Mudar(x, 7, -1); }
         for (int y = 3; y <= 12; y++) t.Mudar(12, y, -1);
         // travessa na diagonal (de baixo-esquerda para cima-direita)
         for (int y = 3; y <= 12; y++)
@@ -736,8 +736,7 @@ public static class ArteDosBlocos
                 if (!NaInterrogacao(x, y)) continue;
                 bool bordaCimaEsq = !NaInterrogacao(x - 1, y) || !NaInterrogacao(x, y + 1);
                 bool bordaBaixoDir = !NaInterrogacao(x + 1, y) || !NaInterrogacao(x, y - 1);
-                int tom = bordaCimaEsq && !bordaBaixoDir ? 4 : bordaBaixoDir && !bordaCimaEsq ? 1 : 3;
-                if (y <= 4 && tom > 2) tom = 2; // o pinguinho fica na sombra do miolo
+                int tom = bordaCimaEsq && !bordaBaixoDir ? 4 : bordaBaixoDir && !bordaCimaEsq ? 2 : 3;
                 t.Pintar(x, y, Ouro, tom);
             }
         // rebites dourados nos cantos do miolo
@@ -760,14 +759,14 @@ public static class ArteDosBlocos
                 t.Pintar(x, y, Pedra, Tom(v, Pedra.Length, x, y));
             }
         Bisel(t, Pedra, 0, 4, 3, 1, 1);
-        // rebites (escuros, com um pontinho de luz em cima-esquerda)
-        int[] cantos = { 3, 12 };
-        foreach (int cx in cantos)
-            foreach (int cy in cantos)
+        // rebites 2 x 2 nos cantos: escuros, com um pontinho de luz em cima-esquerda
+        foreach (int cx in new[] { 3, 11 })
+            foreach (int cy in new[] { 4, 12 })
             {
-                t.Pintar(cx, cy, Pedra, 1);
-                t.Pintar(cx + (cx == 3 ? 1 : -1), cy, Pedra, 1);
-                t.Pintar(cx, cy, Pedra, cy == 12 ? 5 : 1);
+                t.Pintar(cx, cy, Pedra, 5);
+                t.Pintar(cx + 1, cy, Pedra, 1);
+                t.Pintar(cx, cy - 1, Pedra, 1);
+                t.Pintar(cx + 1, cy - 1, Pedra, 0);
             }
         // rachadura
         t.Pintar(8, 10, Pedra, 0); t.Pintar(8, 9, Pedra, 0); t.Pintar(9, 8, Pedra, 0); t.Pintar(9, 7, Pedra, 0); t.Pintar(10, 6, Pedra, 1);
@@ -940,7 +939,7 @@ public static class ArteDosBlocos
                 }
                 if (r == null)
                 {
-                    Color32 cor = c == '.' ? FabricaDeSprites.Transparente : FabricaDeSprites.Cor(c);
+                    Color32 cor = FabricaDeSprites.CorOuTransparente(c);
                     if (cor.a > 0) t.Cor(x, y, cor);
                     continue;
                 }
