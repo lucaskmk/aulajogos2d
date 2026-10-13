@@ -807,7 +807,8 @@ public static class FabricaDeSprites
     {
         if (!DentroDaNuvem(x, y)) return Transparente;
         bool borda = !DentroDaNuvem(x + 1, y) || !DentroDaNuvem(x - 1, y) || !DentroDaNuvem(x, y + 1) || !DentroDaNuvem(x, y - 1);
-        if (borda) return Cor('k');
+        // contorno azul-acinzentado (não preto) e a beirada de cima-esquerda "acesa" pelo sol
+        if (borda) return !DentroDaNuvem(x - 1, y + 1) && y >= 7 && x < 20 ? new Color32(150, 150, 190, 255) : new Color32(58, 60, 96, 255);
         if (malvada)
         {
             // olhos bravos + boca cheia de dentes
@@ -819,7 +820,11 @@ public static class FabricaDeSprites
                 return y == 5 ? Cor('r') : Cor('k');
             }
         }
-        return y < 5 ? Cor('l') : Cor('w');
+        // volume: embaixo sombra lilás, no meio um branco levemente azulado, em cima-esquerda branco quente
+        if (y < 4) return new Color32(170, 176, 218, 255);
+        if (y < 6) return (x + y) % 2 == 0 ? new Color32(170, 176, 218, 255) : new Color32(214, 220, 240, 255);
+        if (!DentroDaNuvem(x - 2, y + 2)) return new Color32(255, 250, 236, 255);
+        return y < 8 || x > 21 ? new Color32(214, 220, 240, 255) : new Color32(246, 246, 248, 255);
     }
 
     // Ponto (fase) do mapa: um "botão" branco com contorno. O mapa pinta com a cor do estado

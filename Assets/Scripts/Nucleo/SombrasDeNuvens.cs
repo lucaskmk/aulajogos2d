@@ -106,8 +106,8 @@ public class SombrasDeNuvens : MonoBehaviour
             : new Color(0.08f, 0.1f, 0.22f, Mathf.Clamp01(0.3f * f));       // sem o shader: azul-escuro transparente
         for (int i = 0; i < desenhos.Length; i++) desenhos[i].color = cor;
 
-        // O sol fica no alto, à direita: tem nuvem passando por lá?
-        float xDoSol = posCam.x + meiaTela * 0.55f;
+        // O sol fica no alto, à esquerda (Paralaxe.PosicaoDoSol): tem nuvem passando por lá?
+        float xDoSol = posCam.x + Paralaxe.PosicaoDoSol.x;
         float u = Mathf.Repeat((xDoSol - origem) / largura, 1f); // (cada pedaço começa em origem + n * largura)
         // (a mesma nuvem, só que lá no alto: a densidade "crua", sem o sumiço do céu)
         LuzDoDia.Cobertura = Mathf.Clamp01(ArteHD2D.DensidadeDaNuvem(u, 0.8f) * Mathf.Min(1f, f));

@@ -46,46 +46,51 @@ public class EfeitosDeTela : MonoBehaviour
         public Vector4 sombrasSMH, luzesSMH; // ShadowsMidtonesHighlights: (r, g, b, claridade)
         public float temperatura, matiz;     // WhiteBalance: >0 mais quente (amarelo), <0 mais frio (azul)
         public float saturacaoExtra;
+        public float contrasteExtra;         // somado ao contraste (mais = sombras mais fundas e luzes mais fortes)
+        public float exposicao;              // ColorAdjustments.postExposure: <0 escurece a imagem inteira
     }
 
-    // O bloom tem um "limite" de claridade: só o que passa dele brilha. Os sprites brancos (a Baleia Branca,
-    // o texto, as nuvens) ficam em ~0,93 de dia por causa da luz global: o limite fica acima disso
-    // para eles NÃO estourarem. O que passa do limite são as luzes 2D somadas (lampiões, lanterna do Subaru).
+    // O bloom tem um "limite" de claridade: só o que passa dele brilha. No HD-2D a luz global é mais fraca
+    // (Luzes.AjustarAoVisual), então os sprites brancos ficam abaixo de 1; o que passa do limite é o que a
+    // LUZ DO SOL (no alto, à esquerda) e as luzinhas (lampiões, lanterna) deixam mais claro que o branco.
+    //
+    // Visual "v3" (escuro e vivo, à la Octopath): contraste alto, sombras azul-arroxeadas bem fundas,
+    // luzes douradas, saturação extra e uma exposição um pouco mais baixa.
     static readonly Visual Dia = new Visual
     {
-        limiteDoBloom = 1.05f, forcaDoBloom = 0.45f, corDoBloom = new Color(1f, 0.9f, 0.7f),
-        sombras = new Color(0.42f, 0.43f, 0.6f), luzes = new Color(0.62f, 0.55f, 0.42f), equilibrio = 15f,
-        sombrasSMH = new Vector4(0.95f, 0.97f, 1.07f, -0.03f), luzesSMH = new Vector4(1.05f, 1.01f, 0.93f, 0.02f),
-        temperatura = 8f, matiz = 0f, saturacaoExtra = 4f,
+        limiteDoBloom = 0.98f, forcaDoBloom = 0.6f, corDoBloom = new Color(1f, 0.86f, 0.62f),
+        sombras = new Color(0.34f, 0.36f, 0.64f), luzes = new Color(0.7f, 0.57f, 0.38f), equilibrio = 8f,
+        sombrasSMH = new Vector4(0.86f, 0.9f, 1.16f, -0.1f), luzesSMH = new Vector4(1.1f, 1.02f, 0.86f, 0.03f),
+        temperatura = 10f, matiz = 2f, saturacaoExtra = 12f, contrasteExtra = 16f, exposicao = -0.12f,
     };
     // O fim de tarde das fases de dia: tudo mais quente e dourado, sombras arroxeadas (o "golden hour").
     static readonly Visual Entardecer = new Visual
     {
-        limiteDoBloom = 1.0f, forcaDoBloom = 0.55f, corDoBloom = new Color(1f, 0.75f, 0.45f),
-        sombras = new Color(0.46f, 0.38f, 0.6f), luzes = new Color(0.72f, 0.52f, 0.32f), equilibrio = 20f,
-        sombrasSMH = new Vector4(0.96f, 0.92f, 1.08f, -0.04f), luzesSMH = new Vector4(1.1f, 0.99f, 0.84f, 0.03f),
-        temperatura = 26f, matiz = 6f, saturacaoExtra = 10f,
+        limiteDoBloom = 0.92f, forcaDoBloom = 0.75f, corDoBloom = new Color(1f, 0.7f, 0.4f),
+        sombras = new Color(0.42f, 0.32f, 0.64f), luzes = new Color(0.8f, 0.52f, 0.28f), equilibrio = 14f,
+        sombrasSMH = new Vector4(0.9f, 0.84f, 1.14f, -0.12f), luzesSMH = new Vector4(1.16f, 1f, 0.78f, 0.04f),
+        temperatura = 28f, matiz = 8f, saturacaoExtra = 16f, contrasteExtra = 20f, exposicao = -0.18f,
     };
     static readonly Visual Noite = new Visual
     {
-        limiteDoBloom = 0.92f, forcaDoBloom = 0.65f, corDoBloom = new Color(0.75f, 0.85f, 1f),
-        sombras = new Color(0.38f, 0.4f, 0.62f), luzes = new Color(0.56f, 0.55f, 0.5f), equilibrio = -10f,
-        sombrasSMH = new Vector4(0.9f, 0.93f, 1.12f, -0.04f), luzesSMH = new Vector4(1.02f, 1f, 0.96f, 0f),
-        temperatura = -16f, matiz = 4f, saturacaoExtra = -4f,
+        limiteDoBloom = 0.85f, forcaDoBloom = 0.8f, corDoBloom = new Color(0.72f, 0.82f, 1f),
+        sombras = new Color(0.3f, 0.34f, 0.66f), luzes = new Color(0.58f, 0.56f, 0.5f), equilibrio = -12f,
+        sombrasSMH = new Vector4(0.84f, 0.9f, 1.18f, -0.1f), luzesSMH = new Vector4(1.04f, 1f, 0.94f, 0.02f),
+        temperatura = -18f, matiz = 4f, saturacaoExtra = 4f, contrasteExtra = 16f, exposicao = -0.08f,
     };
     static readonly Visual NoEscuro = new Visual
     {
-        limiteDoBloom = 1f, forcaDoBloom = 0.7f, corDoBloom = new Color(0.9f, 0.85f, 1f),
-        sombras = new Color(0.4f, 0.38f, 0.58f), luzes = new Color(0.58f, 0.53f, 0.45f), equilibrio = -15f,
-        sombrasSMH = new Vector4(0.92f, 0.92f, 1.1f, -0.02f), luzesSMH = new Vector4(1.04f, 1f, 0.94f, 0f),
-        temperatura = -8f, matiz = 3f, saturacaoExtra = 0f,
+        limiteDoBloom = 0.9f, forcaDoBloom = 0.85f, corDoBloom = new Color(0.9f, 0.82f, 1f),
+        sombras = new Color(0.34f, 0.3f, 0.6f), luzes = new Color(0.62f, 0.54f, 0.42f), equilibrio = -15f,
+        sombrasSMH = new Vector4(0.88f, 0.86f, 1.14f, -0.06f), luzesSMH = new Vector4(1.06f, 1f, 0.92f, 0.02f),
+        temperatura = -8f, matiz = 3f, saturacaoExtra = 6f, contrasteExtra = 14f, exposicao = 0f,
     };
     static readonly Visual Biblioteca = new Visual
     {
-        limiteDoBloom = 0.95f, forcaDoBloom = 0.55f, corDoBloom = new Color(1f, 0.82f, 0.55f),
-        sombras = new Color(0.45f, 0.4f, 0.5f), luzes = new Color(0.64f, 0.54f, 0.4f), equilibrio = 10f,
-        sombrasSMH = new Vector4(0.96f, 0.94f, 1f, -0.03f), luzesSMH = new Vector4(1.06f, 1f, 0.88f, 0.02f),
-        temperatura = 20f, matiz = 2f, saturacaoExtra = -14f,
+        limiteDoBloom = 0.9f, forcaDoBloom = 0.7f, corDoBloom = new Color(1f, 0.78f, 0.5f),
+        sombras = new Color(0.4f, 0.32f, 0.52f), luzes = new Color(0.72f, 0.56f, 0.36f), equilibrio = 8f,
+        sombrasSMH = new Vector4(0.9f, 0.86f, 1.02f, -0.1f), luzesSMH = new Vector4(1.1f, 1f, 0.84f, 0.03f),
+        temperatura = 22f, matiz = 3f, saturacaoExtra = -6f, contrasteExtra = 18f, exposicao = -0.1f,
     };
 
     // Mistura dois visuais (t = 0: o primeiro; t = 1: o segundo). Usado para passar da manhã ao entardecer.
@@ -104,6 +109,8 @@ public class EfeitosDeTela : MonoBehaviour
             temperatura = Mathf.Lerp(a.temperatura, b.temperatura, t),
             matiz = Mathf.Lerp(a.matiz, b.matiz, t),
             saturacaoExtra = Mathf.Lerp(a.saturacaoExtra, b.saturacaoExtra, t),
+            contrasteExtra = Mathf.Lerp(a.contrasteExtra, b.contrasteExtra, t),
+            exposicao = Mathf.Lerp(a.exposicao, b.exposicao, t),
         };
     }
 
@@ -154,6 +161,7 @@ public class EfeitosDeTela : MonoBehaviour
         // O clima: no mapa (e no título, que mostra o mapa) é sempre "dia".
         Clima clima = jogo.Mapa != null ? Clima.Dia : Paralaxe.ClimaDa(jogo.DadosDaFase);
         LuzDoDia.Atualizar(jogo, clima); // a hora do dia (manhã -> entardecer) e o sol atrás das nuvens
+        Luzes.AjustarAoVisual(hd && jogo.Mapa == null); // no HD-2D a luz do céu é mais fraca (quem brilha é o sol)
         Visual v = clima == Clima.Noite ? Noite : clima == Clima.Escuro ? NoEscuro : clima == Clima.Biblioteca ? Biblioteca
             : Misturar(Dia, Entardecer, LuzDoDia.Entardecer);
 
@@ -161,8 +169,9 @@ public class EfeitosDeTela : MonoBehaviour
         bloom.active = AjustesVisuais.bloom;
 
         cor.saturation.value = Mathf.Lerp(saturacao + (hd ? v.saturacaoExtra : 0f), -75f, morte) - (pausa ? 55f : 0f);
-        cor.contrast.value = contraste + morte * 15f;
-        cor.postExposure.value = jogo.FaseNoturna ? -0.2f : 0f;
+        float noHD = hd ? 1f - morte : 0f; // os extras do HD-2D somem ao morrer (a tela fica cinza)
+        cor.contrast.value = contraste + morte * 15f + v.contrasteExtra * noHD;
+        cor.postExposure.value = (jogo.FaseNoturna ? -0.2f : 0f) + v.exposicao * noHD;
         // (no HD-2D quem dá o tom da fase é o WhiteBalance; no Simples, um filtro de cor como antes)
         cor.colorFilter.value = hd ? Color.white
             : jogo.FaseNoturna ? new Color(0.85f, 0.9f, 1.15f)
@@ -171,7 +180,7 @@ public class EfeitosDeTela : MonoBehaviour
 
         aberracao.intensity.value = Mathf.Max(morte * 0.85f, renascer * 0.5f);
         distorcao.intensity.value = -0.35f * renascer * renascer;
-        vinheta.intensity.value = 0.25f + morte * 0.3f + (jogo.FaseNoturna ? 0.1f : 0f) + (hd ? 0.05f : 0f);
+        vinheta.intensity.value = 0.25f + morte * 0.3f + (jogo.FaseNoturna ? 0.1f : 0f) + (hd ? 0.12f : 0f);
 
         // A correção de cor de cinema só no HD-2D. Ao morrer (tela cinza) e na pausa ela some aos poucos:
         // "forca" = 1 normal, 0 = nada (os valores neutros).

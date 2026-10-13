@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 // Fundo em camadas, estilo Castlevania: cada camada anda numa velocidade diferente
 // quando a câmera se move, e isso dá a impressão de profundidade (parece 3D, mas é 2D).
@@ -103,9 +104,20 @@ public class Paralaxe : MonoBehaviour
         // céu em degradê: mais forte em cima, mais claro perto do horizonte
         Color topo = noite ? Color.Lerp(corDoFundo, Color.black, 0.45f) : Color.Lerp(corDoFundo, Escuro, 0.12f);
         Color horizonte = Color.Lerp(corDoFundo, claro, noite ? 0.25f : 0.45f);
-        Faixa(raiz, "Ceu", FabricaDeSprites.Degrade(topo, horizonte), 1f, -30, Color.white, -1f, 17f);
+        if (hd)
+        {
+            // HD-2D: céu de verdade, com 3 cores. Lá no alto, um azul fundo e saturado (o "zênite");
+            // no meio, a cor da fase mais viva; no horizonte, uma luz quente e clara (o sol baixo).
+            Color zenite = noite ? new Color(0.04f, 0.05f, 0.16f) : new Color(0.13f, 0.24f, 0.52f);
+            Color meio = Saturar(corDoFundo, 1.15f) * (noite ? 0.45f : 0.88f);
+            meio.a = 1f;
+            topo = Color.Lerp(meio, zenite, noite ? 0.6f : 0.55f);
+            horizonte = Color.Lerp(corDoFundo, noite ? new Color(0.45f, 0.42f, 0.7f) : new Color(1f, 0.8f, 0.58f), noite ? 0.3f : 0.55f);
+            Faixa(raiz, "Ceu", FabricaDeSprites.Degrade(topo, meio, horizonte), 1f, -30, Color.white, -1f, 17f);
+        }
+        else Faixa(raiz, "Ceu", FabricaDeSprites.Degrade(topo, horizonte), 1f, -30, Color.white, -1f, 17f);
 
-        SolOuLua(raiz, noite, hd);
+        SolOuLua(raiz, noite, hd, clima);
 
         Color montanhas = Color.Lerp(corDoFundo, claro, noite ? 0.1f : 0.35f);
         Color castelo = Color.Lerp(corDoFundo, Escuro, noite ? 0.35f : 0.15f);
@@ -114,13 +126,25 @@ public class Paralaxe : MonoBehaviour
 
         if (hd)
         {
+            // HD-2D: cores mais "de verdade". Cada camada mistura a cor da fase com a cor natural dela
+            // (montanha azulada, castelo de pedra, pinheiros e copas verde-escuros), e as de perto
+            // ficam bem mais escuras e saturadas: é o contraste que dá profundidade.
+            montanhas = Color.Lerp(corDoFundo, new Color(0.5f, 0.58f, 0.8f), 0.5f);
+            castelo = Color.Lerp(corDoFundo, new Color(0.36f, 0.38f, 0.55f), 0.5f);
+            floresta = Color.Lerp(corDoFundo, new Color(0.16f, 0.34f, 0.38f), 0.55f);
+            arvores = Color.Lerp(corDoFundo, new Color(0.1f, 0.26f, 0.2f), 0.6f);
+            if (noite)
+            {
+                montanhas *= 0.55f; castelo *= 0.5f; floresta *= 0.45f; arvores *= 0.4f;
+            }
             // Névoa atmosférica: a cor do ar perto do horizonte, puxada para o azul.
             // Quanto mais longe a camada, mais ela "afunda" nessa cor (e mais borrada ela é).
             Color ar = Color.Lerp(horizonte, noite ? new Color(0.3f, 0.35f, 0.65f) : new Color(0.72f, 0.82f, 1f), 0.35f);
-            montanhas = Color.Lerp(montanhas, ar, 0.45f);
-            castelo = Color.Lerp(castelo, ar, 0.28f);
-            floresta = Color.Lerp(floresta, ar, 0.15f);
-            arvores = Color.Lerp(arvores, ar, 0.05f);
+            montanhas = Color.Lerp(montanhas, ar, 0.5f);
+            castelo = Color.Lerp(castelo, ar, 0.32f);
+            floresta = Color.Lerp(floresta, ar, 0.14f);
+            arvores = Color.Lerp(arvores, ar, 0.06f);
+            montanhas.a = castelo.a = floresta.a = arvores.a = 1f;
         }
         string sufixo = hd ? "_hd" : ""; // "fundo_castelo_hd" = a versão desfocada
 
@@ -211,20 +235,42 @@ public class Paralaxe : MonoBehaviour
         visual.sortingOrder = ordem;
     }
 
+    // Onde fica o sol (ou a lua) em relação à câmera: no alto, à ESQUERDA. É de lá que vem a luz de todos
+    // os desenhos (os blocos são claros em cima-esquerda e a sombrinha deles cai para a direita).
+    public static readonly Vector3 PosicaoDoSol = new Vector3(-8f, 11.3f, 0f);
+
     // Sol com raios de luz (de dia) ou lua com estrelas (de noite), lá longe, no canto de cima.
     // No HD-2D o sol/lua ganha uma auréola grande e suave (um "bloom" desenhado), e os raios
     // simples dão lugar aos feixes de luz (FeixesDeLuz).
-    static void SolOuLua(Transform raiz, bool noite, bool hd)
+    static void SolOuLua(Transform raiz, bool noite, bool hd, Clima clima)
     {
         Transform ceu = NovaCamada(raiz, "SolOuLua", 0.97f).transform;
         var astro = ConstrutorDeFase.Visual(noite ? "Lua" : "Sol", ceu, Vector3.zero, noite ? "lua" : "sol", -29, false);
-        astro.transform.localPosition = new Vector3(8f, 11.3f, 0f);
+        astro.transform.localPosition = PosicaoDoSol;
         astro.transform.localScale = Vector3.one * 1.4f;
+
+        if (hd && clima != Clima.Escuro)
+        {
+            // A LUZ DO SOL de verdade (luz 2D do URP): uma luz enorme e quente vinda do sol, no alto à esquerda.
+            // O canto de cima-esquerda da tela fica dourado e o de baixo-direita fica na sombra azulada da
+            // luz global (que no HD-2D é mais fraca: veja Luzes.AjustarAoVisual). É o contraste "quente x frio"
+            // do Octopath Traveler. Ela anda junto com a câmera (está na camada do sol).
+            var objetoDaLuz = new GameObject("Luz do sol");
+            objetoDaLuz.transform.SetParent(ceu, false);
+            objetoDaLuz.transform.localPosition = PosicaoDoSol + new Vector3(-2f, 2f, 0f);
+            var luz = objetoDaLuz.AddComponent<Light2D>();
+            luz.lightType = Light2D.LightType.Point;
+            luz.color = noite ? new Color(0.55f, 0.65f, 1f) : clima == Clima.Biblioteca ? new Color(1f, 0.75f, 0.45f) : new Color(1f, 0.8f, 0.52f);
+            luz.intensity = noite ? 0.3f : clima == Clima.Biblioteca ? 0.4f : 0.6f;
+            luz.pointLightOuterRadius = 30f;
+            luz.pointLightInnerRadius = 3f;
+            luz.falloffIntensity = 0.35f;
+        }
 
         if (hd)
         {
             var aureola = ConstrutorDeFase.Visual("Aureola", ceu, Vector3.zero, "hd2d_aureola", -28, false);
-            aureola.transform.localPosition = new Vector3(8f, 11.3f, 0f);
+            aureola.transform.localPosition = PosicaoDoSol;
             aureola.transform.localScale = Vector3.one * (noite ? 2.2f : 3.2f);
             var brilho = aureola.GetComponent<SpriteRenderer>();
             brilho.color = noite ? new Color(0.7f, 0.8f, 1f, 0.35f) : new Color(1f, 0.85f, 0.55f, 0.55f);
@@ -253,11 +299,19 @@ public class Paralaxe : MonoBehaviour
         for (int i = 0; i < angulos.Length; i++)
         {
             var raio = ConstrutorDeFase.Visual("RaioDeLuz", ceu, Vector3.zero, "raio_de_luz", -26, false);
-            raio.transform.localPosition = new Vector3(8f, 11.3f, 0f);
-            raio.transform.localRotation = Quaternion.Euler(0f, 0f, angulos[i]);
+            raio.transform.localPosition = PosicaoDoSol;
+            raio.transform.localRotation = Quaternion.Euler(0f, 0f, -angulos[i]); // o sol está à esquerda: os raios descem para a direita
             raio.transform.localScale = new Vector3(1.6f + i * 0.4f, 1.6f, 1f);
             raio.AddComponent<Pulsar>().fase = i * 1.7f;
         }
+    }
+
+    // Deixa a cor mais viva (fator > 1) ou mais cinza (fator < 1), mantendo a claridade.
+    static Color Saturar(Color c, float fator)
+    {
+        float cinza = c.r * 0.3f + c.g * 0.59f + c.b * 0.11f;
+        return new Color(Mathf.Clamp01(cinza + (c.r - cinza) * fator), Mathf.Clamp01(cinza + (c.g - cinza) * fator),
+                         Mathf.Clamp01(cinza + (c.b - cinza) * fator), c.a);
     }
 
     void LateUpdate()

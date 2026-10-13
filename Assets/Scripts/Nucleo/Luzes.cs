@@ -14,6 +14,13 @@ public static class Luzes
 
     static Light2D global;
     static float intensidadeAtual = 1f;
+    static Color corAtual = Color.white;
+
+    // No HD-2D, nas fases claras, a luz global (a "luz do céu") fica mais fraca e um pouco azulada:
+    // quem ilumina de verdade é o sol (a luz quente que a Paralaxe cria no alto, à esquerda).
+    // Assim o que está longe do sol fica na sombra fria e o contraste fica de cinema.
+    const float EscurecerNoHD = 0.84f;
+    static readonly Color CeuNoHD = new Color(0.86f, 0.92f, 1.05f);
     static readonly List<(Light2D luz, float intensidade)> pontos = new List<(Light2D, float)>();
 
     // Necessário porque o projeto está com "Enter Play Mode Options" (sem recarregar o domínio).
@@ -40,11 +47,24 @@ public static class Luzes
         global.intensity = intensidade;
         global.color = cor;
         intensidadeAtual = intensidade;
+        corAtual = cor;
         pontos.RemoveAll(p => p.luz == null);
         foreach (var p in pontos) Aplicar(p.luz, p.intensidade);
     }
 
     static bool Escuro => intensidadeAtual < LimiteDoEscuro;
+
+    // Chamado a cada quadro pelos EfeitosDeTela: aplica (ou tira) o "céu mais fraco" do HD-2D.
+    // Só mexe na luz global; a conta de "a fase é escura?" continua usando o valor original.
+    public static void AjustarAoVisual(bool hd)
+    {
+        if (global == null) return;
+        bool escurecer = hd && !Escuro;
+        float intensidade = escurecer ? intensidadeAtual * EscurecerNoHD : intensidadeAtual;
+        Color cor = escurecer ? corAtual * CeuNoHD : corAtual;
+        if (global.intensity != intensidade) global.intensity = intensidade;
+        if (global.color != cor) global.color = cor;
+    }
 
     static void Aplicar(Light2D luz, float intensidade)
     {

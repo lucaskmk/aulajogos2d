@@ -141,15 +141,47 @@ public static class ArteHD2D
         return sprite;
     }
 
-    // Pega um desenho que já existe (ex.: "fundo_castelo") e devolve a versão borrada dele.
+    // Pega um desenho que já existe (ex.: "fundo_castelo"), PINTA a luz nele e devolve a versão borrada.
     static Sprite VersaoDesfocada(string nome, int raio, int passadas)
     {
         Sprite original = FabricaDeSprites.Pegar(nome);
         Texture2D textura = original.texture;
         int folga = raio * passadas; // o quanto o borrado pode "vazar" para cima
-        Color32[] borrado = Desfocar(textura.GetPixels32(), textura.width, textura.height, raio, passadas, folga, 0);
+        Color32[] pintado = PintarLuz(textura.GetPixels32(), textura.width, textura.height);
+        Color32[] borrado = Desfocar(pintado, textura.width, textura.height, raio, passadas, folga, 0);
         int altura = textura.height + folga;
         return Suave(FabricaDeSprites.Procedural(textura.width, altura, FabricaDeSprites.Base, (x, y) => borrado[y * textura.width + x]));
+    }
+
+    // As camadas do fundo são silhuetas de uma cor só (o jogo pinta com a cor da fase). Para elas parecerem
+    // PINTADAS, com volume, cada pixel ganha um tom de luz antes de borrar:
+    //  - a beirada virada para o sol (em cima e à esquerda) fica clara e um pouco quente (amarelada): "rim light";
+    //  - o miolo fica mais escuro e frio (azulado), e mais ainda perto da base (onde a luz quase não chega).
+    // Como o SpriteRenderer MULTIPLICA a cor da fase por este desenho, branco = a cor cheia e cinza = sombra.
+    static Color32[] PintarLuz(Color32[] origem, int largura, int altura)
+    {
+        var resultado = new Color32[origem.Length];
+        bool Vazio(int x, int y) => y >= altura || origem[y * largura + ((x % largura) + largura) % largura].a < 128;
+        for (int y = 0; y < altura; y++)
+            for (int x = 0; x < largura; x++)
+            {
+                Color32 c = origem[y * largura + x];
+                if (c.a == 0) { resultado[y * largura + x] = c; continue; }
+                // a que distância (em pixels, na diagonal para cima-esquerda) começa o céu?
+                int distancia = 6;
+                for (int k = 1; k <= 5; k++)
+                    if (Vazio(x - k, y + k) || Vazio(x, y + k) || Vazio(x - k, y)) { distancia = k; break; }
+                float borda = Mathf.Exp(-(distancia - 1) / 1.6f);           // 1 na beirada, some em ~4 pixels
+                float base_ = Mathf.Clamp01(y / (altura * 0.6f));            // 0 embaixo, 1 do meio para cima
+                float luz = 0.6f + 0.12f * base_ + 0.4f * borda;
+                float quente = borda * 0.16f;                                // na beirada: mais vermelho, menos azul
+                resultado[y * largura + x] = new Color32(
+                    Byte(c.r / 255f * luz * (0.94f + quente)),
+                    Byte(c.g / 255f * luz * (0.96f + quente * 0.4f)),
+                    Byte(c.b / 255f * luz * (1f - quente * 0.6f)),
+                    c.a);
+            }
+        return resultado;
     }
 
     // Desenha com a fórmula "cor", borra e devolve. folgaEmCima = o borrado vaza para cima (senão para baixo).

@@ -20,7 +20,7 @@ using UnityEngine;
 public class FeixesDeLuz : MonoBehaviour
 {
     const float Fator = 0.85f;         // paralaxe: 1 = parado na tela, 0 = anda junto com a fase
-    const float Angulo = -27f;         // inclinação dos feixes (negativo = descem para a esquerda; o sol fica à direita)
+    const float Angulo = 27f;          // inclinação dos feixes (positivo = descem para a direita; o sol fica à esquerda)
     const float Comprimento = 8f;      // comprimento do desenho do feixe, em blocos (128 pixels / 16)
     const int OrdemDosFeixes = -12;    // na frente das árvores e da neblina, atrás das nuvens e da fase
 
@@ -143,20 +143,21 @@ public class FeixesDeLuz : MonoBehaviour
         float meiaTela = cam.orthographicSize * cam.aspect;
         float topo = posCam.y + cam.orthographicSize + 1.5f; // os feixes nascem um pouco acima da tela
         float t = Time.time;
-        // A "volta" é um pouco mais larga que a tela + o quanto o feixe anda para a esquerda ao descer.
+        // A "volta" é um pouco mais larga que a tela + o quanto o feixe anda para a direita ao descer.
         // O feixe é esticado até atravessar a tela inteira na diagonal.
         // (calculado a cada quadro porque o tamanho da câmera muda de uma fase para outra)
         float vao = meiaTela * 2f + 14f;
         float escalaY = (cam.orthographicSize * 2f + 4f) / Comprimento / Mathf.Cos(Angulo * Mathf.Deg2Rad);
 
-        // direção do feixe (para baixo e para a esquerda) e a direção "de lado" (perpendicular a ele)
+        // direção do feixe (para baixo e para a direita) e a direção "de lado" (perpendicular a ele)
         float rad = Angulo * Mathf.Deg2Rad;
         Vector2 descida = new Vector2(Mathf.Sin(rad), -Mathf.Cos(rad));
         Vector2 lado = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
         float comprimentoReal = Comprimento * escalaY;
 
-        // onde o "vão" começa na tela: da beirada esquerda até passar da direita
-        float inicio = posCam.x - meiaTela - 2f;
+        // onde o "vão" começa: bem antes da beirada esquerda (o feixe nasce lá e desce para a direita)
+        // até um pouco depois da direita
+        float inicio = posCam.x - meiaTela - 12f;
         float deslocamento = posCam.x * Fator; // paralaxe
 
         // A cor e a força de agora: de dia o sol fica alaranjado no entardecer; nuvem na frente do sol apaga os raios.
