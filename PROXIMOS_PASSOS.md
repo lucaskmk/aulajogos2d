@@ -83,6 +83,22 @@ Sprites que o mapa já espera (precisam existir): `mangual`, `vento`, `bloco_rit
 - A fase: aquecimento curto, depois um checkpoint `s`, a arena começando no `w` e, no fim, a Emilia `L` (ao encostar nela, o jogo é zerado).
 - Pode mudar a barra de vida em `Interface.DesenharVidaDoChefe` para mostrar "ETAPA 2/3".
 
+## Atalhos de teste e visual (novo)
+- **F9 no mapa:** libera todas as fases, os chefes e a secreta, só na partida atual. Um Novo Jogo volta tudo para a névoa.
+- **F10 (ou a tecla à esquerda do 1):** painel de gráficos. Liga/desliga cada efeito e mostra o FPS e o pior quadro. O título mostra "visual v3".
+- **Menu de pausa, "Gráficos: HD-2D / Simples":** o Simples desliga os efeitos pesados.
+- **Console da Unity ao dar Play:** precisa aparecer `[Re:CILADA] visual v3 (HD-2D escuro) rodando...`. Se não aparecer, tem erro vermelho no Console e a Unity está rodando os scripts antigos.
+- **Visual v3:**
+  - blocos novos (`ArteDosBlocos.cs`);
+  - fundo desfocado, raios de sol, sombras de nuvens, vento nas plantas e tilt-shift;
+  - tela em baixa resolução com escala inteira (`TelaPixelada.cs`);
+  - os ajustes ficam em `AjustesVisuais.cs` e `EfeitosDeTela.cs`.
+- **Para conferir na Unity:**
+  - se a tela ficou escura demais;
+  - se o texto do HUD fica legível perto do sol;
+  - se a imagem sai de cabeça para baixo;
+  - quais chefes estão difíceis demais e em que ataque.
+
 ## Depois disso: revisão pela rubrica
 - **Menus:**
   - No título: Opções (volume, tela cheia, modo de jogo), Como Jogar, Créditos, Sair (fora do WebGL).
