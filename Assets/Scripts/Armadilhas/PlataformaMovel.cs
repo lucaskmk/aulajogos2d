@@ -562,11 +562,12 @@ public class PlataformaMovel : MonoBehaviour
     static void RegistrarDesenhos()
     {
         Vector2 centro = FabricaDeSprites.Centro;
-        FabricaDeSprites.Registrar("plataforma", () => FabricaDeSprites.DeArte(ArteIcone, centro));
-        FabricaDeSprites.Registrar("plataforma_esq", () => FabricaDeSprites.DeArte(ArteEsquerda, centro));
-        FabricaDeSprites.Registrar("plataforma_meio", () => FabricaDeSprites.DeArte(ArteMeio, centro));
-        FabricaDeSprites.Registrar("plataforma_dir", () => FabricaDeSprites.DeArte(Espelhar(ArteEsquerda), centro));
-        FabricaDeSprites.Registrar("plataforma_unica", () => FabricaDeSprites.DeArte(Unica(), centro));
+        // DeArteRica: o mesmo desenho em texto, mas com as rampas de pedra/madeira de ArteDosBlocos (textura e volume)
+        FabricaDeSprites.Registrar("plataforma", () => ArteDosBlocos.DeArteRica(ArteIcone, centro));
+        FabricaDeSprites.Registrar("plataforma_esq", () => ArteDosBlocos.DeArteRica(ArteEsquerda, centro));
+        FabricaDeSprites.Registrar("plataforma_meio", () => ArteDosBlocos.DeArteRica(ArteMeio, centro));
+        FabricaDeSprites.Registrar("plataforma_dir", () => ArteDosBlocos.DeArteRica(Espelhar(ArteEsquerda), centro));
+        FabricaDeSprites.Registrar("plataforma_unica", () => ArteDosBlocos.DeArteRica(Unica(), centro));
         FabricaDeSprites.Registrar("plataforma_cristal", () => FabricaDeSprites.DeArte(ArteCristal, centro));
         FabricaDeSprites.Registrar("plataforma_cristal_vermelho", () => FabricaDeSprites.DeArte(TrocarCores(ArteCristal, "le", "pr"), centro));
         FabricaDeSprites.Registrar("plataforma_cristal_amarelo", () => FabricaDeSprites.DeArte(TrocarCores(ArteCristal, "le", "yo"), centro));

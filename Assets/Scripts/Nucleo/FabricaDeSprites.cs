@@ -5,9 +5,10 @@ using UnityEngine;
 // Cria TODOS os sprites do jogo por código, sem precisar importar imagens.
 // Os personagens e os blocos são desenhados em "pixel art de texto": cada letra é uma cor
 // da paleta e '.' é transparente. Quer mudar o visual? É só editar os desenhos abaixo!
-// Serra, espinho, bandeira e nuvens são desenhados com fórmulas (procedural).
-// O visual segue o estilo dos ímãs de acrílico de Re:Zero: pedra cinza com grama por cima,
-// fundo pastel e personagens chibi.
+// Serra, bandeira e nuvens são desenhados com fórmulas (procedural).
+// Os blocos do cenário (chão, caixote, bloco "?", espinho, cano) e os enfeites do chão ficam em
+// ArteDosBlocos: pixel art com rampas de cor, luz de cima-esquerda e várias versões de cada bloco.
+// Os personagens são chibi, como nos ímãs de acrílico de Re:Zero.
 public static class FabricaDeSprites
 {
     public const int PixelsPorUnidade = 16;
@@ -211,27 +212,6 @@ public static class FabricaDeSprites
         "...vxxxxxv......",
     };
 
-    // Bloco mágico lilás com '?' dourado.
-    static readonly string[] ArteBlocoSurpresa =
-    {
-        "kkkkkkkkkkkkkkkk",
-        "kPPPPPPPPPPPPPVk",
-        "kPwVVVVVVVVVVwvk",
-        "kPVVVVyyyyVVVVvk",
-        "kPVVVyyooyyVVVvk",
-        "kPVVVVoVVyyoVVvk",
-        "kPVVVVVVyyoVVVvk",
-        "kPVVVVVyyoVVVVvk",
-        "kPVVVVVyyoVVVVvk",
-        "kPVVVVVVooVVVVvk",
-        "kPVVVVVyyVVVVVvk",
-        "kPVVVVVyyoVVVVvk",
-        "kPVVVVVVooVVVVvk",
-        "kPwVVVVVVVVVVwvk",
-        "kVvvvvvvvvvvvvvk",
-        "kkkkkkkkkkkkkkkk",
-    };
-
     static readonly string[] ArteMoeda =
     {
         "................",
@@ -330,89 +310,6 @@ public static class FabricaDeSprites
         "......kddk......",
         "......kddk......",
         "......kddk......",
-    };
-
-    // Pedra cinza em tijolões (como a base dos dioramas dos ímãs).
-    static readonly string[] ArteChao =
-    {
-        "zZZZZZzzzZZZZZzz",
-        "ZmmmmmMzZmmmmmMz",
-        "ZmmmmmMzZmmmmmMz",
-        "ZmmmmmMzZmmmmmMz",
-        "ZmmmmmMzZmmmmmMz",
-        "ZmmmmmMzZmmmmmMz",
-        "zMMMMMzzzMMMMMzz",
-        "zzzzzzzzzzzzzzzz",
-        "ZZzzzZZZZZzzzZZZ",
-        "mmMzZmmmmmMzZmmm",
-        "mmMzZmmmmmMzZmmm",
-        "mmMzZmmmmmMzZmmm",
-        "mmMzZmmmmmMzZmmm",
-        "mmMzZmmmmmMzZmmm",
-        "MMzzzMMMMMzzzMMM",
-        "zzzzzzzzzzzzzzzz",
-    };
-
-    // Grama "escorrendo" por cima da pedra.
-    static readonly string[] ArteChaoTopo =
-    {
-        "qqqqqqqqqqqqqqqq",
-        "aaaaaaaaaaaaaaaa",
-        "aagaaaaaaaaaaaaa",
-        "gggggggggggggggg",
-        "gggggggggggggggg",
-        "GGGGGGGGGGGGGGGG",
-        "GqGGqqGGGqGGqGqG",
-        "qzGqzzqGGzqqzGzq",
-        "ZZqzzZZGqZzzzqZZ",
-        "mmMzZmmqmmMzZmmm",
-        "mmMzZmmmmmMzZmmm",
-        "mmMzZmmmmmMzZmmm",
-        "mmMzZmmmmmMzZmmm",
-        "mmMzZmmmmmMzZmmm",
-        "MMzzzMMMMMzzzMMM",
-        "zzzzzzzzzzzzzzzz",
-    };
-
-    // 'B': caixote de madeira.
-    static readonly string[] ArteCaixote =
-    {
-        "dddddddddddddddd",
-        "dSnnnnnnnnnnnnSd",
-        "dbbbbbbbbbbbndbd",
-        "dbbbbbbbbbbndbbd",
-        "dbbbbbbbbbndbbbd",
-        "dddddddddndddddd",
-        "dnnnnnnnndnnnnnd",
-        "dbbbbbbndbbbbbbd",
-        "dbbbbbndbbbbbbbd",
-        "dbbbbndbbbbbbbbd",
-        "ddddnddddddddddd",
-        "dnnndnnnnnnnnnnd",
-        "dbndbbbbbbbbbbbd",
-        "dndbbbbbbbbbbbbd",
-        "dSbbbbbbbbbbbbSd",
-        "dddddddddddddddd",
-    };
-
-    static readonly string[] ArteBlocoUsado =
-    {
-        "zzzzzzzzzzzzzzzz",
-        "zmmmmmmmmmmmmmmz",
-        "zmkMMMMMMMMMMkMz",
-        "zmMMMMMMMMMMMMMz",
-        "zmMMMMMMMMMMMMMz",
-        "zmMMMMMMMMMMMMMz",
-        "zmMMMMMMMMMMMMMz",
-        "zmMMMMMMMMMMMMMz",
-        "zmMMMMMMMMMMMMMz",
-        "zmMMMMMMMMMMMMMz",
-        "zmMMMMMMMMMMMMMz",
-        "zmMMMMMMMMMMMMMz",
-        "zmMMMMMMMMMMMMMz",
-        "zmkMMMMMMMMMMkMz",
-        "zmMMMMMMMMMMMMMz",
-        "zzzzzzzzzzzzzzzz",
     };
 
     // Puck, o espírito-gatinho da Emilia: é ele quem "dá as dicas" (mentirosas) no lugar das placas.
@@ -622,7 +519,7 @@ public static class FabricaDeSprites
             case "inimigo": return DeArte(ArteInimigo, Centro);
             case "inimigo_esmagado": return DeArte(ArteInimigoEsmagado, Centro);
             case "inimigo_espinhos": return DeArte(ArteInimigoEspinhos, Centro);
-            case "bloco_surpresa": return DeArte(ArteBlocoSurpresa, Centro);
+            case "bloco_surpresa": return ArteDosBlocos.BlocoSurpresa(float.NaN);
             case "moeda": return DeArte(ArteMoeda, Centro);
             case "mola": return DeArte(ArteMola, Centro);
             case "mola_apertada": return DeArte(ArteMolaApertada, Centro);
@@ -652,15 +549,16 @@ public static class FabricaDeSprites
             case "ceu": return Procedural(1, 32, Base, CorCeu);
             case "sombra_nuvem": return Procedural(48, 20, Centro, CorSombraDaNuvem);
 
-            case "chao": return DeArte(ArteChao, Centro);
-            case "chao_topo": return DeArte(ArteChaoTopo, Centro);
-            // variações, para o chão não ficar repetitivo
-            case "chao_rachado": return DeArte(Variar(ArteChao, 11), Centro);
-            case "chao_topo_florido": return DeArte(Florir(ArteChaoTopo), Centro);
+            // O chão é desenhado em ArteDosBlocos (com grama, terra, pedra e várias versões; veja lá os nomes
+            // "chao_topo_2_eb"...). Estes nomes curtos continuam valendo para quem só quer "um bloco de chão".
+            case "chao": return Pegar("chao_pedra_0");
+            case "chao_topo": return Pegar("chao_topo_0");
+            case "chao_rachado": return Pegar("chao_pedra_1");
+            case "chao_topo_florido": return Pegar("chao_topo_3");
 
             // enfeites do cenário (sem colisão)
-            case "arbusto": return Procedural(24, 12, Base, CorArbusto);
-            case "pedra": return Procedural(12, 8, Base, CorPedra);
+            case "arbusto": return ArteDosBlocos.Arbusto();
+            case "pedra": return ArteDosBlocos.PedraDeEnfeite();
             case "cerca": return Procedural(16, 14, Base, CorCerca);
             case "lampiao": return Procedural(10, 40, Base, CorLampiao);
             case "cogumelo": return Procedural(10, 9, Base, CorCogumelo);
@@ -673,27 +571,30 @@ public static class FabricaDeSprites
             case "fundo_montanhas": return Procedural(256, 96, Base, CorMontanhas);
             case "neblina": return Procedural(1, 32, Base, CorNeblina);
             case "frente_folhas": return Procedural(128, 24, Base, CorFrente);
-            case "tijolo": return DeArte(ArteCaixote, Centro);
-            case "bloco_usado": return DeArte(ArteBlocoUsado, Centro);
-            case "tufo": return DeArte(ArteTufo, Base);
-            case "flor": return DeArte(ArteFlor, Base);
+            case "tijolo": return ArteDosBlocos.Caixote();
+            case "bloco_usado": return ArteDosBlocos.BlocoUsado();
+            case "tufo": return ArteDosBlocos.DeArteRica(ArteTufo, Base);
+            case "flor": return ArteDosBlocos.DeArteRica(ArteFlor, Base);
             case "brilho": return DeArte(ArteBrilho, Centro);
             case "poeira": return DeArte(ArtePoeira, Centro);
 
-            case "espinho": return Procedural(16, 16, Centro, CorEspinho);
+            case "espinho": return ArteDosBlocos.Espinho();
             case "serra": return Procedural(16, 16, Centro, CorSerra);
             case "bandeira": return Procedural(16, 48, Base, (x, y) => CorBandeira(x, y, false, 0));
             case "bandeira_falsa": return Procedural(16, 48, Base, (x, y) => CorBandeira(x, y, true, 0));
             case "nuvem": return Procedural(32, 18, Centro, (x, y) => CorNuvem(x, y, false));
             case "nuvem_malvada": return Procedural(32, 18, Centro, (x, y) => CorNuvem(x, y, true));
-            case "cano_topo": return Procedural(32, 16, Centro, (x, y) => CorCano(x, y, true));
-            case "cano_corpo": return Procedural(32, 16, Centro, (x, y) => CorCano(x, y, false));
+            case "cano_topo": return ArteDosBlocos.CanoDesenho(true);
+            case "cano_corpo": return ArteDosBlocos.CanoDesenho(false);
 
             // Camadas do fundo (paralaxe). São brancas/cinza: o jogo pinta com a cor de cada fase.
             case "fundo_castelo": return Procedural(384, 176, Base, CorCastelo);
             case "fundo_floresta": return Procedural(128, 112, Base, CorFloresta);
             case "fundo_arvores": return Procedural(128, 80, Base, CorArvores);
         }
+
+        // Blocos do chão com versão e bordas ("chao_topo_2_eb"): veja ArteDosBlocos.
+        if (ArteDosBlocos.TentarCriar(nome, out Sprite bloco)) return bloco;
 
         // Quadros de animação: "bandeira_2" (pano tremulando), "bloco_surpresa_brilho_3" (brilho passando).
         int sublinhado = nome.LastIndexOf('_');
@@ -703,7 +604,7 @@ public static class FabricaDeSprites
             {
                 case "bandeira": return Procedural(16, 48, Base, (x, y) => CorBandeira(x, y, false, quadro));
                 case "agua": return Procedural(16, 16, Centro, (x, y) => CorAgua(x, y, quadro));
-                case "bloco_surpresa_brilho": return DeArte(ArteBlocoSurpresa, Centro, PixelsPorUnidade, quadro * 5f);
+                case "bloco_surpresa_brilho": return ArteDosBlocos.BlocoSurpresa(quadro * 5f);
             }
         }
         throw new ArgumentException("Sprite desconhecido: " + nome);
@@ -759,23 +660,6 @@ public static class FabricaDeSprites
     // ---------------------------------------------------------------- desenhos por fórmula
 
     static int Ruido(int x, int y) => ((x * 73856093) ^ (y * 19349663) ^ 0x5bd1e995) & 0x7fffffff;
-
-    // Cano visto de lado: contorno preto e sombreado de cilindro (brilho à esquerda, sombra à direita).
-    // O topo é mais largo (a "boca" do cano); o corpo tem 2 pixels a menos de cada lado.
-    static Color32 CorCano(int x, int y, bool topo)
-    {
-        bool boca = topo && y >= 5;
-        int x0 = boca ? 0 : 2, x1 = boca ? 31 : 29;
-        if (x < x0 || x > x1) return Transparente;
-        if (x == x0 || x == x1) return Cor('k');
-        if (boca && (y == 15 || y == 5)) return Cor('k');
-        float t = (x - x0) / (float)(x1 - x0);
-        if (t < 0.12f) return Cor('g');
-        if (t < 0.3f) return Cor('a');
-        if (t < 0.55f) return Cor('g');
-        if (t < 0.8f) return Cor('G');
-        return Cor('q');
-    }
 
     // Fundo: "Cheio" é a silhueta, "Detalhe" um pouco mais escuro (janelas, sombras).
     static readonly Color32 Cheio = new Color32(255, 255, 255, 255);
@@ -867,19 +751,6 @@ public static class FabricaDeSprites
         return Transparente;
     }
 
-    static Color32 CorEspinho(int x, int y)
-    {
-        // dois espinhos triangulares lado a lado
-        int indice = x / 8;
-        float centro = indice * 8 + 3.5f;
-        float distancia = Mathf.Abs(x - centro);
-        float meiaLargura = 4f * (1f - y / 14f);
-        if (y > 14 || distancia > meiaLargura) return Transparente;
-        bool borda = meiaLargura - distancia < 1.1f || y == 0;
-        if (borda) return Cor('S');
-        return x < centro ? Cor('w') : Cor('s');
-    }
-
     static Color32 CorSerra(int x, int y)
     {
         float dx = x - 7.5f, dy = y - 7.5f;
@@ -963,56 +834,9 @@ public static class FabricaDeSprites
         return Cor('Z');
     }
 
-    // ---------------------------------------------------------------- variações do chão
-
-    // Rachaduras: troca alguns pixels da pedra pelo rejunte, num desenho que depende da semente.
-    static string[] Variar(string[] arte, int semente)
-    {
-        var nova = (string[])arte.Clone();
-        for (int y = 2; y < nova.Length - 2; y++)
-        {
-            char[] linha = nova[y].ToCharArray();
-            for (int x = 1; x < linha.Length - 1; x++)
-                if (linha[x] == 'm' && Ruido(x + semente, y * 3) % 17 == 0) linha[x] = 'z';
-            nova[y] = new string(linha);
-        }
-        return nova;
-    }
-
-    // Florzinhas na grama do topo do chão.
-    static string[] Florir(string[] arte)
-    {
-        var nova = (string[])arte.Clone();
-        char[] linha = nova[1].ToCharArray();
-        linha[3] = 'p'; linha[11] = 'y';
-        nova[1] = new string(linha);
-        linha = nova[2].ToCharArray();
-        linha[3] = 'G'; linha[11] = 'G';
-        nova[2] = new string(linha);
-        return nova;
-    }
-
     // ---------------------------------------------------------------- enfeites
 
     static bool Bolinha(int x, int y, float cx, float cy, float r) => (x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r;
-
-    static Color32 CorArbusto(int x, int y)
-    {
-        bool Dentro(int a, int b) => b >= 0 && (Bolinha(a, b, 6f, 4f, 5f) || Bolinha(a, b, 12f, 5.5f, 6f) || Bolinha(a, b, 18f, 4f, 5f));
-        if (!Dentro(x, y)) return Transparente;
-        if (!Dentro(x + 1, y) || !Dentro(x - 1, y) || !Dentro(x, y + 1)) return Cor('q');
-        if (Bolinha(x, y, 10f, 9f, 2f) || Bolinha(x, y, 5f, 6.5f, 1.5f)) return Cor('a');
-        return y < 4 ? Cor('G') : Cor('g');
-    }
-
-    static Color32 CorPedra(int x, int y)
-    {
-        bool Dentro(int a, int b) => b >= 0 && ((a - 5.5f) * (a - 5.5f) / 30f + b * b / 42f <= 1f);
-        if (!Dentro(x, y)) return Transparente;
-        if (!Dentro(x + 1, y) || !Dentro(x - 1, y) || !Dentro(x, y + 1)) return Cor('z');
-        if (x < 5 && y > 3) return Cor('Z');
-        return x > 7 ? Cor('M') : Cor('m');
-    }
 
     static Color32 CorCerca(int x, int y)
     {
@@ -1116,6 +940,22 @@ public static class FabricaDeSprites
         string nome = $"degrade:{topo}|{baixo}";
         if (cache.TryGetValue(nome, out Sprite pronto) && pronto != null) return pronto;
         Sprite sprite = Procedural(1, 64, Base, (x, y) => Color32.Lerp(baixo, topo, y / 63f));
+        sprite.name = nome;
+        cache[nome] = sprite;
+        return sprite;
+    }
+
+    // Céu com 3 cores (em cima -> no meio -> embaixo): o do HD-2D.
+    public static Sprite Degrade(Color32 topo, Color32 meio, Color32 baixo)
+    {
+        string nome = $"degrade:{topo}|{meio}|{baixo}";
+        if (cache.TryGetValue(nome, out Sprite pronto) && pronto != null) return pronto;
+        Sprite sprite = Procedural(1, 64, Base, (x, y) =>
+        {
+            float t = y / 63f; // 0 embaixo, 1 em cima
+            // o meio fica um pouco abaixo da metade: a parte azul de cima ocupa mais espaço
+            return t < 0.4f ? Color32.Lerp(baixo, meio, t / 0.4f) : Color32.Lerp(meio, topo, (t - 0.4f) / 0.6f);
+        });
         sprite.name = nome;
         cache[nome] = sprite;
         return sprite;

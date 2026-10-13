@@ -39,14 +39,24 @@ public static class ConstrutorDeFase
         // também tem bloco firme, ela fica toda escondida atrás deles: nem precisa existir (economiza um desenho).
         bool Firme(char c) => c == '#' || c == 'B';
         bool SombraEscondida(int x, int linha) => Firme(Celula(x + 1, linha)) && Firme(Celula(x, linha + 1)) && Firme(Celula(x + 1, linha + 1));
-        // De vez em quando um bloco com rachadura ou com florzinha, para o chão não ficar repetitivo.
-        // (escolhido pela posição: o chão falso e o que cai continuam IGUAIS ao de verdade)
+        // O desenho de cada bloco de chão (veja ArteDosBlocos):
+        //  - o TIPO vem da profundidade: grama em cima, terra logo abaixo, pedra mais para o fundo;
+        //  - a VERSÃO (pedrinhas, raízes, musgo, florzinhas) é sorteada pela posição, para não repetir;
+        //  - as BORDAS abertas (sem chão do lado ou embaixo) ganham contorno e sombra, como um barranco.
+        // Tudo escolhido pela posição: o chão falso e o que cai continuam IGUAIS ao de verdade.
+        // (fora do mapa, nos lados e embaixo, conta como chão: a beirada da fase não ganha contorno)
+        // (o mangual ENTERRADO, 'Q' ou 'q' com chão em cima, também conta: senão a borda entregaria a pegadinha)
+        bool Enterrado(int x, int linha) => (Celula(x, linha) == 'Q' || Celula(x, linha) == 'q') && PareceChao(Celula(x, linha - 1));
+        bool ChaoEm(int x, int linha) => x < 0 || x >= largura || linha >= altura || PareceChao(Celula(x, linha)) || Enterrado(x, linha);
         string SpriteDoChao(int x, int linha)
         {
-            bool topo = !PareceChao(Celula(x, linha - 1));
-            bool variado = (x * 7 + linha * 13) % 9 == 0;
-            if (topo) return variado ? "chao_topo_florido" : "chao_topo";
-            return variado ? "chao_rachado" : "chao";
+            int profundidade = 0;
+            while (profundidade < 2 && linha - 1 - profundidade >= 0
+                   && (PareceChao(Celula(x, linha - 1 - profundidade)) || Enterrado(x, linha - 1 - profundidade)))
+                profundidade++;
+            int sorteio = ((x * 37 + linha * 11 + (x / 3) * 5) % 8 + 8) % 8;
+            int versao = sorteio < 7 ? sorteio % 3 : 3; // a versão 3 (com flores no topo) aparece menos
+            return ArteDosBlocos.NomeDoChao(profundidade, versao, !ChaoEm(x - 1, linha), !ChaoEm(x + 1, linha), !ChaoEm(x, linha + 1));
         }
 
         // Todo o chão firme vira UM colisor só (CompositeCollider2D).
