@@ -13,44 +13,49 @@ public static class Textos
         public string texto;  // {0} vira o número de mortes na fase
     }
 
-    static Fala Puck(string texto) => new Fala { quem = "Puck", sprite = "puck", texto = texto };
-    static Fala Emilia(string texto) => new Fala { quem = "Emilia", sprite = "emilia", texto = texto };
-    static Fala Beatrice(string texto) => new Fala { quem = "Beatrice", sprite = "beatrice", texto = texto };
+    static Fala Louro(string texto) => new Fala { quem = "Louro", sprite = "louro", texto = texto };
+    static Fala Marina(string texto) => new Fala { quem = "Marina", sprite = "sereia", texto = texto };
+    static Fala Doris(string texto) => new Fala { quem = "Dóris", sprite = "fantasma", texto = texto };
 
     // Uma fala para depois de cada fase, pelo NOME da fase (assim dá para reordenar as fases à vontade).
+    // Mudou o nome de uma fase em Fases.cs? Mude aqui também (senão aparece a FalaPadrao).
     static readonly Dictionary<string, Fala> DepoisDaFase = new Dictionary<string, Fala>
     {
-        { "Bem-vindo :)", Puck("Viu só? Tranquilo! Só {0} morte(s)... por enquanto.") },
-        { "Confia em mim", Puck("Eu disse \"confia em mim\". Você confiou. {0} vez(es).") },
-        { "Corre!", Emilia("Subaru, você estava fugindo de uma SERRA? Toma cuidado, tá?") },
-        { "O Final (sem pegadinhas)", Puck("\"O Final (sem pegadinhas)\". Hahaha. Você acreditou mesmo?") },
-        { "Eu mudo de ideia", Puck("Pegou TODAS as moedas? Dizem que isso abre um caminho escondido...") },
-        { "Cadê a direita?", Puck("Esquerda é direita, direita é esquerda. {0} morte(s). Faz sentido.") },
-        { "Foge, bloco!", Beatrice("Hmpf. Você está chegando perto da minha biblioteca, de fato.") },
-        { "Ponte para a Capital", Puck("Vermelho cai, amarelo dispara. E você caiu {0} vez(es). Anotou?") },
-        { "Biblioteca Proibida", Beatrice("Você achou a porta certa. Não que eu estivesse esperando, kashira.") },
-        { "Oni de Cabelo Azul", Puck("Venceu a Rem! Ela mandou pedir desculpas pelas {0} vez(es). Mentira, ela não mandou.") },
-        { "Voa, Barusu!", Puck("A Ram mandou dizer: \"Barusu voou {0} vez(es). Previsível.\"") },
-        { "Dança das Gêmeas", Puck("Tic, tic, TAC... e você caiu {0} vez(es). A Ram mandou dizer que você dança muito mal.") },
-        { "A Caçadora de Entranhas", Puck("Venceu a Elsa! Ela só viu suas entranhas {0} vez(es). E disse que volta. Ela SEMPRE volta.") },
-        { "Eu Te Amo (CORRE!)", Puck("A Bruxa te abraçou {0} vezes. Ela gosta MESMO de você, hein? Eu ficaria preocupado.") },
-        { "O Verdadeiro Final (juro)", Puck("Ops. Esqueci de falar da Baleia Branca. Boa sorte! :)") },
+        { "Bem-vindo :)", Louro("Viu só? Tranquilo! Só {0} morte(s)... por enquanto. Currupaco!") },
+        { "Confia em mim", Louro("Eu disse \"confia em mim\". Você confiou. {0} vez(es).") },
+        { "Corre!", Marina("Grumete, você estava fugindo de uma SERRA? Toma cuidado, tá?") },
+        { "O Final (sem pegadinhas)", Louro("\"O Final (sem pegadinhas)\". Hahaha. Você acreditou mesmo?") },
+        { "Eu mudo de ideia", Louro("Pegou TODAS as moedas? Dizem que isso abre um caminho escondido...") },
+        { "Cadê a direita?", Louro("Bombordo é estibordo, estibordo é bombordo. {0} morte(s). Faz sentido.") },
+        { "Foge, bloco!", Doris("Buuu. Você está chegando perto das minhas cabines.") },
+        { "Ponte para o Porto", Louro("Vermelho cai, amarelo dispara. E você caiu {0} vez(es). Anotou?") },
+        { "Cabines Assombradas", Doris("Você achou a porta certa. Não que eu estivesse esperando. Buuu.") },
+        { "A Capitã Âncora", Louro("Venceu a Capitã! Ela mandou pedir desculpas pelas {0} vez(es). Mentira, ela não mandou.") },
+        { "Vento em Popa!", Louro("O vento mandou dizer: \"o grumete voou {0} vez(es). Previsível.\"") },
+        { "Dança das Marés", Louro("Tic, tic, TAC... e você caiu {0} vez(es). A maré mandou dizer que você dança muito mal.") },
+        { "A Cozinheira do Porão", Louro("Venceu a Cozinheira! Ela quase te cozinhou {0} vez(es). E disse que volta. Ela SEMPRE volta.") },
+        { "A Maré Negra (CORRE!)", Louro("A Maré Negra te pegou {0} vezes. Ela gosta MESMO de você, hein? Eu ficaria preocupado.") },
+        { "O Verdadeiro Final (juro)", Louro("Ops. Esqueci de falar da Baleia Branca. Boa sorte! :)") },
     };
 
     // Fala genérica para uma fase sem fala própria.
-    static readonly Fala FalaPadrao = Puck("Passou! Com só {0} morte(s). Eu tô impressionado. Um pouco.");
+    static readonly Fala FalaPadrao = Louro("Passou! Com só {0} morte(s). Eu tô impressionado. Um pouco.");
 
     public static readonly Fala SecretaLiberada =
-        Puck("Todas as moedas?! Abriu um caminho no lago! Aperte S no ponto 5.");
+        Louro("Todas as moedas?! Abriu um caminho na lagoa! Aperte S no ponto 5.");
 
     public static readonly Fala DepoisDaSecreta =
-        Puck("Você achou a fase secreta! Sério, como? Nem eu lembrava dela.");
+        Louro("Você achou a ilha secreta! Sério, como? Nem eu lembrava dela.");
+
+    // A fala do modo de teste (F9 no mapa).
+    public static readonly Fala ModoDeTeste =
+        Louro("Modo de teste! Liberei o mapa inteiro, até a Baleia. Não conta pra ninguém. :3");
 
     static readonly Fala[] SemMorrer =
     {
-        Puck("Nenhuma morte?! Suspeito de hack."),
-        Emilia("Nenhuma vez? Subaru, você é incrível!"),
-        Beatrice("Sem morrer? Que sorte irritante, de fato."),
+        Louro("Nenhuma morte?! Suspeito de hack."),
+        Marina("Nenhuma vez? Grumete, você é incrível!"),
+        Doris("Sem morrer? Que sorte irritante. Buuu."),
     };
 
     public static Fala Escolher(int faseConcluida, int mortes)
@@ -61,6 +66,9 @@ public static class Textos
     }
 
     // ------------------------------------------------------------------ créditos
+
+    // O nome do jogo (o logo do título e dos créditos).
+    public const string NomeDoJogo = "CILADA À VISTA!";
 
     // ===== NOMES DA EQUIPE: troque "Integrante 1" ... "Integrante 4" pelos nomes de vocês. =====
     // Eles aparecem logo no começo dos créditos (dá para pôr mais ou menos nomes: é só uma lista).
@@ -80,33 +88,27 @@ public static class Textos
 
     static string[] MontarCreditos()
     {
-        var linhas = new List<string> { "Re:CILADA!", "", "EQUIPE" };
+        var linhas = new List<string> { NomeDoJogo, "", "EQUIPE" };
         linhas.AddRange(Equipe);
         linhas.AddRange(new[]
         {
             "",
-            "UM JOGO DE FÃ",
+            "UM JOGO ORIGINAL",
             "Trabalho de faculdade, sem fins lucrativos.",
-            "Re:Zero - Começando a Vida em Outro Mundo",
-            "pertence a Tappei Nagatsuki, Kadokawa e White Fox.",
-            "Personagens e nomes são dos seus donos.",
-            "",
-            "ÁUDIOS DO ANIME RE:ZERO",
-            "O som do Retorno pela Morte",
-            "e o trecho da OST que toca quando você morre",
-            "são do anime Re:Zero (direitos dos donos).",
+            "Personagens, fases e história criados pela equipe.",
             "",
             "FEITO PELA EQUIPE",
             "Programação, fases e pegadinhas",
             "Pixel art desenhada por código",
-            "Música orquestral original (piano e cordas)",
-            "gerada por código",
-            "Efeitos sonoros 8-bit gerados por código",
+            "Música original gerada por código",
+            "(as fases, o mapa e uma música para cada chefe)",
+            "Efeitos sonoros gerados por código",
             "",
             "INSPIRADO EM",
-            "Re:Zero (Tappei Nagatsuki)",
-            "Cat Mario e Level Devil",
+            "Cat Mario e Level Devil (as pegadinhas)",
             "Super Mario World (o mapa)",
+            "Helltaker (as lutas de chefe)",
+            "Moby Dick, de Herman Melville (a Baleia Branca)",
             "",
             "FEITO EM UNITY 6",
             "",
@@ -147,7 +149,7 @@ public static class Textos
             {
                 new LinhaDeAjuda("A/D ou SETAS", "andar"),
                 new LinhaDeAjuda("ESPAÇO, W ou CIMA", "pular (segure para pular mais alto)"),
-                new LinhaDeAjuda("S ou BAIXO", "entrar nas portas da Beatrice"),
+                new LinhaDeAjuda("S ou BAIXO", "entrar nas portas das cabines"),
                 new LinhaDeAjuda("R", "reiniciar do save (conta como morte. Óbvio.)"),
                 new LinhaDeAjuda("ESC", "pausar o jogo / voltar nos menus"),
                 new LinhaDeAjuda("ENTER", "confirmar (pula a animação da morte)"),
@@ -162,13 +164,27 @@ public static class Textos
             linhas = new[]
             {
                 new LinhaDeAjuda("NADA É O QUE PARECE", "chão, moedas, nuvens... até a bandeira pode mentir."),
-                new LinhaDeAjuda("MORRER FAZ PARTE", "é o Retorno pela Morte: você volta e tenta de novo."),
-                new LinhaDeAjuda("PLACAS DO PUCK", "leia as dicas... ou não confie nelas. :)"),
+                new LinhaDeAjuda("MORRER FAZ PARTE", "é a Volta da Maré: você volta e tenta de novo."),
+                new LinhaDeAjuda("O LOURO", "o papagaio dá dicas... não confie nelas. :)"),
                 new LinhaDeAjuda("CRISTAL DE SAVE", "encostou, você renasce ali. Às vezes ele muda de lugar."),
                 new LinhaDeAjuda("CHEFES", "desvie e, quando ele ficar tonto, PULE NA CABEÇA dele!"),
                 new LinhaDeAjuda("ETAPAS DO CHEFE", "cada etapa vencida vale como checkpoint da luta."),
                 new LinhaDeAjuda("BARRA NO TOPO", "o quanto falta até a bandeira (a mais longe, hehe)."),
                 new LinhaDeAjuda("SALVAR", "o jogo salva sozinho: dá para sair e Continuar depois."),
+            },
+        },
+        new PaginaDeAjuda
+        {
+            titulo = "RECORDES E MEDALHAS",
+            linhas = new[]
+            {
+                new LinhaDeAjuda("RECORDES", "cada fase guarda o seu melhor tempo, menos mortes e mais moedas."),
+                new LinhaDeAjuda("TEMPO", "conta desde que você entra pelo mapa (as mortes contam!)."),
+                new LinhaDeAjuda("MEDALHA DO RELÓGIO", "passar a fase dentro do tempo da meta."),
+                new LinhaDeAjuda("MEDALHA DO CORAÇÃO", "passar a fase sem morrer nenhuma vez."),
+                new LinhaDeAjuda("MEDALHA DA MOEDA", "pegar TODAS as moedas numa tentativa só."),
+                new LinhaDeAjuda("NO MAPA", "as medalhas ficam do lado de cada fase (apagada = falta)."),
+                new LinhaDeAjuda("VALEM PARA SEMPRE", "um Novo jogo não apaga recordes nem medalhas."),
             },
         },
     };

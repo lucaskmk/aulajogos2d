@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 'E' - Mabeast que anda de um lado para o outro. Pule em cima para derrotá-lo;
+// 'E' - caranguejo que anda de um lado para o outro. Pule em cima para derrotá-lo;
 // encostar de lado é morte. Se passar do jogador, dá meia-volta e vem atrás dele.
 // 'e' - IGUALZINHO, mas "espinhoso": quando você pisa, brotam espinhos e quem morre é você.
 public class Inimigo : MonoBehaviour
@@ -19,8 +19,8 @@ public class Inimigo : MonoBehaviour
     ContactFilter2D filtroSolido;
     readonly List<Collider2D> encostados = new List<Collider2D>();
 
-    // Inimigo ou coelho? (o jogador não "pisa no chão" em cima deles, e armadilhas não batem neles como se fossem parede)
-    public static bool EhBicho(Collider2D outro) => outro.TryGetComponent<Inimigo>(out _) || outro.TryGetComponent<Coelho>(out _);
+    // Inimigo ou rato? (o jogador não "pisa no chão" em cima deles, e armadilhas não batem neles como se fossem parede)
+    public static bool EhBicho(Collider2D outro) => outro.TryGetComponent<Inimigo>(out _) || outro.TryGetComponent<Rato>(out _);
 
     void Awake()
     {
@@ -105,7 +105,7 @@ public class Inimigo : MonoBehaviour
         corpo.simulated = false;
         jogador.Quicar(11f, true);
         GerenciadorDoJogo.Som("pisao");
-        Conquistas.Contar("mabeast", 10);
+        Conquistas.Contar("caranguejos", 10);
         Destroy(gameObject, 0.5f);
     }
 }

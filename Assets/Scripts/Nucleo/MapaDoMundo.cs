@@ -3,88 +3,88 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // O mapa do mundo (estilo Super Mario World): cada ponto é uma fase, ligados por caminhos.
-// O Subaru anda de ponto em ponto; em cada ponto fica o "personagem" daquela fase.
+// O Grumete anda de ponto em ponto; em cada ponto fica o "personagem" daquela fase.
 //
-// O mapa começa coberto pela NÉVOA (o miasma da Bruxa): você só enxerga em volta das fases
+// O mapa começa coberto pela NÉVOA (a névoa do alto-mar): você só enxerga em volta das fases
 // que já liberou. Ninguém sabe onde fica a última fase até chegar lá. Quando passa de fase,
 // a névoa vai sumindo ao longo do caminho novo e o ponto da próxima fase aparece.
 // Quando a última fase (o covil da Baleia Branca) aparece, a névoa do mapa INTEIRO vai embora.
 //
 // Cores dos pontos: verde = já passou nesta partida, amarelo = liberada.
 // Embaixo de cada ponto, uma caveira com quantas vezes você morreu nela nesta partida.
-// Tem também uma fase SECRETA numa ilha do lago (aparece quando você pega todas as moedas da fase 5).
+// Tem também uma fase SECRETA numa ilhota da lagoa (aparece quando você pega todas as moedas da fase 5).
 // Quem lê as teclas é o GerenciadorDoJogo; aqui só tem o desenho, a névoa e a caminhada.
 //
 // A ARTE (visual v3, o mesmo acabamento das fases) fica em outros arquivos:
-//  - ArteDoMapa: o chão inteiro numa imagem só (grama, praias, água funda, abismo), o caminho e as pontes;
-//  - ArteDoMapaEnfeites: árvores, casas, castelo, montanhas... e as sombras deles no chão;
+//  - ArteDoMapa: o chão inteiro numa imagem só (grama, praias, mar fundo, abismo), o caminho e as pontes;
+//  - ArteDoMapaEnfeites: palmeiras, casas, castelo, forte, navios, rochedos... e as sombras deles no chão;
 //  - NevoaDoMapa: a névoa macia que respira; VidaDoMapa: água, fumaça, bandeiras, bichinhos e folhas;
-//  - Vento: árvores, flores e capim balançando.
+//  - Vento: palmeiras, flores e capim balançando.
 public class MapaDoMundo : MonoBehaviour
 {
     // O mapa é desenhado em texto, igual às fases. Cada caractere é um bloco.
-    //  .  grama            +  caminho           =  ponte (caminho por cima da água)
-    //  ~  água             T  árvore            ^  montanha
-    //  h  casa             f  flores            M  mansão do Roswaal (a base do desenho fica aqui)
-    //  K  castelo real da capital (o mesmo desenho da mansão, só que branco)
+    //  .  chão (grama)     +  caminho           =  ponte de madeira (caminho por cima do mar)
+    //  ~  mar              T  palmeira          ^  rochedo
+    //  h  casa do porto    f  flores            M  o forte da Capitã (a base do desenho fica aqui)
+    //  K  o castelo do porto
     //  a  abismo (o fundo do desfiladeiro)      #  ponte de corda (caminho por cima do abismo)
-    //  o  pedra            R  ruína             *  cristal
-    //  p  pinheiro sombrio (da região escura)   L  torre da Biblioteca Proibida
-    //  Y  a Grande Árvore Flügel (perto do covil da Baleia Branca)
+    //  o  pedra            R  naufrágio         *  baú do tesouro
+    //  p  palmeira morta (das ilhas do Kraken)  L  o navio fantasma das Cabines Assombradas
+    //  Y  a Rocha da Caveira (perto do covil da Baleia Branca)
+    //  n  um navio pirata navegando (fica no mar)                l  o farol do porto
     //  c  céu (o horizonte lá em cima, com as camadas de paralaxe; a névoa não cobre)
     //  1 a 9, A a G  as fases (A = 10, B = 11 ... G = 16). O caminho de '+', '=' e '#' tem que ligar
     //         o 1 ao 2, o 2 ao 3, e assim por diante (o 9 ao A, o A ao B...).
     //         Cuidado: dois caminhos encostados viram um atalho (a busca anda nas 4 direções).
     //  S  a fase secreta (ligada por caminho ao ponto da Fases.FaseDoSegredo)
     //
-    // A viagem, da esquerda para a direita:
-    //   a capital com o castelo real (1), o rio, a floresta (2 e 3), os morros (4),
-    //   o lago com a ilha secreta (5), o campo de flores e a mansão do Roswaal (6),
-    //   a aldeia e a floresta dos mabeasts (7), as ruínas na beira do desfiladeiro (8),
-    //   o abismo com a mesa de pedra no meio (9) e a beirada do vento (10),
-    //   a Biblioteca Proibida (11) e as montanhas de cristal (12),
-    //   a região sombria (13, 14 e 15) e, lá longe, no mar escuro, o covil da Baleia Branca (16).
+    // A viagem é de ilha em ilha, da esquerda para a direita (as pontes de madeira atravessam os estreitos):
+    //   a Ilha do Porto, com o castelo e o farol (1); a Ilha da Selva, cheia de palmeiras (2, 3 e 4);
+    //   a Ilha da Lagoa, com a ilhota secreta (5), o forte da Capitã (6) e a vila (7);
+    //   a Ilha do Desfiladeiro (8), com a mesa de pedra no meio do abismo (9) e a beirada do vento (10),
+    //   que continua nos rochedos do navio fantasma das Cabines Assombradas (11) e dos baús de tesouro (12);
+    //   as ilhas mortas do Kraken (13, 14 e 15) e, lá longe, no mar escuro, o covil da Baleia Branca (16).
     // As 3 primeiras linhas são o céu. As 4 últimas ficam atrás da faixa escura da interface:
-    // lá embaixo é só enfeite (nenhum ponto).
+    // lá embaixo é só enfeite (nenhum ponto): o mar aberto, com navios passando.
     static readonly string[] Desenho =
     {
             "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
             "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
             "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-            "............~~.T.TT...TTTTT.......^.^....T.T..T...T.................aaaaaaa...^^.^^^^^^....^.p.p.^pp..pp^^.p..^^",
-            "h...........~~.....TTT.TT..TT^.........f.f.T.....Tf..........R.R...aaaaaaaaa...^....^.^^^^^^.......R...^.p.p^p..",
-            "...........~~.T....T.TTTT.TTT++4++^^...T..Tf.T.T..T...............aaaaaoaaaaa.^^^.L..^^^^........p.p^....p......",
-            ".....K.....~~+++2+++.TTTTT.TT+...+^^......f......f............+++8+###+..aaa.o^^^......^^^^..D+++p.......p......",
-            ".h.....h.h.~~+T....+..T..TT..+...+..++++++++++++++f....M......+....aaa+.oaaa..^o++B++^.....^.+..+.....F+++......",
-            "..........~~.+TT...+.T....T..+.^^+^.+...f.....f..+.f.......h..+.R..aa.+..aaao.^.+...+.^^.^^^.+p.+.p...+..+......",
-            "h...1+++++==++.T.T.+TTTT.T++++..^+++5...~~~~~....++++++6++....+..oRaaa+..aa...^o+.^^+....+++++.p+pRpp.+.p+..Y..~",
-            "...........~~..TT.T+T....T+TT....^..+.~~~~~~~~~~..fff....+.hfh+....oaa+9+aaa...o+...+....+^^.p.p++..+++pp+..~~~~",
-            ".h.h..h.h..~~.TT..T+++....+.T....^..+~~~~~..~~~~~f.ffff..+....+..R.aaa..+aaao...+^^.+^...+.p.pRp.+..+ppR.+~~~~~~",
-            "....f.......~~TTTTTT.+....+TT^^.^...=====+S..~~~~...f.f..+f...+....aaa.o+aaa....+^^*+++C++^......+..+p..~=~~~~~~",
-            "..h.h..h.h..~~T..TTTT++3+++^T.......~~~~~~..~~~~~...T....+++7++o..oaaaa.+###++A++....^....^....p.E+++pp~~=~~~~~~",
-            ".ff...f.....~~.TTT.TTT....TTT^^....^.~~~~~~~~~~~~.T..TTT..T.....TT.aaaaaaaaaa....^.^..^.^^^.p.p.....p.~~~=~~..~~",
-            ".h...h..h..~~.TTTTTT..T.T.T.T....^^...~~~~~~~~~~f...ff..TTTT..T.hTaaaaaaaaaa..^^^..^^..^^...R.p..p...~~~~===G..~",
-            "..........T~~..TT.T..TT.TT.T..T^^^....f.~~~~~~~f.Tff...T..T.h.TT.T.aaaaaaaaa....*^^^.^.^^^.^pp....p.~~~~~~~...~~",
-            ".T.h.Th...~~..TT.TT...TT.TTTTTT^.^^.fffff..f~~~f.f...T...T..TTTT.TTaaaaaaaaaa.^o^.^^^^.^^^.p^p...p.~~~~~~~~~~~~~",
-            "..T.T..T.h~~..TTTTTTTT..TTTTT....^..f......f~~~fT..T.fTTTT..T...TT..aaaaaaaao...^*^^...^...^p....p.~~~~~~~~~~~~~",
-            ".h..f......~~..TTTTTT..TTTTTT.^^...^.ff.....~~ff.f....f.T.T.TTTT.TT.aaaaaaa....^^^^^^.^.^^.^..p...~~~~~~~~~~~~~~",
-            "..f..T.....~~.TT.....TTTT.T.^T.......f.f...f~~f.f.TT.T..TTT.TTTT..Taaaaaaaaa.o.*.^....^.^.^.^.p...~~~~~~~~~~~~~~",
+            "~~........~~~~~~~TT...TTTTT~~~~...~~~....T~~T.T~~n~...........~~~~..aaaaaaa..~~^.^~~~~^...~~.p.p.~~~~.pp^^.p..^~",
+            "h.........~~~~.....TTT.TT..TT^....~~...f.f.T.....Tf..........R.~~..aaaaaaaaa...^....^.^^^^~~.......R...^.p.p^p..",
+            "..........~~~.T....T.TTTT.TTT++4++~~...T..Tf.T.T..T............~~.aaaaaoaaaaa.^^^.L..^^^^.~~.....p.p^....p......",
+            ".....K....~~~+++2+++.TTTTT.TT+...+~~......f......f............+==8+###+..aaa.o^^^......^^^~~.D+++p.......p......",
+            ".h.....h.h~~~+T....+..T..TT..+...+~~++++++++++++++f....M......+~~..aaa+.oaaa..^o++B++^....~~.+..+.....F+++......",
+            "..........~~~+TT...+.T....T..+.^^+~~+...f.....f..+.f.......h..+~~..aa.+..aaao.^.+...+.^^.^~~.+p.+.p...+..+......",
+            "h...1+++++===+.T.T.+TTTT.T++++..^+==5...~~~~~....++++++6++....+~~oRaaa+..aa...^o+.^^+....+==++.p+pRpp.+.p+..Y..~",
+            "..........~~~..TT.T+T....T+TT....^~~+.~~~~~~~~~~..fff....+.hfh+~~..oaa+9+aaa...o+...+....+~~.p.p++..+++pp+..~~~~",
+            ".h.h..h.h.~~~.TT..T+++....+.T....^~~+~~~~~..~~~~~f.ffff..+....+~~R.aaa..+aaao...+^^.+^...+~~.pRp.+..+ppR.+~~~~~~",
+            "....f.....~~~~TTTTTT.+....+TT^^.^.~~=====+S..~~~~...f.f..+f...+~~..aaa.o+aaa....+^^*+++C++~~.....+..+p..~=~~~~~~",
+            "..h.h..h.h~~~~T..TTTT++3+++^T.....~~~~~~~~..~~~~~...T....+++7++~~.oaaaa.+###++A++....^....~~...p.E+++pp~~=~~~~~~",
+            ".ff...f...~~~~.TTT.TTT....TTT^^...~~.~~~~~~~~~~~~.T..TTT..T....~~T.aaaaaaaaaa....^.^..^.^^~~p.p.....p.~~~=~~..~~",
+            ".hl..h..h.~~~.TTTTTT..T.T.T.T....^~~..~~~~~~~~~~f...ff..TTTT..T~~Taaaaaaaaaa..^^^..^^..^^.~~R.p..p...~~~~===G..~",
+            "~~~~~~~.~.~~~.~~~.~~~~~~TT.T..T^^~~~~~~~~~~~~~~f~~~~.~~~~~T.h.T~~T.aaaaaaaaa....*^^~~~~~~~~~~p...~~~~~~~~~~~..~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~T~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "~~~~~~~n~~~~~~~~~~~~~.T~~~~n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~n~~~~~~~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.T~~~~~~~n~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
     };
 
     // O "personagem" de cada fase, que fica do lado do ponto (o primeiro é o da fase 1).
     static readonly string[] Personagens =
     {
-        "puck", "inimigo", "serra", "nuvem_malvada", "coelho", "mangual", "inimigo_espinhos", "esmagador",
-        "plataforma", "vento", "beatrice", "bloco_ritmo", "faca", "miasma", "bandeira_falsa", "baleia",
+        "louro", "inimigo", "serra", "nuvem_malvada", "rato", "ancora", "inimigo_espinhos", "esmagador",
+        "plataforma", "vento", "fantasma", "bloco_ritmo", "faca", "mare_negra", "bandeira_falsa", "baleia",
     };
 
-    // Os personagens têm tamanhos bem diferentes (o Puck tem 1 bloco; a Baleia, uns 6!).
+    // Os personagens têm tamanhos bem diferentes (o Louro tem 1 bloco; a Baleia, uns 6!).
     // Cada um encolhe até caber numa "caixinha" do lado do ponto (veja ArrumarPersonagem).
     const float EscalaDosPersonagens = 0.8f, LarguraMaxima = 2f, AlturaMaxima = 1.4f;
 
     public static int Largura => Desenho[0].Length;
     public static int Altura => Desenho.Length;
-    // A cor "média" da grama (o fundo da câmera no mapa e o tom das árvores lá longe, no horizonte).
+    // A cor "média" da grama (o fundo da câmera no mapa).
     public static readonly Color CorDoChao = new Color32(92, 146, 60, 255);
 
     // Regiões com o chão de outro jeito (números = colunas do Desenho): a ArteDoMapa pinta a terra seca
@@ -100,7 +100,7 @@ public class MapaDoMundo : MonoBehaviour
 
     const float RaioDoPonto = 4f;     // quanto a névoa abre em volta de uma fase liberada
     const float RaioDoCaminho = 2f;   // e em volta do caminho
-    const float RaioDaCapital = 6f;   // a capital (fase 1) o Subaru já conhece: abre mais
+    const float RaioDoPorto = 6f;   // o porto (fase 1) o Grumete já conhece: abre mais
     const float VelocidadeDaOnda = 70f; // blocos por segundo da "onda" que leva a névoa embora no fim
     const int OrdemDaNevoa = 30;
     // O chão (água, ponte, terra) fica ATRÁS das sombras (Sombra.Ordem = -9), para tudo projetar sombra nele.
@@ -109,7 +109,7 @@ public class MapaDoMundo : MonoBehaviour
 
     public float velocidade = 7f; // blocos por segundo andando no mapa
 
-    public Transform Subaru { get; private set; }
+    public Transform Grumete { get; private set; }
     public int Selecionado { get; private set; }
     public bool Andando { get; private set; }
 
@@ -123,7 +123,7 @@ public class MapaDoMundo : MonoBehaviour
     SpriteRenderer[] desenhosDosPontos;
     Transform[] personagens;
     Vector3[] ladoDoPersonagem; // onde cada personagem fica, em relação ao ponto dele
-    SpriteRenderer desenhoSubaru;
+    SpriteRenderer desenhoDoGrumete;
     float timerPasso;
     int nascendo = -1; // ponto que está aparecendo agora (animação própria)
 
@@ -134,7 +134,7 @@ public class MapaDoMundo : MonoBehaviour
     SpriteRenderer desenhoSecreto;
     Transform personagemSecreto;
 
-    // no: onde o Subaru começa (pode ser Fases.IndiceSecreto). mortes: mortes por fase (a última é a da secreta).
+    // no: onde o Grumete começa (pode ser Fases.IndiceSecreto). mortes: mortes por fase (a última é a da secreta).
     // andarPara: se >= 0, ele anda sozinho até lá (acabou de passar de fase).
     // caminhoNovo: o caminho até "andarPara" acabou de ser liberado (a névoa some aos pouquinhos).
     // mostrarSecreta: a fase secreta acabou de ser liberada (aparece com animação).
@@ -274,6 +274,7 @@ public class MapaDoMundo : MonoBehaviour
             personagens[i].localPosition = LugarDoPersonagem(i, 0f);
 
             if (i <= liberado && mortes != null && i < mortes.Length) Caveira(pontos[i], mortes[i]);
+            if (i <= liberado) MostrarMedalhas(pontos[i], i);
         }
 
         // A fase secreta: um ponto lilás com "?" e uma moeda girando em cima.
@@ -291,6 +292,7 @@ public class MapaDoMundo : MonoBehaviour
             desenhoSecreto.transform.localScale = aparece ? Vector3.one : Vector3.zero;
             personagemSecreto.gameObject.SetActive(aparece);
             if (secretaLiberada && mortes != null && mortes.Length > pontos.Count) Caveira(pontoSecreto.Value, mortes[pontos.Count]);
+            if (aparece) MostrarMedalhas(pontoSecreto.Value, Fases.IndiceSecreto);
         }
 
         // O que já foi descoberto: em volta das fases liberadas e dos caminhos entre elas.
@@ -300,7 +302,7 @@ public class MapaDoMundo : MonoBehaviour
         for (int i = 0; i <= liberado && !tudoDescoberto; i++)
         {
             if (caminhoNovo && i == andarPara) continue;
-            Descobrir(descoberto, pontos[i], i == 0 ? RaioDaCapital : RaioDoPonto);
+            Descobrir(descoberto, pontos[i], i == 0 ? RaioDoPorto : RaioDoPonto);
             if (i > 0)
                 foreach (Vector2Int c in caminhos[i - 1]) Descobrir(descoberto, c, RaioDoCaminho);
         }
@@ -322,11 +324,27 @@ public class MapaDoMundo : MonoBehaviour
         DecorarCeu();
         vida.SombrasDeNuvens(Mathf.Max(4, Largura / 14), Altura - LinhasDeCeu() - 3f); // passando devagar pelo chão, com o vento
 
-        // O Subaru.
-        desenhoSubaru = ConstrutorDeFase.Visual("Subaru", transform, PosicaoNoPonto(Selecionado), "jogador", 10).GetComponent<SpriteRenderer>();
-        Subaru = desenhoSubaru.transform;
+        // O Grumete.
+        desenhoDoGrumete = ConstrutorDeFase.Visual("Grumete", transform, PosicaoNoPonto(Selecionado), "jogador", 10).GetComponent<SpriteRenderer>();
+        Grumete = desenhoDoGrumete.transform;
 
         if (andarPara >= 0 || mostrarSecreta) StartCoroutine(LiberarEAndar(andarPara, caminhoNovo, mostrarSecreta));
+    }
+
+    // As 3 medalhas da fase (relógio, coração e moeda: veja Medalhas), em coluna à esquerda do ponto.
+    // Só aparecem depois que você passa da fase uma vez; as que faltam ficam apagadinhas.
+    void MostrarMedalhas(Vector2Int ponto, int fase)
+    {
+        if (!Progresso.RecordeDe(fase).existe) return;
+        Medalhas.Conjunto tem = Medalhas.DaFase(fase);
+        for (int k = 0; k < Medalhas.Ordem.Length; k++)
+        {
+            Medalhas.Conjunto medalha = Medalhas.Ordem[k];
+            Vector3 lugar = Mundo(ponto) + new Vector3(-0.95f, 0.45f - k * 0.45f, 0f);
+            var desenho = ConstrutorDeFase.Visual("Medalha", transform, lugar, Medalhas.Desenho(medalha), 5, false).GetComponent<SpriteRenderer>();
+            desenho.transform.localScale = Vector3.one * 0.75f; // 9 pixels: uns 0,4 bloco
+            if ((tem & medalha) == 0) desenho.color = new Color(0.3f, 0.3f, 0.36f, 0.75f);
+        }
     }
 
     // Caveirinha com o número de mortes, embaixo do ponto.
@@ -363,7 +381,7 @@ public class MapaDoMundo : MonoBehaviour
     }
 
     // Deixa o personagem do ponto i de um tamanho bom e devolve onde ele fica (em relação ao ponto).
-    //  - Quem tem o pivô na BASE do desenho (Emilia, Beatrice, a bandeira) fica "em pé" no chão,
+    //  - Quem tem o pivô na BASE do desenho (Sereia, Dóris, a bandeira) fica "em pé" no chão,
     //    à direita do ponto; os outros flutuam em cima e à direita.
     //  - Desenho grande encolhe até caber em LarguraMaxima x AlturaMaxima (a Baleia fica com uns 2 blocos).
     //  - Desenho largo vai mais para a direita, para não cobrir o ponto.
@@ -424,12 +442,12 @@ public class MapaDoMundo : MonoBehaviour
                 terra[c].color = CorDoCaminho(c);
                 break;
             case 'T':
-                string arvore = "mapa_arvore_" + Variacao(c, ArteDoMapa.VersoesDaArvore, 1);
-                Planta("Arvore", p + Vector3.down * 0.5f + tremido, arvore, linha - 4, tom, 0.8f);
+                string palmeira = "mapa_palmeira_" + Variacao(c, ArteDoMapa.VersoesDaPalmeira, 1);
+                Planta("Palmeira", p + Vector3.down * 0.5f + tremido, palmeira, linha - 4, tom, 0.8f);
                 SombraNoChao(p + tremido + new Vector3(0.28f, -0.42f, 0f), "mapa_sombra_m");
                 break;
             case 'p':
-                Planta("Pinheiro", p + Vector3.down * 0.5f + tremido, "mapa_pinheiro", linha - 4, Color.white, 0.6f);
+                Planta("PalmeiraMorta", p + Vector3.down * 0.5f + tremido, "mapa_palmeira_morta", linha - 4, Color.white, 0.6f);
                 SombraNoChao(p + tremido + new Vector3(0.22f, -0.44f, 0f), "mapa_sombra_p");
                 break;
             case '^':
@@ -447,23 +465,26 @@ public class MapaDoMundo : MonoBehaviour
                 SombraNoChao(p + new Vector3(0.2f, -0.42f, 0f), "mapa_sombra_p");
                 break;
             case 'R':
-                Enfeite("Ruina", p + Vector3.down * 0.45f, "mapa_ruina", linha - 6, tom);
+                Enfeite("Naufragio", p + Vector3.down * 0.45f, "mapa_naufragio", linha - 6, tom);
                 SombraNoChao(p + new Vector3(0.25f, -0.45f, 0f), "mapa_sombra_p");
                 break;
             case '*':
-                Enfeite("Cristal", p + Vector3.down * 0.45f, "mapa_cristal", linha - 6, tom);
+                Enfeite("Bau", p + Vector3.down * 0.45f, "mapa_bau", linha - 6, tom);
                 SombraNoChao(p + new Vector3(0.2f, -0.45f, 0f), "mapa_sombra_p");
-                Brilho(p + new Vector3(0f, 0.05f, 0f), 1.4f, new Color(0.8f, 0.55f, 1f, 0.55f), linha - 5);
+                Brilho(p + new Vector3(0f, 0.05f, 0f), 1.4f, new Color(1f, 0.85f, 0.35f, 0.55f), linha - 5); // o ouro brilhando
                 break;
             case 'L':
-                Enfeite("Biblioteca", p + Vector3.down * 0.5f, "mapa_biblioteca", linha - 6, Color.white);
-                SombraNoChao(p + new Vector3(0.35f, -0.5f, 0f), "mapa_sombra_m");
-                Brilho(p + new Vector3(0f, 1.05f, 0f), 2.2f, new Color(0.75f, 0.5f, 1f, 0.45f), linha - 5); // a cúpula mágica
+                Enfeite("NavioFantasma", p + Vector3.down * 0.5f, "mapa_navio_fantasma", linha - 6, Color.white);
+                SombraNoChao(p + new Vector3(0.35f, -0.5f, 0f), "mapa_sombra_g");
+                Brilho(p + new Vector3(-0.6f, 0.4f, 0f), 1.6f, new Color(0.75f, 0.5f, 1f, 0.5f), linha - 5);  // as janelas da popa
+                Brilho(p + new Vector3(0.1f, 1.0f, 0f), 2.4f, new Color(0.7f, 0.6f, 1f, 0.3f), linha - 5);    // a vela fantasma
                 break;
             case 'Y':
-                // a Grande Árvore Flügel: enorme, com a copa verde-dourada (mexe pouco no vento)
-                Planta("ArvoreFlugel", p + Vector3.down * 0.5f, "mapa_arvore_grande", linha - 4, Color.Lerp(Color.white, tom, 0.6f), 0.35f);
-                SombraNoChao(p + new Vector3(0.6f, -0.55f, 0f), "mapa_sombra_arvore_grande");
+                // a Rocha da Caveira: um rochedo enorme, com os olhos brilhando de roxo lá no fundo
+                Enfeite("RochaDaCaveira", p + Vector3.down * 0.5f, "mapa_rocha_caveira", linha - 6, Color.Lerp(Color.white, tom, 0.6f));
+                SombraNoChao(p + new Vector3(0.6f, -0.55f, 0f), "mapa_sombra_rocha");
+                Brilho(p + new Vector3(-0.47f, 0.82f, 0f), 1.2f, new Color(0.75f, 0.5f, 1f, 0.5f), linha - 5);
+                Brilho(p + new Vector3(0.47f, 0.82f, 0f), 1.2f, new Color(0.75f, 0.5f, 1f, 0.5f), linha - 5);
                 break;
             case 'f':
                 for (int i = 0; i < 2; i++)
@@ -475,7 +496,17 @@ public class MapaDoMundo : MonoBehaviour
                     vida.Bichinho(p, CoresDasBorboletas[Variacao(c, CoresDasBorboletas.Length, 8)]);
                 break;
             case 'M':
-                Palacio("Mansao", p, "mapa_mansao", linha, ArteDoMapa.TorresDaMansao, new Color(0.8f, 0.55f, 1f), 0.85f);
+                Palacio("FortePirata", p, "mapa_forte", linha, ArteDoMapa.TorresDoForte, new Color(0.22f, 0.2f, 0.26f), 0.85f); // bandeiras pretas
+                break;
+            case 'n':
+                // um navio pirata navegando: vai e volta devagar no mar
+                SpriteRenderer navio = Enfeite("Navio", p + Vector3.down * 0.25f, "mapa_navio", linha - 6, tom);
+                Animacao.Adicionar(navio.gameObject, Animacao.Tipo.Flutuar, 0.35f, 0.3f);
+                break;
+            case 'l':
+                Enfeite("Farol", p + Vector3.down * 0.45f, "mapa_farol", linha - 6, tom);
+                SombraNoChao(p + new Vector3(0.25f, -0.45f, 0f), "mapa_sombra_p");
+                Brilho(p + new Vector3(0f, -0.45f + 30f / 16f, 0f), 2.6f, new Color(1f, 0.85f, 0.45f, 0.6f), linha - 5); // a luz do farol
                 break;
             case 'K':
                 Palacio("CasteloReal", p, "mapa_castelo", linha, ArteDoMapa.TorresDoCastelo, new Color(1f, 0.35f, 0.35f), 1f);
@@ -552,7 +583,7 @@ public class MapaDoMundo : MonoBehaviour
         sombra.transform.localScale = Vector3.one * escala;
     }
 
-    // Um brilho mágico redondo que pulsa (cristais, a cúpula da Biblioteca). Se der, a luz "soma" com a tela.
+    // Um brilho mágico redondo que pulsa (cristais, a cúpula da casa assombrada). Se der, a luz "soma" com a tela.
     void Brilho(Vector3 lugar, float tamanho, Color cor, int ordem)
     {
         SpriteRenderer brilho = NovoDesenho("Brilho", lugar, "mapa_brilho", ordem);
@@ -562,7 +593,7 @@ public class MapaDoMundo : MonoBehaviour
         vida.Pulsar(brilho, 1.6f, 0.35f);
     }
 
-    // O castelo real e a mansão do Roswaal, com a sombra grande e as bandeirinhas tremulando nas torres.
+    // O castelo e o forte, com a sombra grande e as bandeirinhas tremulando nas torres.
     void Palacio(string nome, Vector3 p, string sprite, int linha, Vector3[] torres, Color corDaBandeira, float tamanhoDaSombra)
     {
         Vector3 pe = p + Vector3.down * 0.5f;
@@ -623,7 +654,7 @@ public class MapaDoMundo : MonoBehaviour
         }
     }
 
-    // O horizonte lá em cima, igual ao fundo das fases: céu, floresta e árvores ao longe com paralaxe
+    // O horizonte lá em cima, igual ao fundo das fases: céu, as ilhas e os galeões ao longe com paralaxe
     // (andam mais devagar que o mapa quando a câmera rola), brilhinhos, a Baleia Branca e nuvens.
     void DecorarCeu()
     {
@@ -636,7 +667,7 @@ public class MapaDoMundo : MonoBehaviour
         var ceu = ConstrutorDeFase.Visual("Ceu", transform, new Vector3(Largura / 2f, horizonte, 0f), "ceu", -26, false);
         ceu.transform.localScale = new Vector3((Largura + 60f) * FabricaDeSprites.PixelsPorUnidade, (linhasDeCeu + 1f) / 2f, 1f);
 
-        Paralaxe.CriarHorizonte(transform, Largura, horizonte - 0.15f, 0.35f, corDoCeu, CorDoChao);
+        Paralaxe.CriarHorizonte(transform, Largura, horizonte - 0.15f, 0.35f, corDoCeu, new Color32(48, 100, 160, 255)); // (a cor do mar)
 
         var sorteio = new System.Random(5);
         for (int i = 0; i < Largura / 4; i++)
@@ -661,7 +692,7 @@ public class MapaDoMundo : MonoBehaviour
             Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.3f, 0.8f, 0.5f);
         }
 
-        // em cima da região sombria o céu vai escurecendo (o miasma da Bruxa está perto)
+        // em cima da região sombria o céu vai escurecendo (a Maré Negra do Kraken está perto)
         float inicio = InicioDaSombra - 8f;
         var ceuSombrio = ConstrutorDeFase.Visual("CeuSombrio", transform, new Vector3(inicio, horizonte - 0.2f, 0f), "mapa_ceu_sombrio", -20, false);
         Vector3 tamanho = FabricaDeSprites.Pegar("mapa_ceu_sombrio").bounds.size;
@@ -670,7 +701,7 @@ public class MapaDoMundo : MonoBehaviour
 
     Vector2Int CelulaDoPonto(int fase) => fase == Fases.IndiceSecreto ? pontoSecreto.Value : pontos[fase];
 
-    // O Subaru fica com os pés no centro do ponto.
+    // O Grumete fica com os pés no centro do ponto.
     Vector3 PosicaoNoPonto(int fase) => Mundo(CelulaDoPonto(fase)) + Vector3.up * 0.45f;
 
     Vector3 LugarDoPersonagem(int i, float pulo) => Mundo(pontos[i]) + ladoDoPersonagem[i] + Vector3.up * pulo;
@@ -709,7 +740,7 @@ public class MapaDoMundo : MonoBehaviour
         return true;
     }
 
-    // Lista de células por onde o Subaru passa do ponto atual até o vizinho "destino".
+    // Lista de células por onde o Grumete passa do ponto atual até o vizinho "destino".
     List<Vector2Int> Rota(int destino)
     {
         if (destino == Selecionado + 1) return caminhos[Selecionado];
@@ -728,25 +759,25 @@ public class MapaDoMundo : MonoBehaviour
         foreach (Vector2Int celula in rota)
         {
             Vector3 alvo = Mundo(celula) + Vector3.up * 0.45f;
-            if (Mathf.Abs(alvo.x - pes.x) > 0.01f) desenhoSubaru.flipX = alvo.x < pes.x;
+            if (Mathf.Abs(alvo.x - pes.x) > 0.01f) desenhoDoGrumete.flipX = alvo.x < pes.x;
             while (pes != alvo)
             {
                 pes = Vector3.MoveTowards(pes, alvo, velocidade * Time.deltaTime);
                 timerPasso += Time.deltaTime;
                 // pulinhos enquanto anda, estilo mapa do Mario
-                Subaru.position = pes + Vector3.up * Mathf.Abs(Mathf.Sin(timerPasso * 14f)) * 0.15f;
-                desenhoSubaru.sprite = FabricaDeSprites.Pegar((int)(timerPasso * 10f) % 2 == 0 ? "jogador" : "jogador_andando");
+                Grumete.position = pes + Vector3.up * Mathf.Abs(Mathf.Sin(timerPasso * 14f)) * 0.15f;
+                desenhoDoGrumete.sprite = FabricaDeSprites.Pegar((int)(timerPasso * 10f) % 2 == 0 ? "jogador" : "jogador_andando");
                 yield return null;
             }
             Efeitos.Poeira(transform, pes + Vector3.down * 0.4f, 1, 1f);
         }
-        Subaru.position = pes;
-        desenhoSubaru.sprite = FabricaDeSprites.Pegar("jogador");
+        Grumete.position = pes;
+        desenhoDoGrumete.sprite = FabricaDeSprites.Pegar("jogador");
         Selecionado = destino;
         Andando = false;
     }
 
-    // Acabou de passar de fase: a névoa some ao longo do caminho novo, a fase nova aparece e o Subaru vai até lá.
+    // Acabou de passar de fase: a névoa some ao longo do caminho novo, a fase nova aparece e o Grumete vai até lá.
     // Se a fase secreta acabou de ser liberada, ela aparece primeiro.
     IEnumerator LiberarEAndar(int destino, bool caminhoNovo, bool mostrarSecreta)
     {
@@ -827,12 +858,12 @@ public class MapaDoMundo : MonoBehaviour
             personagens[i].localPosition = LugarDoPersonagem(i, Mathf.Abs(Mathf.Sin(Time.time * 4f + i)) * altura);
             if (Personagens[i % Personagens.Length] == "serra") personagens[i].Rotate(0f, 0f, -180f * Time.deltaTime);
 
-            // o ponto em que o Subaru está "pulsa" de leve
+            // o ponto em que o Grumete está "pulsa" de leve
             if (i != nascendo)
                 desenhosDosPontos[i].transform.localScale = Vector3.one * (i == Selecionado && !Andando ? 1f + 0.08f * Mathf.Sin(Time.time * 6f) : 1f);
         }
 
-        // a fase secreta: a moeda gira em cima do ponto, e o ponto pulsa quando o Subaru está nele
+        // a fase secreta: a moeda gira em cima do ponto, e o ponto pulsa quando o Grumete está nele
         if (personagemSecreto != null && personagemSecreto.gameObject.activeSelf)
         {
             personagemSecreto.localScale = new Vector3(Mathf.Cos(Time.time * 3f), 1f, 1f);
@@ -841,8 +872,8 @@ public class MapaDoMundo : MonoBehaviour
             else desenhoSecreto.transform.localScale = Vector3.one;
         }
 
-        // parado, o Subaru respira
-        if (!Andando) Subaru.localScale = new Vector3(1f, 1f + 0.04f * Mathf.Sin(Time.time * 3f), 1f);
+        // parado, o Grumete respira
+        if (!Andando) Grumete.localScale = new Vector3(1f, 1f + 0.04f * Mathf.Sin(Time.time * 3f), 1f);
     }
 
     // ------------------------------------------------------------------ desenhos que só o mapa usa

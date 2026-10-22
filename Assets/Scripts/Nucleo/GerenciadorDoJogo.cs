@@ -31,7 +31,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         new Color32(245, 222, 110, 255), // amarelo
         new Color32(195, 165, 230, 255), // lilás
         new Color32(245, 185, 195, 255), // rosa claro
-        new Color32(185, 150, 120, 255), // madeira (a Biblioteca Proibida)
+        new Color32(185, 150, 120, 255), // madeira (as Cabines Assombradas)
         new Color32(60, 80, 170, 255),   // azul-marinho (o "verdadeiro final")
     };
     public Color corDaFaseSecreta = new Color32(250, 230, 150, 255); // dourado
@@ -45,14 +45,14 @@ public class GerenciadorDoJogo : MonoBehaviour
     public int mortesParaEncurtar = 3;
     [Tooltip("Depois desse tempo dá para pular a animação da morte com Espaço/Enter.")]
     public float tempoParaPularMorte = 0.5f;
-    [Tooltip("Quantas marcas da Bruxa ficam no lugar das últimas mortes.")]
+    [Tooltip("Quantos X vermelhos ficam no lugar das últimas mortes.")]
     public int marcasDeMorte = 5;
     [Tooltip("Chance de o ponto de save \"mudar de lugar\" quando você morre (0 a 1).")]
     public float chanceDoSaveMudar = 0.25f;
 
     [Header("Fases")]
     public float tempoAposConcluir = 2.2f;
-    public float tempoComAEmilia = 3.5f; // fim da última fase: um tempinho a mais com a Emilia
+    public float tempoComASereia = 3.5f; // fim da última fase: um tempinho a mais com a Sereia
 
     // ------------------------------------------------------------------ estado (lido pela Interface)
 
@@ -62,15 +62,28 @@ public class GerenciadorDoJogo : MonoBehaviour
     public int MortesNaFase { get; private set; }
     public int Moedas => moedas + moedasNaFase;
     public float TempoTotal { get; private set; }
+    // Tempo nesta fase, desde que entrou pelo mapa (o tempo das mortes conta). É o tempo do recorde da fase.
+    public float TempoNaFase { get; private set; }
+
+    // Como foi a última fase concluída: os números, os recordes batidos e as medalhas (a Interface mostra).
+    public struct ResultadoDaFase
+    {
+        public float tempo;
+        public int mortes, moedas, totalDeMoedas;
+        public Progresso.Novidade novidades;    // quais recordes da fase foram batidos agora
+        public Medalhas.Conjunto medalhas;      // todas as medalhas que a fase tem
+        public Medalhas.Conjunto medalhasNovas; // as que vieram agora
+    }
+    public ResultadoDaFase Resultado { get; private set; }
     public string Mensagem { get; private set; } = "";
     public string Aviso => timerAviso > 0f ? aviso : "";
     public Vector3 PosicaoInicial { get; private set; }
     public List<Transform> Bandeiras { get; private set; } = new List<Transform>();
     public bool EhUltimaFase => FaseAtual == Fases.Todas.Length - 1;
     public bool NaSecreta => FaseAtual == Fases.IndiceSecreto;
-    // Para os efeitos de tela: a última fase é de noite, e a biblioteca tem luz quente.
+    // Para os efeitos de tela: a última fase é de noite, e as cabines têm luz quente.
     public bool FaseNoturna => Mapa == null && (DadosDaFase.noite || DadosDaFase.escura);
-    public bool NaBiblioteca => Mapa == null && naBiblioteca;
+    public bool NasCabines => Mapa == null && nasCabines;
     public Fase DadosDaFase => Fases.Dados(FaseAtual);
 
     // 0 = acabou de morrer, 1 = vai renascer
@@ -92,8 +105,8 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     public readonly List<Placa> placas = new List<Placa>();
     public readonly List<Porta> portas = new List<Porta>();
-    public Emilia Emilia { get; set; }
-    // O chefe da fase (a Baleia Branca, a Elsa...), null se a fase não tem chefe. Veja Chefe.cs.
+    public Sereia Sereia { get; set; }
+    // O chefe da fase (a Baleia Branca, a Cozinheira...), null se a fase não tem chefe. Veja Chefe.cs.
     public Chefe Chefe { get; set; }
     // Já venceu o chefe nesta fase? (se morrer depois, ele não volta)
     public bool ChefeDerrotado { get; private set; }
@@ -161,7 +174,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     float timerAviso;
     bool partidaValida; // só partidas jogadas em ordem desde a fase 1 valem recorde
     int moedasParaOSegredo;  // quantas moedas a fase atual tem (pegou todas na fase do segredo = fase secreta)
-    bool naBiblioteca;       // a fase atual tem as portas da Beatrice
+    bool nasCabines;       // a fase atual tem as portas da Dóris
     bool secretaNova;        // acabou de liberar a fase secreta (o mapa mostra o caminho aparecendo)
     float timerFala;
 
@@ -172,7 +185,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     System.Action trocaPendente;
     float timerSaida;
 
-    // Retorno pela Morte: onde você morreu nas últimas tentativas desta fase.
+    // Volta da Maré: onde você morreu nas últimas tentativas desta fase.
     readonly List<Vector3> lugaresDasMortes = new List<Vector3>();
     int faseDasMarcas = -1;
 
@@ -202,7 +215,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         }
         Instancia = this;
         // Diagnóstico: confirma no Console qual versão do visual está rodando (veja AjustesVisuais.Versao).
-        Debug.Log($"[Re:CILADA] {AjustesVisuais.Versao} rodando. {AjustesVisuais.Resumo()}");
+        Debug.Log($"[Cilada à Vista] {AjustesVisuais.Versao} rodando. {AjustesVisuais.Resumo()}");
 
         PrepararCamera();
         Luzes.PrepararGlobal();
@@ -237,8 +250,8 @@ public class GerenciadorDoJogo : MonoBehaviour
     bool EmPartida => Estado == EstadoDoJogo.Mapa || Estado == EstadoDoJogo.Jogando || Estado == EstadoDoJogo.Pausado
                       || Estado == EstadoDoJogo.Morreu || Estado == EstadoDoJogo.FaseConcluida;
 
-    // Onde o Subaru está: no mapa, o ponto escolhido; numa fase, a própria fase.
-    int FaseDoSubaru => Estado == EstadoDoJogo.Mapa && Mapa != null ? Mapa.Selecionado : FaseAtual;
+    // Onde o Grumete está: no mapa, o ponto escolhido; numa fase, a própria fase.
+    int FaseDoGrumete => Estado == EstadoDoJogo.Mapa && Mapa != null ? Mapa.Selecionado : FaseAtual;
 
     void PrepararCamera()
     {
@@ -272,7 +285,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
         FaseAtual = indice;
         moedasNaFase = 0;
-        Emilia = null;
+        Sereia = null;
         Chefe = null;
         Mapa = null;
 
@@ -285,10 +298,10 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (Camera.main != null) Camera.main.backgroundColor = corDoFundo;
         // a luz da fase vem ANTES de montar: assim as luzinhas só são criadas se a fase for escura
         Fase dados = Fases.Dados(indice);
-        bool biblioteca = dados.portas != null;
+        bool cabines = dados.portas != null;
         if (dados.escura) Luzes.Ambiente(0.22f, new Color(0.7f, 0.72f, 1f));
         else if (dados.noite) Luzes.Ambiente(0.55f, new Color(0.75f, 0.8f, 1f));
-        else if (biblioteca) Luzes.Ambiente(0.72f, new Color(1f, 0.92f, 0.8f));
+        else if (cabines) Luzes.Ambiente(0.72f, new Color(1f, 0.92f, 0.8f));
         else Luzes.Ambiente(indice == Fases.IndiceSecreto ? 1f : 0.93f, Color.white);
         InfoFase info = ConstrutorDeFase.Construir(dados, raizDaFase, MortesNaFase);
         bool noite = dados.noite || dados.escura;
@@ -298,31 +311,36 @@ public class GerenciadorDoJogo : MonoBehaviour
         PosicaoInicial = info.inicio;
         Bandeiras = info.bandeiras;
         moedasParaOSegredo = info.totalDeMoedas;
-        naBiblioteca = info.temPortas;
+        nasCabines = info.temPortas;
         PrepararClima(indice, noite);
         // renasce no ponto de save, se tiver um
         jogador = ConstrutorDeFase.Criar<Jogador>("Jogador", raizDaFase, pontoDeSave ?? info.inicio);
         jogador.inversores = info.inversores;
-        if (dados.escura) Luzes.Ponto(jogador.transform, new Color(1f, 0.95f, 0.85f), 6f, 1.6f); // no escuro: a "lanterna" do Subaru
-        else if (noite || naBiblioteca) Luzes.Ponto(jogador.transform, new Color(0.9f, 0.9f, 1f), 4.5f, 0.7f); // o Subaru "ilumina" em volta
+        if (dados.escura) Luzes.Ponto(jogador.transform, new Color(1f, 0.95f, 0.85f), 6f, 1.6f); // no escuro: a "lanterna" do Grumete
+        else if (noite || nasCabines) Luzes.Ponto(jogador.transform, new Color(0.9f, 0.9f, 1f), 4.5f, 0.7f); // o Grumete "ilumina" em volta
         aviso = "";
         cameraSeguir.Configurar(jogador.transform, info.largura, info.altura);
-        musica.TocarDaFase(indice); // se a música já é essa, continua de onde estava
+
+        // Fase de chefe: a música da luta é gerada AGORA (atrás da transição), para a luta não engasgar.
+        // Renasceu dentro da arena (a luta vai continuar)? A música do chefe continua tocando, sem recomeçar.
+        if (Chefe != null) FabricaDeMusica.DoChefe(Chefe.Musica);
+        if (Chefe != null && !ChefeDerrotado && EhPontoDeSave(Chefe.PontoDeRenascer)) TocarMusicaDoChefe();
+        else musica.TocarDaFase(indice); // se a música já é essa, continua de onde estava
     }
 
-    // Partículas de cada fase (a luz é ajustada em CarregarFase, antes de montar a fase): noite com vaga-lumes, biblioteca com poeira dourada,
+    // Partículas de cada fase (a luz é ajustada em CarregarFase, antes de montar a fase): noite com vaga-lumes, cabines com poeira dourada,
     // fases com "petalas" (Fases.cs) com pétalas, a secreta com brilhos e as outras com pólen.
     void PrepararClima(int indice, bool noite)
     {
         Ambiente.Tipo tipo = Ambiente.Tipo.Polen;
         if (noite) tipo = Ambiente.Tipo.VagaLumes;
-        else if (naBiblioteca) tipo = Ambiente.Tipo.Poeira;
+        else if (nasCabines) tipo = Ambiente.Tipo.Poeira;
         else if (indice == Fases.IndiceSecreto) tipo = Ambiente.Tipo.Brilhos;
         else if (Fases.Dados(indice).petalas) tipo = Ambiente.Tipo.Petalas;
         Ambiente.Criar(raizDaFase, tipo, tipo == Ambiente.Tipo.VagaLumes ? 16 : tipo == Ambiente.Tipo.Poeira ? 40 : 26);
     }
 
-    // Mostra o mapa do mundo com o Subaru no ponto "no".
+    // Mostra o mapa do mundo com o Grumete no ponto "no".
     // andarPara >= 0: ele anda sozinho até lá (acabou de passar de fase); caminhoNovo: o caminho acabou de abrir.
     void MostrarMapa(int no, int andarPara = -1, bool caminhoNovo = false, bool mostrarSecreta = false)
     {
@@ -333,7 +351,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
         raizDaFase = new GameObject("Mapa").transform;
         jogador = null;
-        Emilia = null;
+        Sereia = null;
         Bandeiras = new List<Transform>();
         FaseAtual = no == Fases.IndiceSecreto && Progresso.SecretaLiberada ? no : Mathf.Clamp(no, 0, Fases.Todas.Length - 1);
         if (Camera.main != null) Camera.main.backgroundColor = MapaDoMundo.CorDoChao;
@@ -341,7 +359,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
         Mapa = MapaDoMundo.Criar(raizDaFase, FaseAtual, FaseLiberada, FaseMaisLonge, mortesPorFase,
             Progresso.SecretaLiberada, andarPara, caminhoNovo, mostrarSecreta);
-        cameraSeguir.Configurar(Mapa.Subaru, MapaDoMundo.Largura, MapaDoMundo.Altura);
+        cameraSeguir.Configurar(Mapa.Grumete, MapaDoMundo.Largura, MapaDoMundo.Altura);
         musica.TocarDaFase(FabricaDeMusica.MusicaDoMapa);
         Estado = EstadoDoJogo.Mapa;
     }
@@ -374,6 +392,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         if (fase != Fases.IndiceSecreto && fase > FaseMaisLonge) partidaValida = false; // pulou fases pelo mapa: não vale recorde
         MortesNaFase = 0;
+        TempoNaFase = 0f;
         pontoDeSave = null;
         ChefeDerrotado = false;
         EtapaDoChefe = 0;
@@ -428,6 +447,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
             case EstadoDoJogo.Jogando:
                 TempoTotal += Time.deltaTime;
+                TempoNaFase += Time.deltaTime;
                 timerAviso -= Time.deltaTime;
                 if (Controles.Pausar()) Pausar(true);
                 else if (Controles.Reiniciar()) jogador.Morrer(); // reiniciar conta como morte. Óbvio.
@@ -440,6 +460,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
             case EstadoDoJogo.Morreu:
                 TempoTotal += Time.deltaTime;
+                TempoNaFase += Time.deltaTime;
                 timerEstado -= Time.deltaTime;
                 if (timerEstado > 0f && PodePularMorte && (Controles.Confirmar() || Controles.PuloApertou()))
                 {
@@ -490,7 +511,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         }
         if (!EhUltimaFase)
         {
-            // volta para o mapa e o Subaru anda sozinho até a próxima fase
+            // volta para o mapa e o Grumete anda sozinho até a próxima fase
             int proxima = concluida + 1;
             bool caminhoNovo = proxima > FaseLiberada;
             FaseMaisLonge = Mathf.Max(FaseMaisLonge, proxima);
@@ -519,7 +540,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     void SalvarProgresso()
     {
-        Progresso.Salvar(FaseDoSubaru, FaseMaisLonge, Mortes, moedas, TempoTotal, partidaValida);
+        Progresso.Salvar(FaseDoGrumete, FaseMaisLonge, Mortes, moedas, TempoTotal, partidaValida);
         Progresso.SalvarMortesPorFase(mortesPorFase);
     }
 
@@ -532,7 +553,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     void AjustarMusica()
     {
         float volume = 1f;
-        if (Estado == EstadoDoJogo.Morreu || sonsDaMorte.OstTocando) volume = 0.15f; // a OST do Retorno pela Morte aparece
+        if (Estado == EstadoDoJogo.Morreu || sonsDaMorte.OstTocando) volume = 0.15f; // a OST da Volta da Maré aparece
         else if (Estado == EstadoDoJogo.Pausado && SubmenuAberto != Submenu.Opcoes) volume = 0.35f; // nas opções: volume de verdade, para ajustar
         musica.Abafar(volume);
     }
@@ -900,7 +921,7 @@ public class GerenciadorDoJogo : MonoBehaviour
             SalvarProgresso();
             Som("vitoria", 0.6f);
             MostrarMapa(Mapa.Selecionado);
-            MostrarFala(new Textos.Fala { quem = "Puck", sprite = "puck", texto = "Modo de teste! Liberei o mapa inteiro, até a Baleia. Não conta pra ninguém. :3" });
+            MostrarFala(Textos.ModoDeTeste);
             return;
         }
 
@@ -962,9 +983,9 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         if (Estado != EstadoDoJogo.Jogando) return;
         Estado = EstadoDoJogo.FaseConcluida;
-        timerEstado = EhUltimaFase && Emilia != null ? tempoComAEmilia : tempoAposConcluir;
+        timerEstado = EhUltimaFase && Sereia != null ? tempoComASereia : tempoAposConcluir;
         if (MortesNaFase == 0) Conquistas.Desbloquear("sem_morrer");
-        if (naBiblioteca) Conquistas.Desbloquear("biblioteca");
+        if (nasCabines) Conquistas.Desbloquear("cabines");
         if (NaSecreta) Conquistas.Desbloquear("secreta");
 
         // Pegou TODAS as moedas da fase do segredo (sem morrer no meio)? Aparece a fase secreta no mapa.
@@ -972,17 +993,46 @@ public class GerenciadorDoJogo : MonoBehaviour
                       && moedasParaOSegredo > 0 && moedasNaFase >= moedasParaOSegredo;
         if (secretaNova) Progresso.LiberarSecreta();
 
+        RegistrarRecordes();
+
         moedas += moedasNaFase;
         moedasNaFase = 0;
         jogador.Congelar();
         Som("vitoria");
-        if (EhUltimaFase && Emilia != null) Emilia.Comemorar();
+        if (EhUltimaFase && Sereia != null) Sereia.Comemorar();
+    }
+
+    // Recordes e medalhas da fase que acabou de ser concluída (valem para sempre: Progresso e Medalhas).
+    // Chamado ANTES de as moedas da fase irem para o total (aí elas zeram).
+    void RegistrarRecordes()
+    {
+        Medalhas.Conjunto antes = Medalhas.DaFase(FaseAtual);
+        var resultado = new ResultadoDaFase
+        {
+            tempo = TempoNaFase,
+            mortes = MortesNaFase,
+            moedas = moedasNaFase,
+            totalDeMoedas = Medalhas.TotalDeMoedas(FaseAtual),
+            novidades = Progresso.RegistrarFase(FaseAtual, TempoNaFase, MortesNaFase, moedasNaFase),
+        };
+        resultado.medalhas = Medalhas.DaFase(FaseAtual);
+        resultado.medalhasNovas = resultado.medalhas & ~antes;
+        Resultado = resultado;
+        if (resultado.medalhas == Medalhas.Conjunto.Todas) Conquistas.Desbloquear("medalhas");
+        // bateu recorde ou ganhou medalha: um segundinho a mais na tela, para dar tempo de ler
+        bool novidade = resultado.medalhasNovas != Medalhas.Conjunto.Nenhuma
+                        || (resultado.novidades & ~Progresso.Novidade.Primeira) != Progresso.Novidade.Nada;
+        if (novidade) timerEstado += 1f;
     }
 
     public void GanharMoeda() => moedasNaFase++;
 
-    // Chamados pelos chefes (Baleia Branca, Elsa...).
-    public void TocarMusicaDoChefe() => musica.TocarDaFase(FabricaDeMusica.MusicaDoChefe);
+    // Chamado pelos chefes quando a luta começa: cada chefe tem a sua música (Musicas).
+    // Se ela já está tocando (morreu e voltou para a luta), continua de onde estava.
+    public void TocarMusicaDoChefe()
+    {
+        if (Chefe != null) musica.TocarClipe(FabricaDeMusica.DoChefe(Chefe.Musica));
+    }
 
     public void ChefeVencido(Vector3 renascerEm)
     {
@@ -993,7 +1043,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     // Ponto de save (chamados pelo PontoDeSave).
     public void SalvarPonto(Vector3 lugar) => pontoDeSave = lugar;
-    public Vector3? PontoDeSave => pontoDeSave; // onde o Subaru renasce (null = no começo da fase)
+    public Vector3? PontoDeSave => pontoDeSave; // onde o Grumete renasce (null = no começo da fase)
     public bool EhPontoDeSave(Vector3 lugar) => pontoDeSave.HasValue && Vector3.Distance(pontoDeSave.Value, lugar) < 0.1f;
 
     // Mensagem rápida no meio da tela (controles invertidos, volta pro começo...).
@@ -1025,7 +1075,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         switch (Mortes)
         {
-            case 1: return "Retorno pela Morte desbloqueado. :)";
+            case 1: return "Volta da Maré desbloqueada. :)";
             case 10: return "10 mortes! Tá indo bem (mentira)";
             case 25: return "25 mortes. Já pensou em jogar outra coisa?";
             case 50: return "50 MORTES! Parabéns pela persistência!";
@@ -1034,7 +1084,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         Fase fase = DadosDaFase;
         if (MortesNaFase == 1 && fase.mudancas != null && fase.mudancas.Length > 0)
             return "Ah, e eu mudei umas coisinhas. :)";
-        if (naBiblioteca && Random.value < 0.4f) return "Lembra para onde cada porta leva? Kashira.";
+        if (nasCabines && Random.value < 0.4f) return "Lembra para onde cada porta leva? Buuu.";
         if (MortesNaFase == 5) return "Dica: nem tudo é o que parece.";
         return Fases.MensagensDeMorte[Random.Range(0, Fases.MensagensDeMorte.Length)];
     }
@@ -1044,7 +1094,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (mortes < 10) return "Suspeito de hack";
         if (mortes < 30) return "Sobrevivente";
         if (mortes < 60) return "Teimoso profissional";
-        if (mortes < 100) return "Colecionador de Retornos";
-        return "Natsuki Subaru honorário";
+        if (mortes < 100) return "Colecionador de marés";
+        return "Grumete imortal";
     }
 }

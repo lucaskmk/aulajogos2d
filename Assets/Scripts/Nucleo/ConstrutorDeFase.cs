@@ -9,7 +9,7 @@ public class InfoFase
     public List<float> inversores = new List<float>(); // posições x das linhas 'X'
     public List<Transform> bandeiras = new List<Transform>(); // todas as bandeiras (verdadeiras ou não)
     public int totalDeMoedas;  // moedas '$' + blocos '?' (para a fase secreta: "pegue TODAS")
-    public bool temPortas;     // é a Biblioteca Proibida?
+    public bool temPortas;     // é as Cabines Assombradas?
 }
 
 // Lê o mapa de texto de uma fase (veja Fases.cs) e cria todos os objetos na cena.
@@ -73,9 +73,9 @@ public static class ConstrutorDeFase
         var celulasQueFogem = new HashSet<Vector2Int>();
         var celulasDePlataforma = new Dictionary<Vector2Int, char>(); // 'j', 'J' e 'D' (a letra diz o tipo)
         var celulasDoRitmo = new Dictionary<Vector2Int, char>();      // 'a', 'b' e 'A' (blocos do ritmo)
-        var celulasDeVento = new HashSet<Vector2Int>();               // 'y' (rajada da Ram)
+        var celulasDeVento = new HashSet<Vector2Int>();               // 'y' (rajada de vento)
         var celulasDeRedemoinho = new HashSet<Vector2Int>();          // 'n' (redemoinho)
-        var placas = new List<(Vector3 lugar, bool beatrice)>();
+        var placas = new List<(Vector3 lugar, bool fantasma)>();
         var portas = new List<Porta>();
 
         var fujonas = new List<BandeiraFujona>();
@@ -89,7 +89,7 @@ public static class ConstrutorDeFase
                 Vector3 pos = Posicao(x, linha);
                 Vector3 chaoDaCelula = pos + Vector3.down * 0.5f;
 
-                if (char.IsDigit(c)) // porta da Beatrice, com o número dela
+                if (char.IsDigit(c)) // porta da Dóris, com o número dela
                 {
                     var porta = Criar<Porta>("Porta " + c, raiz, chaoDaCelula);
                     porta.Numerar(c);
@@ -129,21 +129,21 @@ public static class ConstrutorDeFase
                     case 'j': case 'J': case 'D': celulasDePlataforma[new Vector2Int(x, linha)] = c; break; // plataformas móveis
                     case 'a': case 'b': case 'A': celulasDoRitmo[new Vector2Int(x, linha)] = c; break; // blocos do ritmo (juntados depois do laço)
                     case 't': Criar<EsmagadorDoRitmo>("EsmagadorDoRitmo", raiz, pos); break;
-                    case 'l': Criar<FacasDaElsa>("Elsa", raiz, pos); break;
-                    case 'k': Criar<FacasDaElsa>("ElsaDoLeque", raiz, pos).Montar(true); break;
-                    case 'N': Criar<MiasmaDaBruxa>("MiasmaDaBruxa", raiz, pos); break;
+                    case 'l': Criar<FacasDaCozinheira>("Cozinheira", raiz, pos); break;
+                    case 'k': Criar<FacasDaCozinheira>("CozinheiraDoLeque", raiz, pos).Montar(true); break;
+                    case 'N': Criar<MareNegra>("MareNegra", raiz, pos); break;
                     case 'y': celulasDeVento.Add(new Vector2Int(x, linha)); break;
                     case 'n': celulasDeRedemoinho.Add(new Vector2Int(x, linha)); break;
                     case 'Q': case 'q': // com chão em cima = ENTERRADO (disfarçado de chão)
-                        Criar<MangualDaRem>("Mangual", raiz, pos).Montar(x, c == 'q', PareceChao(Celula(x, linha - 1)) ? SpriteDoChao(x, linha) : null);
+                        Criar<Ancora>("Mangual", raiz, pos).Montar(x, c == 'q', PareceChao(Celula(x, linha - 1)) ? SpriteDoChao(x, linha) : null);
                         break;
-                    case 'u': Criar<ChefeRem>("ChefeRem", raiz, pos); break; // a Rem (chefe da fase 6)
+                    case 'u': Criar<ChefeCapita>("ChefeCapita", raiz, pos); break; // a Capitã (chefe da fase 6)
                     case 'W': info.bandeiras.Add(Criar<BandeiraVolta>("BandeiraVolta", raiz, chaoDaCelula).transform); break;
                     case 'X': info.inversores.Add(x); break;
-                    case 'r': Criar<Coelho>("Coelho", raiz, pos); break;
+                    case 'r': Criar<Rato>("Rato", raiz, pos); break;
                     case 'w': Criar<BaleiaBranca>("BaleiaBranca", raiz, pos); break;
-                    case 'H': Criar<ElsaCacadora>("ElsaCacadora", raiz, pos); break;
-                    case 'L': Criar<Emilia>("Emilia", raiz, pos); break;
+                    case 'H': Criar<ChefeCozinheira>("ChefeCozinheira", raiz, pos); break;
+                    case 'L': Criar<Sereia>("Sereia", raiz, pos); break;
                     case 's': Criar<PontoDeSave>("PontoDeSave", raiz, chaoDaCelula); break;
                     case 'U':
                         // o cano desce até encontrar chão
@@ -166,11 +166,11 @@ public static class ConstrutorDeFase
                 chaoQueCai.AdicionarBloco(Posicao(celula.x, celula.y), FabricaDeSprites.Pegar(SpriteDoChao(celula.x, celula.y)));
         }
 
-        // Vento da Ram: células 'y' (ou 'n') encostadas viram UMA zona (o retângulo em volta delas).
+        // Vento do mar: células 'y' (ou 'n') encostadas viram UMA zona (o retângulo em volta delas).
         foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasDeVento))
-            VentoDaRam.CriarZona(raiz, VentoDaRam.Tipo.Rajada, grupo, altura);
+            VentoDoMar.CriarZona(raiz, VentoDoMar.Tipo.Rajada, grupo, altura);
         foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasDeRedemoinho))
-            VentoDaRam.CriarZona(raiz, VentoDaRam.Tipo.Redemoinho, grupo, altura);
+            VentoDoMar.CriarZona(raiz, VentoDoMar.Tipo.Redemoinho, grupo, altura);
 
         // Bloco que foge: blocos 'M' encostados fogem juntos.
         foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasQueFogem))
@@ -202,16 +202,16 @@ public static class ConstrutorDeFase
         foreach (BandeiraFujona fujona in fujonas)
             if (destinoDaFujona.HasValue) fujona.destino = destinoDaFujona.Value;
 
-        // Placas (Puck e Beatrice): textos na ordem da esquerda para a direita.
+        // Placas (Louro e Dóris): textos na ordem da esquerda para a direita.
         placas.Sort((a, b) => a.lugar.x.CompareTo(b.lugar.x));
         for (int i = 0; i < placas.Count; i++)
         {
             var placa = Criar<Placa>("Placa", raiz, placas[i].lugar);
             placa.texto = fase.placas != null && i < fase.placas.Length ? fase.placas[i] : "...";
-            if (placas[i].beatrice) placa.VirarBeatrice();
+            if (placas[i].fantasma) placa.VirarFantasma();
         }
 
-        // Portas da Beatrice: liga os pares da lista "portas" da fase (ida e volta, sempre iguais).
+        // Portas da Dóris: liga os pares da lista "portas" da fase (ida e volta, sempre iguais).
         if (portas.Count > 0)
         {
             info.temPortas = true;
@@ -357,7 +357,7 @@ public static class ConstrutorDeFase
             Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.4f, 0.4f, ParalaxeDasNuvens);
         }
 
-        // Enfeites em cima do chão: capim, flores, arbustos, pedras, cogumelos, cercas e lampiões (que iluminam).
+        // Enfeites em cima do chão: capim, flores, arbustos, pedras, estrelas-do-mar, barris e lampiões (que iluminam).
         int ultimoLampiao = -100;
         for (int x = sorteio.Next(0, 3); x < largura; x += sorteio.Next(2, 5))
         {
@@ -379,9 +379,9 @@ public static class ConstrutorDeFase
                 var arbusto = Visual("Arbusto", decoracao, base_, "arbusto", -7, parado: true);
                 Vento.Plantar(arbusto.GetComponent<SpriteRenderer>(), "arbusto", decoracao, rigidez: 0.7f);
             }
-            else if (sorte < 26 && chaoDosLados) Visual("Cerca", decoracao, base_, "cerca", -7, parado: true);
+            else if (sorte < 26 && chaoDosLados) Visual("Barril", decoracao, base_, "barril", -7, parado: true);
             else if (sorte < 35) Visual("Pedra", decoracao, base_, "pedra", -7, parado: true);
-            else if (sorte < 42) Visual("Cogumelo", decoracao, base_, "cogumelo", -7, parado: true);
+            else if (sorte < 42) Visual("EstrelaDoMar", decoracao, base_, "estrela_do_mar", -7, parado: true);
             else
             {
                 // flores e capim balançam no vento: o topo mexe mais e a base fica presa no chão (Vento.cs)
@@ -391,7 +391,7 @@ public static class ConstrutorDeFase
             }
         }
 
-        // Brilhinhos no céu, como no fundo dos ímãs de Re:Zero.
+        // Brilhinhos no céu, como num céu de verão.
         for (int i = 0; i < largura / 3; i++)
         {
             var brilho = Visual("Brilho", decoracao, new Vector3(sorteio.Next(0, largura), altura - 1 - sorteio.Next(0, 9), 0f), "brilho", -11, false);

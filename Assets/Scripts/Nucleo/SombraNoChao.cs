@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Sombra oval no chão, embaixo de quem está no ar (Subaru, Mabeasts, coelhos, Puck...).
+// Sombra oval no chão, embaixo de quem está no ar (Grumete, caranguejos, ratos, Louro...).
 // Quanto mais alto, menor e mais fraquinha. Ajuda muito a saber onde você vai cair.
 public class SombraNoChao : MonoBehaviour
 {
@@ -10,7 +10,7 @@ public class SombraNoChao : MonoBehaviour
 
     Transform sombra;
     SpriteRenderer desenho;
-    Jogador jogador; // se for o Subaru: some quando ele morre
+    Jogador jogador; // se for o Grumete: some quando ele morre
     ContactFilter2D filtro;
     readonly List<RaycastHit2D> acertos = new List<RaycastHit2D>();
 

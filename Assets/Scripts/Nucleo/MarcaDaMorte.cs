@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// "Retorno pela Morte" como mecânica: no lugar de cada uma das últimas mortes nesta fase
-// fica a marca da mão da Bruxa. Assim você vê onde já morreu (e o Subaru "lembra").
+// "Volta da Maré" como mecânica: no lugar de cada uma das últimas mortes nesta fase
+// fica um X vermelho (X marca o lugar!). Assim você vê onde já morreu (e o Grumete "lembra").
 // As marcas mais antigas são mais apagadas. Não encostam em nada: é só desenho.
 public class MarcaDaMorte : MonoBehaviour
 {
@@ -15,7 +15,7 @@ public class MarcaDaMorte : MonoBehaviour
     {
         for (int i = 0; i < lugares.Count; i++)
         {
-            var objeto = ConstrutorDeFase.Visual("MarcaDaMorte", raiz, lugares[i], "mao_sombra", 1, false);
+            var objeto = ConstrutorDeFase.Visual("MarcaDaMorte", raiz, lugares[i], "marca_x", 1, false);
             objeto.transform.localScale = Vector3.one * 0.6f;
             objeto.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Sin(i * 2.3f + lugares[i].x) * 25f); // cada uma meio torta
             var marca = objeto.AddComponent<MarcaDaMorte>();
