@@ -1,32 +1,32 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 'N' - o MIASMA DA BRUXA: uma PAREDE de sombra roxa (o miasma da Satella, a Bruxa da Inveja),
-// cheia de olhos e de mãos negras, que PERSEGUE o Subaru pela fase inteira. Encostou nela, morreu.
+// 'N' - a MARÉ NEGRA DO KRAKEN: uma PAREDE de tinta roxa (o Kraken, o monstro das profundezas, vem atrás
+// de você), cheia de olhos e de tentáculos, que PERSEGUE o Grumete pela fase inteira. Encostou nela, morreu.
 //  - O 'N' marca a coluna de onde ela começa, atrás do jogador. Ela fica "dormindo" (olhos fechados)
 //    até o jogador se afastar uns 4 blocos; aí ela RI, a tela treme e ela começa a andar para a direita.
-//  - Ela anda a 5,2 blocos por segundo e o Subaru anda 7: correndo sem parar você abre vantagem.
+//  - Ela anda a 5,2 blocos por segundo e o Grumete anda 7: correndo sem parar você abre vantagem.
 //    Mas cada vez que você PARA para pensar (ou erra um pulo e tem que voltar) é tempo que ela recupera:
 //    ficou uns 2 segundos parado, ela te pega. Por isso a fase dela é só CORRER e PULAR (parkour).
 //  - "Elástico": se você abrir vantagem demais, ela acelera. Correndo perfeito ela fica uns 11 blocos atrás
 //    (bem na beirada da tela) e NUNCA mais de 14. Não dá para "guardar" vantagem para depois.
-//  - Quando você fica perto dela (3,5 blocos), uma das MÃOS se estica para te agarrar. O aviso é a mão
+//  - Quando você fica perto dela (3,5 blocos), um dos TENTÁCULOS se estica para te agarrar. O aviso é ele
 //    recuar para dentro da parede e piscar (0,35 s). Corra ou pule por cima!
 //  - Renasceu num checkpoint? A parede nasce 9 blocos ATRÁS de você (senão o checkpoint não serviria de nada).
 //  - Ela para antes da bandeira de verdade. Passou de fase? Ela desiste e vai embora... por enquanto.
 //
 // O desenho é todo feito de pedaços (todos filhos do objeto "Parede", que anda junto com a frente):
 //  fundo escuro liso + faixa de névoa com fiapos subindo + "bolhas" na borda (trocam de forma o tempo todo)
-//  + olhos que piscam + mãos com braço de bolinhas. Na frente, fumaça roxa (partículas).
+//  + olhos que piscam + tentáculos de gomos. Na frente, fumaça roxa (partículas).
 //  Uma vinheta roxa presa na câmera escurece a tela quando ela chega perto (junto com um "coração" batendo).
 [DefaultExecutionOrder(100)] // roda depois da CameraSeguir: a vinheta acompanha a câmera sem tremer
-public class MiasmaDaBruxa : MonoBehaviour
+public class MareNegra : MonoBehaviour
 {
     enum Estado { Dormindo, Acordando, Perseguindo, IndoEmbora }
     enum EstadoDaMao { Balancando, Preparando, Agarrando, Voltando }
 
     [Header("Perseguição")]
-    public float velocidade = 5.2f;           // blocos por segundo (o Subaru anda 7)
+    public float velocidade = 5.2f;           // blocos por segundo (o Grumete anda 7)
     public float distanciaParaAcordar = 4f;   // acorda quando o jogador se afasta isso da frente dela
     public float inicioDoElastico = 9f;       // mais longe que isso, ela acelera...
     public float forcaDoElastico = 0.8f;      // ...0,8 bloco/s a mais para cada bloco de distância a mais
@@ -34,13 +34,13 @@ public class MiasmaDaBruxa : MonoBehaviour
     public float distanciaAoRenascer = 9f;    // renasceu num checkpoint? Ela aparece isso atrás de você
     public float tempoAcordando = 0.7f;       // a "espreguiçada" (risada) antes de começar a andar
 
-    [Header("Mãos")]
-    public float distanciaDoBote = 3.5f;      // jogador mais perto que isso da frente: uma mão tenta agarrar
-    public float tempoDePreparo = 0.35f;      // o aviso: a mão recua e pisca
-    public float alcanceDoBote = 2.6f;        // até onde a mão estica (a partir da frente da parede)
-    public float recargaDaMao = 0.9f;         // descanso de cada mão depois de um bote
+    [Header("Tentáculos")]
+    public float distanciaDoBote = 3.5f;      // jogador mais perto que isso da frente: um tentáculo tenta agarrar
+    public float tempoDePreparo = 0.35f;      // o aviso: o tentáculo recua e pisca
+    public float alcanceDoBote = 2.6f;        // até onde o tentáculo estica (a partir da frente da parede)
+    public float recargaDaMao = 0.9f;         // descanso de cada tentáculo depois de um bote
 
-    // A "linha da morte" é a frente da parede. O colisor do Subaru tem uns 0,36 de cada lado do centro.
+    // A "linha da morte" é a frente da parede. O colisor do Grumete tem uns 0,36 de cada lado do centro.
     const float MeiaLarguraDoJogador = 0.36f;
 
     // Até onde a parede vai na vertical (a câmera mostra de -0,5 a 14,5 nas fases de 15 linhas).
@@ -50,7 +50,7 @@ public class MiasmaDaBruxa : MonoBehaviour
     const int OrdemDoFundo = 38, OrdemDaNevoa = 39, OrdemDosOlhos = 40, OrdemDosBracos = 41,
               OrdemDaBorda = 42, OrdemDasMaos = 44, OrdemDaVinheta = 60;
 
-    const int QuantidadeDeBolhas = 4;  // variações do desenho da borda ("miasma_borda_0" a "_3")
+    const int QuantidadeDeBolhas = 4;  // variações do desenho da borda ("mare_negra_borda_0" a "_3")
     const float LarguraDaNevoa = 8f, AlturaDaNevoa = 4f;
     const int GomosDoBraco = 8;
 
@@ -59,7 +59,7 @@ public class MiasmaDaBruxa : MonoBehaviour
     static readonly Color FumacaEscura = new Color(0.22f, 0.07f, 0.32f, 0.9f);
     static readonly Color CorDoAviso = new Color(1f, 0.75f, 1f);
 
-    // Uma mão da Bruxa: o desenho (que mata), o braço de "gomos" e o que ela está fazendo agora.
+    // Um tentáculo do Kraken: a ponta (que mata), os "gomos" e o que ele está fazendo agora.
     class Mao
     {
         public Transform mao;
@@ -68,9 +68,9 @@ public class MiasmaDaBruxa : MonoBehaviour
         public float alturaBase, fase;     // onde ela fica na parede e o "ritmo" dela (cada uma mexe diferente)
         public EstadoDaMao estado;
         public float timer, recarga;
-        public float alcance, altura;      // posição atual da mão (em relação à frente da parede)
+        public float alcance, altura;      // posição atual da ponta (em relação à frente da parede)
         public float alturaDoBote;         // a altura em que ela vai dar o bote (a do jogador)
-        public bool fechada;               // já fechou a mão neste bote?
+        public bool fechada;               // já se enrolou neste bote?
     }
 
     // Um olho que pisca no meio da sombra.
@@ -108,18 +108,18 @@ public class MiasmaDaBruxa : MonoBehaviour
         parede.SetParent(transform, false);
 
         // Fundo: um retângulo escuro liso, comprido para a esquerda (você nunca vê o fim dele).
-        var fundo = ConstrutorDeFase.Visual("Fundo", parede, transform.position, "miasma_fundo", OrdemDoFundo, false).transform;
+        var fundo = ConstrutorDeFase.Visual("Fundo", parede, transform.position, "mare_negra_fundo", OrdemDoFundo, false).transform;
         fundo.localPosition = new Vector3(-LarguraDaNevoa - 25f, (Baixo + Alto) / 2f, 0f);
         fundo.localScale = new Vector3(52f, Alto - Baixo, 1f);
 
         // Faixa de névoa logo atrás da borda, com fiapos roxos que sobem (o desenho se repete na vertical).
         for (int i = 0; i < 6; i++)
-            nevoas.Add(ConstrutorDeFase.Visual("Nevoa", parede, transform.position, "miasma_nevoa", OrdemDaNevoa, false).transform);
+            nevoas.Add(ConstrutorDeFase.Visual("Nevoa", parede, transform.position, "mare_negra_nevoa", OrdemDaNevoa, false).transform);
 
         // Borda: "bolhas" de fumaça empilhadas, uma por bloco de altura. Elas tremem e trocam de forma.
         for (float y = Baixo; y <= Alto; y += 1f)
         {
-            var bolha = ConstrutorDeFase.Visual("Borda", parede, transform.position, "miasma_borda_0", OrdemDaBorda, false);
+            var bolha = ConstrutorDeFase.Visual("Borda", parede, transform.position, "mare_negra_borda_0", OrdemDaBorda, false);
             bolha.transform.localPosition = new Vector3(0f, y, 0f);
             bolhas.Add(bolha.GetComponent<SpriteRenderer>());
         }
@@ -128,13 +128,13 @@ public class MiasmaDaBruxa : MonoBehaviour
         Vector2[] lugaresDosOlhos = { new Vector2(-1.7f, 2.7f), new Vector2(-3.6f, 6.1f), new Vector2(-2.1f, 9.5f), new Vector2(-3.9f, 12.8f) };
         foreach (Vector2 lugar in lugaresDosOlhos)
         {
-            var olho = ConstrutorDeFase.Visual("Olho", parede, transform.position, "miasma_olho_0", OrdemDosOlhos, false);
+            var olho = ConstrutorDeFase.Visual("Olho", parede, transform.position, "mare_negra_olho_0", OrdemDosOlhos, false);
             olho.transform.localPosition = lugar;
             Luzes.Ponto(olho.transform, Luzes.Lilas, 1.6f, 0.6f);
             olhos.Add(new Olho { desenho = olho.GetComponent<SpriteRenderer>(), timer = Random.Range(0.5f, 3f) });
         }
 
-        // As mãos, em alturas diferentes (a de baixo pega quem corre no chão; as outras, quem pula).
+        // Os tentáculos, em alturas diferentes (a de baixo pega quem corre no chão; as outras, quem pula).
         float[] alturas = { 1.9f, 4.6f, 7.4f, 10.2f, 13f };
         for (int i = 0; i < alturas.Length; i++) maos.Add(CriarMao(alturas[i], i * 2.1f));
 
@@ -143,7 +143,7 @@ public class MiasmaDaBruxa : MonoBehaviour
             Luzes.Ponto(parede, Luzes.Lilas, 5f, 0.9f, new Vector3(0.3f, y, 0f));
 
         // A vinheta: um desenho do tamanho da tela, preso na câmera (veja LateUpdate). Começa invisível.
-        vinheta = ConstrutorDeFase.Visual("Vinheta", transform, transform.position, "miasma_vinheta", OrdemDaVinheta, false).GetComponent<SpriteRenderer>();
+        vinheta = ConstrutorDeFase.Visual("Vinheta", transform, transform.position, "mare_negra_vinheta", OrdemDaVinheta, false).GetComponent<SpriteRenderer>();
         vinheta.color = new Color(1f, 1f, 1f, 0f);
 
         frente = xDoN = transform.position.x;
@@ -153,17 +153,17 @@ public class MiasmaDaBruxa : MonoBehaviour
     {
         var mao = new Mao { alturaBase = altura, altura = altura, fase = fase };
         for (int i = 0; i < GomosDoBraco; i++)
-            mao.gomos.Add(ConstrutorDeFase.Visual("Braco", parede, transform.position, "miasma_braco", OrdemDosBracos, false).transform);
+            mao.gomos.Add(ConstrutorDeFase.Visual("Braco", parede, transform.position, "mare_negra_braco", OrdemDosBracos, false).transform);
 
-        var objeto = ConstrutorDeFase.Visual("MaoDaBruxa", parede, transform.position, "mao_da_bruxa", OrdemDasMaos, false);
+        var objeto = ConstrutorDeFase.Visual("TentaculoDaMare", parede, transform.position, "tentaculo_da_mare", OrdemDasMaos, false);
         mao.mao = objeto.transform;
         mao.desenho = objeto.GetComponent<SpriteRenderer>();
 
-        // Só a MÃO mata (o braço é só enfeite). Como ela se mexe, precisa do corpo cinemático.
+        // Só a PONTA mata (os gomos são só enfeite). Como ela se mexe, precisa do corpo cinemático.
         var area = objeto.AddComponent<CircleCollider2D>();
         area.isTrigger = true;
         area.radius = 0.33f;
-        objeto.AddComponent<Perigo>().conquista = "miasma";
+        objeto.AddComponent<Perigo>().conquista = "mare_negra";
         Perigo.TornarMovel(objeto);
         Luzes.Ponto(mao.mao, Luzes.Lilas, 1.4f, 0.5f);
         return mao;
@@ -255,7 +255,7 @@ public class MiasmaDaBruxa : MonoBehaviour
         GerenciadorDoJogo.Som("rugido", 0.45f);
         CameraSeguir.Tremer(0.25f, 0.5f);
         if (GerenciadorDoJogo.Instancia.MortesNaFase < 3) GerenciadorDoJogo.Instancia.Avisar("CORRE!", 1.2f);
-        // um "estouro" de fumaça e todas as mãos se esticam de uma vez
+        // um "estouro" de fumaça e todos os tentáculos se esticam de uma vez
         EstouroDeFumaca(24);
         foreach (Mao mao in maos) mao.alcance = 1.1f;
     }
@@ -284,32 +284,32 @@ public class MiasmaDaBruxa : MonoBehaviour
         else if (distancia < 2.5f && !jaSussurrou)
         {
             jaSussurrou = true;
-            GerenciadorDoJogo.Instancia.Avisar("Eu te amo...", 1f); // a Bruxa está BEM perto
+            GerenciadorDoJogo.Instancia.Avisar("Glub, glub...", 1f); // a Maré Negra está BEM perto
         }
     }
 
-    // Encostou na parede: a Bruxa te "abraça". Todas as mãos fecham de uma vez.
+    // Encostou na parede: o Kraken te agarra. Todos os tentáculos se enrolam de uma vez.
     void Abracar()
     {
         Jogador jogador = GerenciadorDoJogo.JogadorAtual;
         if (jogador == null || jogador.Morto) return;
         jogador.Morrer();
         if (!jogador.Morto) return;
-        Conquistas.Desbloquear("miasma");
+        Conquistas.Desbloquear("mare_negra");
         GerenciadorDoJogo.Som("rugido", 0.6f);
         CameraSeguir.Tremer(0.3f, 0.35f);
         foreach (Mao mao in maos)
         {
             mao.estado = EstadoDaMao.Voltando;
             mao.timer = 0.8f;
-            mao.desenho.sprite = FabricaDeSprites.Pegar("mao_da_bruxa_fechada");
+            mao.desenho.sprite = FabricaDeSprites.Pegar("tentaculo_da_mare_enrolado");
         }
     }
 
     void IrEmbora()
     {
         estado = Estado.IndoEmbora;
-        foreach (Olho olho in olhos) olho.desenho.sprite = FabricaDeSprites.Pegar("miasma_olho_0");
+        foreach (Olho olho in olhos) olho.desenho.sprite = FabricaDeSprites.Pegar("mare_negra_olho_0");
     }
 
     // ------------------------------------------------------------------ animações
@@ -327,7 +327,7 @@ public class MiasmaDaBruxa : MonoBehaviour
             bolha.transform.localPosition = new Vector3(x, p.y, 0f);
             bolha.transform.localScale = new Vector3(1f + 0.12f * Mathf.Sin(relogio * 3.1f + i * 2.3f), 1f, 1f); // "respirando"
             int forma = (i * 3 + Mathf.FloorToInt(relogio * 3f * agitacao + i * 0.37f)) % QuantidadeDeBolhas;
-            bolha.sprite = FabricaDeSprites.Pegar("miasma_borda_" + forma);
+            bolha.sprite = FabricaDeSprites.Pegar("mare_negra_borda_" + forma);
             bolha.flipY = i % 2 == 1; // de ponta-cabeça a cada duas: parece que tem mais formas
         }
     }
@@ -357,10 +357,10 @@ public class MiasmaDaBruxa : MonoBehaviour
             }
 
             string quadro;
-            if (estado == Estado.IndoEmbora) quadro = "miasma_olho_0";
-            else if (estado == Estado.Dormindo) quadro = olho.piscando > 0f ? "miasma_olho_1" : "miasma_olho_0"; // espiando...
-            else if (olho.piscando > 0f) quadro = olho.piscando > 0.05f && olho.piscando < 0.1f ? "miasma_olho_0" : "miasma_olho_1";
-            else quadro = "miasma_olho_2";
+            if (estado == Estado.IndoEmbora) quadro = "mare_negra_olho_0";
+            else if (estado == Estado.Dormindo) quadro = olho.piscando > 0f ? "mare_negra_olho_1" : "mare_negra_olho_0"; // espiando...
+            else if (olho.piscando > 0f) quadro = olho.piscando > 0.05f && olho.piscando < 0.1f ? "mare_negra_olho_0" : "mare_negra_olho_1";
+            else quadro = "mare_negra_olho_2";
             olho.desenho.sprite = FabricaDeSprites.Pegar(quadro);
 
             float pulso = 1f + 0.06f * Mathf.Sin(relogio * 3f + olho.desenho.transform.localPosition.y);
@@ -370,7 +370,7 @@ public class MiasmaDaBruxa : MonoBehaviour
 
     void AnimarMaos(float dt, bool vivo, Vector2 jogador, float distancia)
     {
-        // Jogador perto da parede e nenhuma mão no meio de um bote? A mão mais perto da altura dele ataca.
+        // Jogador perto da parede e nenhum tentáculo no meio de um bote? O mais perto da altura dele ataca.
         if (estado == Estado.Perseguindo && vivo && distancia < distanciaDoBote && !AlgumaMaoAtacando())
         {
             Mao escolhida = null;
@@ -411,13 +411,13 @@ public class MiasmaDaBruxa : MonoBehaviour
                     break;
 
                 case EstadoDaMao.Agarrando:
-                    // estica rapidinho (0,1 s), segura aberta e fecha a mão no fim
+                    // estica rapidinho (0,1 s), segura esticado e se enrola no fim
                     float quanto = Mathf.SmoothStep(0f, 1f, (0.3f - mao.timer) / 0.1f);
                     mao.alcance = Mathf.Lerp(-0.7f, alcanceDoBote, quanto);
                     if (mao.timer < 0.12f && !mao.fechada)
                     {
                         mao.fechada = true;
-                        mao.desenho.sprite = FabricaDeSprites.Pegar("mao_da_bruxa_fechada");
+                        mao.desenho.sprite = FabricaDeSprites.Pegar("tentaculo_da_mare_enrolado");
                         GerenciadorDoJogo.Som("bloco", 0.5f);
                         Fumaca(mao.alcance + 0.4f, mao.altura, 4);
                     }
@@ -434,7 +434,7 @@ public class MiasmaDaBruxa : MonoBehaviour
                     {
                         mao.estado = EstadoDaMao.Balancando;
                         mao.recarga = recargaDaMao;
-                        mao.desenho.sprite = FabricaDeSprites.Pegar("mao_da_bruxa");
+                        mao.desenho.sprite = FabricaDeSprites.Pegar("tentaculo_da_mare");
                     }
                     break;
             }
@@ -457,12 +457,12 @@ public class MiasmaDaBruxa : MonoBehaviour
         mao.timer = tempoDePreparo;
         mao.alturaDoBote = Mathf.Clamp(alturaDoJogador, mao.alturaBase - 1.6f, mao.alturaBase + 1.6f);
         mao.fechada = false;
-        mao.desenho.sprite = FabricaDeSprites.Pegar("mao_da_bruxa");
+        mao.desenho.sprite = FabricaDeSprites.Pegar("tentaculo_da_mare");
         GerenciadorDoJogo.Som("armadilha", 0.35f);
     }
 
-    // A mão fica na ponta do braço; o braço é uma fileira de "gomos" que sai de dentro da sombra
-    // e ondula um pouquinho (os gomos de perto da mão são menores).
+    // A ponta fica no fim do tentáculo; o resto é uma fileira de "gomos" que sai de dentro da sombra
+    // e ondula um pouquinho (os gomos de perto da ponta são menores).
     void PosicionarMao(Mao mao)
     {
         Vector2 raiz = new Vector2(-0.8f, mao.alturaBase); // escondida embaixo da borda
@@ -563,95 +563,92 @@ public class MiasmaDaBruxa : MonoBehaviour
 
     // ------------------------------------------------------------------ desenhos
 
-    // Registra os desenhos na FabricaDeSprites (Pegar("miasma") funciona em qualquer lugar, até no mapa do mundo).
+    // Registra os desenhos na FabricaDeSprites (Pegar("mare_negra") funciona em qualquer lugar, até no mapa do mundo).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void RegistrarDesenhos()
     {
         Vector2 centro = FabricaDeSprites.Centro;
-        FabricaDeSprites.Registrar("miasma", () => FabricaDeSprites.DeArte(ArteIcone, centro));
-        FabricaDeSprites.Registrar("mao_da_bruxa", () => FabricaDeSprites.DeArte(ArteMao, centro));
-        FabricaDeSprites.Registrar("mao_da_bruxa_fechada", () => FabricaDeSprites.DeArte(ArteMaoFechada, centro));
-        FabricaDeSprites.Registrar("miasma_braco", () => FabricaDeSprites.DeArte(ArteGomo, centro));
-        FabricaDeSprites.Registrar("miasma_olho_0", () => FabricaDeSprites.DeArte(ArteOlhoFechado, centro));
-        FabricaDeSprites.Registrar("miasma_olho_1", () => FabricaDeSprites.DeArte(ArteOlhoMeio, centro));
-        FabricaDeSprites.Registrar("miasma_olho_2", () => FabricaDeSprites.DeArte(ArteOlhoAberto, centro));
-        FabricaDeSprites.Registrar("miasma_fundo", () => FabricaDeSprites.Procedural(16, 16, centro, (x, y) => FabricaDeSprites.Cor('x')));
-        FabricaDeSprites.Registrar("miasma_nevoa", () => FabricaDeSprites.Procedural(128, 64, centro, CorDaNevoa));
-        FabricaDeSprites.Registrar("miasma_vinheta", () => FabricaDeSprites.Procedural(128, 72, centro, CorDaVinheta));
+        FabricaDeSprites.Registrar("mare_negra", () => FabricaDeSprites.DeArte(ArteIcone, centro));
+        FabricaDeSprites.Registrar("tentaculo_da_mare", () => FabricaDeSprites.DeArte(ArteMao, centro));
+        FabricaDeSprites.Registrar("tentaculo_da_mare_enrolado", () => FabricaDeSprites.DeArte(ArteMaoFechada, centro));
+        FabricaDeSprites.Registrar("mare_negra_braco", () => FabricaDeSprites.DeArte(ArteGomo, centro));
+        FabricaDeSprites.Registrar("mare_negra_olho_0", () => FabricaDeSprites.DeArte(ArteOlhoFechado, centro));
+        FabricaDeSprites.Registrar("mare_negra_olho_1", () => FabricaDeSprites.DeArte(ArteOlhoMeio, centro));
+        FabricaDeSprites.Registrar("mare_negra_olho_2", () => FabricaDeSprites.DeArte(ArteOlhoAberto, centro));
+        FabricaDeSprites.Registrar("mare_negra_fundo", () => FabricaDeSprites.Procedural(16, 16, centro, (x, y) => FabricaDeSprites.Cor('x')));
+        FabricaDeSprites.Registrar("mare_negra_nevoa", () => FabricaDeSprites.Procedural(128, 64, centro, CorDaNevoa));
+        FabricaDeSprites.Registrar("mare_negra_vinheta", () => FabricaDeSprites.Procedural(128, 72, centro, CorDaVinheta));
 
         // A borda: o pivô fica no pixel 15 de 24 (a "frente" da parede passa no meio das bolhas).
         var pivoDaBorda = new Vector2(15f / 24f, 0.5f);
         for (int i = 0; i < QuantidadeDeBolhas; i++)
         {
             int forma = i;
-            FabricaDeSprites.Registrar("miasma_borda_" + forma, () => FabricaDeSprites.Procedural(24, 24, pivoDaBorda, (x, y) => CorDaBorda(x, y, forma)));
+            FabricaDeSprites.Registrar("mare_negra_borda_" + forma, () => FabricaDeSprites.Procedural(24, 24, pivoDaBorda, (x, y) => CorDaBorda(x, y, forma)));
         }
-        FabricaDeSprites.Registrar("miasma_borda", () => FabricaDeSprites.Pegar("miasma_borda_0"));
+        FabricaDeSprites.Registrar("mare_negra_borda", () => FabricaDeSprites.Pegar("mare_negra_borda_0"));
     }
 
-    // Ícone (mapa do mundo): a mão da Bruxa saindo da sombra, com um olho roxo na palma.
+    // Ícone (mapa do mundo): o Kraken espiando da maré, com os olhos roxos e os tentáculos.
     static readonly string[] ArteIcone =
     {
-        ".......vvv.vvv.......",
-        "...vvv.vxv.vxv.vvv...",
+        ".......vvvvvvv.......",
+        ".....vvxxxxxxxvv.....",
+        "....vxxxxxxxxxxxv....",
+        "...vxxxxxxxxxxxxxv...",
+        "...vxxvvvxxxvvvxxv...",
+        "..vxxvPPkvxvPPkvxxv..",
+        "..vxxvPwkvxvPwkvxxv..",
+        "..vxxxvvvxxxvvvxxxv..",
+        "..vxxxxxxxxxxxxxxxv..",
+        "...vxxxxxxxxxxxxxv...",
+        "..vxxvxxvxxxvxxvxxv..",
         "...vxv.vxv.vxv.vxv...",
-        "...vxv.vxv.vxv.vxv...",
-        "...vxv.vxv.vxv.vxv...",
-        "...vxvvvxvvvxvvvxv...",
-        "vv.vxxxxxxxxxxxxxv...",
-        "vxvvxxxxxxxxxxxxxv...",
-        "vxxvxxvvvvvvvvxxxv...",
-        ".vxxxvVPPPkPPPVvxv...",
-        "..vxxvVPPwkPPPVvxv...",
-        "...vxxvvvvvvvvxxxv...",
-        "...vxxxxxxxxxxxxv....",
-        "....vxxxxxxxxxxv.....",
-        "..vvvvxxxxxxxxvvvv...",
-        ".vxxxxvxxxxxxvxxxxv..",
-        "vxxvxxxxxxxxxxxxvxxv.",
-        ".vvvvvvvvvvvvvvvvvv..",
+        "...vPv.vxv.vxv.vPv...",
+        "..vxv..vPv.vPv..vxv..",
+        ".vxv...vxv.vxv...vxv.",
+        ".vxv..vxv...vxv..vxv.",
+        "..vxv.vxv...vxv.vxv..",
+        "...v...v.....v...v...",
     };
 
-    // A mão aberta, esticada para a direita (dedos com unhas lilás). Contorno roxo, como a mão do cano.
+    // A ponta do tentáculo esticada para a direita, com a pontinha enrolada e as ventosas lilás embaixo.
     static readonly string[] ArteMao =
     {
-        "........vv......",
-        ".......vxxv.....",
-        "......vxxvPP....",
-        "..vvvvxxv.......",
-        ".vxxxxxxvvvvvv..",
-        "vxxxxxxxxxxxxxvP",
-        "vxxxxxxxvvvvvvV.",
-        "vxxxxxxv........",
-        "vxxxxxxxvvvvvvv.",
-        "vxxxxxxxxxxxxxxP",
-        "vxxxxxxxvvvvvvvV",
-        "vxxxxxxv........",
-        "vxxxxxxxvvvvv...",
-        ".vxxxxxxxxxxxvP.",
-        "..vvvvvvvvvvvV..",
+        "...........vvv..",
+        "..........vxxxv.",
+        "..........vxvxxv",
+        "...........v.vxv",
+        "............vxxv",
+        "..vvvvvvvvvvxxv.",
+        ".vxxxxxxxxxxxxv.",
+        "vxxxxxxxxxxxxv..",
+        "vxxxxxxxxxxvv...",
+        "vxPxxPxxPxv.....",
+        "vxxxxxxxxv......",
+        ".vvvvvvvv.......",
     };
 
-    // A mão fechada (agarrando), com as unhas para baixo.
+    // O tentáculo enrolado (agarrando).
     static readonly string[] ArteMaoFechada =
     {
         "................",
-        "........vvv.....",
-        ".......vxxxv....",
-        "..vvvvvxxxxxv...",
-        ".vxxxxxxxxxxxv..",
-        "vxxxxxxxvxxxxxv.",
-        "vxxxxxxxxvxxxxv.",
-        "vxxvxxxxxvxxxxv.",
-        "vxxxvxxxvxxxxxv.",
-        "vxxxxxxxxxxxxv..",
-        "vxxvxxxvxvxvxv..",
-        ".vxxxxvVvVvVv...",
-        "..vvvvvP.P.P....",
+        ".....vvvvv......",
+        "...vvxxxxxvv....",
+        "..vxxvvvvvxxv...",
+        ".vxxv.....vxxv..",
+        ".vxv..vvv..vxv..",
+        "vxxv.vxxxv.vxv..",
+        "vxxv.vxvxv.vxv..",
+        "vxxv..vxxv.vxv..",
+        "vxPxv..vv.vxxv..",
+        "vxxxxvvvvvxxv...",
+        ".vxPxxxPxxxv....",
+        "..vvvvvvvvv.....",
         "................",
     };
 
-    // Um "gomo" do braço (bolinha de sombra).
+    // Um "gomo" do tentáculo (bolinha de sombra).
     static readonly string[] ArteGomo =
     {
         "...vvvv...",

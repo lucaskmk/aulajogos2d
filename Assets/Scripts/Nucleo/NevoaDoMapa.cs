@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// A NÉVOA do mapa do mundo (o miasma da Bruxa), que esconde o que o Subaru ainda não descobriu.
+// A NÉVOA do mapa do mundo (a névoa do alto-mar), que esconde o que o Grumete ainda não descobriu.
 //
 // Antes eram ~2000 "bolotas" (um sprite por célula). Agora são nuvens macias pintadas numa IMAGEM só
 // (na verdade 3 camadas iguais, com pequenas diferenças), metade da resolução do mapa e com filtro
@@ -246,23 +246,25 @@ public class NevoaDoMapa : MonoBehaviour
                         // a sombra que a névoa faz no chão: a névoa "deslocada" para baixo-direita
                         int j = Mathf.Min(texAltura - 1, py + 3) * texLargura + Mathf.Max(0, px - 3);
                         float hs = densidadeMacia[j] + (ruido[j] - 0.5f) * Ruido;
-                        sombra = Mathf.Clamp01((hs - 0.35f) / 0.2f) * 0.38f;
+                        sombra = Mathf.Clamp01((hs - 0.35f) / 0.2f) * 0.22f;
                     }
                     if (alfa <= 0.003f && sombra <= 0.003f) { saida[i] = new Color32(0, 0, 0, 0); continue; }
 
                     // luz de cima-esquerda: onde a nuvem "sobe" para a direita e para baixo, a face olha para o sol
-                    float hx = alturaDaNevoa[py * texLargura + Mathf.Min(texLargura - 1, px + 1)] - alturaDaNevoa[py * texLargura + Mathf.Max(0, px - 1)];
-                    float hy = alturaDaNevoa[Mathf.Min(texAltura - 1, py + 1) * texLargura + px] - alturaDaNevoa[Mathf.Max(0, py - 1) * texLargura + px];
-                    // (e os "rolinhos" do ruído: o alto de cada um é mais claro, os vales entre eles mais escuros)
-                    float luz = 0.46f + (0.62f * hx - 0.78f * hy) * 2.4f + (ruido[i] - 0.5f) * 0.6f + (k == 0 ? 0f : 0.08f);
+                    // (pela densidade MACIA, sem o ruído fino: senão o miolo da nuvem fica todo listrado)
+                    float hx = densidadeMacia[py * texLargura + Mathf.Min(texLargura - 1, px + 2)] - densidadeMacia[py * texLargura + Mathf.Max(0, px - 2)];
+                    float hy = densidadeMacia[Mathf.Min(texAltura - 1, py + 2) * texLargura + px] - densidadeMacia[Mathf.Max(0, py - 2) * texLargura + px];
+                    // (o miolo fica liso e claro, como uma nuvem fofa: o ruído só mexe bem de leve no tom)
+                    float luz = 0.6f + (0.62f * hx - 0.78f * hy) * 2.4f + (ruido[i] - 0.5f) * 0.15f + (k == 0 ? 0f : 0.06f);
                     // na beirada a nuvem é mais fina (mais clara)
                     luz += (1f - alfa) * 0.2f;
                     float x = (px + 0.5f) * Passo;
-                    float escura = Mathf.Clamp01((x - inicioDaSombria) / 6f); // na região sombria o miasma é mais escuro
+                    float escura = Mathf.Clamp01((x - inicioDaSombria) / 6f); // na região sombria a névoa é mais escura
                     luz -= escura * 0.35f;
-                    float limiar = (ArteDosBlocos.Bayer[(py & 3) * 4 + (px & 3)] + 0.5f) / 16f - 0.5f;
-                    int tom = Mathf.Clamp(Mathf.RoundToInt(luz * (Cores.Length - 1) + limiar * 0.7f), 0, Cores.Length - 1);
-                    Color32 c = Cores[tom];
+                    // (sem pontilhado: o filtro suave da imagem já mistura os tons; o pontilhado virava manchas)
+                    float posicao = Mathf.Clamp(luz, 0f, 1f) * (Cores.Length - 1);
+                    int tom = Mathf.Min(Cores.Length - 2, (int)posicao);
+                    Color32 c = Color32.Lerp(Cores[tom], Cores[tom + 1], posicao - tom);
                     if (escura > 0f) c = Color32.Lerp(c, new Color32(84, 52, 120, 255), escura * 0.45f);
 
                     // junta a nuvem com a sombra embaixo dela

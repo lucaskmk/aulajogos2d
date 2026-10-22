@@ -1,128 +1,91 @@
 using UnityEngine;
 
-// Os sons do Retorno pela Morte (Re:Zero):
-//  - o áudio "retorno_pela_morte", agendado para que a parte mais alta (o "TUM")
-//    caia EXATAMENTE quando o jogador renasce;
-//  - a música "ost_morte", que toca só os primeiros segundos e vai sumindo.
-// Para trocar os sons, substitua os arquivos em Assets/Resources/Sons mantendo os nomes.
+// Os sons da Volta da Maré (a morte), todos gerados por código em SomDaMare:
+//  - a "volta": a onda que cresce e quebra no SINO de navio, agendada para que o sino bata
+//    EXATAMENTE quando o jogador renasce;
+//  - o "lamento": a frase curtinha de acordeão, que toca só os primeiros segundos e vai sumindo.
 public class SonsDaMorte : MonoBehaviour
 {
-    const string AudioDaMorte = "Sons/retorno_pela_morte"; // em Assets/Resources, sem a extensão
-    const string MusicaDaMorte = "Sons/ost_morte";
-    const float DuracaoOst = 2f;       // quanto tempo a música toca (curtinho: morre-se MUITO neste jogo)
-    const float DuracaoFadeOst = 0.8f; // nos últimos 0,8 s ela vai sumindo
-    const float VolumeDaOst = 0.7f;
-    const float GanhoDoRenascer = 1.8f; // o "TUM" do renascimento fica mais alto que o arquivo original
+    const float DuracaoDoLamento = 2f;      // quanto tempo o lamento toca (curtinho: morre-se MUITO neste jogo)
+    const float DuracaoDoFadeDoLamento = 0.8f; // nos últimos 0,8 s ele vai sumindo
+    const float VolumeDoLamento = 0.7f;
 
-    AudioSource fonteDaMorte;
-    AudioClip clipeDaMorte;
-    float picoDaMorte; // em que segundo do áudio vem a parte mais alta
+    AudioSource fonteDaVolta;
+    AudioClip clipeDaVolta;
+    float picoDaVolta; // em que segundo do som o sino bate
 
-    AudioSource fonteDaOst;
-    float timerOst;
+    AudioSource fonteDoLamento;
+    float timerDoLamento;
 
-    // A OST está tocando? (a música de fundo fica baixinha enquanto isso)
-    public bool OstTocando => fonteDaOst.isPlaying;
+    // O lamento está tocando? (a música de fundo fica baixinha enquanto isso)
+    public bool OstTocando => fonteDoLamento.isPlaying;
 
     void Awake()
     {
-        fonteDaMorte = gameObject.AddComponent<AudioSource>();
-        fonteDaMorte.playOnAwake = false;
-        clipeDaMorte = Resources.Load<AudioClip>(AudioDaMorte);
-        if (clipeDaMorte != null)
-        {
-            fonteDaMorte.clip = clipeDaMorte;
-            picoDaMorte = AcharPico(clipeDaMorte);
-            clipeDaMorte = MaisAlto(clipeDaMorte, GanhoDoRenascer);
-            fonteDaMorte.clip = clipeDaMorte;
-        }
+        fonteDaVolta = gameObject.AddComponent<AudioSource>();
+        fonteDaVolta.playOnAwake = false;
+        clipeDaVolta = CriarClipe("volta_da_mare", SomDaMare.Volta());
+        fonteDaVolta.clip = clipeDaVolta;
+        picoDaVolta = SomDaMare.SegundoDoSino;
 
-        fonteDaOst = gameObject.AddComponent<AudioSource>();
-        fonteDaOst.playOnAwake = false;
-        fonteDaOst.clip = Resources.Load<AudioClip>(MusicaDaMorte);
+        fonteDoLamento = gameObject.AddComponent<AudioSource>();
+        fonteDoLamento.playOnAwake = false;
+        fonteDoLamento.clip = CriarClipe("lamento_da_mare", SomDaMare.Lamento());
+    }
+
+    static AudioClip CriarClipe(string nome, float[] amostras)
+    {
+        var clipe = AudioClip.Create(nome, amostras.Length, 1, SomDaMare.Taxa, false);
+        clipe.SetData(amostras, 0);
+        return clipe;
     }
 
     // Chamado quando o jogador morre. "duracao" = quantos segundos até ele renascer.
     public void Tocar(float duracao)
     {
-        TocarRetornoPelaMorte(duracao);
-        TocarOst();
+        TocarVolta(duracao);
+        TocarLamento();
     }
 
-    // O jogador pulou a animação: renasce AGORA, então o "TUM" tem que tocar agora.
+    // O jogador pulou a animação: renasce AGORA, então o sino tem que bater agora.
     public void PularParaOPico()
     {
-        if (clipeDaMorte == null) return;
-        fonteDaMorte.Stop();
-        fonteDaMorte.Play();
-        fonteDaMorte.time = picoDaMorte;
+        fonteDaVolta.Stop();
+        fonteDaVolta.Play();
+        fonteDaVolta.time = picoDaVolta;
     }
 
     void Update()
     {
-        // Fade-out: o volume cai até zero nos últimos segundos e aí a música para.
-        if (!fonteDaOst.isPlaying) return;
-        timerOst -= Time.deltaTime;
-        if (timerOst <= 0f) fonteDaOst.Stop();
-        else fonteDaOst.volume = Mathf.Clamp01(timerOst / DuracaoFadeOst) * VolumeDaOst * Opcoes.Musica;
+        // Fade-out: o volume cai até zero nos últimos segundos e aí o lamento para.
+        if (!fonteDoLamento.isPlaying) return;
+        timerDoLamento -= Time.deltaTime;
+        if (timerDoLamento <= 0f) fonteDoLamento.Stop();
+        else fonteDoLamento.volume = Mathf.Clamp01(timerDoLamento / DuracaoDoFadeDoLamento) * VolumeDoLamento * Opcoes.Musica;
     }
 
-    void TocarOst()
+    void TocarLamento()
     {
-        if (fonteDaOst.clip == null) return;
-        fonteDaOst.Stop(); // morreu de novo? recomeça do início
-        fonteDaOst.volume = VolumeDaOst * Opcoes.Musica;
-        fonteDaOst.Play();
-        timerOst = DuracaoOst;
+        fonteDoLamento.Stop(); // morreu de novo? recomeça do início
+        fonteDoLamento.volume = VolumeDoLamento * Opcoes.Musica;
+        fonteDoLamento.Play();
+        timerDoLamento = DuracaoDoLamento;
     }
 
-    // Agenda o áudio para que a parte mais alta caia EXATAMENTE quando o jogador renasce.
-    void TocarRetornoPelaMorte(float duracao)
+    // Agenda a volta para que o sino bata EXATAMENTE quando o jogador renasce.
+    void TocarVolta(float duracao)
     {
-        if (clipeDaMorte == null)
-        {
-            GerenciadorDoJogo.Som("morte"); // sem o arquivo de áudio, usa o som 8-bit
-            return;
-        }
-        fonteDaMorte.Stop(); // morreu de novo durante o áudio? recomeça
-        fonteDaMorte.volume = Opcoes.Efeitos;
-        float atraso = duracao - picoDaMorte;
+        fonteDaVolta.Stop(); // morreu de novo durante o som? recomeça
+        fonteDaVolta.volume = Opcoes.Efeitos;
+        float atraso = duracao - picoDaVolta;
         if (atraso >= 0f)
         {
-            fonteDaMorte.PlayDelayed(atraso);
+            fonteDaVolta.PlayDelayed(atraso);
         }
         else
         {
-            fonteDaMorte.Play();
-            fonteDaMorte.time = -atraso; // a espera é mais curta que o começo do áudio: pula um pedaço
+            fonteDaVolta.Play();
+            fonteDaVolta.time = -atraso; // a espera é mais curta que o começo do som: pula um pedaço da onda
         }
-    }
-
-    // Cópia do áudio com o volume multiplicado (o AudioSource não passa de 100%).
-    // Usa uma curva suave (tanh) no lugar de cortar o som, para não "estourar" feio.
-    static AudioClip MaisAlto(AudioClip original, float ganho)
-    {
-        var amostras = new float[original.samples * original.channels];
-        if (!original.GetData(amostras, 0)) return original; // não deu para ler: fica o original
-        for (int i = 0; i < amostras.Length; i++)
-            amostras[i] = (float)System.Math.Tanh(amostras[i] * ganho);
-        var copia = AudioClip.Create(original.name + "_alto", original.samples, original.channels, original.frequency, false);
-        copia.SetData(amostras, 0);
-        return copia;
-    }
-
-    // Primeiro instante em que o áudio chega à metade do volume máximo (o "TUM").
-    static float AcharPico(AudioClip clipe)
-    {
-        clipe.LoadAudioData();
-        var amostras = new float[clipe.samples * clipe.channels];
-        if (!clipe.GetData(amostras, 0)) return 0f;
-
-        float maximo = 0f;
-        foreach (float a in amostras) maximo = Mathf.Max(maximo, Mathf.Abs(a));
-        for (int i = 0; i < amostras.Length; i++)
-            if (Mathf.Abs(amostras[i]) >= maximo * 0.5f)
-                return (float)(i / clipe.channels) / clipe.frequency;
-        return 0f;
     }
 }

@@ -22,7 +22,7 @@ using UnityEngine;
 //
 // Os blocos continuam com 16 x 16 pixels (1 bloco). Só o bloco com grama em cima é um pouco mais alto
 // (16 x 19): as pontas do capim passam 3 pixels acima do bloco, e o pivô fica no meio da parte de 16 x 16,
-// então ele continua encaixado no mesmo lugar (o Subaru pisa no topo do bloco, entre as folhinhas).
+// então ele continua encaixado no mesmo lugar (o Grumete pisa no topo do bloco, entre as folhinhas).
 //
 // Nomes dos blocos do chão: "chao_<tipo>_<versão>_<bordas>", por exemplo "chao_topo_2_eb":
 //   tipo   = topo (grama em cima), terra (logo abaixo) ou pedra (mais fundo);

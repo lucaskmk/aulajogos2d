@@ -4,9 +4,9 @@ using UnityEngine.Rendering.Universal;
 
 // Pós-processamento (os "shaders" da tela inteira, do URP), criado por código:
 //  - Bloom: as partes bem claras (luzes, lampiões, brilhos) brilham em volta;
-//  - Vinheta: as bordas da tela ficam um pouco escuras (roxo da Bruxa);
+//  - Vinheta: as bordas da tela ficam um pouco escuras (o roxo da tinta do Kraken);
 //  - Cor: um pouco mais de saturação e contraste;
-//  - Retorno pela Morte: ao morrer a tela perde a cor e ganha aberração cromática (as cores "se separam");
+//  - Volta da Maré: ao morrer a tela perde a cor e ganha aberração cromática (as cores "se separam");
 //    no renascimento a imagem dá um "soco" de distorção de lente;
 //  - Pausa: tudo meio sem cor.
 //
@@ -15,7 +15,7 @@ using UnityEngine.Rendering.Universal;
 //  - SplitToning: pinta as SOMBRAS de azul-arroxeado (frio) e as partes CLARAS de dourado (quente).
 //    É o truque mais usado em filme e em Octopath Traveler: o contraste quente/frio dá "volume" à imagem;
 //  - ShadowsMidtonesHighlights: escurece e esfria só as sombras, esquenta só as luzes;
-//  - WhiteBalance: a "temperatura" da luz (dia dourado, noite azul, biblioteca cor de sépia).
+//  - WhiteBalance: a "temperatura" da luz (dia dourado, noite azul, cabines cor de sépia).
 // Nada disso é shader escrito por nós: são efeitos prontos do URP, só ajustados por código.
 public class EfeitosDeTela : MonoBehaviour
 {
@@ -32,7 +32,7 @@ public class EfeitosDeTela : MonoBehaviour
     ShadowsMidtonesHighlights sombrasELuzes;
     WhiteBalance balancoDeBranco;
 
-    static readonly Color RoxoDaBruxa = new Color(0.12f, 0f, 0.18f);
+    static readonly Color RoxoDoKraken = new Color(0.12f, 0f, 0.18f);
     static readonly Color Cinza = new Color(0.5f, 0.5f, 0.5f); // no SplitToning, cinza = "não pinta nada"
     static readonly Vector4 Neutro = new Vector4(1f, 1f, 1f, 0f); // no ShadowsMidtonesHighlights, (1,1,1,0) = "não muda nada"
 
@@ -85,7 +85,7 @@ public class EfeitosDeTela : MonoBehaviour
         sombrasSMH = new Vector4(0.88f, 0.86f, 1.14f, -0.06f), luzesSMH = new Vector4(1.06f, 1f, 0.92f, 0.02f),
         temperatura = -8f, matiz = 3f, saturacaoExtra = 6f, contrasteExtra = 14f, exposicao = 0f,
     };
-    static readonly Visual Biblioteca = new Visual
+    static readonly Visual Cabines = new Visual
     {
         limiteDoBloom = 0.9f, forcaDoBloom = 0.7f, corDoBloom = new Color(1f, 0.78f, 0.5f),
         sombras = new Color(0.4f, 0.32f, 0.52f), luzes = new Color(0.72f, 0.56f, 0.36f), equilibrio = 8f,
@@ -129,7 +129,7 @@ public class EfeitosDeTela : MonoBehaviour
         bloom.scatter.value = 0.65f;
 
         vinheta = perfil.Add<Vignette>(true);
-        vinheta.color.value = RoxoDaBruxa;
+        vinheta.color.value = RoxoDoKraken;
         vinheta.intensity.value = 0.25f;
         vinheta.smoothness.value = 0.45f;
 
@@ -162,7 +162,7 @@ public class EfeitosDeTela : MonoBehaviour
         Clima clima = jogo.Mapa != null ? Clima.Dia : Paralaxe.ClimaDa(jogo.DadosDaFase);
         LuzDoDia.Atualizar(jogo, clima); // a hora do dia (manhã -> entardecer) e o sol atrás das nuvens
         Luzes.AjustarAoVisual(hd && jogo.Mapa == null); // no HD-2D a luz do céu é mais fraca (quem brilha é o sol)
-        Visual v = clima == Clima.Noite ? Noite : clima == Clima.Escuro ? NoEscuro : clima == Clima.Biblioteca ? Biblioteca
+        Visual v = clima == Clima.Noite ? Noite : clima == Clima.Escuro ? NoEscuro : clima == Clima.Cabines ? Cabines
             : Misturar(Dia, Entardecer, LuzDoDia.Entardecer);
 
         // Bloom: pode ser desligado ou ajustado no painel F10 (AjustesVisuais).
@@ -175,7 +175,7 @@ public class EfeitosDeTela : MonoBehaviour
         // (no HD-2D quem dá o tom da fase é o WhiteBalance; no Simples, um filtro de cor como antes)
         cor.colorFilter.value = hd ? Color.white
             : jogo.FaseNoturna ? new Color(0.85f, 0.9f, 1.15f)
-            : jogo.NaBiblioteca ? new Color(1.08f, 0.97f, 0.86f)
+            : jogo.NasCabines ? new Color(1.08f, 0.97f, 0.86f)
             : Color.white;
 
         aberracao.intensity.value = Mathf.Max(morte * 0.85f, renascer * 0.5f);

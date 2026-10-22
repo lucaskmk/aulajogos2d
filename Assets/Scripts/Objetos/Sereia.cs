@@ -1,10 +1,10 @@
 using System.Collections;
 using UnityEngine;
 
-// 'L' - a Emilia, esperando o Subaru no fim da última fase.
+// 'L' - a Sereia, esperando o Grumete no fim da última fase.
 // Quando você pega a bandeira de verdade, ela comemora (pulinhos e coraçõezinhos)
 // e a Interface mostra a fala dela.
-public class Emilia : MonoBehaviour
+public class Sereia : MonoBehaviour
 {
     Transform visual;
     SpriteRenderer desenho;
@@ -13,18 +13,18 @@ public class Emilia : MonoBehaviour
     void Awake()
     {
         // a arte tem o "pé" no pivô, então ela fica em cima do chão
-        var filho = ConstrutorDeFase.Visual("Visual", transform, transform.position + Vector3.down * 0.5f, "emilia", 6);
+        var filho = ConstrutorDeFase.Visual("Visual", transform, transform.position + Vector3.down * 0.5f, "sereia", 6);
         visual = filho.transform;
         desenho = filho.GetComponent<SpriteRenderer>();
-        if (GerenciadorDoJogo.Instancia != null) GerenciadorDoJogo.Instancia.Emilia = this;
+        if (GerenciadorDoJogo.Instancia != null) GerenciadorDoJogo.Instancia.Sereia = this;
         Luzes.Ponto(transform, new Color(0.9f, 0.85f, 1f), 3f, 0.7f, Vector3.up * 0.7f);
         SombraNoChao.Adicionar(gameObject, 0.9f);
     }
 
     void OnDestroy()
     {
-        if (GerenciadorDoJogo.Instancia != null && GerenciadorDoJogo.Instancia.Emilia == this)
-            GerenciadorDoJogo.Instancia.Emilia = null;
+        if (GerenciadorDoJogo.Instancia != null && GerenciadorDoJogo.Instancia.Sereia == this)
+            GerenciadorDoJogo.Instancia.Sereia = null;
     }
 
     void Update()

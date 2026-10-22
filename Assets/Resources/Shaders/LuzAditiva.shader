@@ -12,7 +12,7 @@
 // Sprite-Unlit-Default). Ele também desenha passes "SRPDefaultUnlit"; se este shader tivesse os
 // DOIS, o sprite seria desenhado duas vezes (e a luz somada em dobro).
 // Se este shader não funcionar na placa de vídeo, o jogo usa o material normal (veja MateriaisHD2D).
-Shader "ReCilada/LuzAditiva"
+Shader "CiladaAVista/LuzAditiva"
 {
     Properties
     {

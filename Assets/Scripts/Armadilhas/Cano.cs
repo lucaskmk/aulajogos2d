@@ -1,8 +1,8 @@
 using UnityEngine;
 
 // 'U' - cano (2 blocos de largura, desce até o chão). De tempos em tempos sai dele
-// uma MÃO DE SOMBRA da Bruxa. Encostou, morreu.
-// Dá para subir no cano e pular por cima... mas só enquanto a mão está lá dentro. Timing!
+// um TENTÁCULO do Kraken. Encostou, morreu.
+// Dá para subir no cano e pular por cima... mas só enquanto o tentáculo está lá dentro. Timing!
 public class Cano : MonoBehaviour
 {
     enum Estado { Escondida, Subindo, Fora, Descendo }
@@ -34,7 +34,7 @@ public class Cano : MonoBehaviour
         bocaDoCano = topo.y + 0.5f;
         yEscondida = bocaDoCano - 1.25f;
         yFora = bocaDoCano + 0.55f;
-        var objetoMao = ConstrutorDeFase.Visual("Mao", transform, new Vector3(topo.x, yEscondida, 0f), "mao_sombra", -1);
+        var objetoMao = ConstrutorDeFase.Visual("Mao", transform, new Vector3(topo.x, yEscondida, 0f), "tentaculo", -1);
         mao = objetoMao.transform;
         Luzes.Ponto(mao, Luzes.Lilas, 1.6f, 0.6f);
         perigo = Perigo.Adicionar(objetoMao, new Vector2(0.6f, 1.3f), Vector2.zero);

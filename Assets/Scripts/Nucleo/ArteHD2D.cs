@@ -1,17 +1,14 @@
 using UnityEngine;
 
 // O "clima" de cada fase: decide a cor do pós-processamento, dos feixes de luz e da névoa.
-public enum Clima { Dia, Noite, Escuro, Biblioteca }
+public enum Clima { Dia, Noite, Escuro, Cabines }
 
 // Desenhos do visual "HD-2D" (o estilo de Octopath Traveler: pixel art com luz e profundidade de "foto").
 //
-// Na fotografia, quando a câmera foca em algo perto, o que está longe fica DESFOCADO (borrado), e o que
-// está muito perto da lente também. É isso que dá a sensação de "maquete" (o efeito tilt-shift).
-// Normalmente isso é feito com um shader na placa de vídeo... mas aqui fazemos do jeito mais simples
-// possível: borramos as IMAGENS uma única vez, na hora em que são criadas (blur "por CPU"), e guardamos.
-// Nada é recalculado durante o jogo, então fica leve até no navegador (WebGL).
-//
-// O plano do jogo (blocos, Subaru, inimigos) continua NÍTIDO: só o fundo e a frente são borrados.
+// O fundo fica NÍTIDO, com a luz pintada (a beirada virada para o sol brilha) e a profundidade dada pela cor:
+// quanto mais longe a camada, mais clara e azulada (a "perspectiva do ar"). Só o que está bem perto da "lente"
+// (o capim e o galho do primeiro plano) é um pouquinho borrado. Tudo é feito uma vez só, quando a imagem é
+// criada (por CPU), e guardado: nada é recalculado durante o jogo, então fica leve até no navegador (WebGL).
 public static class ArteHD2D
 {
     // Registra os desenhos novos na FabricaDeSprites: depois é só usar FabricaDeSprites.Pegar("nome").
@@ -19,20 +16,21 @@ public static class ArteHD2D
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Registrar()
     {
-        // Camadas do fundo, desfocadas: quanto mais longe, mais borrada (raio maior e mais passadas).
-        FabricaDeSprites.Registrar("fundo_montanhas_hd", () => VersaoDesfocada("fundo_montanhas", 3, 3));
-        FabricaDeSprites.Registrar("fundo_castelo_hd", () => VersaoDesfocada("fundo_castelo", 2, 3));
-        FabricaDeSprites.Registrar("fundo_floresta_hd", () => VersaoDesfocada("fundo_floresta", 1, 3));
-        FabricaDeSprites.Registrar("fundo_arvores_hd", () => VersaoDesfocada("fundo_arvores", 1, 2));
+        // Camadas do fundo com a luz pintada na beirada (NÍTIDAS: a distância vem da cor, que a Paralaxe
+        // deixa mais clara e azulada nas camadas de longe; borrar deixava tudo com cara de mancha).
+        FabricaDeSprites.Registrar("fundo_ilhas_hd", () => VersaoComLuz("fundo_ilhas"));
+        FabricaDeSprites.Registrar("fundo_galeao_hd", () => VersaoComLuz("fundo_galeao"));
+        FabricaDeSprites.Registrar("fundo_palmeiras_hd", () => VersaoComLuz("fundo_palmeiras"));
+        FabricaDeSprites.Registrar("fundo_mato_hd", () => VersaoComLuz("fundo_mato"));
 
         // Luz: o feixe (god ray) e a auréola em volta do sol/lua.
         FabricaDeSprites.Registrar("hd2d_feixe", () => Suave(FabricaDeSprites.Procedural(32, 128, new Vector2(0.5f, 1f), CorFeixe)));
         FabricaDeSprites.Registrar("hd2d_aureola", () => Suave(FabricaDeSprites.Procedural(64, 64, FabricaDeSprites.Centro, CorAureola)));
 
         // Primeiro plano (bem perto da "lente"): desenhado com metade da resolução (8 pixels por bloco)
-        // e bem borrado. Capim embaixo; galho com folhas pendurado em cima.
-        FabricaDeSprites.Registrar("hd2d_frente_capim", () => Desfocado(LarguraDaFrente, AlturaDoCapim, CorCapim, FabricaDeSprites.Base, 1, 3, true, 8));
-        FabricaDeSprites.Registrar("hd2d_frente_galho", () => Desfocado(LarguraDaFrente, AlturaDoGalho, CorGalho, new Vector2(0.5f, 1f), 2, 3, false, 8));
+        // e só um pouquinho borrado. Capim embaixo; galho com folhas pendurado em cima.
+        FabricaDeSprites.Registrar("hd2d_frente_capim", () => Desfocado(LarguraDaFrente, AlturaDoCapim, CorCapim, FabricaDeSprites.Base, 1, 1, true, 8));
+        FabricaDeSprites.Registrar("hd2d_frente_galho", () => Desfocado(LarguraDaFrente, AlturaDoGalho, CorGalho, new Vector2(0.5f, 1f), 1, 1, false, 8));
 
         // Sombras de nuvens (SombrasDeNuvens): manchas brancas com transparência, bem grandes
         // (4 pixels por bloco) e com filtragem suave. A cor da sombra vem de quem desenha.
@@ -141,20 +139,16 @@ public static class ArteHD2D
         return sprite;
     }
 
-    // Pega um desenho que já existe (ex.: "fundo_castelo"), PINTA a luz nele e devolve a versão borrada.
-    static Sprite VersaoDesfocada(string nome, int raio, int passadas)
+    // Pega um desenho que já existe (ex.: "fundo_galeao") e PINTA a luz nele. Sem borrar, com o pixel nítido.
+    static Sprite VersaoComLuz(string nome)
     {
-        Sprite original = FabricaDeSprites.Pegar(nome);
-        Texture2D textura = original.texture;
-        int folga = raio * passadas; // o quanto o borrado pode "vazar" para cima
+        Texture2D textura = FabricaDeSprites.Pegar(nome).texture;
         Color32[] pintado = PintarLuz(textura.GetPixels32(), textura.width, textura.height);
-        Color32[] borrado = Desfocar(pintado, textura.width, textura.height, raio, passadas, folga, 0);
-        int altura = textura.height + folga;
-        return Suave(FabricaDeSprites.Procedural(textura.width, altura, FabricaDeSprites.Base, (x, y) => borrado[y * textura.width + x]));
+        return FabricaDeSprites.Procedural(textura.width, textura.height, FabricaDeSprites.Base, (x, y) => pintado[y * textura.width + x]);
     }
 
-    // As camadas do fundo são silhuetas de uma cor só (o jogo pinta com a cor da fase). Para elas parecerem
-    // PINTADAS, com volume, cada pixel ganha um tom de luz antes de borrar:
+    // As camadas do fundo são desenhadas em tons de cinza (o jogo pinta com a cor da fase). Para elas parecerem
+    // PINTADAS, com volume, cada pixel ganha mais um tom de luz:
     //  - a beirada virada para o sol (em cima e à esquerda) fica clara e um pouco quente (amarelada): "rim light";
     //  - o miolo fica mais escuro e frio (azulado), e mais ainda perto da base (onde a luz quase não chega).
     // Como o SpriteRenderer MULTIPLICA a cor da fase por este desenho, branco = a cor cheia e cinza = sombra.
@@ -173,7 +167,7 @@ public static class ArteHD2D
                     if (Vazio(x - k, y + k) || Vazio(x, y + k) || Vazio(x - k, y)) { distancia = k; break; }
                 float borda = Mathf.Exp(-(distancia - 1) / 1.6f);           // 1 na beirada, some em ~4 pixels
                 float base_ = Mathf.Clamp01(y / (altura * 0.6f));            // 0 embaixo, 1 do meio para cima
-                float luz = 0.6f + 0.12f * base_ + 0.4f * borda;
+                float luz = 0.86f + 0.06f * base_ + 0.22f * borda; // (o desenho já tem as sombras: aqui é só o brilho da beirada)
                 float quente = borda * 0.16f;                                // na beirada: mais vermelho, menos azul
                 resultado[y * largura + x] = new Color32(
                     Byte(c.r / 255f * luz * (0.94f + quente)),

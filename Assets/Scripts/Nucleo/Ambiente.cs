@@ -4,7 +4,7 @@ using UnityEngine;
 //  - Polen:     pontinhos claros subindo devagar, balançando (dia normal);
 //  - Petalas:   pétalas cor-de-rosa caindo (fases rosadas);
 //  - VagaLumes: luzinhas amarelas que piscam e iluminam em volta (fase noturna);
-//  - Poeira:    poeira dourada parada no ar (biblioteca);
+//  - Poeira:    poeira dourada parada no ar (as cabines);
 //  - Brilhos:   estrelinhas (fase secreta).
 [DefaultExecutionOrder(110)] // depois da câmera e da paralaxe
 public class Ambiente : MonoBehaviour
