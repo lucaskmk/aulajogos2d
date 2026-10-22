@@ -3,7 +3,7 @@ using UnityEngine;
 // A "hora do dia" e o céu, divididos entre os efeitos (raios de sol, cores da tela, sombras de nuvem).
 //
 //  - Entardecer: nas fases de DIA, o começo da fase é de manhã e o fim é um entardecer dourado.
-//    Quem manda é a posição do Subaru na fase (0 = manhã, 1 = fim de tarde). É bem suave: só a parte
+//    Quem manda é a posição do Grumete na fase (0 = manhã, 1 = fim de tarde). É bem suave: só a parte
 //    final da fase fica realmente alaranjada. No painel F10 dá para forçar uma hora (AjustesVisuais.horaManual).
 //  - Cobertura: quanto o sol está tapado por uma nuvem agora (0 = céu limpo, 1 = nuvem cheia).
 //    Quem calcula são as SombrasDeNuvens; os raios de sol (FeixesDeLuz) somem quando ela sobe.

@@ -3,7 +3,7 @@ using UnityEngine;
 // RAIOS DE SOL ("god rays"): feixes de luz diagonais, como o sol entrando por entre as nuvens, e
 // grãozinhos de poeira dourada flutuando DENTRO deles (igual poeira num raio de sol na janela).
 //  - de dia: feixes dourados de manhã, que vão ficando alaranjados no entardecer (LuzDoDia.Entardecer);
-//  - na biblioteca: feixes cor de sépia (luz velha entrando pelas janelas);
+//  - nas cabines: feixes cor de sépia (luz velha entrando pelas janelas);
 //  - de noite: poucos feixes de luar azulados, bem fracos;
 //  - no escuro: nada (nem é criado).
 //
@@ -52,7 +52,7 @@ public class FeixesDeLuz : MonoBehaviour
                 quantidade = 3; forca = 0.35f; cor = new Color(0.6f, 0.72f, 1f);
                 quantosGraos = 6; corDoGrao = new Color(0.75f, 0.85f, 1f);
                 break;
-            case Clima.Biblioteca:
+            case Clima.Cabines:
                 quantidade = 4; forca = 0.85f; cor = new Color(1f, 0.78f, 0.5f);
                 quantosGraos = 24; corDoGrao = new Color(1f, 0.85f, 0.55f);
                 break;

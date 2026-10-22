@@ -1,23 +1,24 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 'Q' - o MANGUAL DA REM: a bola de ferro cheia de espinhos (a arma da Rem, a empregada de cabelo azul
-// da mansão Roswaal) girando sem parar, presa numa corrente, em volta de um bloco de ferro (o eixo).
-//  - Só a BOLA mata. A corrente é só enfeite (pode encostar à vontade).
+// 'Q' - a ÂNCORA DA CAPITÃ: a âncora de ferro (a arma da Capitã Âncora, a pirata da fase 6) girando sem
+// parar, presa numa corrente, em volta de um bloco de ferro (o eixo).
+//  - Só a ÂNCORA mata. A corrente é só enfeite (pode encostar à vontade).
 //  - O eixo é um bloco sólido: dá para subir nele. E lá em cima é o "olho do furacão":
-//    a bola passa em volta, mas não alcança quem está colado no eixo. ;)
-//  - A bola é desenhada ATRÁS dos blocos: quando ela passa pelo chão ou pelo teto, parece que "entra" neles
-//    (e levanta poeira). Um mangual com o eixo dentro de um teto de tijolos fica escondido metade do tempo...
-//  - O jeito de girar (onde a bola começa e para que lado gira) depende da COLUNA do 'Q' no mapa
+//    a âncora passa em volta, mas não alcança quem está colado no eixo. ;)
+//  - A âncora é desenhada ATRÁS dos blocos: quando ela passa pelo chão ou pelo teto, parece que "entra" neles
+//    (e levanta poeira). Uma âncora com o eixo dentro de um teto de tijolos fica escondida metade do tempo...
+//  - O jeito de girar (onde a âncora começa e para que lado gira) depende da COLUNA do 'Q' no mapa
 //    (veja a tabela "Jeitos" abaixo). Assim quem desenha a fase escolhe tudo só mudando o 'Q' de lugar,
 //    e a fase é igual em toda tentativa (dá para decorar o ritmo).
 //  - ENTERRADO: um 'Q' colocado DENTRO do chão (com chão em cima dele) se disfarça de bloco de chão.
-//    Não dá para ver nada... até a bola pular para fora do chão, como a barbatana de um tubarão. :)
+//    Não dá para ver nada... até a âncora pular para fora do chão, como a barbatana de um tubarão. :)
+//  (no código, a âncora se chama "bola": é o mesmo papel da bola de um mangual)
 //
-// 'q' - igualzinho... até você chegar perto. Aí a Rem fica BRAVA (vira oni, com chifre e tudo):
-//       a corrente range, a bola freia e treme por um instante (esse é o aviso!) e depois volta
+// 'q' - igualzinho... até você chegar perto. Aí a Capitã fica FURIOSA (sobe a bandeirinha pirata do eixo):
+//       a corrente range, a âncora freia e treme por um instante (esse é o aviso!) e depois volta
 //       girando para o OUTRO lado, com o dobro da velocidade. E ela não se acalma mais.
-public class MangualDaRem : MonoBehaviour
+public class Ancora : MonoBehaviour
 {
     enum Estado { Girando, Avisando, Brava }
 
@@ -29,7 +30,7 @@ public class MangualDaRem : MonoBehaviour
 
     [Header("Variante troll ('q')")]
     public bool troll;
-    public float distanciaParaIrritar = 4.5f; // distância na horizontal em que a Rem percebe você (a bola alcança uns 3,5)
+    public float distanciaParaIrritar = 4.5f; // distância na horizontal em que a Capitã percebe você (a bola alcança uns 3,5)
     public float tempoDeAviso = 0.4f;       // quanto tempo ela fica rangendo e freando antes de virar
     public float multiplicadorDaRaiva = 2f; // brava, ela gira esse tanto de vezes mais rápido
 
@@ -50,7 +51,7 @@ public class MangualDaRem : MonoBehaviour
         (180f, 1),  // 7: bola à esquerda, anti-horário
     };
 
-    static readonly Color CorDaLuz = new Color(0.55f, 0.75f, 1f);      // azul do cabelo da Rem
+    static readonly Color CorDaLuz = new Color(0.55f, 0.75f, 1f);      // azul do cabelo da Capitã
     static readonly Color CorDaRaiva = new Color(1f, 0.55f, 0.55f);    // bola esquentando de raiva
     static readonly Color CorDoRastro = new Color(1f, 0.35f, 0.4f, 0.7f);
 
@@ -71,14 +72,14 @@ public class MangualDaRem : MonoBehaviour
     void Awake()
     {
         // O eixo: um bloco de ferro sólido (dá para ficar em cima dele).
-        desenhoDoEixo = ConstrutorDeFase.Visual("Eixo", transform, transform.position, "mangual_eixo", 1).GetComponent<SpriteRenderer>();
+        desenhoDoEixo = ConstrutorDeFase.Visual("Eixo", transform, transform.position, "ancora_eixo", 1).GetComponent<SpriteRenderer>();
         gameObject.AddComponent<BoxCollider2D>().size = Vector2.one;
 
         // A corrente: elos alternando "de frente" e "de lado", como numa corrente de verdade.
         // Ficam atrás do eixo e da bola (ordem -2), saindo do meio do bloco.
         for (int i = 0; i < QuantidadeDeElos; i++)
         {
-            string desenho = i % 2 == 0 ? "mangual_elo" : "mangual_elo_lado";
+            string desenho = i % 2 == 0 ? "corrente_elo" : "corrente_elo_lado";
             elos.Add(ConstrutorDeFase.Visual("Elo", transform, transform.position, desenho, -2, false).transform);
         }
 
@@ -91,12 +92,12 @@ public class MangualDaRem : MonoBehaviour
         area.radius = RaioDaBola;
         perigo = objetoBola.AddComponent<Perigo>();
         Perigo.TornarMovel(objetoBola); // ela se mexe o tempo todo
-        visualDaBola = ConstrutorDeFase.Visual("Visual", bola, bola.position, "mangual", -1).transform;
+        visualDaBola = ConstrutorDeFase.Visual("Visual", bola, bola.position, "ancora", -1).transform;
         desenhoDaBola = visualDaBola.GetComponent<SpriteRenderer>();
         luz = Luzes.Ponto(bola, CorDaLuz, 2.4f, 0.7f); // só existe nas fases escuras (senão é null)
 
-        // O chifre de oni da Rem (aparece quando ela fica brava) e o "!" de aviso. Começam escondidos.
-        chifre = ConstrutorDeFase.Visual("Chifre", transform, transform.position + Vector3.up * 0.5f, "mangual_chifre", 2).transform;
+        // O chifre da fúria da Capitã (aparece quando ela fica brava) e o "!" de aviso. Começam escondidos.
+        chifre = ConstrutorDeFase.Visual("Chifre", transform, transform.position + Vector3.up * 0.5f, "ancora_brava", 2).transform;
         chifre.gameObject.SetActive(false);
         aviso = ConstrutorDeFase.Visual("Aviso", transform, transform.position + Vector3.up * 1.75f, "aviso", 20, false).transform;
         aviso.gameObject.SetActive(false);
@@ -197,11 +198,11 @@ public class MangualDaRem : MonoBehaviour
         estado = Estado.Avisando;
         timer = tempoDeAviso;
         GerenciadorDoJogo.Som("armadilha");
-        chifre.gameObject.SetActive(true); // o chifre de oni brota do eixo
+        chifre.gameObject.SetActive(true); // a bandeirinha pirata sobe do eixo
         StartCoroutine(Efeitos.Pulinho(chifre, 0.3f, 0.2f));
     }
 
-    // Virou oni: inverte o sentido e gira o dobro, com a bola vermelha de raiva.
+    // Ficou furiosa: inverte o sentido e gira o dobro, com a âncora vermelha de raiva.
     void FicarBrava()
     {
         estado = Estado.Brava;
@@ -213,7 +214,7 @@ public class MangualDaRem : MonoBehaviour
         if (luz != null) luz.color = CorDaRaiva;
         Animacao.Adicionar(chifre.gameObject, Animacao.Tipo.Piscar, 14f, 0.15f); // chifre pulsando
 
-        perigo.conquista = "rem_brava"; // morreu para a Rem brava? Conquista!
+        perigo.conquista = "capita_furiosa"; // morreu para a Capitã brava? Conquista!
         GerenciadorDoJogo.Som("rugido", 0.5f);
         CameraSeguir.Tremer(0.15f, 0.25f);
         Efeitos.Poeira(transform.parent, bola.position, 8, 3f);
@@ -263,16 +264,16 @@ public class MangualDaRem : MonoBehaviour
 
     // ------------------------------------------------------------------ desenhos
 
-    // Registra os desenhos do mangual na FabricaDeSprites (funcionam com Pegar("mangual") em qualquer lugar,
+    // Registra os desenhos do mangual na FabricaDeSprites (funcionam com Pegar("ancora") em qualquer lugar,
     // inclusive no mapa do mundo).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void RegistrarDesenhos()
     {
-        FabricaDeSprites.Registrar("mangual", () => FabricaDeSprites.Procedural(24, 24, FabricaDeSprites.Centro, CorDaBola));
-        FabricaDeSprites.Registrar("mangual_elo", () => FabricaDeSprites.DeArte(ArteElo, FabricaDeSprites.Centro));
-        FabricaDeSprites.Registrar("mangual_elo_lado", () => FabricaDeSprites.DeArte(ArteEloDeLado, FabricaDeSprites.Centro));
-        FabricaDeSprites.Registrar("mangual_eixo", () => FabricaDeSprites.DeArte(ArteEixo, FabricaDeSprites.Centro));
-        FabricaDeSprites.Registrar("mangual_chifre", () => FabricaDeSprites.DeArte(ArteChifre, FabricaDeSprites.Base));
+        FabricaDeSprites.Registrar("ancora", () => FabricaDeSprites.DeArte(ArteAncora, FabricaDeSprites.Centro));
+        FabricaDeSprites.Registrar("corrente_elo", () => FabricaDeSprites.DeArte(ArteElo, FabricaDeSprites.Centro));
+        FabricaDeSprites.Registrar("corrente_elo_lado", () => FabricaDeSprites.DeArte(ArteEloDeLado, FabricaDeSprites.Centro));
+        FabricaDeSprites.Registrar("ancora_eixo", () => FabricaDeSprites.DeArte(ArteEixo, FabricaDeSprites.Centro));
+        FabricaDeSprites.Registrar("ancora_brava", () => FabricaDeSprites.DeArte(ArteChifre, FabricaDeSprites.Base));
     }
 
     // O eixo: bloco de ferro com rebites nos cantos e a argola da corrente no meio.
@@ -316,63 +317,48 @@ public class MangualDaRem : MonoBehaviour
         ".kkkkkkk.",
     };
 
-    // O chifre de oni da Rem (branco, brilhando).
+    // A bandeirinha pirata que sobe do eixo quando a Capitã fica furiosa (o 'q'): preta com a caveira branca.
     static readonly string[] ArteChifre =
     {
-        "...k...",
-        "..kwk..",
-        "..kwk..",
-        "..kwPk.",
-        ".kwwPk.",
-        ".kwwPk.",
-        ".kwPPk.",
-        "kwwPPPk",
-        "kwPPPPk",
+        "kkkkkk.",
+        "kjjjjjk",
+        "kjwwwjk",
+        "kjwkwjk",
+        "kjjwjjk",
+        "kjwjwjk",
         "kkkkkkk",
+        "k......",
+        "k......",
+        "k......",
     };
 
-    // A bola com espinhos, por fórmula: 0 = fora, 1 = bola, 2 = espinho.
-    static int FormaDaBola(int x, int y)
+    // A âncora de ferro (é ela que mata). A argola fica em cima, presa na corrente; a luz vem de cima,
+    // pela esquerda (o lado esquerdo é mais claro). O meio do desenho é o meio da área que mata.
+    static readonly string[] ArteAncora =
     {
-        float dx = x - 11.5f, dy = y - 11.5f;
-        if (dx * dx + dy * dy <= 6.6f * 6.6f) return 1;
-        for (int i = 0; i < 8; i++) // 8 espinhos, um a cada 45 graus
-        {
-            float a = i * Mathf.PI / 4f;
-            float paraFora = dx * Mathf.Cos(a) + dy * Mathf.Sin(a);              // distância do centro na direção do espinho
-            float deLado = Mathf.Abs(-dx * Mathf.Sin(a) + dy * Mathf.Cos(a));    // distância até a "linha" do espinho
-            if (paraFora > 5f && paraFora < 10.8f && deLado <= (10.8f - paraFora) * 0.4f + 0.3f) return 2; // triângulo afinando
-        }
-        return 0;
-    }
-
-    static Color32 CorDaBola(int x, int y)
-    {
-        int forma = FormaDaBola(x, y);
-        if (forma == 0)
-        {
-            // contorno preto em volta de tudo (pixel vazio encostado na bola ou num espinho)
-            bool encostado = FormaDaBola(x + 1, y) > 0 || FormaDaBola(x - 1, y) > 0
-                          || FormaDaBola(x, y + 1) > 0 || FormaDaBola(x, y - 1) > 0;
-            return encostado ? FabricaDeSprites.Cor('k') : FabricaDeSprites.Transparente;
-        }
-
-        float dx = (x - 11.5f) / 6.6f, dy = (y - 11.5f) / 6.6f;
-        bool ladoDaLuz = -0.6f * dx + 0.8f * dy > 0f; // a luz vem de cima, pela esquerda
-        if (forma == 2)
-        {
-            bool ponta = Mathf.Sqrt(dx * dx + dy * dy) * 6.6f > 9.3f;
-            if (ponta) return FabricaDeSprites.Cor(ladoDaLuz ? 'w' : 's');
-            return FabricaDeSprites.Cor(ladoDaLuz ? 's' : 'S');
-        }
-
-        // A bola é sombreada como uma esfera de metal: brilho em cima à esquerda, escura embaixo à direita.
-        float dz = Mathf.Sqrt(Mathf.Max(0f, 1f - dx * dx - dy * dy));
-        float luzNoPixel = -0.45f * dx + 0.55f * dy + 0.7f * dz;
-        if (luzNoPixel > 0.95f) return FabricaDeSprites.Cor('w');
-        if (luzNoPixel > 0.75f) return FabricaDeSprites.Cor('s');
-        if (luzNoPixel > 0.45f) return FabricaDeSprites.Cor('M');
-        if (luzNoPixel > 0.1f) return FabricaDeSprites.Cor('S');
-        return FabricaDeSprites.Cor('z');
-    }
+        "..........kkkk..........",
+        ".........kZssMk.........",
+        "........kZk..kMk........",
+        "........ksk..kSk........",
+        ".........kMMSSk.........",
+        "..........kMSk..........",
+        "......kkkkkMSkkkkk......",
+        "......kZsssMSMMMSk......",
+        "......kkkkkMSkkkkk......",
+        "..........kMSk..........",
+        "..........kMSk..........",
+        "..........kMSk..........",
+        "..........kMSk..........",
+        "..........kMSk..........",
+        "..........kMSk..........",
+        "..k.......kMSk.......k..",
+        ".kZk......kMSk......kSk.",
+        ".kZsk.....kMSk.....kMSk.",
+        "..kZsk....kMSk....kMSk..",
+        "...kZsk...kMSk...kMSk...",
+        "....kZsMkkkMSkkkMMSk....",
+        ".....ksMMMMMSSMMMSk.....",
+        "......kkMMMSSSSSkk......",
+        "........kkkkkkkk........",
+    };
 }

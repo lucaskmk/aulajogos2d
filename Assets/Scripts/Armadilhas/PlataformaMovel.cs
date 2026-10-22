@@ -8,12 +8,12 @@ using UnityEngine.Rendering.Universal;
 // 'J' - IGUALZINHA... mas meio segundo depois que você sobe, o cristal fica VERMELHO, ela treme e DESPENCA.
 //       (um tempinho depois ela reaparece no lugar, para ninguém ficar preso do lado errado do abismo)
 // 'D' - IGUALZINHA também... mas o cristal fica AMARELO, ela treme e DISPARA para o lado até bater numa
-//       parede, e para DE REPENTE (o tranco joga o Subaru para a frente).
+//       parede, e para DE REPENTE (o tranco joga o Grumete para a frente).
 //       Quem pula de medo quando ela treme... fica para trás. :)
 // Blocos encostados NA MESMA LINHA formam UMA plataforma só (quem junta é o ConstrutorDeFase).
 //
 // Como funciona a física: a plataforma é um Rigidbody2D CINEMÁTICO (não sente gravidade e ninguém
-// empurra ela) que anda com MovePosition no FixedUpdate. O Subaru não tem atrito, então ele não
+// empurra ela) que anda com MovePosition no FixedUpdate. O Grumete não tem atrito, então ele não
 // "gruda" sozinho em coisas que se mexem: a cada passo da física a plataforma carrega ele junto
 // com Jogador.Carregar(o quanto ela andou). Quando ele sai de cima, leva junto o embalo dela.
 //
@@ -31,14 +31,14 @@ public class PlataformaMovel : MonoBehaviour
     public float pausaNasPontas = 0.4f;
 
     [Header("Pegadinhas ('J' e 'D')")]
-    public float esperaAntesDoTruque = 0.5f; // contado a partir do momento em que o Subaru sobe
+    public float esperaAntesDoTruque = 0.5f; // contado a partir do momento em que o Grumete sobe
     public float tempoTremendo = 0.35f;      // o aviso: ela treme e o cristal muda de cor
-    public float gravidadeDaQueda = 60f;     // mais que a do Subaru (34): ela "foge" de baixo dos pés dele
+    public float gravidadeDaQueda = 60f;     // mais que a do Grumete (34): ela "foge" de baixo dos pés dele
     public float tempoParaReaparecer = 1.5f; // 'J': depois de sumir lá embaixo
     public float velocidadeDoDisparo = 18f;
     public float aceleracaoDoDisparo = 120f;
     public float distanciaMaximaDoDisparo = 16f;
-    public float tranco = 14f;               // velocidade com que o Subaru é jogado para a frente na freada
+    public float tranco = 14f;               // velocidade com que o Grumete é jogado para a frente na freada
     public float pulinhoDoTranco = 7f;
     public float descansoDepoisDoDisparo = 1.2f;
 
@@ -46,7 +46,7 @@ public class PlataformaMovel : MonoBehaviour
     // A ponta de pedra e o cristal pendurados embaixo são só enfeite.
     const float AlturaDoColisor = 0.75f;
     const float AlturaDoCristal = -0.62f;    // onde o cristal fica pendurado (em relação ao centro)
-    // O quanto o corpo do Subaru pode passar da borda: o pé dele ainda "pisa" até 0.3 para fora (veja
+    // O quanto o corpo do Grumete pode passar da borda: o pé dele ainda "pisa" até 0.3 para fora (veja
     // JogadorEmCima) e ele tem 0.36 de meia largura. Arredondado para cima.
     const float MargemDoJogador = 0.7f;
 
@@ -70,7 +70,7 @@ public class PlataformaMovel : MonoBehaviour
     int sentido = 1;           // 1 = indo para a direita, -1 = voltando
     float pausa;
 
-    float contagem = -1f;      // contagem para o truque depois que o Subaru sobe (-1 = desarmada)
+    float contagem = -1f;      // contagem para o truque depois que o Grumete sobe (-1 = desarmada)
     bool tremendo;             // o aviso (ela continua andando enquanto treme)
     float timerDoTremor;
     float timerDeEspera;       // Escondida: até reaparecer. Parada: até voltar a andar.
@@ -80,9 +80,9 @@ public class PlataformaMovel : MonoBehaviour
     int direcaoDoDisparo = 1;
     bool freouAgora;
 
-    Vector2 velocidadeAtual;   // quanto ela andou no último passo, por segundo (o Subaru herda isso quando sai)
+    Vector2 velocidadeAtual;   // quanto ela andou no último passo, por segundo (o Grumete herda isso quando sai)
     Jogador jogadorEmCimaAntes;
-    float afundado;            // a afundadinha quando o Subaru aterrissa (só no desenho)
+    float afundado;            // a afundadinha quando o Grumete aterrissa (só no desenho)
     float aparecendo = 1f;     // 0 -> 1: animação de reaparecer (só no desenho)
     float timerDoBrilho;
     float faseDaAnimacao;
@@ -203,13 +203,13 @@ public class PlataformaMovel : MonoBehaviour
         }
     }
 
-    // O Subaru está em pé em cima de mim? (pela posição: os pés dele encostando no meu topo)
+    // O Grumete está em pé em cima de mim? (pela posição: os pés dele encostando no meu topo)
     Jogador JogadorEmCima()
     {
         if (colisor == null || !colisor.enabled || !GerenciadorDoJogo.JogadorVivo(out Vector2 _)) return null;
         Jogador jogador = GerenciadorDoJogo.JogadorAtual;
         Vector2 p = jogador.Corpo.position;
-        float pes = p.y - 0.5f;          // a caixa do Subaru termina meio bloco abaixo do centro dele
+        float pes = p.y - 0.5f;          // a caixa do Grumete termina meio bloco abaixo do centro dele
         float topo = posicao.y + 0.5f;
         bool emCima = Mathf.Abs(pes - topo) < 0.12f
                       && Mathf.Abs(p.x - posicao.x) < largura / 2f + 0.3f
@@ -300,7 +300,7 @@ public class PlataformaMovel : MonoBehaviour
         timerDeEspera -= dt;
         if (timerDeEspera > 0f) return;
 
-        // Não reaparece "dentro" do Subaru (se ele estiver bem ali no ar, espera ele sair).
+        // Não reaparece "dentro" do Grumete (se ele estiver bem ali no ar, espera ele sair).
         float x = XDoVaiEVolta();
         if (GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)
             && Mathf.Abs(jogador.x - x) < largura / 2f + 0.45f && Mathf.Abs(jogador.y - origem.y) < 1.2f) return;
@@ -343,7 +343,7 @@ public class PlataformaMovel : MonoBehaviour
         }
     }
 
-    // Para DE REPENTE: barulhão, tremidinha na câmera e o Subaru (se estiver em cima) é jogado para a frente.
+    // Para DE REPENTE: barulhão, tremidinha na câmera e o Grumete (se estiver em cima) é jogado para a frente.
     void Frear(Jogador jogador)
     {
         estado = Estado.Parada;
@@ -373,18 +373,18 @@ public class PlataformaMovel : MonoBehaviour
     }
 
     // Quanto a plataforma pode andar para um lado (direcao 1 ou -1) até encostar em algo sólido.
-    // Olha na altura dela E na altura de quem está em cima (assim ela nunca espreme o Subaru numa parede).
-    // Na altura do Subaru a parede conta como se estivesse MargemDoJogador mais perto: ele pode ficar
+    // Olha na altura dela E na altura de quem está em cima (assim ela nunca espreme o Grumete numa parede).
+    // Na altura do Grumete a parede conta como se estivesse MargemDoJogador mais perto: ele pode ficar
     // em pé bem na beirada, com metade do corpo para fora da plataforma.
-    // Ignora o Subaru, os bichos e as outras plataformas (elas se atravessam).
+    // Ignora o Grumete, os bichos e as outras plataformas (elas se atravessam).
     float EspacoLivre(int direcao, float maximo)
     {
         float menor = maximo;
         float borda = posicao.x + direcao * largura / 2f;
-        float[] alturas = { -0.15f, 0.15f, 0.4f, 0.7f, 1.3f }; // 3 no corpo dela, 2 no corpo do Subaru
+        float[] alturas = { -0.15f, 0.15f, 0.4f, 0.7f, 1.3f }; // 3 no corpo dela, 2 no corpo do Grumete
         foreach (float altura in alturas)
         {
-            float folga = altura > 0.5f ? MargemDoJogador : 0f; // acima de 0.5 = acima do topo = corpo do Subaru
+            float folga = altura > 0.5f ? MargemDoJogador : 0f; // acima de 0.5 = acima do topo = corpo do Grumete
             Vector2 inicio = new Vector2(borda, posicao.y + altura);
             int quantidade = Physics2D.Raycast(inicio, Vector2.right * direcao, filtroSolido, acertos, maximo);
             for (int i = 0; i < quantidade; i++)
@@ -404,7 +404,7 @@ public class PlataformaMovel : MonoBehaviour
     {
         if (visual == null || GerenciadorDoJogo.Pausado) return;
 
-        // Afundadinha quando o Subaru aterrissa, voltando aos poucos. Tremendo: chacoalha.
+        // Afundadinha quando o Grumete aterrissa, voltando aos poucos. Tremendo: chacoalha.
         afundado = Mathf.MoveTowards(afundado, 0f, 0.4f * Time.deltaTime);
         Vector3 tremor = tremendo ? (Vector3)(Random.insideUnitCircle * 0.07f) : Vector3.zero;
         visual.localPosition = Vector3.down * afundado + tremor;

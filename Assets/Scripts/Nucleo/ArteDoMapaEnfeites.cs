@@ -1,9 +1,10 @@
 using UnityEngine;
 using Tela = ArteDosBlocos.Tela;
 
-// ARTE DO MAPA (parte 2): os enfeites que ficam em cima do chão. Árvores, pinheiros, montanhas com neve,
-// casinhas com telhado de telhas e janela acesa, o castelo real, a mansão do Roswaal, a Biblioteca,
-// ruínas, cristais, flores, a Grande Árvore Flügel e os bichinhos (pássaros, borboletas, fumaça...).
+// ARTE DO MAPA (parte 2): os enfeites que ficam em cima do chão. Palmeiras (e as palmeiras mortas das
+// ilhas do Kraken), rochedos, as casinhas do porto com telhado de telhas e janela acesa, o castelo do porto,
+// o forte da Capitã, o navio fantasma (as Cabines), naufrágios, baús de tesouro, flores, a Rocha da Caveira,
+// os navios no mar, o farol e os bichinhos (gaivotas, borboletas, fumaça...).
 //
 // Tudo com as rampas e a luz de CIMA-ESQUERDA dos blocos: o lado esquerdo e o topo de cada coisa pegam sol,
 // o lado direito e a parte de baixo ficam na sombra azul-arroxeada, e o contorno usa o tom mais escuro
@@ -38,17 +39,9 @@ public static partial class ArteDoMapa
     {
         C(26, 30, 30), C(52, 56, 42), C(84, 86, 50), C(120, 116, 62), C(160, 150, 82), C(204, 192, 120),
     };
-    static readonly Color32[] TelhaLilas = // os telhados da mansão do Roswaal
-    {
-        C(36, 22, 56), C(64, 40, 92), C(98, 64, 132), C(136, 98, 168), C(178, 142, 202), C(218, 192, 230),
-    };
-    static readonly Color32[] PinhoSombrio = // pinheiros da região sombria
+    static readonly Color32[] PinhoSombrio = // as folhas secas das palmeiras mortas (ilhas do Kraken)
     {
         C(14, 12, 26), C(26, 22, 44), C(40, 34, 66), C(58, 50, 90), C(80, 72, 116), C(108, 102, 142),
-    };
-    static readonly Color32[] Folhagem = // a copa clara (verde-dourado) da Grande Árvore e das árvores mais jovens
-    {
-        C(22, 44, 40), C(36, 76, 46), C(62, 112, 48), C(100, 148, 54), C(146, 180, 66), C(196, 208, 98), C(236, 230, 150),
     };
     static readonly Color32 ContornoEscuro = C(24, 18, 36), Vidro = C(30, 34, 70);
 
@@ -60,8 +53,8 @@ public static partial class ArteDoMapa
     public static readonly Vector3 Chamine = new Vector3(3.5f / P, 19.5f / P, 0f);
     // As pontas das torres (onde ficam as bandeirinhas), em blocos a partir do pé do desenho.
     public static readonly Vector3[] TorresDoCastelo = { new Vector3(0f, 63f / P, 0f), new Vector3(-17.5f / P, 55f / P, 0f), new Vector3(17.5f / P, 55f / P, 0f) };
-    public static readonly Vector3[] TorresDaMansao = { new Vector3(0f, 47f / P, 0f) };
-    public const int VersoesDaArvore = 3, VersoesDaMontanha = 3, VersoesDaCasa = 3, VersoesDasFlores = 4, QuadrosDaBandeira = 4;
+    public static readonly Vector3[] TorresDoForte = { new Vector3(0f, 47f / P, 0f), new Vector3(-28.5f / P, 35f / P, 0f), new Vector3(27.5f / P, 35f / P, 0f) };
+    public const int VersoesDaPalmeira = 3, VersoesDaMontanha = 3, VersoesDaCasa = 3, VersoesDasFlores = 4, QuadrosDaBandeira = 4;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Registrar()
@@ -72,23 +65,25 @@ public static partial class ArteDoMapa
         FabricaDeSprites.Registrar("mapa_ponte_empe", () => Ponte(true, false));
         FabricaDeSprites.Registrar("mapa_ponte_corda", () => Ponte(false, true));
         FabricaDeSprites.Registrar("mapa_ponte_corda_empe", () => Ponte(true, true));
-        for (int v = 0; v < VersoesDaArvore; v++) { int vv = v; FabricaDeSprites.Registrar("mapa_arvore_" + v, () => Arvore(vv)); }
+        for (int v = 0; v < VersoesDaPalmeira; v++) { int vv = v; FabricaDeSprites.Registrar("mapa_palmeira_" + v, () => Palmeira(vv)); }
         for (int v = 0; v < VersoesDaMontanha; v++) { int vv = v; FabricaDeSprites.Registrar("mapa_montanha_" + v, () => Montanha(vv)); }
         for (int v = 0; v < VersoesDaCasa; v++) { int vv = v; FabricaDeSprites.Registrar("mapa_casa_" + v, () => Casa(vv)); }
         for (int v = 0; v < VersoesDasFlores; v++) { int vv = v; FabricaDeSprites.Registrar("mapa_flores_" + v, () => Flores(vv)); }
-        FabricaDeSprites.Registrar("mapa_pinheiro", Pinheiro);
-        FabricaDeSprites.Registrar("mapa_arvore_grande", ArvoreGrande);
+        FabricaDeSprites.Registrar("mapa_palmeira_morta", PalmeiraMorta);
+        FabricaDeSprites.Registrar("mapa_rocha_caveira", RochaDaCaveira);
         FabricaDeSprites.Registrar("mapa_castelo", Castelo);
-        FabricaDeSprites.Registrar("mapa_mansao", Mansao);
-        FabricaDeSprites.Registrar("mapa_biblioteca", Biblioteca);
-        FabricaDeSprites.Registrar("mapa_ruina", Ruina);
-        FabricaDeSprites.Registrar("mapa_cristal", Cristal);
+        FabricaDeSprites.Registrar("mapa_forte", FortePirata);
+        FabricaDeSprites.Registrar("mapa_navio_fantasma", NavioFantasma);
+        FabricaDeSprites.Registrar("mapa_naufragio", Naufragio);
+        FabricaDeSprites.Registrar("mapa_bau", Bau);
+        FabricaDeSprites.Registrar("mapa_navio", Navio);
+        FabricaDeSprites.Registrar("mapa_farol", Farol);
         FabricaDeSprites.Registrar("mapa_brilho", () => Brilho(16, new Color32(255, 255, 255, 255)));
         FabricaDeSprites.Registrar("mapa_sombra_p", () => SombraNoChao(12, 5));
         FabricaDeSprites.Registrar("mapa_sombra_m", () => SombraNoChao(18, 7));
         FabricaDeSprites.Registrar("mapa_sombra_g", () => SombraNoChao(26, 9));
         FabricaDeSprites.Registrar("mapa_sombra_castelo", () => SombraNoChao(84, 16));
-        FabricaDeSprites.Registrar("mapa_sombra_arvore_grande", () => SombraNoChao(56, 14));
+        FabricaDeSprites.Registrar("mapa_sombra_rocha", () => SombraNoChao(48, 13));
         FabricaDeSprites.Registrar("mapa_fumaca", Fumaca);
         FabricaDeSprites.Registrar("mapa_passaro_0", () => Passaro(0));
         FabricaDeSprites.Registrar("mapa_passaro_1", () => Passaro(1));
@@ -174,100 +169,142 @@ public static partial class ArteDoMapa
             }
     }
 
-    // ---------------------------------------------------------------- árvores
+    // ---------------------------------------------------------------- palmeiras e a Rocha da Caveira
 
-    static readonly Vector3[][] BolasDaArvore =
+    // Uma folha de palmeira: sai da copa (cx, cy) na direção "angulo" (em graus) e vai caindo com o peso.
+    // A nervura é grossa perto da copa; embaixo dela ficam pendurados os folíolos (os "dentes" da folha).
+    // As folhas viradas para a esquerda (para o sol) são mais claras. "escuro" baixa os tons (folhas de trás).
+    static void FolhaDePalmeira(Tela t, Color32[] r, float cx, float cy, float angulo, float comprimento, float queda, int escuro)
     {
-        // 0: carvalho redondo
-        new[] { new Vector3(10f, 14.5f, 6.2f), new Vector3(5.5f, 12.5f, 4.2f), new Vector3(14.5f, 12.5f, 4.4f), new Vector3(7.5f, 18.5f, 4.8f), new Vector3(12.8f, 18.5f, 4.6f), new Vector3(10f, 21.5f, 3.8f) },
-        // 1: copa mais larga e baixa (com frutinhas)
-        new[] { new Vector3(10f, 13.5f, 6f), new Vector3(4.8f, 12.5f, 4.2f), new Vector3(15.2f, 12.8f, 4.2f), new Vector3(8f, 17.5f, 5f), new Vector3(13f, 17f, 4.6f), new Vector3(10.5f, 20f, 3.6f) },
-        // 2: alta e fina (um álamo, mais claro)
-        new[] { new Vector3(10f, 11.5f, 4.6f), new Vector3(10f, 15.5f, 5f), new Vector3(10.5f, 19.5f, 4.4f), new Vector3(10f, 22.8f, 3f), new Vector3(7.2f, 13.5f, 3.2f), new Vector3(13f, 16.5f, 3.2f) },
-    };
-
-    static Sprite Arvore(int versao)
-    {
-        var t = new Tela(20, 26);
-        Vector3[] bolas = BolasDaArvore[versao];
-        Copa(t, bolas, versao == 2 ? Folhagem : Capim, 300 + versao * 11, versao == 2 ? 0.04f : 0f);
-        if (versao == 1)
-            foreach (Vector2Int f in new[] { new Vector2Int(5, 14), new Vector2Int(12, 12), new Vector2Int(9, 18), new Vector2Int(15, 16), new Vector2Int(7, 11) })
+        float a = angulo * Mathf.Deg2Rad, dx = Mathf.Cos(a), dy = Mathf.Sin(a);
+        int passos = Mathf.CeilToInt(comprimento * 2f);
+        int luz = (dx < -0.25f ? 5 : dx > 0.35f ? 3 : 4) - escuro;
+        for (int k = 0; k <= passos; k++)
+        {
+            float s = k / (float)passos;
+            int px = Mathf.FloorToInt(cx + dx * comprimento * s), py = Mathf.FloorToInt(cy + dy * comprimento * s - queda * s * s);
+            int tom = luz - (s > 0.8f ? 1 : 0);
+            t.Pintar(px, py, r, tom);
+            if (s < 0.45f) t.Pintar(px, py + 1, r, tom + 1); // perto da copa a folha é larga e pega luz em cima
+            if (s > 0.12f && (k & 1) == 0)
             {
-                t.Cor(f.x, f.y, C(222, 60, 64));     // maçãs (com um brilhinho)
-                t.Cor(f.x, f.y - 1, C(140, 30, 50));
+                int pendura = s < 0.6f ? 2 : 1;
+                for (int j = 1; j <= pendura; j++) t.Pintar(px, py - j, r, tom - j);
             }
-        int fundo = versao == 2 ? 7 : 8;
-        Tronco(t, 9, 11, 0, fundo + 1, fundo + 1);
-        // raízes saindo do pé
-        t.Pintar(8, 0, Madeira, 2); t.Pintar(12, 0, Madeira, 0); t.Pintar(8, 1, Madeira, 3);
-        return t.Criar(new Vector2(10f / 20f, 0f));
+        }
     }
 
-    // A Grande Árvore Flügel: tronco enorme com raízes, copa gigante verde-dourada.
-    static Sprite ArvoreGrande()
+    // O tronco da palmeira: fino, curvado e com anéis, claro à esquerda e escuro à direita.
+    static float TroncoDePalmeira(Tela t, float pe, float inclinacao, int topo, int escuro)
     {
-        var t = new Tela(56, 64);
-        var bolas = new[]
+        float Meio(float y) => pe + inclinacao * Mathf.Pow(y / topo, 1.7f);
+        for (int y = 0; y <= topo; y++)
         {
-            new Vector3(28f, 36f, 13f), new Vector3(15f, 32f, 9f), new Vector3(41f, 32f, 9.5f), new Vector3(19f, 44f, 10f),
-            new Vector3(37f, 45f, 10f), new Vector3(28f, 52f, 9f), new Vector3(8f, 37f, 6f), new Vector3(48f, 38f, 6f),
-            new Vector3(24f, 57f, 5.5f), new Vector3(33f, 58f, 5f),
-        };
-        Copa(t, bolas, Folhagem, 401);
-        // tronco largo (de 22 a 33) que se abre em raízes embaixo
-        for (int y = 0; y <= 24; y++)
-        {
-            float abre = Mathf.Max(0f, 6f - y) * 1.2f;
-            int x0 = Mathf.RoundToInt(22f - abre), x1 = Mathf.RoundToInt(33f + abre);
+            float meio = Meio(y), meia = y < 3 ? 2f : 1.6f - y / (float)topo * 0.5f; // mais grosso no pé
+            int x0 = Mathf.RoundToInt(meio - meia), x1 = Mathf.Max(x0, Mathf.RoundToInt(meio + meia) - 1);
             for (int x = x0; x <= x1; x++)
             {
-                if (t.Cheio(x, y)) continue;
                 float u = (x - x0 + 0.5f) / (x1 - x0 + 1);
-                float v = 0.75f - u * 0.6f + (Ruido(x / 1.5f, y / 4f, 403) - 0.5f) * 0.35f; // casca com veios
-                if (y >= 20) v -= 0.25f;
-                int tom = Tom(v, Madeira.Length, x, y);
-                if (x == x0 || x == x1) tom = 0;
+                int tom = (u < 0.4f ? 4 : u < 0.75f ? 3 : 1) - escuro;
+                if (y % 3 == 0) tom--;       // os anéis
+                if (y >= topo - 1) tom--;    // embaixo da copa: sombra
                 t.Pintar(x, y, Madeira, tom);
             }
         }
-        // musgo e luzinhas na copa (é uma árvore mágica)
-        for (int k = 0; k < 9; k++)
-        {
-            int x = 10 + (int)(Sorteio(k, 0, 405) * 36f), y = 28 + (int)(Sorteio(k, 1, 405) * 26f);
-            if (t.RampaEm(x, y) == Folhagem) t.Cor(x, y, C(255, 246, 190));
-        }
-        return t.Criar(new Vector2(28f / 56f, 0f));
+        return Meio(topo);
     }
 
-    // Pinheiro sombrio: quatro "andares" de galhos, com luz à esquerda e neve nenhuma (é a terra da Bruxa).
-    static Sprite Pinheiro()
+    // As 3 palmeiras: uma inclinada para a direita, uma para a esquerda e uma alta e reta.
+    static readonly float[] InclinacaoDaPalmeira = { 4.5f, -3.5f, 1.2f };
+    static readonly int[] AlturaDaPalmeira = { 17, 16, 20 };
+
+    static Sprite Palmeira(int versao)
     {
-        var t = new Tela(16, 26);
-        bool Dentro(int x, int y)
+        var t = new Tela(26, 28);
+        int topo = AlturaDaPalmeira[versao];
+        float giro = -InclinacaoDaPalmeira[versao] * 3f; // a copa acompanha um pouco a inclinação
+        float cx = TroncoDePalmeira(t, 13f, InclinacaoDaPalmeira[versao], topo, 0), cy = topo + 1.5f;
+        // folhas de trás (mais escuras), depois os cocos, depois as da frente
+        FolhaDePalmeira(t, Capim, cx, cy, 150f + giro, 8f, 4f, 2);
+        FolhaDePalmeira(t, Capim, cx, cy, 32f + giro, 8f, 4f, 2);
+        foreach (Vector2Int c in new[] { new Vector2Int(-2, -2), new Vector2Int(1, -2), new Vector2Int(-1, -3) })
         {
-            float dx = Mathf.Abs(x + 0.5f - 8f);
-            for (int andar = 0; andar < 4; andar++)
-            {
-                float baseDoAndar = 4f + andar * 5f, topo = baseDoAndar + 8f - andar * 0.5f;
-                float largura = 7.5f - andar * 1.5f;
-                if (y >= baseDoAndar && y <= topo && dx <= (topo - y) / (topo - baseDoAndar) * largura + 0.5f) return true;
-            }
-            return false;
+            int x = Mathf.FloorToInt(cx) + c.x, y = Mathf.FloorToInt(cy) + c.y;
+            t.Pintar(x, y, Madeira, 1); t.Pintar(x + 1, y, Madeira, 0); t.Pintar(x, y + 1, Madeira, 2); t.Pintar(x + 1, y + 1, Madeira, 1);
         }
-        for (int y = 0; y < 26; y++)
-            for (int x = 0; x < 16; x++)
+        FolhaDePalmeira(t, Capim, cx, cy, 178f + giro, 10f, 6.5f, 0);
+        FolhaDePalmeira(t, Capim, cx, cy, 122f + giro, 7f, 3f, 0);
+        FolhaDePalmeira(t, Capim, cx, cy, 88f + giro, 4f, 1f, 0);
+        FolhaDePalmeira(t, Capim, cx, cy, 58f + giro, 7f, 3f, 1);
+        FolhaDePalmeira(t, Capim, cx, cy, 2f + giro, 10f, 6.5f, 1);
+        return t.Criar(new Vector2(13f / 26f, 0f));
+    }
+
+    // Palmeira morta (das ilhas do Kraken): tronco escuro e poucas folhas secas, quebradas e penduradas.
+    static Sprite PalmeiraMorta()
+    {
+        var t = new Tela(20, 26);
+        float cx = TroncoDePalmeira(t, 10f, -2f, 18, 1), cy = 19.5f;
+        FolhaDePalmeira(t, PinhoSombrio, cx, cy, 165f, 7f, 7f, 0);
+        FolhaDePalmeira(t, PinhoSombrio, cx, cy, 120f, 5f, 4f, 1);
+        FolhaDePalmeira(t, PinhoSombrio, cx, cy, 40f, 6f, 6f, 1);
+        FolhaDePalmeira(t, PinhoSombrio, cx, cy, 5f, 5f, 6f, 2);
+        return t.Criar(new Vector2(0.5f, 0f));
+    }
+
+    // A Rocha da Caveira, perto do covil da Baleia Branca: um rochedo enorme no formato de uma caveira,
+    // com os olhos fundos (lá dentro, um brilho roxo) e os dentes.
+    static Sprite RochaDaCaveira()
+    {
+        const int w = 44, h = 40;
+        var t = new Tela(w, h);
+        const float cx = 22f, cy = 22f;
+        bool Cranio(int x, int y)
+        {
+            float nx = (x + 0.5f - cx) / 17f, ny = (y + 0.5f - cy) / 15f;
+            return nx * nx + ny * ny <= 1f + (Ruido(x * 0.4f, y * 0.4f, 491) - 0.5f) * 0.12f;
+        }
+        bool Queixo(int x, int y) => y >= 3 && y <= 14 && x >= 11 && x <= 32 && !((x == 11 || x == 32) && y <= 4);
+        bool Base(int x, int y) => y <= 4 + Ruido(x * 0.3f, 0f, 493) * 3f && x >= 2 && x <= w - 3;
+        bool Dentro(int x, int y) => x >= 0 && y >= 0 && x < w && y < h && (Cranio(x, y) || Queixo(x, y) || Base(x, y));
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
             {
                 if (!Dentro(x, y)) continue;
-                float nx = (x + 0.5f - 8f) / 7f;
-                float v = 0.62f - nx * 0.5f + (Sorteio(x, y, 411) - 0.5f) * 0.2f;
-                if (!Dentro(x, y - 1)) v -= 0.1f;     // embaixo de cada andar: sombra
-                else if (!Dentro(x, y + 2)) v += 0.2f; // em cima de cada andar: luz
-                t.Pintar(x, y, PinhoSombrio, Tom(v, PinhoSombrio.Length, x, y));
+                float nx = (x + 0.5f - cx) / 17f, ny = (y + 0.5f - cy) / 15f;
+                float v = 0.12f + 0.8f * LuzDaBola(Mathf.Clamp(nx, -1f, 1f), Mathf.Clamp(ny, -1f, 1f));
+                v += (Ruido(x / 2.5f, y / 2.5f, 495) - 0.5f) * 0.25f; // a rocha cheia de marcas
+                if (!Cranio(x, y)) v -= 0.12f;                        // o queixo e a base ficam na sombra do crânio
+                t.Pintar(x, y, Pedra, Tom(v, Pedra.Length, x, y));
             }
-        Contorno(t, Dentro, PinhoSombrio, 0, 2);
-        Tronco(t, 7, 8, 0, 4, 4);
-        return t.Criar(new Vector2(0.5f, 0f));
+        // os olhos: dois buracos fundos com uma brasa roxa no meio
+        foreach (float ox in new[] { 14.5f, 29.5f })
+            for (int y = 15; y <= 27; y++)
+                for (int x = (int)ox - 6; x <= (int)ox + 6; x++)
+                {
+                    float nx = (x + 0.5f - ox) / 5f, ny = (y + 0.5f - 21f) / 4.5f;
+                    float d = nx * nx + ny * ny;
+                    if (d > 1f) continue;
+                    if (d > 0.75f && ny > 0f) t.Pintar(x, y, Pedra, 1); // a borda de cima do buraco, na sombra
+                    else t.Cor(x, y, d < 0.12f ? (Color32)Magia[4] : d < 0.3f ? (Color32)Magia[1] : C(14, 10, 24));
+                }
+        // o nariz (um triângulo de ponta-cabeça)
+        for (int y = 12; y <= 16; y++)
+            for (int x = 19; x <= 25; x++)
+                if (Mathf.Abs(x + 0.5f - 22f) <= (y - 11.5f) * 0.7f) t.Cor(x, y, C(14, 10, 24));
+        // os dentes: blocos claros com frestas escuras
+        for (int x = 13; x <= 30; x++)
+            for (int y = 6; y <= 10; y++)
+            {
+                bool fresta = (x - 13) % 3 == 2 || y == 8;
+                if (fresta) t.Cor(x, y, C(14, 10, 24));
+                else t.Pintar(x, y, Pedra, y == 10 || y == 7 ? 6 : 5);
+            }
+        // rachaduras
+        for (int k = 0; k < 10; k++) t.Pintar(30 + k / 2, 33 - k, Pedra, 1);
+        for (int k = 0; k < 6; k++) t.Pintar(8 + k, 28 + (k & 1), Pedra, 1);
+        ContornoDeFora(t, ContornoEscuro);
+        return t.Criar(new Vector2(cx / w, 0f));
     }
 
     // ---------------------------------------------------------------- montanhas
@@ -287,7 +324,7 @@ public static partial class ArteDoMapa
             float altura = pico * (1f - Mathf.Pow(Mathf.Abs(dx), 1.15f)) + (Ruido(x * 0.6f, 3f, semente + 1) - 0.5f) * 3f;
             return y + 0.5f <= altura;
         }
-        float neve = versao == 2 ? 99f : pico * 0.52f;
+        const float neve = 99f; // (ilha tropical: rochedo sem neve no topo)
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
@@ -403,7 +440,7 @@ public static partial class ArteDoMapa
         return t.Criar(new Vector2(10f / w, 0f));
     }
 
-    // ---------------------------------------------------------------- castelo real e mansão
+    // ---------------------------------------------------------------- castelo, forte e as peças deles
 
     // Torre redonda: sombreada como um cilindro (luz à esquerda), com tijolos.
     static void Torre(Tela t, Color32[] r, int x0, int x1, int y0, int y1)
@@ -516,7 +553,7 @@ public static partial class ArteDoMapa
             }
     }
 
-    // O castelo real da capital (Lugunica): muralha branca com portão, torres com telhados azuis em cone
+    // O castelo do porto: muralha branca com portão, torres com telhados azuis em cone
     // e a torre principal no meio. As bandeirinhas são desenhos separados (tremulam: veja a VidaDoMapa).
     static Sprite Castelo()
     {
@@ -560,126 +597,247 @@ public static partial class ArteDoMapa
         return t.Criar(new Vector2(meio / (float)w, 0f));
     }
 
-    // A mansão do Roswaal: um casarão largo (duas alas e o corpo do meio) com telhados lilás.
-    static Sprite Mansao()
+    // A boca de um canhão na muralha: o buraco escuro e o cano de ferro saindo dele.
+    static void Canhao(Tela t, int cx, int cy)
+    {
+        for (int y = cy - 1; y <= cy + 2; y++)
+            for (int x = cx - 2; x <= cx + 2; x++)
+                t.Cor(x, y, C(20, 16, 30));
+        for (int x = cx - 1; x <= cx + 1; x++) { t.Pintar(x, cy, Pedra, x == cx - 1 ? 3 : 2); t.Pintar(x, cy + 1, Pedra, x == cx - 1 ? 4 : 3); }
+        t.Cor(cx, cy, C(8, 6, 14)); // a boca do cano
+    }
+
+    // O forte da Capitã Âncora: muralha de pedra com canhões, as duas torres dos cantos e a torre de vigia
+    // de madeira no meio. As bandeiras (pretas, de pirata) tremulam nas pontas (TorresDoForte).
+    static Sprite FortePirata()
     {
         const int w = 74, h = 50;
         var t = new Tela(w, h);
         int meio = 37;
-        // o corpo do meio, mais alto, com uma torrinha de relógio
-        Torre(t, Reboco, meio - 4, meio + 4, 30, 40);
-        Cone(t, TelhaLilas, meio + 0.5f, 6f, 40, 48);
-        Parede(t, Reboco, meio - 12, meio + 12, 0, 26, 0.84f);
-        Telhado(t, TelhaLilas, meio - 13, meio + 13, 27, 34);
-        // as duas alas
-        Parede(t, Reboco, 4, meio - 13, 0, 18, 0.8f);
-        Telhado(t, TelhaLilas, 3, meio - 12, 19, 26);
-        Parede(t, Reboco, meio + 13, w - 5, 0, 18, 0.66f);
-        Telhado(t, TelhaLilas, meio + 12, w - 4, 19, 26);
-        // janelas (algumas acesas) e a porta grande
-        for (int k = 0; k < 3; k++)
-        {
-            Janela(t, 8 + k * 7, 10, 2, 4, k == 2);
-            Janela(t, 8 + k * 7, 3, 2, 4, false);
-            Janela(t, meio + 17 + k * 7, 10, 2, 4, k == 0);
-            Janela(t, meio + 17 + k * 7, 3, 2, 4, k == 2);
-        }
-        for (int k = 0; k < 3; k++) Janela(t, meio - 9 + k * 8, 17, 3, 5, k != 1);
-        Janela(t, meio - 1, 33, 3, 4, true); // o relógio... ou a janela do escritório do Roswaal
-        for (int y = 0; y <= 8; y++)
-            for (int x = meio - 3; x <= meio + 3; x++)
-                t.Pintar(x, y, Madeira, y == 8 ? 0 : x == meio - 3 ? 3 : x == meio + 3 ? 0 : 2);
+        // a torre de vigia (atrás de tudo)
+        Torre(t, Madeira, meio - 6, meio + 6, 16, 37);
+        Cone(t, TelhaVermelha, meio + 0.5f, 9f, 38, 47);
+        Janela(t, meio - 1, 29, 3, 4, true);
+        Janela(t, meio - 4, 21, 2, 3, false);
+        Janela(t, meio + 3, 21, 2, 3, true);
+        // as torres dos cantos
+        Torre(t, Pedra, 3, 14, 0, 27);
+        Cone(t, TelhaVermelha, 8.5f, 7.5f, 28, 35);
+        Torre(t, Pedra, w - 15, w - 4, 0, 27);
+        Cone(t, TelhaVermelha, w - 9.5f, 7.5f, 28, 35);
+        Janela(t, 8, 18, 2, 4, true);
+        Janela(t, w - 10, 18, 2, 4, false);
+        // a muralha da frente, com as ameias, os canhões e o portão de madeira
+        Parede(t, Pedra, 15, w - 16, 0, 16, 0.74f);
+        Ameias(t, Pedra, 15, w - 16, 17);
+        foreach (int x in new[] { 20, 28, 46, 54 }) Canhao(t, x, 9);
+        for (int y = 0; y <= 10; y++)
+            for (int x = meio - 4; x <= meio + 4; x++)
+            {
+                float dx = x + 0.5f - meio;
+                if (y > 7 && dx * dx + (y - 7) * (y - 7) * 2f > 20f) continue;
+                int tom = x == meio - 4 ? 3 : x == meio + 4 ? 0 : (x - meio) % 2 == 0 ? 1 : 2; // as tábuas do portão
+                if (y == 3 || y == 7) tom = 0;                                                // as travas
+                t.Pintar(x, y, Madeira, tom);
+            }
         ContornoDeFora(t, ContornoEscuro);
         return t.Criar(new Vector2(meio / (float)w, 0f));
     }
 
-    // ---------------------------------------------------------------- biblioteca, ruína, cristal
+    // ---------------------------------------------------------------- navio fantasma, naufrágio, baú, navio e farol
 
-    // Torre da Biblioteca Proibida: pedra, cúpula roxa (a magia da Beatrice) e janelas brilhando.
-    static Sprite Biblioteca()
+    // As Cabines Assombradas: um navio fantasma encalhado nas pedras, com as velas rasgadas e as janelas
+    // da popa brilhando de roxo (a magia da Dóris).
+    static Sprite NavioFantasma()
     {
-        const int w = 26, h = 36;
+        const int w = 34, h = 36;
         var t = new Tela(w, h);
-        Torre(t, Pedra, 6, 19, 0, 22);
-        for (int x = 4; x <= 21; x++) { t.Pintar(x, 23, Pedra, x == 21 ? 0 : 5); t.Pintar(x, 22, Pedra, x == 21 ? 0 : 2); } // a beirada
-        for (int y = 24; y <= 33; y++) // a cúpula
-            for (int x = 5; x <= 20; x++)
+        // o mastro e a vela rasgada (atrás do casco)
+        for (int y = 8; y <= 33; y++) { t.Pintar(17, y, Madeira, 2); t.Pintar(18, y, Madeira, 0); }
+        for (int x = 15; x <= 20; x++) t.Pintar(x, 31, Madeira, x == 15 ? 3 : 1); // o cesto da gávea
+        for (int y = 16; y <= 29; y++)
+            for (int x = 8; x <= 27; x++)
             {
-                float nx = (x + 0.5f - 13f) / 8f, ny = (y + 0.5f - 24f) / 10f;
-                if (nx * nx + ny * ny > 1f) continue;
-                float v = 0.2f + 0.8f * LuzDaBola(nx, ny);
-                int tom = Tom(v, Magia.Length, x, y);
-                if (((x - 5) % 4) == 0) tom--; // as nervuras da cúpula
-                t.Pintar(x, y, Magia, tom);
+                float u = (x - 8 + 0.5f) / 20f;
+                float barriga = Mathf.Sin(u * Mathf.PI) * 1.5f; // a vela "estufada" pelo vento
+                if (y < 16 + barriga * 0.6f || y > 29 - barriga * 0.3f) continue;
+                if (Ruido(x * 0.45f, y * 0.45f, 501) > 0.66f) continue;          // os rasgos
+                if (y < 19 && Sorteio(x, y, 503) < 0.35f) continue;               // a barra de baixo, esfiapada
+                float v = 0.82f - u * 0.45f + (Sorteio(x, y, 505) - 0.5f) * 0.1f;
+                t.Pintar(x, y, Neve, Tom(v, Neve.Length, x, y));
             }
-        t.Pintar(12, 34, Ouro, 4); t.Pintar(13, 34, Ouro, 3); t.Pintar(12, 35, Ouro, 4); // a estrelinha na ponta
-        for (int y = 0; y <= 7; y++) // a porta, com a escuridão mágica lá dentro
-            for (int x = 11; x <= 14; x++)
+        // o casco: largo no convés, estreito embaixo; a popa (esquerda) é alta, com as janelas
+        for (int y = 0; y <= 17; y++)
+            for (int x = 1; x <= 32; x++)
             {
-                if (y == 7 && (x == 11 || x == 14)) continue;
-                t.Pintar(x, y, Magia, y >= 5 ? 2 : 1);
+                bool casco = y <= 10 && x >= 9 - y * 0.7f && x <= 25 + y * 0.65f;
+                bool popa = y > 10 && y <= 17 && x >= 2 && x <= 11;
+                bool proa = y > 10 && y <= 13 && x >= 27 && x <= 32 - (y - 11);
+                if (!casco && !popa && !proa) continue;
+                float v = 0.55f - (x - 1) / 32f * 0.25f;
+                int tom = Tom(v, Madeira.Length, x, y) - 1; // madeira velha, escura
+                if (y % 3 == 0) tom--;                       // as tábuas
+                if (y == 10 && casco) tom = 3;                // a amurada pega luz
+                t.Pintar(x, y, Madeira, tom);
             }
-        foreach (int jx in new[] { 8, 16 })
-            for (int y = 12; y <= 16; y++)
-                for (int x = jx; x <= jx + 1; x++)
-                    t.Pintar(x, y, Magia, y == 16 ? 6 : x == jx ? 5 : 4);
+        foreach (int jx in new[] { 3, 6, 9 }) // as janelas da popa, acesas de roxo
+            for (int y = 13; y <= 15; y++) { t.Pintar(jx, y, Magia, y == 15 ? 6 : 5); t.Pintar(jx + 1, y, Magia, 4); }
+        for (int k = 0; k < 4; k++) t.Pintar(14 + k * 3, 6, Magia, 3); // vigias com a luz de dentro
+        // as pedras onde ele encalhou
+        for (int x = 0; x < w; x++)
+            for (int y = 0; y <= 2; y++)
+                if (Ruido(x * 0.5f, y, 507) > 0.42f + y * 0.15f) t.Pintar(x, y, Pedra, y == 2 ? 4 : 2);
         ContornoDeFora(t, ContornoEscuro);
-        return t.Criar(new Vector2(13f / w, 0f));
+        return t.Criar(new Vector2(17f / w, 0f));
     }
 
-    // Coluna quebrada das ruínas antigas, com musgo em cima e um pedaço caído do lado.
-    static Sprite Ruina()
+    // Um navio naufragado na areia: o casco quebrado, as costelas de madeira de fora e o mastro caído.
+    static Sprite Naufragio()
     {
         const int w = 18, h = 16;
         var t = new Tela(w, h);
-        int Topo(int x) => x < 4 || x > 8 ? -1 : 13 - (int)(Sorteio(x, 0, 461) * 3f) - (x == 8 ? 2 : 0);
-        for (int x = 4; x <= 8; x++)
-            for (int y = 2; y <= Topo(x); y++)
+        // o mastro caído (na diagonal, atrás)
+        for (int k = 0; k <= 11; k++) { t.Pintar(9 + k / 2 + k % 2, 2 + k, Madeira, 2); t.Pintar(10 + k / 2 + k % 2, 2 + k, Madeira, 0); }
+        // as costelas do casco: arcos de madeira saindo da areia
+        foreach (int cx in new[] { 3, 6, 9, 12 })
+        {
+            int altura = cx == 3 ? 9 : cx == 6 ? 11 : cx == 9 ? 8 : 6;
+            for (int y = 1; y <= altura; y++)
             {
-                float u = (x - 4 + 0.5f) / 5f;
-                int tom = u < 0.3f ? 5 : u < 0.7f ? 4 : 2;
-                if (x == 6 && y > 3 && y < Topo(x) - 1) tom--; // a canelura da coluna
-                if (y == Topo(x)) tom = Sorteio(x, y, 463) < 0.6f ? -1 : 6;
-                if (tom < 0) t.Pintar(x, y, Capim, 3);
-                else t.Pintar(x, y, Pedra, tom);
+                int x = cx + (y > altura - 3 ? 1 : 0);
+                t.Pintar(x, y, Madeira, 3); t.Pintar(x + 1, y, Madeira, 1);
             }
-        for (int x = 2; x <= 10; x++) { t.Pintar(x, 1, Pedra, x <= 3 ? 5 : x >= 9 ? 1 : 3); t.Pintar(x, 0, Pedra, 1); } // a base
-        for (int x = 12; x <= 16; x++) // o pedaço caído (deitado)
-            for (int y = 0; y <= 3; y++)
-            {
-                if ((x == 12 || x == 16) && y == 3) continue;
-                t.Pintar(x, y, Pedra, y == 3 ? 5 : y == 0 ? 1 : x == 16 ? 2 : 4);
-            }
-        t.Pintar(13, 4, Capim, 3); t.Pintar(14, 4, Capim, 4);
+        }
+        // um pedaço do costado ainda inteiro (as tábuas)
+        for (int y = 1; y <= 4; y++)
+            for (int x = 2; x <= 13; x++)
+                t.Pintar(x, y, Madeira, (y % 2 == 0 ? 2 : 3) - (x > 10 ? 1 : 0));
+        // a areia por cima do pé
+        for (int x = 0; x < w; x++)
+        {
+            t.Pintar(x, 0, Areia, 3);
+            if (Sorteio(x, 1, 511) < 0.5f) t.Pintar(x, 1, Areia, 4);
+        }
         ContornoDeFora(t, ContornoEscuro);
         return t.Criar(new Vector2(7f / w, 0f));
     }
 
-    // Três cristais mágicos com faces: a da esquerda pega luz, a da direita fica no escuro.
-    static Sprite Cristal()
+    // O baú do tesouro, aberto e cheio de moedas de ouro (com um brilho na pilha).
+    static Sprite Bau()
     {
-        const int w = 16, h = 16;
+        const int w = 16, h = 14;
         var t = new Tela(w, h);
-        void Um(float meio, float largura, int altura)
-        {
-            for (int y = 0; y <= altura; y++)
+        // a tampa aberta (atrás)
+        for (int y = 8; y <= 11; y++)
+            for (int x = 3; x <= 12; x++)
+                t.Pintar(x, y, Madeira, y == 11 ? 4 : x == 12 ? 1 : 2);
+        for (int x = 3; x <= 12; x++) t.Pintar(x, 9, Pedra, x == 12 ? 2 : 4); // a cinta de ferro da tampa
+        // as moedas transbordando
+        for (int y = 6; y <= 8; y++)
+            for (int x = 2; x <= 13; x++)
             {
-                float meia = y > altura - 4 ? largura * (altura - y + 0.5f) / 4f : largura;
-                for (int x = Mathf.FloorToInt(meio - meia); x <= Mathf.CeilToInt(meio + meia) - 1; x++)
+                if (y == 8 && (x < 4 || x > 11)) continue;
+                int tom = 2 + ((x + y) % 3 == 0 ? 2 : 1) - (x > 10 ? 1 : 0);
+                t.Pintar(x, y, Ouro, tom);
+            }
+        t.Pintar(5, 8, Ouro, 4); t.Cor(6, 9, C(255, 255, 255)); // o brilho
+        // a caixa: madeira com as cintas de ferro e a fechadura de ouro
+        for (int y = 0; y <= 5; y++)
+            for (int x = 2; x <= 13; x++)
+            {
+                int tom = x <= 3 ? 4 : x >= 12 ? 1 : 3;
+                if (y == 5) tom = 4;
+                t.Pintar(x, y, Madeira, tom);
+                if (x == 4 || x == 11) t.Pintar(x, y, Pedra, x == 4 ? 4 : 2);
+            }
+        t.Pintar(7, 3, Ouro, 3); t.Pintar(8, 3, Ouro, 2); t.Pintar(7, 2, Ouro, 2); t.Pintar(8, 2, Ouro, 1);
+        ContornoDeFora(t, ContornoEscuro);
+        return t.Criar(new Vector2(0.5f, 0f));
+    }
+
+    // Um navio pirata navegando: casco com a faixa dourada e as portinholas dos canhões, duas velas e a
+    // bandeira preta com a caveira lá no alto. O pivô fica na linha da água.
+    static Sprite Navio()
+    {
+        const int w = 30, h = 32;
+        var t = new Tela(w, h);
+        const int agua = 3;
+        // os mastros (atrás das velas)
+        for (int y = agua + 6; y <= 29; y++) { t.Pintar(11, y, Madeira, 2); t.Pintar(12, y, Madeira, 0); }
+        for (int y = agua + 6; y <= 26; y++) { t.Pintar(20, y, Madeira, 2); t.Pintar(21, y, Madeira, 0); }
+        // as velas: brancas, estufadas para a frente (luz à esquerda)
+        void Vela(int x0, int x1, int y0, int y1)
+        {
+            for (int y = y0; y <= y1; y++)
+                for (int x = x0; x <= x1; x++)
                 {
-                    float dx = x + 0.5f - meio;
-                    if (Mathf.Abs(dx) > meia) continue;
-                    int tom = dx < -meia * 0.3f ? 5 : dx < meia * 0.3f ? 3 : 1;
-                    if (y == altura - 3 && dx < 0f) tom = 6; // o brilho na quina
-                    t.Pintar(x, y, Magia, tom);
+                    float u = (x - x0 + 0.5f) / (x1 - x0 + 1), s = (y - y0 + 0.5f) / (y1 - y0 + 1);
+                    float v = 0.92f - u * 0.5f + Mathf.Sin(s * Mathf.PI) * 0.08f;
+                    if ((y - y0) % 4 == 3) v -= 0.12f; // as costuras
+                    t.Pintar(x, y, Reboco, Tom(v, Reboco.Length, x, y));
                 }
+        }
+        Vela(6, 17, agua + 11, agua + 24);
+        Vela(16, 25, agua + 10, agua + 21);
+        // a bandeira preta com a caveira
+        for (int y = 27; y <= 30; y++)
+            for (int x = 13; x <= 18; x++)
+                t.Cor(x, y, C(26, 22, 34));
+        t.Cor(15, 29, C(240, 236, 228)); t.Cor(16, 29, C(240, 236, 228)); t.Cor(15, 28, C(200, 196, 196)); t.Cor(16, 28, C(200, 196, 196));
+        // o casco
+        for (int y = 0; y <= agua + 7; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float s = y / (float)(agua + 7);
+                bool casco = x >= 6 - s * 4f && x <= 22 + s * 5f;
+                bool popa = y > agua + 4 && x >= 1 && x <= 8;
+                bool proa = y >= agua + 5 && x >= 26 && x <= 29 - (y - agua - 5);
+                if (!casco && !popa && !proa) continue;
+                float v = 0.62f - x / (float)w * 0.3f;
+                int tom = Tom(v, Madeira.Length, x, y);
+                if (y < agua) tom -= 2;          // embaixo da linha da água: escuro e esverdeado
+                if (y == agua + 6) tom = 4;       // a amurada pega luz
+                t.Pintar(x, y, Madeira, tom);
+                if (y == agua + 3) t.Pintar(x, y, Ouro, x < 14 ? 3 : 2); // a faixa dourada
+            }
+        for (int x = 7; x <= 22; x += 4) { t.Cor(x, agua + 1, C(20, 16, 30)); t.Cor(x + 1, agua + 1, C(20, 16, 30)); } // as portinholas
+        for (int y = agua + 8; y <= agua + 9; y++) for (int x = 2; x <= 7; x++) t.Pintar(x, y, Madeira, x == 2 ? 4 : 2); // o castelo da popa
+        t.Pintar(4, agua + 8, Ouro, 4); // a lanterna da popa
+        ContornoDeFora(t, ContornoEscuro);
+        return t.Criar(new Vector2(15f / w, agua / (float)h));
+    }
+
+    // O farol do porto: torre listrada de vermelho e branco em cima das pedras, com a lanterna acesa.
+    static Sprite Farol()
+    {
+        const int w = 14, h = 38;
+        var t = new Tela(w, h);
+        for (int x = 0; x < w; x++) // as pedras do pé
+            for (int y = 0; y <= 3; y++)
+                if (Ruido(x * 0.6f, y * 0.6f, 521) > 0.25f + y * 0.12f) t.Pintar(x, y, Pedra, y >= 2 ? 4 : 2);
+        for (int y = 3; y <= 26; y++) // a torre (afina para cima), com as listras
+        {
+            float meia = 4.2f - (y - 3) / 23f * 1.4f;
+            for (int x = 0; x < w; x++)
+            {
+                float dx = x + 0.5f - 7f;
+                if (Mathf.Abs(dx) > meia) continue;
+                float v = 0.82f - (dx + meia) / (2f * meia) * 0.55f;
+                bool listra = (y - 3) / 5 % 2 == 1;
+                Color32[] r = listra ? TelhaVermelha : Reboco;
+                t.Pintar(x, y, r, Tom(v, r.Length, x, y));
             }
         }
-        Um(4f, 2f, 8);
-        Um(12f, 2f, 7);
-        Um(8f, 2.5f, 13);
-        ContornoDeFora(t, C(30, 14, 48));
-        return t.Criar(new Vector2(0.5f, 0f));
+        for (int x = 2; x <= 11; x++) t.Pintar(x, 27, Pedra, x == 11 ? 1 : 3); // a sacada
+        for (int y = 28; y <= 32; y++) // a lanterna acesa
+            for (int x = 4; x <= 9; x++)
+            {
+                if (x == 4 || x == 9 || y == 28) t.Pintar(x, y, Pedra, 2); // a armação
+                else t.Pintar(x, y, Ouro, y >= 31 ? 4 : 3);
+            }
+        Cone(t, TelhaVermelha, 7f, 4f, 33, 37);
+        ContornoDeFora(t, ContornoEscuro);
+        return t.Criar(new Vector2(7f / w, 0f));
     }
 
     // ---------------------------------------------------------------- flores, sombras e bichinhos
@@ -725,7 +883,7 @@ public static partial class ArteDoMapa
         });
     }
 
-    // Brilho redondo e suave (os cristais e a biblioteca "acesos"): branco, transparente nas bordas.
+    // Brilho redondo e suave (os baús, o farol e o navio fantasma "acesos"): branco, transparente nas bordas.
     static Sprite Brilho(int tamanho, Color32 cor)
     {
         return FabricaDeSprites.Procedural(tamanho, tamanho, FabricaDeSprites.Centro, (x, y) =>
@@ -748,7 +906,7 @@ public static partial class ArteDoMapa
         });
     }
 
-    // Passarinho de longe: um "v" escuro (asas para cima ou para baixo).
+    // Gaivota de longe: um "v" escuro (asas para cima ou para baixo).
     static Sprite Passaro(int quadro)
     {
         string[] arte = quadro == 0

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
-// 'H' - ELSA GRANHIERTE, a CAÇADORA DE ENTRANHAS (CHEFE). A fase dela é escura e a luta é no breu:
-// de dia ela é só uma moça de capa preta; no escuro, só se veem os OLHOS dela (roxos), andando pela sala.
+// 'H' - a COZINHEIRA do navio fantasma (CHEFE). A fase dela é o porão escuro e a luta é no breu:
+// no claro ela é uma cozinheira de chapéu de chef e avental; no escuro, só se veem os OLHOS dela (roxos), andando pela cozinha.
 //
 // O 'H' marca o começo da arena (na linha em que o jogador anda); a arena tem larguraDaArena blocos
 // a partir dele, com chão reto. Os dois DEGRAUS de tijolo dentro da arena são criados por este script
@@ -18,25 +18,25 @@ using UnityEngine.Rendering.Universal;
 //  - 3 ETAPAS de 2 golpes. Morreu? Volta na hora, no começo da arena, JÁ na etapa em que estava
 //    (o GerenciadorDoJogo guarda a etapa em EtapaDoChefe). A introdução só aparece na 1ª vez.
 //
-// OS ATAQUES (todos com faca, a kukri dela, que tem LUZ PRÓPRIA):
+// OS ATAQUES (todos com faca, o cutelo dela, que tem LUZ PRÓPRIA):
 //   FACA MIRADA  - a faca aparece na mão, mira em você (linha lilás) e TRAVA (linha vermelha): saia da linha!
 //   LEQUE        - igual, com 3 ou 5 facas: fique no VÃO entre as linhas.
 //   CHUVA        - marcas vermelhas no chão; as facas caem do teto em cima delas: fique ENTRE as marcas.
 //   CORTE RENTE  - linha vermelha no pé: num piscar de olhos ela atravessa a arena cortando o chão. PULE.
 //   CORTE ALTO   - linha vermelha na altura do pulo: NÃO pule.
 //   BUMERANGUE   - ela joga uma faca reto, a faca crava na parede do outro lado... e VOLTA pelo mesmo caminho.
-//   ATRÁS DE VOCÊ - os olhos piscam e somem (e ela ri)... e aparecem vermelhos ATRÁS do Subaru: PULE.
+//   ATRÁS DE VOCÊ - os olhos piscam e somem (e ela ri)... e aparecem vermelhos ATRÁS do Grumete: PULE.
 //  Etapa 1: um ataque de cada vez. Etapa 2: mais rápida e juntando dois. Etapa 3: mais rápida ainda e
-//  a escuridão FECHA (só sobra um círculo pequeno em volta do Subaru).
+//  a escuridão FECHA (só sobra um círculo pequeno em volta do Grumete).
 //
-// COMO VENCER: no fim de cada rodada aparece um CRISTAL DE LUZ (uma lâmpada mágica do Roswaal) num lugar
-// fixo da arena (às vezes lá no alto, em cima de um degrau). Encostou nele: CLARÃO! A arena acende por
-// uns segundos e a Elsa, ofuscada, fica TONTA no chão, à vista. PULE NA CABEÇA DELA. Não deu tempo?
-// Ela levanta rindo, a luz apaga e a rodada recomeça.
+// COMO VENCER: no fim de cada rodada aparece um LAMPIÃO (o lampião do porão) num lugar fixo da arena
+// (às vezes lá no alto, em cima de um degrau). Encostou nele: CLARÃO! A arena acende por uns segundos e a
+// Cozinheira, ofuscada, fica TONTA no chão, à vista. PULE NA CABEÇA DELA (é o único jeito de dar dano).
+// Não deu tempo? Ela levanta rindo, a luz apaga e a rodada recomeça.
 //
 // Como a Baleia, os perigos não usam colisores: cada faca (ou corte) é uma "Zona" (um segmento com
-// grossura, tipo uma salsicha) e a própria Elsa testa, a cada quadro, se o Subaru encostou em alguma.
-public class ElsaCacadora : Chefe
+// grossura, tipo uma salsicha) e a própria Cozinheira testa, a cada quadro, se o Grumete encostou em alguma.
+public class ChefeCozinheira : Chefe
 {
     const int EtapasDaLuta = 3;
     const int GolpesDaEtapa = 2;
@@ -55,10 +55,10 @@ public class ElsaCacadora : Chefe
     static readonly float[] VelocidadeDoBumerangue = { 11f, 12.5f, 14f };
     static readonly float[] TempoCravada = { 0.6f, 0.55f, 0.5f };       // o bumerangue fica na parede antes de voltar
     static readonly float[] TempoAtordoada = { 3.2f, 2.8f, 2.5f };
-    static readonly float[] IntervaloNoCristal = { 1.7f, 1.5f, 1.3f }; // facas enquanto você busca o cristal
+    static readonly float[] IntervaloNoLampiao = { 1.7f, 1.5f, 1.3f }; // facas enquanto você busca o lampião
     const float AvisoMinimoRente = 0.55f; // tudo que pede PULO avisa pelo menos isso (precisa de tempo para acertar o pulo)
     const float DuracaoDoCorte = 0.2f;    // quanto tempo o rastro do corte mata
-    const float RaioDoCristal = 0.8f;     // encostou (o meio do Subaru a menos disso do cristal) = clarão
+    const float RaioDoLampiao = 0.8f;     // encostou (o meio do Grumete a menos disso do lampião) = clarão
 
     // Alturas acima do chão (e "grossura" de cada coisa que mata).
     const float AlturaDoCorteRente = 0.35f, RaioDoCorteRente = 0.33f;   // mata até 0,68 do chão: pule
@@ -66,7 +66,7 @@ public class ElsaCacadora : Chefe
     const float AlturaDaFacaRente = 0.4f, AlturaDaFacaAlta = 1.65f;     // bumerangue
     const float RaioDaFaca = 0.12f;
     const float AlcanceDoAtras = 6f;      // o corte "atrás de você" tem 6 blocos
-    const float DistanciaDoAtras = 1.8f;  // ela aparece a 1,8 bloco do Subaru
+    const float DistanciaDoAtras = 1.8f;  // ela aparece a 1,8 bloco do Grumete
 
     // Lugares FIXOS (x a partir da borda esquerda da arena, y a partir do chão).
     // "Poleiros": de onde ela joga as facas (só os olhos aparecem lá).
@@ -80,9 +80,9 @@ public class ElsaCacadora : Chefe
     static readonly float[] ChuvaA = { 1f, 3f, 5f, 7f, 9f, 11f, 13f, 15f, 17f, 19f, 21f, 23f };
     static readonly float[] ChuvaB = { 2f, 4f, 6f, 8f, 10f, 12f, 14f, 16f, 18f, 20f, 22f };
 
-    // O cristal de cada rodada (x, altura do meio dele) e onde a Elsa cai tonta (x). Rodada = etapa * 2 + golpe.
+    // O lampião de cada rodada (x, altura do meio dele) e onde a Cozinheira cai tonta (x). Rodada = etapa * 2 + golpe.
     // Altura 1 = no chão; 2,6 a 3,4 = precisa pular; 3 = em cima de um degrau; 4,4 = subir no degrau E pular.
-    static readonly Vector2[] Cristais =
+    static readonly Vector2[] Lampioes =
     {
         new Vector2(12f, 1f), new Vector2(4.5f, 3f), new Vector2(19.5f, 4.4f),
         new Vector2(22.5f, 2.6f), new Vector2(4.5f, 4.4f), new Vector2(12f, 3.3f),
@@ -90,20 +90,20 @@ public class ElsaCacadora : Chefe
     static readonly float[] OndeElaCai = { 22.5f, 15.5f, 11.5f, 14.5f, 12.5f, 7.5f };
 
     // Medidas do desenho (pixels / 16 = blocos).
-    const float AlturaDosOlhosNoCorpo = 19.5f / 16f; // dos pés até os olhos, no desenho "elsa_chefe"
-    const float AlturaDaCabecaTonta = 18f / 16f;     // dos pés ao topo da cabeça, no desenho "elsa_tonta"
+    const float AlturaDosOlhosNoCorpo = 19.5f / 16f; // dos pés até os olhos, no desenho "cozinheira_chefe"
+    const float AlturaDaCabecaTonta = 18f / 16f;     // dos pés ao topo da cabeça, no desenho "cozinheira_tonta"
     const float MeiaLarguraTonta = 0.5f;
 
-    // Ordem de desenho: os avisos, as facas, o cristal e os olhos ficam POR CIMA da escuridão da etapa 3.
+    // Ordem de desenho: os avisos, as facas, o lampião e os olhos ficam POR CIMA da escuridão da etapa 3.
     const int OrdemDoCorpo = 8, OrdemDaEscuridao = 50, OrdemDasBeiradas = 54, OrdemDosAvisos = 55,
-              OrdemDosAtaques = 56, OrdemDoCristal = 57, OrdemDosOlhos = 58;
+              OrdemDosAtaques = 56, OrdemDoLampiao = 57, OrdemDosOlhos = 58;
 
     // A luz da fase escura (a mesma do GerenciadorDoJogo.CarregarFase) e a do clarão.
     // (o clarão fica abaixo de 0,8: acima disso o Luzes acha que é dia e apaga as luzinhas)
     const float LuzDoEscuro = 0.22f, LuzDoClarao = 0.7f;
     static readonly Color CorDoEscuro = new Color(0.7f, 0.72f, 1f);
 
-    // A "caixa" do Subaru que conta para morrer (um tiquinho menor que o desenho: é mais justo).
+    // A "caixa" do Grumete que conta para morrer (um tiquinho menor que o desenho: é mais justo).
     const float MeiaLarguraDoJogador = 0.27f, MeiaAlturaDoJogador = 0.42f;
     // Folga: o perigo só mata se encostar DE VERDADE (de raspão, perto da borda dos espinhos, não conta). Mais justo.
     const float FolgaDoAcerto = 0.08f;
@@ -111,13 +111,13 @@ public class ElsaCacadora : Chefe
     static readonly Color Vermelho = new Color(1f, 0.2f, 0.3f, 1f);
     static readonly Color VermelhoFraco = new Color(1f, 0.2f, 0.3f, 0.35f);
     static readonly Color Lilas = new Color(0.8f, 0.55f, 1f, 0.55f);
-    static readonly Color CorDoCristal = new Color(1f, 0.92f, 0.6f);
+    static readonly Color CorDoLampiao = new Color(1f, 0.92f, 0.6f);
     static readonly Color CorDoRastro = new Color(0.9f, 0.8f, 1f, 1f);
 
     // ------------------------------------------------------------------ estado
 
     // O que a barra de vida (Interface) lê (veja Chefe.cs).
-    public override string Nome => "ELSA";
+    public override string Nome => "COZINHEIRA";
     public override int Vida => vida;
     public override float VidaMostrada => vidaMostrada;
     public override bool EmCombate => emCombate;
@@ -125,6 +125,8 @@ public class ElsaCacadora : Chefe
     public override int EtapaAtual => etapa;
     public override int Etapas => EtapasDaLuta;
     public override int GolpesPorEtapa => GolpesDaEtapa;
+    public override Musicas.Tema Musica => Musicas.Tema.Cozinheira;
+    public override Vector3 PontoDeRenascer => new Vector3(esquerda + 0.5f, chao + 0.5f, 0f); // a casa do 'H'
 
     enum Estado { Esperando, Lutando, Atordoada, Derrotada }
     Estado estado;
@@ -132,8 +134,7 @@ public class ElsaCacadora : Chefe
     float vidaMostrada;
     bool emCombate;
     bool parado;          // o jogador morreu: tudo congela até a fase recomeçar
-    bool golpeada;        // levou um pisão nesta tontura
-    bool arremessando;    // um arremesso está mirando (no cristal, ela espera um acabar para começar outro)
+    bool arremessando;    // um arremesso está mirando (no lampião, ela espera um acabar para começar outro)
     float chao, esquerda, direita, meio;
     float relogio;
 
@@ -150,9 +151,9 @@ public class ElsaCacadora : Chefe
     SpriteRenderer corpo;
     Sprite spriteDePe, spriteTonta;
 
-    SpriteRenderer escuridao;     // etapa 3: a escuridão que só deixa um círculo em volta do Subaru
+    SpriteRenderer escuridao;     // etapa 3: a escuridão que só deixa um círculo em volta do Grumete
     Transform efeitos;            // pai de tudo que é passageiro (avisos, facas, marcas...): some de uma vez
-    Transform cristal;
+    Transform lampiao;
     Light2D luzDoClarao;
 
     // Uma área que mata: tudo a menos de "raio" do segmento a-b.
@@ -162,13 +163,10 @@ public class ElsaCacadora : Chefe
     readonly List<GameObject> paredes = new List<GameObject>();
     readonly List<Transform> estrelas = new List<Transform>();
     readonly List<Rect> degraus = new List<Rect>();
-    readonly List<Coroutine> soltos = new List<Coroutine>();
     readonly HashSet<string> dicasMostradas = new HashSet<string>();
-    int emParalelo;
 
     float Aviso => TempoDeAviso[etapa];
     float AvisoDePulo => Mathf.Max(Aviso, AvisoMinimoRente);
-    Vector3 PontoDeRenascer => new Vector3(esquerda + 0.5f, chao + 0.5f, 0f); // a casa do 'H'
     Vector2 Ponto(Vector2 relativo) => new Vector2(esquerda + relativo.x, chao + relativo.y);
 
     // ------------------------------------------------------------------ Unity
@@ -185,18 +183,18 @@ public class ElsaCacadora : Chefe
         efeitos = new GameObject("Efeitos").transform;
         efeitos.SetParent(transform, false);
 
-        olhosNormais = FabricaDeSprites.Pegar("olhos_elsa");
-        olhosBravos = FabricaDeSprites.Pegar("olhos_elsa_bravos");
-        desenhoDosOlhos = Desenho("Olhos", "olhos_elsa", Ponto(PoleiroDoTopo), OrdemDosOlhos);
+        olhosNormais = FabricaDeSprites.Pegar("olhos_cozinheira");
+        olhosBravos = FabricaDeSprites.Pegar("olhos_cozinheira_bravos");
+        desenhoDosOlhos = Desenho("Olhos", "olhos_cozinheira", Ponto(PoleiroDoTopo), OrdemDosOlhos);
         olhos = desenhoDosOlhos.transform;
         olhos.SetParent(transform, true);
         olhos.localScale = Vector3.one * 1.4f;
-        luzDosOlhos = Luzes.Ponto(olhos, FacasDaElsa.CorDosOlhos, 1.6f, 1f);
+        luzDosOlhos = Luzes.Ponto(olhos, FacasDaCozinheira.CorDosOlhos, 1.6f, 1f);
         if (luzDosOlhos != null) intensidadeDosOlhos = luzDosOlhos.intensity;
 
-        spriteDePe = FabricaDeSprites.Pegar("elsa_chefe");
-        spriteTonta = FabricaDeSprites.Pegar("elsa_tonta");
-        corpo = Desenho("Elsa", "elsa_chefe", transform.position, OrdemDoCorpo);
+        spriteDePe = FabricaDeSprites.Pegar("cozinheira_chefe");
+        spriteTonta = FabricaDeSprites.Pegar("cozinheira_tonta");
+        corpo = Desenho("Cozinheira", "cozinheira_chefe", transform.position, OrdemDoCorpo);
         corpo.transform.SetParent(transform, true);
         corpo.enabled = false;
 
@@ -247,12 +245,8 @@ public class ElsaCacadora : Chefe
         if (parado) return;
 
         AnimarOlhos();
-        if (estado == Estado.Atordoada)
-        {
-            GirarEstrelas();
-            TestarPisao();
-        }
-        TestarPerigos();
+        if (estrelas.Count > 0) GirarEstrelas();
+        if (!TestarPisao()) TestarPerigos(); // pisou na cabeça: neste quadro nada machuca
         if (escuridao != null && GerenciadorDoJogo.JogadorVivo(out Vector2 jogador))
             escuridao.transform.position = jogador;
     }
@@ -275,7 +269,12 @@ public class ElsaCacadora : Chefe
 
         if (renasceu) yield return Pronto();
         else yield return Introducao();
+        yield return Combate();
+    }
 
+    // O laço da luta (depois de cada pisão ele recomeça daqui, pela etapa e pela vida: veja Chefe.cs).
+    protected override IEnumerator Combate()
+    {
         while (true)
         {
             // repete as rodadas da etapa até levar os 2 golpes dela
@@ -283,8 +282,7 @@ public class ElsaCacadora : Chefe
             while (vida > vidaNoFimDaEtapa)
             {
                 int rodada = etapa * GolpesPorEtapa + (VidaMaxima - etapa * GolpesPorEtapa - vida);
-                yield return Rodada(rodada);
-                yield return BuscarOCristal(rodada);
+                yield return RodarRodada(RodadaComLampiao(rodada));
             }
             if (vida <= 0) break;
 
@@ -296,10 +294,16 @@ public class ElsaCacadora : Chefe
         yield return SerDerrotada();
     }
 
-    // Cada rodada é uma sequência FIXA de ataques. Depois dela vem o cristal (a chance de dar dano).
+    // A rodada inteira: os ataques e depois o lampião (a chance mais fácil de dar dano).
+    IEnumerator RodadaComLampiao(int qual)
+    {
+        yield return Rodada(qual);
+        yield return BuscarOLampiao(qual);
+    }
+
+    // Cada rodada é uma sequência FIXA de ataques.
     IEnumerator Rodada(int qual)
     {
-        soltos.Clear();
         switch (qual)
         {
             case 0: return Etapa1Rodada1();
@@ -311,7 +315,7 @@ public class ElsaCacadora : Chefe
         }
     }
 
-    // ETAPA 1: um ataque de cada vez (o Puck explica cada um).
+    // ETAPA 1: um ataque de cada vez (o Louro explica cada um).
     IEnumerator Etapa1Rodada1()
     {
         yield return Arremesso(PoleiroEsquerdo, 1);
@@ -425,12 +429,12 @@ public class ElsaCacadora : Chefe
     IEnumerator Introducao()
     {
         GerenciadorDoJogo.Som("risada");
-        GerenciadorDoJogo.Instancia.Avisar("ELSA, A CAÇADORA DE ENTRANHAS!", 2.4f);
+        GerenciadorDoJogo.Instancia.Avisar("A COZINHEIRA DO NAVIO FANTASMA!", 2.4f);
         olhos.position = Ponto(PoleiroDoTopo);
         olhosAbertos = true;
         yield return new WaitForSeconds(1.2f);
 
-        // o relâmpago: por um instante dá para ver a Elsa inteira (sorrindo)
+        // o relâmpago: por um instante dá para ver a Cozinheira inteira (sorrindo)
         Luzes.Ambiente(LuzDoClarao, Color.white);
         MostrarCorpo(spriteDePe, (Vector2)olhos.position - new Vector2(0f, AlturaDosOlhosNoCorpo));
         GerenciadorDoJogo.Som("pancada");
@@ -440,7 +444,7 @@ public class ElsaCacadora : Chefe
         corpo.enabled = false;
         yield return new WaitForSeconds(0.7f);
 
-        GerenciadorDoJogo.Instancia.Avisar("Fuja das facas. Ache o CRISTAL DE LUZ e pule na CABEÇA dela!", 2.8f);
+        GerenciadorDoJogo.Instancia.Avisar("Fuja das facas. Ache o LAMPIÃO e pule na CABEÇA dela!", 2.8f);
         yield return new WaitForSeconds(1.5f);
     }
 
@@ -475,12 +479,12 @@ public class ElsaCacadora : Chefe
         yield return new WaitForSeconds(0.8f);
     }
 
-    // Etapa 3: um desenho preto do tamanho da tela com um buraco em volta do Subaru (o Update leva junto).
+    // Etapa 3: um desenho preto do tamanho da tela com um buraco em volta do Grumete (o Update leva junto).
     void CriarEscuridao()
     {
         if (escuridao != null) return;
         Vector3 lugar = GerenciadorDoJogo.JogadorVivo(out Vector2 jogador) ? (Vector3)jogador : transform.position;
-        escuridao = Desenho("Escuridao", "elsa_escuridao", lugar, OrdemDaEscuridao);
+        escuridao = Desenho("Escuridao", "cozinheira_escuridao", lugar, OrdemDaEscuridao);
         escuridao.transform.SetParent(transform, true);
         escuridao.transform.localScale = Vector3.one * 2.4f; // o buraco claro fica com uns 2 blocos de raio
     }
@@ -489,12 +493,16 @@ public class ElsaCacadora : Chefe
     {
         estado = Estado.Derrotada;
         zonas.Clear();
-        Conquistas.Desbloquear("elsa_vencida");
+        Conquistas.Desbloquear("cozinheira_vencida");
         // a partir daqui, se morrer (caiu num buraco...), renasce DEPOIS da arena
         GerenciadorDoJogo.Instancia.ChefeVencido(new Vector3(direita + 1.5f, chao + 0.5f, 0f));
-        GerenciadorDoJogo.Instancia.Avisar("A ELSA FOI DERROTADA! (ela fugiu rindo...)", 3f);
+        GerenciadorDoJogo.Instancia.Avisar("A COZINHEIRA FOI DERROTADA! (ela fugiu rindo...)", 3f);
 
-        // ela levanta, ri e some correndo para a direita, ainda no clarão
+        // ela levanta, ri e some correndo para a direita, no clarão. (O Reagir já acendeu a luz e mostrou o
+        // corpo onde ela estava; se por algum motivo o corpo estiver escondido, aparece onde estão os olhos.)
+        if (!corpo.enabled) MostrarCorpo(spriteDePe, new Vector2(Mathf.Clamp(olhos.position.x, esquerda + 0.6f, direita - 0.6f), chao));
+        Luzes.Ambiente(LuzDoClarao, Color.white);
+        olhosAbertos = false;
         GerenciadorDoJogo.Som("risada");
         corpo.sprite = spriteDePe;
         Vector3 de = corpo.transform.position;
@@ -518,25 +526,25 @@ public class ElsaCacadora : Chefe
         emCombate = false;
     }
 
-    // ------------------------------------------------------------------ o cristal e o clarão
+    // ------------------------------------------------------------------ o lampião e o clarão
 
-    // O cristal aparece num lugar fixo; enquanto você não encosta, ela continua jogando facas.
-    IEnumerator BuscarOCristal(int rodada)
+    // O lampião aparece num lugar fixo; enquanto você não encosta, ela continua jogando facas.
+    IEnumerator BuscarOLampiao(int rodada)
     {
-        Vector2 lugar = Ponto(Cristais[rodada]);
-        var desenhoDoCristal = Desenho("CristalDeLuz", "cristal_de_luz", lugar, OrdemDoCristal);
-        cristal = desenhoDoCristal.transform;
-        cristal.SetParent(transform, true);
-        Animacao.Adicionar(cristal.gameObject, Animacao.Tipo.Flutuar, 2.5f, 0.12f);
-        Luzes.Ponto(cristal, CorDoCristal, 3f, 1.2f);
+        Vector2 lugar = Ponto(Lampioes[rodada]);
+        var desenhoDoLampiao = Desenho("Lampiao", "lampiao_do_porao", lugar, OrdemDoLampiao);
+        lampiao = desenhoDoLampiao.transform;
+        lampiao.SetParent(transform, true);
+        Animacao.Adicionar(lampiao.gameObject, Animacao.Tipo.Flutuar, 2.5f, 0.12f);
+        Luzes.Ponto(lampiao, CorDoLampiao, 3f, 1.2f);
         GerenciadorDoJogo.Som("moeda");
-        Dica(Cristais[rodada].y > 4f ? "Cristal lá no alto! Suba no DEGRAU e pule!" : "Um CRISTAL DE LUZ! Encosta nele!");
+        Dica(Lampioes[rodada].y > 4f ? "Lampião lá no alto! Suba no DEGRAU e pule!" : "Um LAMPIÃO! Encosta nele!");
 
         float proxima = 0.8f;
         while (true)
         {
             bool vivo = GerenciadorDoJogo.JogadorVivo(out Vector2 jogador); // (na pausa ele "não está vivo")
-            if (vivo && Vector2.Distance(jogador, cristal.position) < RaioDoCristal)
+            if (vivo && Vector2.Distance(jogador, lampiao.position) < RaioDoLampiao)
                 break;
             proxima -= Time.deltaTime;
             if (vivo && proxima <= 0f && !arremessando)
@@ -544,16 +552,16 @@ public class ElsaCacadora : Chefe
                 // ela joga do lado de LONGE (para dar tempo de ver a faca vindo)
                 bool jogadorNaEsquerda = jogador.x < meio;
                 Paralelo(Arremesso(jogadorNaEsquerda ? PoleiroDireito : PoleiroEsquerdo, etapa == 1 ? 3 : 1));
-                proxima = IntervaloNoCristal[etapa];
+                proxima = IntervaloNoLampiao[etapa];
             }
             yield return null;
         }
 
         // CLARÃO! As facas no ar somem na luz, ela fica ofuscada.
-        Vector3 ondeEstava = cristal.position;
-        Destroy(cristal.gameObject);
-        cristal = null;
-        PararSoltos();
+        Vector3 ondeEstava = lampiao.position;
+        Destroy(lampiao.gameObject);
+        lampiao = null;
+        PararAtaques();
         LimparEfeitos();
         yield return Clarao(ondeEstava, OndeElaCai[rodada]);
     }
@@ -569,7 +577,7 @@ public class ElsaCacadora : Chefe
         objetoDaLuz.transform.position = ondeAcendeu;
         luzDoClarao = Luzes.Ponto(objetoDaLuz.transform, Color.white, 30f, 1.4f);
         for (int i = 0; i < 12; i++)
-            Particula.Criar(efeitos, ondeAcendeu, Random.insideUnitCircle * 6f, 0.5f, 0.5f, CorDoCristal);
+            Particula.Criar(efeitos, ondeAcendeu, Random.insideUnitCircle * 6f, 0.5f, 0.5f, CorDoLampiao);
         if (escuridao != null) escuridao.color = new Color(1f, 1f, 1f, 0f);
 
         // ela aparece no chão, tonta, com as mãos nos olhos
@@ -578,13 +586,13 @@ public class ElsaCacadora : Chefe
         MostrarCorpo(spriteTonta, new Vector2(esquerda + xDaTontura, chao));
         CriarEstrelas();
         estado = Estado.Atordoada;
-        golpeada = false;
         if (etapa == 0) GerenciadorDoJogo.Instancia.Avisar("OFUSCADA! Pule na CABEÇA dela!", 1.6f);
         else GerenciadorDoJogo.Instancia.Avisar("NA CABEÇA!", 1f);
 
+        // (levou o pisão, a rodada para na hora: Chefe.cs. Daqui para baixo só chega quem NÃO pulou a tempo)
         Vector3 caida = corpo.transform.position;
         float tempo = TempoAtordoada[etapa];
-        for (float t = 0f; t < tempo && !golpeada; t += Time.deltaTime)
+        for (float t = 0f; t < tempo; t += Time.deltaTime)
         {
             // meio segundo antes de acordar ela treme e a luz começa a falhar (aviso)
             bool acordando = t > tempo - 0.5f;
@@ -595,9 +603,14 @@ public class ElsaCacadora : Chefe
         corpo.transform.position = caida;
         ApagarEstrelas();
         if (estado == Estado.Atordoada) estado = Estado.Lutando;
-        if (vida <= 0) yield break; // levou o último golpe: a cena da derrota cuida do resto
 
-        if (!golpeada) GerenciadorDoJogo.Som("risada", 0.7f); // não deu tempo: ela levanta rindo
+        GerenciadorDoJogo.Som("risada", 0.7f); // não deu tempo: ela levanta rindo
+        yield return SumirNoEscuro();
+    }
+
+    // Ela levanta, some na sombra, a luz apaga de novo (em dois passos) e os olhos voltam lá para o alto.
+    IEnumerator SumirNoEscuro()
+    {
         corpo.sprite = spriteDePe;
         for (float t = 0f; t < 0.35f; t += Time.deltaTime) // some na sombra
         {
@@ -618,29 +631,66 @@ public class ElsaCacadora : Chefe
         yield return new WaitForSeconds(0.9f); // respiro antes da próxima rodada
     }
 
-    // Caiu em cima da cabeça dela (caindo, por cima)?
-    void TestarPisao()
+    // Caiu em cima da cabeça dela (caindo, por cima)? Só vale com ela TONTA no clarão do lampião (é o único
+    // jeito de dar dano). Devolve true se acertou.
+    bool TestarPisao()
     {
+        if (!Vulneravel || estado != Estado.Atordoada) return false;
         Jogador jogador = GerenciadorDoJogo.JogadorAtual;
-        if (golpeada || jogador == null || jogador.Morto || jogador.Corpo.linearVelocity.y > 0.5f) return;
-        Vector3 pes = jogador.transform.position + Vector3.down * 0.5f;
         Vector3 base_ = corpo.transform.position;
-        float cabeca = base_.y + AlturaDaCabecaTonta;
-        if (Mathf.Abs(pes.x - base_.x) < MeiaLarguraTonta + 0.2f && pes.y > cabeca - 0.5f && pes.y < cabeca + 0.8f)
-            LevarGolpe(jogador);
+        float meia = MeiaLarguraTonta + 0.2f;
+        bool acertou = PesNaCabeca(jogador, base_.x - meia, base_.x + meia, base_.y + AlturaDaCabecaTonta, abaixo: 0.5f);
+        if (acertou) LevarGolpe(jogador);
+        return acertou;
     }
 
     void LevarGolpe(Jogador jogador)
     {
         vida--;
-        golpeada = true;
         jogador.Quicar(14f, true);
         GerenciadorDoJogo.Som("pisao");
         GerenciadorDoJogo.Som("risada", 0.4f); // ela ri até apanhando
         CameraSeguir.Tremer(0.2f, 0.3f);
-        Efeitos.Poeira(transform, corpo.transform.position + Vector3.up * 1f, 8, 3f);
-        string[] falas = { "ACERTOU! Ela gostou... (?)", "Mais um! Ela tá rindo menos!", "SÓ MAIS UM! VAI, SUBARU!" };
+        Vector3 cabeca = estado == Estado.Atordoada ? corpo.transform.position + Vector3.up : olhos.position;
+        Efeitos.Poeira(transform, cabeca, 8, 3f);
+        string[] falas = { "ACERTOU! Ela gostou... (?)", "Mais um! Ela tá rindo menos!", "SÓ MAIS UM! VAI, GRUMETE!" };
         if (vida > 0 && vida % GolpesPorEtapa != 0) GerenciadorDoJogo.Instancia.Avisar(falas[etapa], 1.6f);
+        Golpeado(); // para a rodada (Chefe.cs): depois vêm o Arrumar, o Reagir e o Combate de novo
+    }
+
+    // Um pisão interrompeu a rodada: apaga as facas, os avisos e o lampião que ficaram pela metade.
+    protected override void Arrumar()
+    {
+        PararAtaques();
+        LimparEfeitos(); // (as estrelas também ficam em "efeitos")
+        estrelas.Clear();
+        if (lampiao != null) Destroy(lampiao.gameObject);
+        lampiao = null;
+        if (estado == Estado.Atordoada) estado = Estado.Lutando;
+        corpo.transform.rotation = Quaternion.identity;
+        corpo.color = Color.white;
+    }
+
+    // Levou o pisão: CLARÃO! Ela aparece caída onde estava (no clarão, ou embaixo dos olhos), tonta um
+    // instante, ri e some no escuro de novo. Depois, a próxima rodada.
+    protected override IEnumerator Reagir()
+    {
+        Vector2 pes = corpo.enabled
+            ? (Vector2)corpo.transform.position
+            : new Vector2(Mathf.Clamp(olhos.position.x, esquerda + 0.6f, direita - 0.6f), AlturaDoPiso(olhos.position.x));
+        olhosAbertos = false;
+        aberturaDosOlhos = 0f;
+        Luzes.Ambiente(LuzDoClarao, Color.white);
+        if (luzDoClarao != null) luzDoClarao.enabled = true; // (no fim da tontura ela pisca)
+        if (escuridao != null) escuridao.color = new Color(1f, 1f, 1f, 0f);
+        MostrarCorpo(spriteTonta, pes);
+        if (vida <= 0) yield break; // o último golpe: a cena da derrota começa daqui
+
+        CriarEstrelas();
+        yield return new WaitForSeconds(0.7f);
+        ApagarEstrelas();
+        GerenciadorDoJogo.Som("risada", 0.7f);
+        yield return SumirNoEscuro();
     }
 
     // ------------------------------------------------------------------ os ataques
@@ -658,7 +708,7 @@ public class ElsaCacadora : Chefe
         var linhas = new List<LinhaDeAviso>();
         for (int i = 0; i < quantas; i++)
         {
-            facas.Add(FacasDaElsa.DesenharFaca(efeitos, olhos.position, OrdemDosAtaques, out _));
+            facas.Add(FacasDaCozinheira.DesenharFaca(efeitos, olhos.position, OrdemDosAtaques, out _));
             linhas.Add(NovoAviso());
         }
         GerenciadorDoJogo.JogadorVivo(out Vector2 alvo);
@@ -678,7 +728,7 @@ public class ElsaCacadora : Chefe
                 direcoes[i] = Girar(DirecaoPara(origem, alvo), (i - (quantas - 1) / 2f) * abertura);
                 Vector2 lugar = origem + direcoes[i] * 0.6f;
                 facas[i].transform.position = lugar;
-                FacasDaElsa.ApontarDesenho(facas[i], direcoes[i]);
+                FacasDaCozinheira.ApontarDesenho(facas[i], direcoes[i]);
                 Vector2 ponta = lugar + direcoes[i] * 0.6f;
                 linhas[i].Mostrar(ponta, ponta + direcoes[i] * Alcance(ponta, direcoes[i]),
                     !travou ? Lilas : Piscando(t - mira, trava) ? Vermelho : VermelhoFraco, travou ? 1f : 0.6f);
@@ -711,7 +761,7 @@ public class ElsaCacadora : Chefe
             if (rastro <= 0f)
             {
                 rastro = 0.03f;
-                Particula.Criar(efeitos, agora, Vector2.zero, 0.18f, 0.55f, FacasDaElsa.CorDoRastro);
+                Particula.Criar(efeitos, agora, Vector2.zero, 0.18f, 0.55f, FacasDaCozinheira.CorDoRastro);
             }
             yield return null;
         }
@@ -725,7 +775,7 @@ public class ElsaCacadora : Chefe
         Vector2 ponta = (Vector2)faca.transform.position + direcao * 0.6f;
         for (int i = 0; i < 5; i++)
             Particula.Criar(efeitos, ponta, -direcao * Random.Range(1.5f, 4f) + Random.insideUnitCircle * 2.5f,
-                Random.Range(0.15f, 0.3f), Random.Range(0.35f, 0.6f), FacasDaElsa.CorDaFaisca);
+                Random.Range(0.15f, 0.3f), Random.Range(0.35f, 0.6f), FacasDaCozinheira.CorDaFaisca);
         GerenciadorDoJogo.Som("bloco", 0.35f);
         for (float t = 0f; t < 0.3f; t += Time.deltaTime)
         {
@@ -755,9 +805,9 @@ public class ElsaCacadora : Chefe
         var luzDaMarca = new GameObject("LuzDaMarca"); // separada da marca (a marca está esticada)
         luzDaMarca.transform.SetParent(efeitos, false);
         luzDaMarca.transform.position = marca.transform.position;
-        Luzes.Ponto(luzDaMarca.transform, FacasDaElsa.CorDoAviso, 1f, 0.8f);
-        SpriteRenderer faca = FacasDaElsa.DesenharFaca(efeitos, new Vector3(x, chao + 13f, 0f), OrdemDosAtaques, out _);
-        FacasDaElsa.ApontarDesenho(faca, Vector2.down);
+        Luzes.Ponto(luzDaMarca.transform, FacasDaCozinheira.CorDoAviso, 1f, 0.8f);
+        SpriteRenderer faca = FacasDaCozinheira.DesenharFaca(efeitos, new Vector3(x, chao + 13f, 0f), OrdemDosAtaques, out _);
+        FacasDaCozinheira.ApontarDesenho(faca, Vector2.down);
         Zona zona = NovaZona(RaioDaFaca);
         float de = chao + 13f, ate = pouso + 0.6f; // no fim, a ponta encosta no chão
         for (float t = 0f; t < tempo; t += Time.deltaTime)
@@ -808,7 +858,7 @@ public class ElsaCacadora : Chefe
         olhos.position = new Vector2(xDeChegada, y + 0.35f);
     }
 
-    // O golpe de kukri em si: o rastro de luz de "de" até "ate" mata por DuracaoDoCorte segundos,
+    // O golpe de faca em si: o rastro de luz de "de" até "ate" mata por DuracaoDoCorte segundos,
     // e o corpo dela aparece passando como um borrão.
     IEnumerator Golpe(Vector2 de, Vector2 ate, float raio, bool alto)
     {
@@ -817,7 +867,7 @@ public class ElsaCacadora : Chefe
         zona.b = ate;
         GerenciadorDoJogo.Som("serra");
         CameraSeguir.Tremer(0.1f, 0.2f);
-        LinhaDeAviso rastro = NovoAviso("elsa_rastro", Color.white);
+        LinhaDeAviso rastro = NovoAviso("cozinheira_rastro", Color.white);
         float sentido = Mathf.Sign(ate.x - de.x);
         olhosAbertos = false;
         aberturaDosOlhos = 0f;
@@ -853,8 +903,8 @@ public class ElsaCacadora : Chefe
         // aviso: olhos vermelhos e a faca na mão, apontada
         olhosVermelhos = true;
         Vector2 direcao = new Vector2(sentido, 0f);
-        SpriteRenderer faca = FacasDaElsa.DesenharFaca(efeitos, inicio, OrdemDosAtaques, out _);
-        FacasDaElsa.ApontarDesenho(faca, direcao);
+        SpriteRenderer faca = FacasDaCozinheira.DesenharFaca(efeitos, inicio, OrdemDosAtaques, out _);
+        FacasDaCozinheira.ApontarDesenho(faca, direcao);
         LinhaDeAviso linha = NovoAviso();
         float aviso = alta ? Aviso + 0.1f : AvisoDePulo;
         GerenciadorDoJogo.Som("pop", 0.6f);
@@ -914,10 +964,10 @@ public class ElsaCacadora : Chefe
     {
         faca.transform.position = lugar;
         PosicionarZona(zona, lugar, direcao);
-        if (Random.value < 0.4f) Particula.Criar(efeitos, lugar, Vector2.zero, 0.18f, 0.5f, FacasDaElsa.CorDoRastro);
+        if (Random.value < 0.4f) Particula.Criar(efeitos, lugar, Vector2.zero, 0.18f, 0.5f, FacasDaCozinheira.CorDoRastro);
     }
 
-    // ATRÁS DE VOCÊ: os olhos piscam e somem (com uma risadinha)... e aparecem VERMELHOS atrás do Subaru,
+    // ATRÁS DE VOCÊ: os olhos piscam e somem (com uma risadinha)... e aparecem VERMELHOS atrás do Grumete,
     // perto do chão. A linha vermelha mostra o corte rente: PULE.
     IEnumerator Atras()
     {
@@ -986,7 +1036,7 @@ public class ElsaCacadora : Chefe
         desenhoDosOlhos.sprite = olhosVermelhos ? olhosBravos : olhosNormais;
         desenhoDosOlhos.color = new Color(1f, 1f, 1f, alfa);
         if (luzDosOlhos == null) return;
-        luzDosOlhos.color = olhosVermelhos ? FacasDaElsa.CorDoAviso : FacasDaElsa.CorDosOlhos;
+        luzDosOlhos.color = olhosVermelhos ? FacasDaCozinheira.CorDoAviso : FacasDaCozinheira.CorDosOlhos;
         luzDosOlhos.pointLightOuterRadius = olhosVermelhos ? 2.6f : 1.6f;
         luzDosOlhos.intensity = intensidadeDosOlhos * alfa * (olhosVermelhos ? 1.3f + 0.4f * Mathf.Sin(relogio * 40f) : 0.8f);
     }
@@ -996,7 +1046,7 @@ public class ElsaCacadora : Chefe
         corpo.sprite = pose;
         corpo.transform.position = pes;
         corpo.transform.rotation = Quaternion.identity;
-        corpo.flipX = GerenciadorDoJogo.JogadorVivo(out Vector2 jogador) && jogador.x < pes.x; // olha para o Subaru
+        corpo.flipX = GerenciadorDoJogo.JogadorVivo(out Vector2 jogador) && jogador.x < pes.x; // olha para o Grumete
         corpo.color = Color.white;
         corpo.enabled = true;
     }
@@ -1068,7 +1118,7 @@ public class ElsaCacadora : Chefe
         {
             var ponto = new GameObject("LuzDoAviso");
             ponto.transform.SetParent(aviso.raiz.transform, false);
-            Light2D luz = Luzes.Ponto(ponto.transform, corDaLuz ?? FacasDaElsa.CorDoAviso, 2f, 0.6f);
+            Light2D luz = Luzes.Ponto(ponto.transform, corDaLuz ?? FacasDaCozinheira.CorDoAviso, 2f, 0.6f);
             if (luz != null)
             {
                 luz.enabled = false;
@@ -1215,7 +1265,7 @@ public class ElsaCacadora : Chefe
         if (jogador == null || jogador.Morto || estado == Estado.Derrotada) return;
         Vector2 p = (Vector2)jogador.transform.position + new Vector2(0f, -0.02f); // centro da caixa dele
         bool encostou = false;
-        // o Subaru vira uma "salsicha" em pé: 3 pontos no meio dele, com a meia largura de raio
+        // o Grumete vira uma "salsicha" em pé: 3 pontos no meio dele, com a meia largura de raio
         for (int i = 0; i < zonas.Count && !encostou; i++)
             for (int k = -1; k <= 1 && !encostou; k++)
             {
@@ -1223,7 +1273,7 @@ public class ElsaCacadora : Chefe
                 if (DistanciaAoSegmento(ponto, zonas[i].a, zonas[i].b) < zonas[i].raio + MeiaLarguraDoJogador - FolgaDoAcerto) encostou = true;
             }
         if (!encostou) return;
-        Conquistas.Desbloquear("elsa"); // "Entranhas à mostra"
+        Conquistas.Desbloquear("cozinheira"); // "Picadinho"
         jogador.Morrer();
     }
 
@@ -1237,28 +1287,12 @@ public class ElsaCacadora : Chefe
 
     // ------------------------------------------------------------------ ataques ao mesmo tempo
 
-    // Começa um ataque "solto" (sem esperar ele acabar). Guardamos a corrotina para poder parar
-    // tudo de uma vez no clarão. (o "yield return ataque" roda o ataque DENTRO desta corrotina:
-    // parando esta, o ataque para junto)
-    void Paralelo(IEnumerator ataque) => soltos.Add(StartCoroutine(Contar(ataque)));
+    // (Paralelo, EsperarTodos e PararSoltos ficam em Chefe.cs)
 
-    IEnumerator Contar(IEnumerator ataque)
+    // Para todos os ataques soltos de uma vez (no clarão e no pisão) e "acalma" os olhos.
+    void PararAtaques()
     {
-        emParalelo++;
-        yield return ataque;
-        emParalelo--;
-    }
-
-    IEnumerator EsperarTodos()
-    {
-        while (emParalelo > 0) yield return null;
-    }
-
-    void PararSoltos()
-    {
-        foreach (Coroutine solto in soltos) if (solto != null) StopCoroutine(solto);
-        soltos.Clear();
-        emParalelo = 0;
+        PararSoltos();
         arremessando = false;
         olhosVermelhos = false;
         olhosPiscando = false;
@@ -1288,7 +1322,7 @@ public class ElsaCacadora : Chefe
     // Avisos piscam, e piscam mais rápido no finalzinho ("vai AGORA").
     static bool Piscando(float t, float total) => Mathf.Repeat(t * (total - t < 0.2f ? 22f : 9f), 1f) < 0.6f;
 
-    // Dicas do Puck: só na etapa 1, e cada uma só uma vez por tentativa.
+    // Dicas do Louro: só na etapa 1, e cada uma só uma vez por tentativa.
     void Dica(string texto)
     {
         if (etapa > 0 || !dicasMostradas.Add(texto)) return;
@@ -1300,11 +1334,13 @@ public class ElsaCacadora : Chefe
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void RegistrarDesenhos()
     {
-        FabricaDeSprites.Registrar("elsa_chefe", () => FabricaDeSprites.DeArte(ArteElsaDePe, FabricaDeSprites.Base));
-        FabricaDeSprites.Registrar("elsa_tonta", () => FabricaDeSprites.DeArte(ArteElsaTonta, FabricaDeSprites.Base));
-        FabricaDeSprites.Registrar("cristal_de_luz", () => FabricaDeSprites.DeArte(ArteCristal, FabricaDeSprites.Centro));
-        FabricaDeSprites.Registrar("elsa_rastro", () => FabricaDeSprites.Procedural(1, 8, FabricaDeSprites.Centro, (x, y) => CorDoRastroDoCorte(y)));
-        FabricaDeSprites.Registrar("elsa_escuridao", () => FabricaDeSprites.Procedural(320, 200, FabricaDeSprites.Centro, CorDaEscuridao));
+        // (com o sombreamento automático: a luz de cima-esquerda nas bordas do avental, do casaco e do chapéu)
+        var tons = new Dictionary<char, (char, char)> { { 'j', ('J', 'j') }, { 'w', ('w', 's') }, { 'c', ('c', 'C') } };
+        FabricaDeSprites.Registrar("cozinheira_chefe", () => FabricaDeSprites.DeArte(FabricaDeSprites.Sombrear(ArteCozinheiraDePe, tons), FabricaDeSprites.Base));
+        FabricaDeSprites.Registrar("cozinheira_tonta", () => FabricaDeSprites.DeArte(FabricaDeSprites.Sombrear(ArteCozinheiraTonta, tons), FabricaDeSprites.Base));
+        FabricaDeSprites.Registrar("lampiao_do_porao", () => FabricaDeSprites.DeArte(ArteLampiao, FabricaDeSprites.Centro));
+        FabricaDeSprites.Registrar("cozinheira_rastro", () => FabricaDeSprites.Procedural(1, 8, FabricaDeSprites.Centro, (x, y) => CorDoRastroDoCorte(y)));
+        FabricaDeSprites.Registrar("cozinheira_escuridao", () => FabricaDeSprites.Procedural(320, 200, FabricaDeSprites.Centro, CorDaEscuridao));
     }
 
     // O rastro do corte: branco no meio, sumindo nas beiradas.
@@ -1330,79 +1366,79 @@ public class ElsaCacadora : Chefe
         return new Color32(6, 2, 14, (byte)(160 * p));
     }
 
-    // A Elsa de pé: cabelo preto comprido (com franja), olhos lilases, sorriso, roupa e capa pretas
-    // com a beirada roxa, e a kukri na mão esquerda (do lado direito do desenho).
-    static readonly string[] ArteElsaDePe =
+    // A Cozinheira de pé: chapéu de chef (o "toque"), olhos lilases, um sorriso largo demais, avental branco
+    // por cima do vestido preto, e o cutelo na mão (do lado direito do desenho).
+    static readonly string[] ArteCozinheiraDePe =
     {
         "....kkkkkkk.....",
-        "...khhhhhhhk....",
-        "..khhHHhhhhhk...",
-        "..khhhhhhhhhk...",
-        ".khhhhhhhhhhhk..",
-        ".khhkcccccckhhk.",
-        ".khkcVwccVwckhk.",
-        ".khkccccCccckhk.",
-        ".khkkccrrcckkhk.",
-        ".khhjkcccckjhhk.",
-        "khhjjjvccvjjjhhk",
-        "khjjjjjvvjjjjjhk",
-        "khjjJjjjjjjjjjhk",
-        "khjjJjjjjjjjcckk",
-        "khjjJjjjjjjjkdsk",
-        "khvjjjjjjjjjvksk",
-        "khvjjjjjjjjjvssk",
-        ".hvjjjjjjjjjvsSk",
-        ".hvvjjjjjjjjvks.",
-        ".khvjjjjjjjjvk..",
-        "..kvjjjjjjjjvk..",
-        "..kvvjjjjjjvvk..",
-        "...kvjjjjjjvk...",
+        "...kwwwwwwwk....",
+        "..kwwswwwswwk...",
+        "..kwwwwwwwwwk...",
+        "...kssssssssk...",
+        "..khkcccccckhk..",
+        "..kkcVwccVwckk..",
+        "...kccccCccck...",
+        "...kccrrrrcck...",
+        "....kkcccckk....",
+        ".kjjjjwwwwjjjjk.",
+        ".kjjjwwwwwwjjjk.",
+        ".kjjjwwwwwwjjjk.",
+        ".kjjjwwwwwwjcck.",
+        ".kjjjwwswwwjkdsk",
+        ".kjjjwwwwwwjkssk",
+        ".kjjjwwwwwwjkssk",
+        ".kjjjwwwwwwjksSk",
+        ".kjjjwwwwwwjkkk.",
+        "..kjjwwwwwwjjk..",
+        "..kjjwwwwwwjjk..",
+        "..kjjjjjjjjjjk..",
+        "...kjjjjjjjjk...",
         "...kjjk..kjjk...",
         "...kjjk..kjjk...",
         "..kkkkk..kkkkk..",
     };
 
-    // A Elsa ofuscada: sentada no chão, olhos girando e a boca torta.
-    static readonly string[] ArteElsaTonta =
+    // A Cozinheira ofuscada: sentada no chão, olhos girando e a boca torta.
+    static readonly string[] ArteCozinheiraTonta =
     {
         "....kkkkkkk.....",
-        "...khhhhhhhk....",
-        "..khhHHhhhhhk...",
-        ".khhhhhhhhhhhk..",
-        ".khhkcccccckhhk.",
-        ".khkcPVccPVckhk.",
-        ".khkcVPccVPckhk.",
-        ".khkkcrcrcckkhk.",
-        ".khhjkcccckjhhk.",
-        "khhjjjvccvjjjhhk",
-        "khjjjjjvvjjjjjhk",
-        "khjjJjjjjjjjjjhk",
-        "khvjjjjjjjjjjvhk",
-        "kvvjjjjjjjjjjvvk",
-        "kvjjjjjjjjjjjjvk",
-        "kvvjjjjjjjjjjvvk",
-        ".kvvvvvvvvvvvvk.",
+        "...kwwwwwwwk....",
+        "..kwwswwwswwk...",
+        "..kwwwwwwwwwk...",
+        "...kssssssssk...",
+        "..khkcccccckhk..",
+        "..kkcPVccPVckk..",
+        "..kkcVPccVPckk..",
+        "...kcrcrccck....",
+        "....kkcccckk....",
+        "..kjjjwwwwjjjk..",
+        ".kjjjwwwwwwjjjk.",
+        ".kcjjwwwwwwjjck.",
+        "kjjjjwwwwwwjjjjk",
+        "kjjjjwwwwwwjjjjk",
+        "kjjjjjjjjjjjjjjk",
+        ".kjjjjjjjjjjjjk.",
         "..kkkkkkkkkkkk..",
     };
 
-    // O cristal de luz (a lâmpada mágica do Roswaal): amarelo-claro, com o brilho branco.
-    static readonly string[] ArteCristal =
+    // O lampião do porão: a chama acesa dentro do vidro, com a alça em cima.
+    static readonly string[] ArteLampiao =
     {
         "....kk....",
-        "...kwyk...",
-        "..kwyyyk..",
-        "..kwyyyk..",
-        ".kwyyyyyk.",
-        ".kwwyyyyk.",
-        "kwwyyyyyyk",
-        "kwyyyyyyyk",
-        "kwyyyyyyok",
-        ".kyyyyyok.",
-        ".kyyyyyok.",
-        "..kyyyok..",
-        "..kyyook..",
-        "...kyok...",
-        "...kook...",
-        "....kk....",
+        "...k..k...",
+        "...kkkk...",
+        "..kddddk..",
+        ".kddddddk.",
+        ".kwyyyywk.",
+        ".kyyooyyk.",
+        ".kyorroyk.",
+        ".kyorroyk.",
+        ".kyyooyyk.",
+        ".kwyyyywk.",
+        ".kddddddk.",
+        "..kddddk..",
+        "..kkkkkk..",
+        "..........",
+        "..........",
     };
 }

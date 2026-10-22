@@ -5,7 +5,7 @@ using UnityEngine.Rendering.Universal;
 // Luzes 2D de verdade (URP): a luz global de cada fase e luzinhas pontuais em moedas, blocos,
 // cristais, portas, lampiões... O jogo usa sprites "iluminados", então a luz global um pouco abaixo de 1
 // deixa o cenário levemente mais escuro e as luzinhas aparecem brilhando.
-// As luzinhas só existem nas fases ESCURAS (noite, biblioteca): de dia elas "estouravam" em branco.
+// As luzinhas só existem nas fases ESCURAS (noite, cabines): de dia elas "estouravam" em branco.
 // (De dia elas nem são criadas: Ponto() devolve null. Por isso quem chama usa "luz?." / testa null.)
 public static class Luzes
 {

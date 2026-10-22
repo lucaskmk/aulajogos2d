@@ -3,7 +3,7 @@ using UnityEngine;
 // Câmera que segue o jogador na horizontal, sem mostrar nada fora da fase,
 // e que sabe "tremer" quando algo pesado cai.
 //
-// Ela roda no LateUpdate: DEPOIS que o Subaru já andou neste quadro (o Rigidbody2D dele tem interpolação,
+// Ela roda no LateUpdate: DEPOIS que o Grumete já andou neste quadro (o Rigidbody2D dele tem interpolação,
 // então a posição dele já está "lisa"). E com a tela pixelada (TelaPixelada), a posição final é
 // arredondada para a grade de pixels, senão a pixel art tremeria. O arredondamento vale só para o que vai
 // para a tela: a conta do "deslizar" (xSuave) continua com a posição exata, para não emperrar.

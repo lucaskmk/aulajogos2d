@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// O Subaru, controlado pelo jogador (a arte fica em FabricaDeSprites).
+// O Grumete, controlado pelo jogador (a arte fica em FabricaDeSprites).
 // Usa Rigidbody2D (física do Unity) com alguns truques de "game feel":
 //  - pulo variável: segurar o botão pula mais alto, soltar cedo pula mais baixo;
 //  - coyote time: ainda dá pra pular uma fração de segundo depois de sair da beirada;

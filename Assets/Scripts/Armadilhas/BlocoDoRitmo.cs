@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
 // 'a' / 'b' - BLOCOS DO RITMO: blocos mágicos que se revezam no compasso de um relógio da fase.
-//   'a' (azul, da Rem, com uma nota ♪) e 'b' (rosa, da Ram, com duas notas ♫) NUNCA estão sólidos juntos:
+//   'a' (azul, da maré, com uma nota ♪) e 'b' (rosa, do coral, com duas notas ♫) NUNCA estão sólidos juntos:
 //   enquanto um time está aceso (sólido), o outro é só um "fantasma" (o contorno tracejado, sem colisão).
 //   A cada 1,4 s eles trocam. Nos últimos 0,35 s antes da troca, os que vão sumir PISCAM e tremem,
 //   e o relógio faz "tic... tic... TAC" (dá para jogar no ritmo, como num metrônomo).
@@ -13,17 +13,17 @@ using UnityEngine.Rendering.Universal;
 // sincronizados, não importa onde estão. O relógio volta para zero quando a fase é montada (a fase é
 // recriada a cada morte): o ritmo começa SEMPRE igual, com os 'a' acesos. Dá para decorar.
 //
-// Justiça: se o Subaru estiver DENTRO de um bloco na hora em que ele deveria acender, o bloco espera
+// Justiça: se o Grumete estiver DENTRO de um bloco na hora em que ele deveria acender, o bloco espera
 // ele sair (senão ele ficaria preso dentro da parede, ou seria cuspido para algum lado).
 //
 // Blocos iguais encostados NA MESMA LINHA viram um objeto só, com um colisor só (quem junta é o
-// MontarTodos, chamado pelo ConstrutorDeFase): assim o Subaru não "engancha" nas emendas.
+// MontarTodos, chamado pelo ConstrutorDeFase): assim o Grumete não "engancha" nas emendas.
 public class BlocoDoRitmo : MonoBehaviour
 {
     public const float TempoDaBatida = 1.4f; // de quanto em quanto tempo os blocos trocam
     public const float TempoDoAviso = 0.35f; // quanto tempo antes da troca eles começam a piscar
 
-    // O Subaru é uma caixa de 0.72 x 0.96 (o colisor 0.62 x 0.86 + a borda arredondada de 0.05),
+    // O Grumete é uma caixa de 0.72 x 0.96 (o colisor 0.62 x 0.86 + a borda arredondada de 0.05),
     // com o centro 0.02 abaixo da posição dele. Usado para saber se ele está dentro de um bloco.
     static readonly Vector2 MeioCorpoDoJogador = new Vector2(0.36f, 0.48f);
     const float DesvioDoCorpo = -0.02f;
@@ -41,7 +41,7 @@ public class BlocoDoRitmo : MonoBehaviour
     static float relogio;              // segundos desde que a fase foi montada (para quando pausa)
     static int quadroDoRelogio = -1;   // em que quadro o relógio já andou (anda uma vez só por quadro)
     static int quadroDaMontagem = -1;  // em que quadro a última fase com blocos do ritmo foi montada
-    static bool alguemPerto;           // algum bloco do ritmo está perto do Subaru? (para o tic-tac)
+    static bool alguemPerto;           // algum bloco do ritmo está perto do Grumete? (para o tic-tac)
     static bool alguemPertoAntes;
 
     // Necessário porque o projeto está com "Enter Play Mode Options" (sem recarregar o domínio).
@@ -98,7 +98,7 @@ public class BlocoDoRitmo : MonoBehaviour
             != Mathf.FloorToInt((agora + antecedencia) / TempoDaBatida);
     }
 
-    // Os blocos do ritmo e os esmagadores do ritmo só fazem barulho e poeira perto do Subaru.
+    // Os blocos do ritmo e os esmagadores do ritmo só fazem barulho e poeira perto do Grumete.
     public static bool PertoDoJogador(Vector3 posicao, float distancia = 13f)
     {
         if (!GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return false;
@@ -194,7 +194,7 @@ public class BlocoDoRitmo : MonoBehaviour
         bool deve = DeveEstarAceso();
         if (deve && !aceso)
         {
-            // Hora de acender... a não ser que o Subaru esteja dentro (aí espera ele sair).
+            // Hora de acender... a não ser que o Grumete esteja dentro (aí espera ele sair).
             if (falso || !JogadorDentro()) Acender(perto);
         }
         else if (!deve && aceso)
@@ -202,7 +202,7 @@ public class BlocoDoRitmo : MonoBehaviour
             Apagar(perto);
         }
 
-        // O pegadinha: o Subaru "pisou" nele bem quando ele parecia sólido. Puck ri.
+        // O pegadinha: o Grumete "pisou" nele bem quando ele parecia sólido. Louro ri.
         if (falso && aceso && !riu && JogadorDentro())
         {
             riu = true;
@@ -228,7 +228,7 @@ public class BlocoDoRitmo : MonoBehaviour
         if (perto) Faiscas(true);
     }
 
-    // A caixa do Subaru encosta (por dentro, não só na borda) na caixa deste bloco?
+    // A caixa do Grumete encosta (por dentro, não só na borda) na caixa deste bloco?
     bool JogadorDentro()
     {
         if (!GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return false;
@@ -278,7 +278,7 @@ public class BlocoDoRitmo : MonoBehaviour
         {
             sprite = spriteFantasma;
             if (deve)
-                alfa = 0.45f + 0.35f * Mathf.Sin(Time.time * 25f);    // esperando o Subaru sair de dentro
+                alfa = 0.45f + 0.35f * Mathf.Sin(Time.time * 25f);    // esperando o Grumete sair de dentro
             else if (vaiTrocar)
                 alfa = 1f;                                               // já já acende: o contorno fica forte
             else
@@ -303,9 +303,9 @@ public class BlocoDoRitmo : MonoBehaviour
 
     // ------------------------------------------------------------------ desenhos (pixel art em texto)
     // Letras destes desenhos: k = contorno, W = nota (branca), L = claro, B = cor do bloco, D = escuro.
-    // As cores de verdade vêm de cada time (azul da Rem, rosa da Ram).
+    // As cores de verdade vêm de cada time (azul da maré, rosa do coral).
 
-    // Rem: azul, com uma colcheia (♪).
+    // Maré: azul, com uma colcheia (♪).
     static readonly string[] ArteBlocoA =
     {
         ".kkkkkkkkkkkkkk.",
@@ -326,7 +326,7 @@ public class BlocoDoRitmo : MonoBehaviour
         ".kkkkkkkkkkkkkk.",
     };
 
-    // Ram: rosa, com duas semicolcheias ligadas (♫). (desenho diferente: dá para jogar sem distinguir as cores)
+    // Coral: rosa, com duas semicolcheias ligadas (♫). (desenho diferente: dá para jogar sem distinguir as cores)
     static readonly string[] ArteBlocoB =
     {
         ".kkkkkkkkkkkkkk.",

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Sombrinha "projetada" no fundo, 2 pixels para a direita e para baixo (o visual dos ímãs de Re:Zero).
+// Sombrinha "projetada" no fundo, 2 pixels para a direita e para baixo (o visual de adesivo).
 // Copia o desenho do objeto a cada quadro, então acompanha animações, viradas e quando ele some.
 //
 // DESEMPENHO: uma fase tem centenas de blocos e enfeites com sombra, e o mapa do mundo tem mais de mil.
@@ -8,7 +8,7 @@ using UnityEngine;
 // objeto nunca muda. Por isso existe a sombra "parada": ela copia o desenho no primeiro quadro e
 // depois se DESLIGA (enabled = false: o Unity nem chama mais o LateUpdate dela). Como ela é "filha" do
 // objeto, continua no lugar certo sozinha. Use parada para blocos, pedras, casas...; e a normal para
-// quem anda, vira ou troca de desenho (o Subaru, os bichos).
+// quem anda, vira ou troca de desenho (o Grumete, os bichos).
 public class Sombra : MonoBehaviour
 {
     public const int Ordem = -9; // atrás de tudo, mas na frente das nuvens e dos brilhos

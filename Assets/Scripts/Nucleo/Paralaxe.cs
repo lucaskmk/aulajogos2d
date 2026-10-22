@@ -9,8 +9,8 @@ using UnityEngine.Rendering.Universal;
 //   0 = anda junto com a fase (está "colada" no chão);
 //   negativo = está NA FRENTE da fase (passa mais rápido que o chão: a folhagem perto da câmera).
 //
-// Do fundo para a frente: céu em degradê -> sol/lua e raios de luz -> montanhas -> castelo ->
-// floresta -> árvores -> neblina -> (a fase) -> folhagem da frente.
+// Do fundo para a frente: céu em degradê -> sol/lua e raios de luz -> ilhas e o vulcão lá longe ->
+// o galeão no horizonte -> palmeiras -> o mato da praia -> neblina -> (a fase) -> folhagem da frente.
 [DefaultExecutionOrder(100)] // roda depois da CameraSeguir, para não tremer
 public class Paralaxe : MonoBehaviour
 {
@@ -33,13 +33,13 @@ public class Paralaxe : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Limpar() => fundoAtual = null;
 
-    // O clima da fase: escura > noite > biblioteca (tem portas) > dia.
+    // O clima da fase: escura > noite > cabines (tem portas) > dia.
     public static Clima ClimaDa(Fase dados)
     {
         if (dados == null) return Clima.Dia;
         if (dados.escura) return Clima.Escuro;
         if (dados.noite) return Clima.Noite;
-        if (dados.portas != null) return Clima.Biblioteca;
+        if (dados.portas != null) return Clima.Cabines;
         return Clima.Dia;
     }
 
@@ -49,7 +49,7 @@ public class Paralaxe : MonoBehaviour
         return jogo != null ? ClimaDa(jogo.DadosDaFase) : Clima.Dia;
     }
 
-    // Quando o Subaru morre, a fase INTEIRA é destruída e montada de novo (GerenciadorDoJogo.CarregarFase).
+    // Quando o Grumete morre, a fase INTEIRA é destruída e montada de novo (GerenciadorDoJogo.CarregarFase).
     // O fundo é igualzinho ao de antes, então não precisa ser refeito: Soltar() tira ele de dentro da fase
     // que vai ser destruída, e o Criar() logo em seguida pega ele de volta (se nada mudou).
     public static void Soltar()
@@ -120,17 +120,17 @@ public class Paralaxe : MonoBehaviour
         SolOuLua(raiz, noite, hd, clima);
 
         Color montanhas = Color.Lerp(corDoFundo, claro, noite ? 0.1f : 0.35f);
-        Color castelo = Color.Lerp(corDoFundo, Escuro, noite ? 0.35f : 0.15f);
+        Color castelo = Color.Lerp(corDoFundo, claro, noite ? 0.05f : 0.22f); // (o galeão: lá longe, um pouco mais claro que a fase)
         Color floresta = Color.Lerp(corDoFundo, Escuro, noite ? 0.5f : 0.3f);
         Color arvores = Color.Lerp(corDoFundo, Escuro, noite ? 0.65f : 0.45f);
 
         if (hd)
         {
             // HD-2D: cores mais "de verdade". Cada camada mistura a cor da fase com a cor natural dela
-            // (montanha azulada, castelo de pedra, pinheiros e copas verde-escuros), e as de perto
+            // (ilhas azuladas, o galeão de madeira escura, palmeiras e mato verde-escuros), e as de perto
             // ficam bem mais escuras e saturadas: é o contraste que dá profundidade.
             montanhas = Color.Lerp(corDoFundo, new Color(0.5f, 0.58f, 0.8f), 0.5f);
-            castelo = Color.Lerp(corDoFundo, new Color(0.36f, 0.38f, 0.55f), 0.5f);
+            castelo = Color.Lerp(corDoFundo, new Color(0.4f, 0.34f, 0.42f), 0.5f); // (o galeão)
             floresta = Color.Lerp(corDoFundo, new Color(0.16f, 0.34f, 0.38f), 0.55f);
             arvores = Color.Lerp(corDoFundo, new Color(0.1f, 0.26f, 0.2f), 0.6f);
             if (noite)
@@ -138,21 +138,21 @@ public class Paralaxe : MonoBehaviour
                 montanhas *= 0.55f; castelo *= 0.5f; floresta *= 0.45f; arvores *= 0.4f;
             }
             // Névoa atmosférica: a cor do ar perto do horizonte, puxada para o azul.
-            // Quanto mais longe a camada, mais ela "afunda" nessa cor (e mais borrada ela é).
+            // Quanto mais longe a camada, mais ela "afunda" nessa cor.
             Color ar = Color.Lerp(horizonte, noite ? new Color(0.3f, 0.35f, 0.65f) : new Color(0.72f, 0.82f, 1f), 0.35f);
             montanhas = Color.Lerp(montanhas, ar, 0.5f);
-            castelo = Color.Lerp(castelo, ar, 0.32f);
+            castelo = Color.Lerp(castelo, ar, 0.45f); // (o galeão: bem longe, quase sumindo no ar)
             floresta = Color.Lerp(floresta, ar, 0.14f);
             arvores = Color.Lerp(arvores, ar, 0.06f);
             montanhas.a = castelo.a = floresta.a = arvores.a = 1f;
         }
-        string sufixo = hd ? "_hd" : ""; // "fundo_castelo_hd" = a versão desfocada
+        string sufixo = hd ? "_hd" : ""; // "fundo_galeao_hd" = a versão com a luz pintada
 
-        Camada(raiz, "fundo_montanhas" + sufixo, 0.93f, -27, montanhas, larguraFase, 3f);
+        Camada(raiz, "fundo_ilhas" + sufixo, 0.93f, -27, montanhas, larguraFase, 3f);
         // (as ordens pulam o -23 de propósito: é onde a Baleia Branca nada no fundo)
-        Camada(raiz, "fundo_castelo" + sufixo, 0.85f, -24, castelo, larguraFase);
-        Camada(raiz, "fundo_floresta" + sufixo, 0.6f, -22, floresta, larguraFase);
-        Camada(raiz, "fundo_arvores" + sufixo, 0.35f, -20, arvores, larguraFase);
+        Camada(raiz, "fundo_galeao" + sufixo, 0.85f, -24, castelo, larguraFase);
+        Camada(raiz, "fundo_palmeiras" + sufixo, 0.6f, -22, floresta, larguraFase);
+        Camada(raiz, "fundo_mato" + sufixo, 0.35f, -20, arvores, larguraFase);
 
         // neblina baixinha, entre o fundo e a fase
         Faixa(raiz, "Neblina", FabricaDeSprites.Pegar("neblina"), 1f, -19, new Color(claro.r, claro.g, claro.b, hd ? 0.45f : 0.35f), -0.5f, 3.5f);
@@ -170,7 +170,7 @@ public class Paralaxe : MonoBehaviour
         SombrasDeNuvens.Criar(raiz, clima); // manchas de sombra das nuvens passando (só de dia e de noite)
 
         // Primeiro plano desfocado: escuro (contra a luz) e meio transparente nas bordas borradas.
-        // Na biblioteca (dentro de casa) não tem capim; no escuro nem daria para ver.
+        // Nas cabines (dentro do navio) não tem capim; no escuro nem daria para ver.
         if (clima == Clima.Dia || clima == Clima.Noite)
         {
             Color frente = Color.Lerp(corDoFundo, Escuro, noite ? 0.9f : 0.82f);
@@ -181,12 +181,12 @@ public class Paralaxe : MonoBehaviour
         }
     }
 
-    // Versão pequena, para o horizonte do mapa do mundo: só a floresta e as árvores, encolhidas,
-    // com a base em "baseY". Quanto mais longe, mais a cor puxa para a do céu (parece neblina).
-    public static void CriarHorizonte(Transform raiz, int largura, float baseY, float escala, Color corDoCeu, Color corDoChao)
+    // Versão pequena, para o horizonte do mapa do mundo: o mar aberto, com as ilhas e o vulcão lá longe e
+    // os galeões passando, encolhidos e com a base em "baseY". Quanto mais longe, mais a cor puxa para a do céu.
+    public static void CriarHorizonte(Transform raiz, int largura, float baseY, float escala, Color corDoCeu, Color corDoMar)
     {
-        Camada(raiz, "fundo_floresta", 0.7f, -24, Color.Lerp(corDoCeu, Escuro, 0.25f), largura, baseY, escala);
-        Camada(raiz, "fundo_arvores", 0.45f, -22, Color.Lerp(corDoChao, Escuro, 0.2f), largura, baseY - 0.1f, escala);
+        Camada(raiz, "fundo_ilhas", 0.7f, -24, Color.Lerp(corDoCeu, Escuro, 0.18f), largura, baseY, escala);
+        Camada(raiz, "fundo_galeao", 0.45f, -22, Color.Lerp(Color.Lerp(corDoMar, corDoCeu, 0.4f), Escuro, 0.2f), largura, baseY - 0.6f, escala);
     }
 
     static Paralaxe NovaCamada(Transform raiz, string nome, float fator)
@@ -260,8 +260,8 @@ public class Paralaxe : MonoBehaviour
             objetoDaLuz.transform.localPosition = PosicaoDoSol + new Vector3(-2f, 2f, 0f);
             var luz = objetoDaLuz.AddComponent<Light2D>();
             luz.lightType = Light2D.LightType.Point;
-            luz.color = noite ? new Color(0.55f, 0.65f, 1f) : clima == Clima.Biblioteca ? new Color(1f, 0.75f, 0.45f) : new Color(1f, 0.8f, 0.52f);
-            luz.intensity = noite ? 0.3f : clima == Clima.Biblioteca ? 0.4f : 0.6f;
+            luz.color = noite ? new Color(0.55f, 0.65f, 1f) : clima == Clima.Cabines ? new Color(1f, 0.75f, 0.45f) : new Color(1f, 0.8f, 0.52f);
+            luz.intensity = noite ? 0.3f : clima == Clima.Cabines ? 0.4f : 0.6f;
             luz.pointLightOuterRadius = 30f;
             luz.pointLightInnerRadius = 3f;
             luz.falloffIntensity = 0.35f;
