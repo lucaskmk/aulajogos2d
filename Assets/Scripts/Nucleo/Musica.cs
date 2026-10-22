@@ -4,8 +4,8 @@ using UnityEngine;
 // Se existir Assets/Resources/Sons/musica_fundo (mp3, ogg ou wav), toca ela em todas as fases.
 // Dá para repetir só um TRECHO do arquivo (o refrão, por exemplo): coloque em InicioDoTrecho e
 // FimDoTrecho o segundo em que ele começa e termina (0 e 0 = a música inteira).
-// Se não existir o arquivo, toca a música gerada por código (FabricaDeMusica), uma variação por fase.
-// O volume abaixa sozinho na morte (para a OST do Retorno pela Morte aparecer) e na pausa.
+// Se não existir o arquivo, toca a música gerada por código (FabricaDeMusica): a jiga pirata, num tom por fase.
+// O volume abaixa sozinho na morte (para a OST da Volta da Maré aparecer) e na pausa.
 public class Musica : MonoBehaviour
 {
     const string ArquivoDaMusica = "Sons/musica_fundo"; // em Assets/Resources, sem a extensão
@@ -38,12 +38,22 @@ public class Musica : MonoBehaviour
 
     public void TocarDaFase(int fase)
     {
-        AudioClip clipe = arquivo != null ? arquivo : FabricaDeMusica.Lofi(fase);
+        AudioClip clipe = arquivo != null ? arquivo : FabricaDeMusica.DaFase(fase);
         if (fonte.clip == clipe && fonte.isPlaying) return; // já está tocando: não recomeça
         fonte.clip = clipe;
         fonte.volume = 0f; // entra suave
         fonte.Play();
         if (clipe == arquivo && inicioDoTrecho > 0f && inicioDoTrecho < clipe.length) fonte.time = inicioDoTrecho;
+    }
+
+    // Uma música específica (a luta de um chefe). Ignora o arquivo musica_fundo: cada chefe tem a sua.
+    // Se ela já está tocando, continua de onde estava (morrer na luta não recomeça a música).
+    public void TocarClipe(AudioClip clipe)
+    {
+        if (clipe == null || (fonte.clip == clipe && fonte.isPlaying)) return;
+        fonte.clip = clipe;
+        fonte.volume = 0f; // entra suave
+        fonte.Play();
     }
 
     // 1 = volume normal, 0 = mudo. O volume "desliza" até o alvo.

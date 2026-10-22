@@ -1,125 +1,71 @@
 # Onde paramos (e o que falta)
 
-Arquivo de passagem de bastão: se a sessão na nuvem acabar, dá para continuar daqui (no Claude Code local ou na mão).
-Tudo o que está listado como "pronto" já está na `main`.
-
-## Objetivo desta leva
-- 15 fases + 1 fase só do chefe (16 no total).
-- A Baleia Branca como chefe DIFÍCIL, estilo chefe final do Helltaker: 3 etapas com checkpoint entre elas, ataques rápidos e telegrafados, morre com um toque. O visual é uma orca com chifre.
-- Só UMA fase com controles invertidos ("Cadê a direita?"), e só num trecho.
-- O jogo continua troll ("passar raiva"), mas sempre possível e justo depois que você sabe.
-- Depois: revisão completa pela rubrica da disciplina (12 frentes), GDD, README com créditos e página do itch.io.
+Arquivo de passagem de bastão: dá para continuar daqui (no Claude Code ou na mão).
+O README explica o jogo e o código; o GDD explica o design. Aqui fica só o estado do trabalho.
 
 ## Pronto
-- **Base** (commit `77ccb87`):
-  - `FabricaDeSprites.Registrar(nome, criar)`: cada arquivo novo registra os próprios sprites.
-  - `Jogador.Empurrar(velX)` (vento) e `Jogador.Carregar(deslocamento)` (plataformas).
-  - `Fase.noite`, `Fase.escura`, `Fase.petalas` e `Fase.corDoFundo` (em `Fases.cs`).
-  - `GerenciadorDoJogo.EtapaDoChefe`: lembra a etapa da luta entre uma morte e outra.
-  - Pontos do mapa de `1` a `9` e de `A` a `G` (fases 10 a 16).
-  - Checador de fases: `Ferramentas/checar_fase.py`.
-- **Inversão:** "Cadê a direita?" agora só tem um trecho invertido, depois do checkpoint. O trecho tem 36 blocos e a contagem é de 1,2 s: antes, quem corria cruzava os dois `X` e a inversão era cancelada.
-- **Bandeira falsa da fase 10:** agora tem um tijolo antes dela para pular por cima. A bandeira tem 3 de altura e o pulo alcança só 2,8.
-- **Fase "Ponte para a Capital"** (`PlataformaMovel.cs`, letras `j` / `J` / `D`):
-  - `j` normal; `J` com cristal vermelho, que despenca; `D` com cristal amarelo, que dispara.
-  - Já está integrada em `Fases.cs` e `ConstrutorDeFase.cs`, com a conquista "expressa".
-- **"O Verdadeiro Final (juro)":** fim novo (bandeira falsa, chão que cai), sem a arena; o chefe vai ter fase própria.
-- **Cor do céu, pétalas e fala do mapa** agora são presas a cada fase (pelo nome), não à posição. Reordenar fases não bagunça mais nada.
-- **Mapa do mundo novo** (`MapaDoMundo.cs`): 112 x 21, com 16 pontos (capital, floresta, lago com a ilha secreta, mansão, abismo, biblioteca, montanhas de cristal, região sombria e o covil da Baleia no mar). Prévia em `Ferramentas/previews/mapa_do_mundo.png`.
-- **Arte da orca com chifre** (`Objetos/ArteDaBaleia.cs`):
-  - Registra `baleia`, `baleia_0..3`, `baleia_boca`, `baleia_carga` e `baleia_tonta`.
-  - Também registra os sprites dos ataques: raio, linha e elo.
-  - Prévia em `Ferramentas/previews/orca_chefe.png`.
+- **16 fases + a secreta**, todas integradas (`Fases.cs`), com o mapa do mundo (`MapaDoMundo.cs`) e as falas (`Textos.cs`).
+- **Os 3 chefes no molde Helltaker** (3 etapas de 2 golpes, aviso antes de todo ataque, padrões fixos, checkpoint por etapa):
+  `ChefeCapita.cs` (fase 6), `ChefeCozinheira.cs` (fase 13) e `BaleiaBranca.cs` (fase 16), com a base em `Chefe.cs`.
+  O dano é **pular na cabeça no momento de vulnerabilidade** de cada um (âncora presa, clarão do lampião, atordoada depois do mergulho).
+- **Recordes por fase e medalhas** (`Progresso.cs`, `Medalhas.cs`, `Interface.cs`, `MapaDoMundo.cs`) e a conquista "Perfeccionista".
+- **Atalhos de teste:** F9 no mapa (libera tudo só na partida atual) e F10 (painel de gráficos, FPS e pior quadro).
+- **Visual v3 (HD-2D):** blocos (`ArteDosBlocos.cs`), fundo nítido com a luz pintada, raios de sol, sombras de nuvens, vento nas plantas e a tela pixelada
+  (o tilt-shift ficou desligado de fábrica; dá para ligar no F10).
 
-## Em andamento / falta fazer
-A ordem final das 16 fases:
+## Leva do tema pirata (pronta, falta testar na Unity)
+O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora é **CILADA À VISTA!**, uma aventura de pirata:
+- **Nomes e textos:** o Grumete, a Marina (sereia), o Louro (papagaio), a Dóris (fantasminha), a Capitã Âncora, a Cozinheira,
+  o Kraken e a Baleia Branca; fases, falas, conquistas, mensagens de morte, créditos, README e GDD.
+- **Desenhos novos:** os personagens, a âncora, os cutelos, os caranguejos e ratos, o tentáculo e os tentáculos da Maré Negra (no lugar das mãos).
+- **Áudio 100% próprio:** os dois MP3 do anime foram apagados. A Volta da Maré agora é gerada por código (`SomDaMare.cs`: a onda, o sino do navio e um lamento de acordeão).
+- **Trilha pirata** (`Musicas.cs`, sintetizador próprio com acordeão, apito, violão, tambor de mão, pisadas e sino):
+  - "Jiga do Grumete" nas fases (6/8, ré menor, AABB), num tom por fase (`FabricaDeMusica.DaFase`);
+  - "Balada do Arquipélago" no mapa;
+  - as músicas dos 3 chefes reorquestradas com os instrumentos de pirata.
+  - A `FabricaDeEpico.cs` (a música antiga, "abertura de anime") foi apagada.
+- **Mapa do arquipélago:** as ilhas separadas por estreitos (as pontes de madeira atravessam), o mar no norte e no sul com navios,
+  palmeiras, o farol, o forte da Capitã, o navio fantasma das Cabines, naufrágios, baús e a Rocha da Caveira.
+  Os caminhos são os mesmos de antes (só ganharam pontes onde passam por cima do mar), então a ordem das fases e os atalhos não mudaram.
+- **Fundos das fases:** ilhas com um vulcão lá longe, um galeão no horizonte, palmeiras e o mato da praia (as camadas de `Paralaxe.cs`).
+  No chão das fases, barris e estrelas-do-mar no lugar das cercas e dos cogumelos.
+- **Capitã Âncora:** mais difícil (avisos mais curtos, tudo mais rápido, mais ataques por rodada) e com a **tempestade de âncoras**
+  (âncoras rápidas para todos os lados, que voltam pelo mesmo caminho). A janela da âncora presa continua mais longa que a original
+  (3 / 2,7 / 2,4 s). As outras dificuldades dos chefes voltaram a ser as de antes.
+- **Gráficos:** fundos nítidos e com detalhe (sem o desfoque), caixas de fala novas (fonte pixel, retrato, moldura, no alto da tela),
+  os personagens redesenhados com três tons por material (`ArteDosPersonagens.cs`), a Capitã com rosto novo e as chefes com sombreamento,
+  e a névoa do mapa mais macia.
 
-| # | Fase | Mecânica | Situação |
-|---|---|---|---|
-| 1 | Bem-vindo :) | — | pronta |
-| 2 | Confia em mim | — | pronta |
-| 3 | Corre! | — | pronta |
-| 4 | O Final (sem pegadinhas) | — | pronta |
-| 5 | Eu mudo de ideia (libera a secreta) | — | pronta |
-| 6 | Oni de Cabelo Azul | CHEFE: a Rem com o mangual (`ChefeRem.cs`, letra `u`), 3 etapas; aquecimento com `Q` | pronta (ainda não testada dentro da Unity) |
-| 7 | Cadê a direita? | inversão (um trecho) | pronta |
-| 8 | Foge, bloco! | — | pronta |
-| 9 | Ponte para a Capital | plataformas `j` `J` `D` | pronta |
-| 10 | Voa, Barusu! | Vento da Ram `y` / redemoinho `n` | pronta |
-| 11 | Biblioteca Proibida | portas | pronta |
-| 12 | Dança das Gêmeas (noite) | blocos do ritmo `a`/`b`/`A`, esmagador `t` | pronta |
-| 13 | A Caçadora de Entranhas (escura) | CHEFE Elsa `H` em 3 etapas no escuro (`ElsaCacadora.cs`): só os olhos aparecem; cristal de luz -> clarão -> pule na cabeça. Aquecimento com Elsas `l` | pronta (ainda não testada dentro da Unity) |
-| 14 | Eu Te Amo (CORRE!) (noite) | Miasma da Bruxa `N` (só correr e parkour) | pronta |
-| 15 | O Verdadeiro Final (juro) | — | pronta |
-| 16 | A Baleia Branca (noite) | chefe em 3 etapas (`BaleiaBranca.cs`) | pronta (ainda não testada dentro da Unity) |
+### Para conferir na Unity
+- O Console ao dar Play: `[Cilada à Vista] visual v3 (HD-2D escuro) rodando...` (sem erro vermelho).
+- **Capitã:** a tempestade de âncoras (as linhas piscam antes; as âncoras cravam e voltam), se a luta ficou difícil na medida,
+  a janela da âncora presa e se o pisão fora da janela não dá dano.
+- **Cozinheira e Baleia:** se a luta ficou igual à de antes (dificuldade e janela de dano).
+- **Música:** a jiga em cada fase (o tom muda de fase para fase), a balada no mapa, a de cada chefe na luta (continua depois de morrer e volta para a da fase depois da vitória).
+  E o engasgo ao gerar a música (meio segundo), principalmente no navegador.
+- **Morte:** a onda e o sino da Volta da Maré caem bem no renascimento.
+- **Mapa:** os navios no mar, a luz do farol, as palmeiras ao vento, o horizonte (mar com galeões e ilhas) e a névoa abrindo pelas pontes novas.
+- **Fundos das fases:** o galeão e as palmeiras no HD-2D e no Simples; se nada pontudo no fundo parece espinho.
 
-**Todas as 16 fases estão integradas.** O checador estático não entende plataformas, vento e portas (fases 9, 10 e 11). Elas foram testadas com simuladores próprios dos agentes, em `/tmp/claude-0/teste_*`.
+## Ainda falta
+- **Página do itch.io:** como jogar e os segredos (fase secreta: todas as moedas da fase 5 e depois seta para baixo no ponto 5).
+- **Tempos-alvo das medalhas:** são estimativas. Ajustar o campo `tempoAlvo` em `Fases.cs` depois de jogar,
+  e conferir se TODAS as moedas de cada fase dá para pegar (senão a medalha de moeda fica impossível).
+- **Narrativa (opcional):** um prólogo curto (o Grumete cai do navio, e a maré sempre o traz de volta), um cartão de capítulo ao entrar em cada fase e um epílogo com a Marina.
+- **Modo Justo (opcional, desligado por padrão):** o save nunca "muda de lugar" e a bandeira `W` não manda para o começo.
+- **Sons das mecânicas:** efeitos para a âncora, o vento, as facas, a Maré Negra, o tic do ritmo e as plataformas.
+- **Equipe:** pôr os nomes em `Textos.Equipe` (créditos), no README e no GDD.
 
-Cada mecânica nova é **um arquivo novo** em `Assets/Scripts/Armadilhas/` (com `.meta`). Os sprites são registrados com `FabricaDeSprites.Registrar` num método `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]`. Integrar uma fase nova é:
+## Como integrar uma mecânica ou fase nova
+Cada mecânica nova é **um arquivo novo** em `Assets/Scripts/Armadilhas/` (com `.meta`). Os sprites são registrados com
+`FabricaDeSprites.Registrar` num método `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]`. Integrar uma fase nova é:
 1. Pôr um `case` no `switch` de `ConstrutorDeFase.Construir`.
 2. Acrescentar a fase no lugar certo de `Fases.Todas`, com `corDoFundo` e, se for o caso, `noite`/`escura`. Pôr também a linha da legenda no topo de `Fases.cs`.
-3. Pôr a fala do mapa em `Textos.DepoisDaFase`, pelo nome da fase.
+3. Pôr o ponto dela no `MapaDoMundo` e a fala do mapa em `Textos.DepoisDaFase`, pelo nome da fase.
 4. Se tiver conquista nova, pôr em `Conquistas.Todas`.
 5. Testar o terreno:
    ```
    python3 Ferramentas/extrair_fases.py Assets/Scripts/Nucleo/Fases.cs /tmp/fases
    python3 Ferramentas/checar_fase.py /tmp/fases/fase_XX.json --de s
    ```
-
-Sprites que o mapa já espera (precisam existir): `mangual`, `vento`, `bloco_ritmo`, `faca`, `miasma` (e `plataforma`, que já existe).
-
-### O chefe (Helltaker)
-- 3 etapas, 2 golpes por etapa (vida 6).
-- Ao começar a luta, chamar `GerenciadorDoJogo.Instancia.SalvarPonto(início da arena)`; ao passar de etapa, `EtapaDoChefe++`. Morreu → renasce no começo da arena, já na etapa em que estava, sem a introdução longa.
-- Ataques, todos com aviso curto (0,45–0,6 s na etapa 1; 0,3–0,4 s na 3):
-  - investida alta ou baixa;
-  - chuva de névoa;
-  - correntes/raios horizontais e verticais (piscam e depois matam por 0,4 s);
-  - onda de choque no chão;
-  - raio do chifre que varre a arena;
-  - bolas em anel;
-  - mergulho → ela fica atordoada → **pular na cabeça** (o único jeito de dar dano).
-- Etapa 2: 2 ataques juntos. Etapa 3: mais rápida, com o chão sumindo e um ataque final "desesperado".
-- A fase: aquecimento curto, depois um checkpoint `s`, a arena começando no `w` e, no fim, a Emilia `L` (ao encostar nela, o jogo é zerado).
-- Pode mudar a barra de vida em `Interface.DesenharVidaDoChefe` para mostrar "ETAPA 2/3".
-
-## Atalhos de teste e visual (novo)
-- **F9 no mapa:** libera todas as fases, os chefes e a secreta, só na partida atual. Um Novo Jogo volta tudo para a névoa.
-- **F10 (ou a tecla à esquerda do 1):** painel de gráficos. Liga/desliga cada efeito e mostra o FPS e o pior quadro. O título mostra "visual v3".
-- **Menu de pausa, "Gráficos: HD-2D / Simples":** o Simples desliga os efeitos pesados.
-- **Console da Unity ao dar Play:** precisa aparecer `[Re:CILADA] visual v3 (HD-2D escuro) rodando...`. Se não aparecer, tem erro vermelho no Console e a Unity está rodando os scripts antigos.
-- **Visual v3:**
-  - blocos novos (`ArteDosBlocos.cs`);
-  - fundo desfocado, raios de sol, sombras de nuvens, vento nas plantas e tilt-shift;
-  - tela em baixa resolução com escala inteira (`TelaPixelada.cs`);
-  - os ajustes ficam em `AjustesVisuais.cs` e `EfeitosDeTela.cs`.
-- **Para conferir na Unity:**
-  - se a tela ficou escura demais;
-  - se o texto do HUD fica legível perto do sol;
-  - se a imagem sai de cabeça para baixo;
-  - quais chefes estão difíceis demais e em que ataque.
-
-## Depois disso: revisão pela rubrica
-- **Menus:**
-  - No título: Opções (volume, tela cheia, modo de jogo), Como Jogar, Créditos, Sair (fora do WebGL).
-  - Pausa em lista: Continuar, Reiniciar fase, Opções, Voltar ao mapa.
-  - Mouse nos menus.
-- **Modo Justo** (opcional, desligado por padrão): o save nunca "muda de lugar" e a bandeira `W` não manda para o começo. O modo troll continua sendo o padrão.
-- **Narrativa:**
-  - Prólogo (o Subaru é invocado, e o Retorno pela Morte vira a regra do jogo: aprender morrendo).
-  - Cartão de capítulo ao entrar em cada fase.
-  - Epílogo com a Emilia.
-- **Rejogabilidade:** recorde por fase (tempo, mortes e todas as moedas), medalhas no mapa e "novo recorde!".
-- **Som:** efeitos para cada mecânica nova (mangual, vento, faca, miasma, tic do ritmo, plataforma) e para o chefe.
-- **Robustez:**
-  - Saves antigos de 9 fases (o índice da fase salva mudou: limitar/validar).
-  - Pausa durante as transições; morte durante "fase concluída".
-- **Documentação:**
-  - `GDD.md` organizado pelo DDE (para colar no Milanote).
-  - `README.md` com os créditos. Atenção: `Assets/Resources/Sons/retorno_pela_morte.mp3` e `ost_morte.mp3` são do anime Re:Zero e precisam de crédito.
-  - Texto da página do itch.io: como jogar e os segredos (fase secreta: todas as moedas da fase 5, e depois seta para baixo no ponto 5).
-
-## Como testar sem abrir a Unity (só na nuvem)
-- O compilador e o stub da Unity ficaram em `/tmp/claude-0/` (não vão para o git).
-- Na sua máquina é só abrir o projeto no Unity 6 e dar Play.
-- Para testar uma fase direto: selecione `GerenciadorDoJogo` no Play, mude `Fase Inicial`, volte ao título e escolha Novo Jogo.
+6. Para mexer numa música: editar `Musicas.cs` e ouvir com `dotnet run --project Ferramentas/ouvir_musicas -- Builds/musicas`.

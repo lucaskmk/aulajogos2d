@@ -12,7 +12,7 @@ public class EsmagadorDoRitmo : MonoBehaviour
 {
     enum Estado { EmCima, Caindo, NoChao, Subindo }
 
-    public float gravidade = 90f;       // cai MAIS rápido que o Subaru (34): não dá para "correr junto"
+    public float gravidade = 90f;       // cai MAIS rápido que o Grumete (34): não dá para "correr junto"
     public float tempoNoChao = 0.45f;
     public float velocidadeSubida = 9f;
     public float quedaMaxima = 12f;     // se não tiver chão embaixo, para de cair depois disso (e volta)
@@ -116,7 +116,7 @@ public class EsmagadorDoRitmo : MonoBehaviour
         return false;
     }
 
-    // Igual ao do esmagador normal: o Subaru e os bichos não contam como chão.
+    // Igual ao do esmagador normal: o Grumete e os bichos não contam como chão.
     // (os blocos do ritmo apagados também não: o colisor deles fica desligado)
     float DistanciaAteOChao()
     {

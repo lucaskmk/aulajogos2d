@@ -4,9 +4,9 @@ using UnityEngine;
 // A VIDA do mapa do mundo: tudo o que mexe sozinho (fora o vento nas plantas, que é do Vento.cs, e a
 // névoa, que é da NevoaDoMapa).
 //  - a água: ondinhas, espuma "respirando" na margem e brilhos do sol (quadros prontos da ArteDoMapa);
-//  - bandeirinhas tremulando nas torres do castelo e da mansão;
+//  - bandeirinhas tremulando nas torres do castelo e do forte;
 //  - fumaça saindo das chaminés das casas (e indo com o vento, para a direita);
-//  - cristais e a Biblioteca pulsando de leve;
+//  - cristais e a casa assombrada pulsando de leve;
 //  - borboletas em volta das flores e vaga-lumes na região sombria;
 //  - bandos de pássaros cruzando o céu de vez em quando;
 //  - folhas (e cinzas, na região sombria) voando no vento, mais rápido quando passa uma rajada;

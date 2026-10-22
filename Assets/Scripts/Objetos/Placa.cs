@@ -1,12 +1,13 @@
 using UnityEngine;
 
-// 'i' - o Puck (o gatinho-espírito da Emilia) flutuando, com uma "dica". Não confie nele.
-// 'Y' - a Beatrice, na Biblioteca Proibida (em pé, não flutua).
+// 'i' - o Louro (o papagaio da Marina, a Sereia) voando parado, com uma "dica". Não confie nele.
+// 'Y' - a Dóris, nas Cabines Assombradas (em pé, não flutua).
 // O texto aparece na tela quando o jogador chega perto (desenhado pela Interface).
 public class Placa : MonoBehaviour
 {
     public string texto;
-    public string quem = "Puck";
+    public string quem = "Louro";
+    public string Retrato => quem == "Dóris" ? "fantasma" : "louro"; // o desenho que aparece na caixa de fala
 
     Transform visual;
     SpriteRenderer desenho;
@@ -14,22 +15,22 @@ public class Placa : MonoBehaviour
 
     void Awake()
     {
-        var filho = ConstrutorDeFase.Visual("Puck", transform, transform.position, "puck", 5);
+        var filho = ConstrutorDeFase.Visual("Louro", transform, transform.position, "louro", 5);
         visual = filho.transform;
         desenho = filho.GetComponent<SpriteRenderer>();
         SombraNoChao.Adicionar(gameObject, 0.8f);
     }
 
-    public void VirarBeatrice()
+    public void VirarFantasma()
     {
-        quem = "Beatrice";
+        quem = "Dóris";
         flutua = false;
-        desenho.sprite = FabricaDeSprites.Pegar("beatrice"); // a arte tem o pé no pivô
+        desenho.sprite = FabricaDeSprites.Pegar("fantasma"); // a arte tem o pé no pivô
     }
 
     void Update()
     {
-        // o Puck flutua devagarinho; a Beatrice fica em pé, "respirando". Os dois olham para o jogador.
+        // o Louro flutua devagarinho; a Dóris fica em pé, "respirando". Os dois olham para o jogador.
         if (flutua) visual.localPosition = Vector3.up * (0.25f + Mathf.Sin(Time.time * 2.5f + transform.position.x) * 0.15f);
         else
         {

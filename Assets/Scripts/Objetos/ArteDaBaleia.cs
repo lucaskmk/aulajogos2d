@@ -674,7 +674,7 @@ public static class ArteDaBaleia
         return risco ? new Color32(20, 20, 28, 230) : FabricaDeSprites.Transparente;
     }
 
-    // A ESCURIDÃO do ataque final: tudo escuro, menos um buraco redondo em volta do Subaru.
+    // A ESCURIDÃO do ataque final: tudo escuro, menos um buraco redondo em volta do Grumete.
     // A borda do buraco é "pontilhada" (dithering), como nos jogos antigos.
     static Color32 CorDaEscuridao(int x, int y)
     {

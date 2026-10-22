@@ -1,10 +1,11 @@
 using UnityEngine;
 
 // Tudo o que fica salvo entre uma partida e outra (PlayerPrefs):
-//  - a partida em andamento, para "Continuar" do título (onde o Subaru está no mapa,
+//  - a partida em andamento, para "Continuar" do título (onde o Grumete está no mapa,
 //    até onde ele chegou, mortes, moedas e tempo);
 //  - a fase mais longe que você já chegou em qualquer partida (só informativo: o mapa usa a da partida);
-//  - o recorde (zerar com menos mortes).
+//  - o recorde (zerar com menos mortes);
+//  - os recordes de CADA FASE (tempo, mortes e moedas), que dão as medalhas (veja Medalhas).
 public static class Progresso
 {
     const string ChaveRecorde = "cilada_recorde_mortes";
@@ -50,7 +51,7 @@ public static class Progresso
             mortes[i] = i < partes.Length && int.TryParse(partes[i], out int n) ? n : 0;
     }
 
-    // fase: onde o Subaru está. maisLonge: a fase mais longe liberada NESTA partida.
+    // fase: onde o Grumete está. maisLonge: a fase mais longe liberada NESTA partida.
     // valida: a partida foi jogada em ordem desde a fase 1? Só assim ela vale para o recorde.
     public static void Salvar(int fase, int maisLonge, int mortes, int moedas, float tempo, bool valida)
     {
@@ -99,5 +100,63 @@ public static class Progresso
         if (Recorde >= 0 && mortes >= Recorde) return;
         PlayerPrefs.SetInt(ChaveRecorde, mortes);
         PlayerPrefs.Save();
+    }
+
+    // ------------------------------------------------------------------ recordes de cada fase
+
+    // Valem para sempre, como as conquistas (um Novo Jogo NÃO apaga). Cada número é o MELHOR que você já fez
+    // naquela fase, cada um por si: o menor tempo, o menor número de mortes e o maior número de moedas.
+    // Ficam guardados pelo NÚMERO da fase ("secreta" para a fase secreta).
+    public struct RecordeDaFase
+    {
+        public bool existe;  // já passou dessa fase alguma vez?
+        public float tempo;  // segundos, desde que entrou pela fase no mapa (o tempo das mortes conta)
+        public int mortes;
+        public int moedas;   // as da tentativa em que passou (morrer zera as moedas da fase)
+    }
+
+    // O que uma passada pela fase trouxe de novo. Primeira = nunca tinha passado (aí não é "recorde batido").
+    [System.Flags]
+    public enum Novidade { Nada = 0, Primeira = 1, Tempo = 2, Mortes = 4, Moedas = 8 }
+
+    static string ChaveDaFase(int fase) => "cilada_recorde_" + (fase == Fases.IndiceSecreto ? "secreta" : "fase" + fase) + "_";
+
+    public static RecordeDaFase RecordeDe(int fase)
+    {
+        string chave = ChaveDaFase(fase);
+        if (PlayerPrefs.GetInt(chave + "existe", 0) != 1) return default;
+        return new RecordeDaFase
+        {
+            existe = true,
+            tempo = PlayerPrefs.GetFloat(chave + "tempo", 0f),
+            mortes = PlayerPrefs.GetInt(chave + "mortes", 0),
+            moedas = PlayerPrefs.GetInt(chave + "moedas", 0),
+        };
+    }
+
+    // Guarda o que você acabou de fazer (só o que for MELHOR que o recorde) e diz o que foi novidade.
+    public static Novidade RegistrarFase(int fase, float tempo, int mortes, int moedas)
+    {
+        RecordeDaFase antes = RecordeDe(fase);
+        string chave = ChaveDaFase(fase);
+        Novidade novidade = antes.existe ? Novidade.Nada : Novidade.Primeira;
+        if (!antes.existe || tempo < antes.tempo)
+        {
+            PlayerPrefs.SetFloat(chave + "tempo", tempo);
+            if (antes.existe) novidade |= Novidade.Tempo;
+        }
+        if (!antes.existe || mortes < antes.mortes)
+        {
+            PlayerPrefs.SetInt(chave + "mortes", mortes);
+            if (antes.existe) novidade |= Novidade.Mortes;
+        }
+        if (!antes.existe || moedas > antes.moedas)
+        {
+            PlayerPrefs.SetInt(chave + "moedas", moedas);
+            if (antes.existe) novidade |= Novidade.Moedas;
+        }
+        PlayerPrefs.SetInt(chave + "existe", 1);
+        PlayerPrefs.Save();
+        return novidade;
     }
 }

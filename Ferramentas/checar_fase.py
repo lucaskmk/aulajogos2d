@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Checa se uma fase do Re:CILADA! (mapa em texto, 15 linhas) dá para passar.
+"""Checa se uma fase do CILADA À VISTA! (mapa em texto, 15 linhas) dá para passar.
 
 Simula a física do Jogador.cs (velocidade 7, aceleração 80, pulo 14, gravidade 9.81*3.5,
 queda máxima 20, caixa 0.72 x 0.96) com passos de 0.02 s, explorando pulos e caminhadas a partir
-de cada posição em que o Subaru pode ficar parado. Diz se algum alvo (G, L, ou o '*' da bandeira
+de cada posição em que o Grumete pode ficar parado. Diz se algum alvo (G, L, ou o '*' da bandeira
 fujona) é alcançável a partir do P sem encostar em células mortais.
 
 Uso:

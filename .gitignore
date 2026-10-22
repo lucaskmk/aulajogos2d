@@ -37,3 +37,8 @@ crashlytics-build.properties
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Ferramentas em C# (fora da Unity): o projeto entra no git, o que ele gera não
+!Ferramentas/**/*.csproj
+Ferramentas/**/bin/
+Ferramentas/**/obj/

@@ -28,7 +28,7 @@ public class SombrasDeNuvens : MonoBehaviour
 
     public static SombrasDeNuvens Criar(Transform raiz, Clima clima)
     {
-        if (clima != Clima.Dia && clima != Clima.Noite) return null; // dentro da biblioteca e no escuro: sem nuvens
+        if (clima != Clima.Dia && clima != Clima.Noite) return null; // dentro das cabines e no escuro: sem nuvens
 
         var objeto = new GameObject("Sombras de nuvens");
         objeto.transform.SetParent(raiz, false);

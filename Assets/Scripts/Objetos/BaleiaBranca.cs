@@ -15,7 +15,7 @@ using UnityEngine;
 //  - são 3 ETAPAS de 2 golpes cada. Morreu? Volta na hora, no começo da arena, JÁ na etapa em que
 //    estava (o GerenciadorDoJogo guarda a etapa em EtapaDoChefe). A introdução longa é só na 1ª vez.
 //
-//  ETAPA 1 - um ataque de cada vez (para aprender; o Puck dá dicas):
+//  ETAPA 1 - um ataque de cada vez (para aprender; o Louro dá dicas):
 //     INVESTIDA ALTA (não pule), BARBATANA rasgando o chão (pule), CHUVA DE NÉVOA (fique entre as marcas),
 //     CORRENTES (fique nos vãos), ONDA DE CHOQUE (pule), RAIO DO CHIFRE (não fique parado).
 //  ETAPA 2 - os mesmos ataques, mais rápidos e DOIS AO MESMO TEMPO.
@@ -25,7 +25,7 @@ using UnityEngine;
 //  despenca ali. Fugiu? Ela fica ATORDOADA no chão: PULE NA CABEÇA DELA. É o único jeito de dar dano.
 //
 // Os perigos daqui não usam colisores: cada ataque cria uma "Zona" (um segmento com grossura, tipo uma
-// salsicha) e a própria Baleia testa, a cada quadro, se o Subaru encostou em alguma. Assim um raio
+// salsicha) e a própria Baleia testa, a cada quadro, se o Grumete encostou em alguma. Assim um raio
 // inclinado, uma bola e uma onda usam a MESMA regra. O corpo dela usa retângulos (CaixasDoCorpo).
 public class BaleiaBranca : Chefe
 {
@@ -65,7 +65,7 @@ public class BaleiaBranca : Chefe
     const int OrdemSubmersa = -3, OrdemDaBaleia = 8, OrdemDaEscuridao = 50, OrdemDaNevoa = 52,
               OrdemDosAvisos = 55, OrdemDosAtaques = 56, OrdemDoOlho = 58;
 
-    // A "caixa" do Subaru que conta para morrer (um tiquinho menor que o desenho: é mais justo).
+    // A "caixa" do Grumete que conta para morrer (um tiquinho menor que o desenho: é mais justo).
     const float MeiaLarguraDoJogador = 0.27f, MeiaAlturaDoJogador = 0.42f;
     // Folga: o perigo só mata se encostar DE VERDADE (de raspão, perto da borda dos espinhos, não conta). Mais justo.
     const float FolgaDoAcerto = 0.08f;
@@ -98,6 +98,8 @@ public class BaleiaBranca : Chefe
     public override int EtapaAtual => etapa;            // 0, 1 ou 2
     public override int Etapas => EtapasDaLuta;
     public override int GolpesPorEtapa => GolpesDaEtapa;
+    public override Musicas.Tema Musica => Musicas.Tema.Baleia;
+    public override Vector3 PontoDeRenascer => new Vector3(esquerda + 0.5f, chao + 0.5f, 0f); // a casa do 'w'
 
     int vida;
     float vidaMostrada;
@@ -110,14 +112,13 @@ public class BaleiaBranca : Chefe
     bool livre;           // ela está "à toa", flutuando no alto (o Update cuida de mexer nela)
     bool corpoPerigoso;   // encostar no corpo dela mata?
     bool submersa;        // nadando DENTRO do chão (só a barbatana e o chifre aparecem)
-    bool golpeada;        // levou um pisão nesta tontura
     float chao, esquerda, direita, meio;
     float relogio, timerPiscar;
-    int emParalelo;       // quantos ataques "soltos" (Paralelo) ainda estão rodando
     Vector2 descanso;     // onde ela flutua entre um ataque e outro
     Sprite poseFixa;      // boca aberta, chifre aceso, tonta... (null = nadando, o rabo batendo)
 
     Transform baleia;
+    Transform efeitos;    // pai de tudo que é passageiro (avisos, bolas, raios, ondas...): some de uma vez no Arrumar
     SpriteRenderer desenho, olho, brilhoDoChifre, escuridao;
     Sprite[] quadros, quadrosDaBola, quadrosDaOnda, quadrosDoRaio;
     Sprite spriteBoca, spriteCarga, spriteTonta;
@@ -132,7 +133,6 @@ public class BaleiaBranca : Chefe
     readonly HashSet<string> dicasMostradas = new HashSet<string>();
 
     float Aviso => TempoDeAviso[etapa];
-    Vector3 PontoDeRenascer => new Vector3(esquerda + 0.5f, chao + 0.5f, 0f); // a casa do 'w'
 
     // ------------------------------------------------------------------ Unity
 
@@ -155,17 +155,20 @@ public class BaleiaBranca : Chefe
         spriteCarga = FabricaDeSprites.Pegar("baleia_carga");
         spriteTonta = FabricaDeSprites.Pegar("baleia_tonta");
 
-        desenho = Desenho("Baleia", "baleia", transform.position, OrdemDaBaleia);
+        efeitos = new GameObject("Efeitos").transform;
+        efeitos.SetParent(transform, false);
+
+        desenho = DesenhoFixo("Baleia", "baleia", transform.position, OrdemDaBaleia);
         baleia = desenho.transform;
         desenho.enabled = false;
         Luzes.Ponto(baleia, new Color(0.85f, 0.85f, 1f), 5f, 0.5f); // ela "brilha" um pouco no escuro
 
         // o olho vermelho e o brilho do chifre ficam por cima de tudo (até da escuridão)
-        olho = Desenho("Olho", "baleia_olho", transform.position, OrdemDoOlho);
+        olho = DesenhoFixo("Olho", "baleia_olho", transform.position, OrdemDoOlho);
         olho.transform.SetParent(baleia, true);
         olho.enabled = false;
         Luzes.Ponto(olho.transform, new Color(1f, 0.25f, 0.3f), 2.5f, 0.9f);
-        brilhoDoChifre = Desenho("BrilhoDoChifre", "baleia_brilho_chifre", transform.position, OrdemDoOlho);
+        brilhoDoChifre = DesenhoFixo("BrilhoDoChifre", "baleia_brilho_chifre", transform.position, OrdemDoOlho);
         brilhoDoChifre.transform.SetParent(baleia, true);
         brilhoDoChifre.enabled = false;
 
@@ -217,17 +220,13 @@ public class BaleiaBranca : Chefe
 
         Flutuar();
         Animar();
-        if (estado == Estado.Atordoada)
-        {
-            GirarEstrelas();
-            TestarPisao();
-        }
-        TestarPerigos();
+        if (estrelas.Count > 0) GirarEstrelas();
+        if (!TestarPisao()) TestarPerigos(); // pisou nas costas: neste quadro o corpo dela não machuca
         if (escuridao != null && GerenciadorDoJogo.JogadorVivo(out Vector2 jogador))
             escuridao.transform.position = jogador;
     }
 
-    // Quando está "à toa", ela flutua lá no alto, balançando, sempre olhando para o Subaru.
+    // Quando está "à toa", ela flutua lá no alto, balançando, sempre olhando para o Grumete.
     void Flutuar()
     {
         if (!livre || !desenho.enabled) return;
@@ -272,17 +271,22 @@ public class BaleiaBranca : Chefe
 
         if (renasceu) yield return Pronto();
         else yield return Introducao();
+        yield return Combate();
+    }
 
+    // O laço da luta (depois de cada pisão ele recomeça daqui, pela etapa e pela vida: veja Chefe.cs).
+    protected override IEnumerator Combate()
+    {
         while (true)
         {
-            if (etapa == Etapas - 1) yield return Desmoronar();
+            if (etapa == Etapas - 1) yield return Desmoronar(); // (se o chão já caiu, não faz nada)
 
             // repete as rodadas da etapa até levar os 2 golpes dela
             int vidaNoFimDaEtapa = vidaMaxima - (etapa + 1) * GolpesPorEtapa;
             while (Vida > vidaNoFimDaEtapa)
             {
                 int golpe = vidaMaxima - etapa * GolpesPorEtapa - Vida; // 0 = 1º golpe da etapa, 1 = 2º
-                yield return Rodada(etapa * GolpesPorEtapa + golpe);
+                yield return RodarRodada(Rodada(etapa * GolpesPorEtapa + golpe));
             }
             if (Vida <= 0) break;
 
@@ -474,7 +478,7 @@ public class BaleiaBranca : Chefe
         foreach (GameObject bloco in blocosFrageis)
         {
             origens.Add(bloco.transform.position);
-            Desenho("Rachadura", "baleia_rachadura", bloco.transform.position, 1).transform.SetParent(bloco.transform, true);
+            DesenhoFixo("Rachadura", "baleia_rachadura", bloco.transform.position, 1).transform.SetParent(bloco.transform, true);
         }
         for (float t = 0f; t < 1.1f; t += Time.deltaTime) // tremendo
         {
@@ -487,7 +491,7 @@ public class BaleiaBranca : Chefe
         foreach (GameObject bloco in blocosFrageis) bloco.GetComponent<BoxCollider2D>().enabled = false;
         for (int coluna = 0; coluna < ColunasFrageis.Length; coluna++) // névoa saindo do abismo
         {
-            var nevoa = Desenho("NevoaDoAbismo", "nevoa", new Vector3(esquerda + ColunasFrageis[coluna] + 0.5f, chao - 0.2f, 0f), OrdemDaNevoa);
+            var nevoa = DesenhoFixo("NevoaDoAbismo", "nevoa", new Vector3(esquerda + ColunasFrageis[coluna] + 0.5f, chao - 0.2f, 0f), OrdemDaNevoa);
             nevoa.color = new Color(0.75f, 0.45f, 1f, 0.6f);
             nevoa.transform.localScale = Vector3.one * 1.3f;
             Animacao.Adicionar(nevoa.gameObject, Animacao.Tipo.Flutuar, 2f, 0.12f);
@@ -507,8 +511,8 @@ public class BaleiaBranca : Chefe
         if (escuridao != null) yield break; // já está escuro (ela não acertou o último golpe e repetiu)
         GerenciadorDoJogo.Instancia.Avisar("A NÉVOA ENGOLIU TUDO!", 2f);
         GerenciadorDoJogo.Som("rugido");
-        escuridao = Desenho("Escuridao", "baleia_escuridao", baleia.position, OrdemDaEscuridao);
-        escuridao.transform.localScale = Vector3.one * 3.2f; // cobre a tela; o buraco em volta do Subaru tem ~3 blocos
+        escuridao = DesenhoFixo("Escuridao", "baleia_escuridao", baleia.position, OrdemDaEscuridao);
+        escuridao.transform.localScale = Vector3.one * 3.2f; // cobre a tela; o buraco em volta do Grumete tem ~3 blocos
         for (float t = 0f; t < 1f; t += Time.deltaTime)
         {
             escuridao.color = new Color(1f, 1f, 1f, t);
@@ -558,7 +562,7 @@ public class BaleiaBranca : Chefe
     // ------------------------------------------------------------------ os ataques
 
     // INVESTIDA: ela sai da tela e atravessa a arena inteira.
-    //  alta  = passa um pouco acima da cabeça do Subaru (faixa vermelha no alto): NÃO pule;
+    //  alta  = passa um pouco acima da cabeça do Grumete (faixa vermelha no alto): NÃO pule;
     //  baixa = nada DENTRO do chão, só a barbatana e o chifre aparecem (faixa rente ao chão): PULE.
     IEnumerator Investida(bool alta, bool daDireita)
     {
@@ -932,16 +936,16 @@ public class BaleiaBranca : Chefe
     }
 
     // Atordoada no chão: não machuca, e as costas dela viram um "botão". Pule em cima!
+    // (levou o pisão, a rodada para na hora: Chefe.cs. Aqui embaixo só chega quem NÃO pulou a tempo)
     IEnumerator Atordoada()
     {
         estado = Estado.Atordoada;
-        golpeada = false;
         poseFixa = spriteTonta;
         CriarEstrelas();
         Dica("AGORA! Pule na CABEÇA dela!");
         Vector3 deitada = baleia.position;
         float tempo = TempoAtordoada[etapa];
-        for (float t = 0f; t < tempo && !golpeada; t += Time.deltaTime)
+        for (float t = 0f; t < tempo; t += Time.deltaTime)
         {
             // meio segundo antes de acordar ela treme (aviso)
             baleia.position = t > tempo - 0.5f ? deitada + (Vector3)(Random.insideUnitCircle * 0.06f) : deitada;
@@ -950,37 +954,65 @@ public class BaleiaBranca : Chefe
         baleia.position = deitada;
         ApagarEstrelas();
         if (estado == Estado.Atordoada) estado = Estado.Lutando;
-        if (Vida <= 0) yield break; // levou o último golpe: fica no chão para a cena da derrota
 
         poseFixa = null;
         yield return SairPorCima(); // vai embora para cima (sem machucar ninguém)
         yield return Voltar();
     }
 
-    // Pulou na cabeça (nas costas) dela, caindo, por cima?
-    void TestarPisao()
+    // Pulou na cabeça (nas costas) dela, caindo, por cima? Só vale com ela ATORDOADA no chão, depois do
+    // mergulho (é o único jeito de dar dano). Devolve true se acertou.
+    bool TestarPisao()
     {
+        if (!Vulneravel || estado != Estado.Atordoada) return false;
         Jogador jogador = GerenciadorDoJogo.JogadorAtual;
-        if (golpeada || jogador == null || jogador.Morto || jogador.Corpo.linearVelocity.y > 0.5f) return;
-        Vector3 pes = jogador.transform.position + Vector3.down * 0.5f;
         CaixaNoMundo(CaixasDoCorpo[0], out Vector2 min, out Vector2 max);
         float costas = baleia.position.y + 0.55f * tamanho;
-        if (pes.x > min.x - 0.2f && pes.x < max.x + 0.2f && pes.y > costas - 0.5f && pes.y < costas + 0.8f)
-            LevarGolpe(jogador);
+        if (!PesNaCabeca(jogador, min.x - 0.2f, max.x + 0.2f, costas, abaixo: 0.5f)) return false;
+        LevarGolpe(jogador);
+        return true;
     }
 
     void LevarGolpe(Jogador jogador)
     {
         vida--;
-        golpeada = true;
         timerPiscar = 0.8f;
         jogador.Quicar(14f, true);
         GerenciadorDoJogo.Som("pisao");
         GerenciadorDoJogo.Som("rugido", 0.8f);
         CameraSeguir.Tremer(0.2f, 0.3f);
         Efeitos.Poeira(transform, baleia.position + Vector3.up * 0.8f, 8, 3f);
-        string[] falas = { "ACERTOU! Mais um!", "Ela tá tonta! De novo!", "SÓ MAIS UM! VAI, SUBARU!" };
+        string[] falas = { "ACERTOU! Mais um!", "Ela tá tonta! De novo!", "SÓ MAIS UM! VAI, GRUMETE!" };
         if (Vida > 0 && Vida % GolpesPorEtapa != 0) GerenciadorDoJogo.Instancia.Avisar(falas[etapa], 1.6f);
+        Golpeado(); // para a rodada (Chefe.cs): depois vêm o Arrumar, o Reagir e o Combate de novo
+    }
+
+    // Um pisão interrompeu a rodada: apaga os avisos e ataques pela metade e tira os perigos do corpo dela.
+    protected override void Arrumar()
+    {
+        zonas.Clear();
+        corpoPerigoso = false;
+        submersa = false;
+        livre = false;
+        poseFixa = null;
+        foreach (Transform filho in efeitos) Destroy(filho.gameObject); // avisos, bolas, raios, ondas, estrelas...
+        estrelas.Clear();
+        if (estado == Estado.Atordoada) estado = Estado.Lutando;
+        baleia.rotation = Quaternion.identity;
+        if (desenho.enabled) desenho.sortingOrder = OrdemDaBaleia;
+    }
+
+    // Levou o pisão: fica tonta um instante (com estrelinhas) e vai embora para cima. Depois, a próxima rodada.
+    protected override IEnumerator Reagir()
+    {
+        poseFixa = spriteTonta;
+        if (Vida <= 0) yield break; // o último golpe: a cena da derrota começa daqui mesmo
+        CriarEstrelas();
+        yield return new WaitForSeconds(0.7f);
+        ApagarEstrelas();
+        poseFixa = null;
+        yield return SairPorCima();
+        yield return Voltar();
     }
 
     // ------------------------------------------------------------------ movimento e desenho
@@ -1066,7 +1098,12 @@ public class BaleiaBranca : Chefe
         max = new Vector2(Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
     }
 
+    // Um desenho passageiro (aviso, bola, raio, estrela...): fica em "efeitos", que o Arrumar apaga de uma vez.
     SpriteRenderer Desenho(string nome, string sprite, Vector3 lugar, int ordem) =>
+        ConstrutorDeFase.Visual(nome, efeitos, lugar, sprite, ordem, false).GetComponent<SpriteRenderer>();
+
+    // Um desenho que fica (o corpo, o olho, a escuridão, a névoa do abismo...).
+    SpriteRenderer DesenhoFixo(string nome, string sprite, Vector3 lugar, int ordem) =>
         ConstrutorDeFase.Visual(nome, transform, lugar, sprite, ordem, false).GetComponent<SpriteRenderer>();
 
     // Estica um desenho de "1 pixel de comprimento" (linha, raio, faixa) de a até b.
@@ -1081,7 +1118,7 @@ public class BaleiaBranca : Chefe
     // Avisos piscam, e piscam mais rápido no finalzinho (como no Helltaker: "vai disparar AGORA").
     static bool Piscando(float t, float total) => Mathf.Repeat(t * (total - t < 0.2f ? 22f : 9f), 1f) < 0.6f;
 
-    // Dicas do Puck: só na etapa 1 (ou até "ateAEtapa"), e cada uma só uma vez por tentativa.
+    // Dicas do Louro: só na etapa 1 (ou até "ateAEtapa"), e cada uma só uma vez por tentativa.
     void Dica(string texto, int ateAEtapa = 0)
     {
         if (etapa > ateAEtapa || !dicasMostradas.Add(texto)) return;
@@ -1105,7 +1142,7 @@ public class BaleiaBranca : Chefe
         Vector2 p = (Vector2)jogador.transform.position + new Vector2(0f, -0.02f); // centro da caixa dele
 
         bool encostou = corpoPerigoso && EncostaNoCorpo(p);
-        // o Subaru vira uma "salsicha" em pé: 3 pontos no meio dele, com a meia largura de raio
+        // o Grumete vira uma "salsicha" em pé: 3 pontos no meio dele, com a meia largura de raio
         for (int i = 0; i < zonas.Count && !encostou; i++)
             for (int k = -1; k <= 1 && !encostou; k++)
             {
@@ -1138,21 +1175,7 @@ public class BaleiaBranca : Chefe
     }
 
     // ------------------------------------------------------------------ ataques ao mesmo tempo
-
-    // Começa um ataque "solto" (sem esperar ele acabar) e conta quantos ainda estão rodando.
-    void Paralelo(IEnumerator ataque) => StartCoroutine(Contar(ataque));
-
-    IEnumerator Contar(IEnumerator ataque)
-    {
-        emParalelo++;
-        yield return StartCoroutine(ataque);
-        emParalelo--;
-    }
-
-    IEnumerator EsperarTodos()
-    {
-        while (emParalelo > 0) yield return null;
-    }
+    // (Paralelo, EsperarTodos e PararSoltos ficam em Chefe.cs)
 
     IEnumerator Atrasar(float segundos, IEnumerator ataque)
     {

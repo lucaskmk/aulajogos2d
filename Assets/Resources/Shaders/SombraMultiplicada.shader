@@ -9,7 +9,7 @@
 //
 // Um Pass só, com LightMode "Universal2D" (veja o comentário em LuzAditiva.shader).
 // Se este shader não funcionar na placa de vídeo, o jogo usa o material normal (veja MateriaisHD2D).
-Shader "ReCilada/SombraMultiplicada"
+Shader "CiladaAVista/SombraMultiplicada"
 {
     Properties
     {

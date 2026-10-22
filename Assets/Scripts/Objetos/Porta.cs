@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-// '0' a '9' - porta da Biblioteca Proibida (o "Door Crossing" da Beatrice), com o número em cima.
+// '0' a '9' - porta das Cabines Assombradas (o "Door Crossing" da Dóris), com o número em cima.
 // Aperte S (ou seta para baixo) na frente dela: você sai pela porta par dela (lista "portas" da fase).
 // É sempre o mesmo caminho, então dá para decorar. Depois de atravessar, espera um pouquinho
 // antes de poder entrar de novo (senão você atravessava sem querer, ida e volta).

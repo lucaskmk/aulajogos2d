@@ -11,7 +11,7 @@ using UnityEngine;
 //    clarinha perto da margem, com espuma na beira e o barranco de terra fazendo sombra em cima.
 //  - É bem mais leve: 1 desenho no lugar de ~2400.
 // Os enfeites (árvores, casas, castelo...) continuam sendo sprites separados (ArteDoMapaEnfeites.cs),
-// porque balançam no vento, ficam na frente ou atrás do Subaru e projetam sombra.
+// porque balançam no vento, ficam na frente ou atrás do Grumete e projetam sombra.
 //
 // As mesmas ideias de pixel art dos blocos: RAMPAS de cores com hue shifting (sombra azul-arroxeada,
 // luz dourada), DITHERING (matriz de Bayer) nas passagens, luz de CIMA-ESQUERDA, oclusão e contorno colorido.
@@ -41,7 +41,7 @@ public static partial class ArteDoMapa
     {
         C(92, 66, 62), C(138, 102, 80), C(182, 144, 100), C(212, 180, 124), C(234, 208, 150), C(248, 234, 188),
     };
-    static readonly Color32[] CapimSombrio = // a "grama morta" da região sombria (o miasma da Bruxa)
+    static readonly Color32[] CapimSombrio = // a "grama morta" da região sombria (a Maré Negra do Kraken)
     {
         C(16, 12, 28), C(28, 22, 44), C(42, 34, 60), C(58, 50, 76), C(76, 68, 92), C(98, 90, 108), C(124, 118, 124),
     };
@@ -195,10 +195,10 @@ public static partial class ArteDoMapa
                 {
                     char c = d[l][x];
                     int i = l * W + x;
-                    celAgua[i] = c == '~' || c == '=' ? 1f : 0f;
+                    celAgua[i] = c == '~' || c == '=' || c == 'n' ? 1f : 0f; // (os navios ficam na água)
                     celAbismo[i] = c == 'a' || c == '#' ? 1f : 0f;
-                    celMata[i] = c == 'T' || c == 'p' || c == 'Y' ? 1f : 0f;
-                    celRocha[i] = c == '^' || c == 'o' || c == 'R' || c == '*' ? 1f : 0f;
+                    celMata[i] = c == 'T' || c == 'p' ? 1f : 0f;
+                    celRocha[i] = c == '^' || c == 'o' || c == 'R' || c == '*' || c == 'Y' || c == 'l' ? 1f : 0f;
                     celFlores[i] = c == 'f' ? 1f : 0f;
                     andavel[i] = c == '+' || EhPonto(c);
                 }

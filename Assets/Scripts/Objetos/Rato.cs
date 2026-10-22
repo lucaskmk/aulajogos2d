@@ -1,19 +1,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 'r' - Grande Coelho (Re:Zero): pequeno, fofo e em bando. Quando você chega perto ele
-// sai pulando atrás de você e, de tempos em tempos, cada coelho vira DOIS.
+// 'r' - Rato do Porão: pequeno, fofo e em bando. Quando você chega perto ele
+// sai pulando atrás de você e, de tempos em tempos, cada rato vira DOIS.
 // Pise em cima para derrotar; encostar de lado é morte.
-public class Coelho : MonoBehaviour
+public class Rato : MonoBehaviour
 {
     public float alcance = 12f;        // acorda quando o jogador chega a essa distância
     public float velocidade = 3.5f;
     public float forcaDoPulo = 7f;
     public Vector2 intervaloEntrePulos = new Vector2(0.45f, 0.9f);
     public Vector2 intervaloParaMultiplicar = new Vector2(2.5f, 4f);
-    public const int Limite = 10;      // no máximo isso de coelhos ao mesmo tempo (senão o bando não acaba)
+    public const int Limite = 10;      // no máximo isso de ratos ao mesmo tempo (senão o bando não acaba)
 
-    static readonly List<Coelho> todos = new List<Coelho>();
+    static readonly List<Rato> todos = new List<Rato>();
 
     // Necessário porque o projeto está com "Enter Play Mode Options" (sem recarregar o domínio).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -39,12 +39,12 @@ public class Coelho : MonoBehaviour
         colisor.offset = new Vector2(0f, -0.2f);
         colisor.sharedMaterial = new PhysicsMaterial2D("SemAtrito") { friction = 0f };
 
-        visual = ConstrutorDeFase.Visual("Visual", transform, transform.position, "coelho", 6).GetComponent<SpriteRenderer>();
+        visual = ConstrutorDeFase.Visual("Visual", transform, transform.position, "rato", 6).GetComponent<SpriteRenderer>();
         filtroSolido = new ContactFilter2D { useTriggers = false };
         SombraNoChao.Adicionar(gameObject, 0.7f);
 
-        // coelhos atravessam uns aos outros (senão o bando vira uma pilha)
-        foreach (Coelho outro in todos)
+        // ratos atravessam uns aos outros (senão o bando vira uma pilha)
+        foreach (Rato outro in todos)
             if (outro != null) Physics2D.IgnoreCollision(colisor, outro.colisor);
         todos.Add(this);
 
@@ -99,7 +99,7 @@ public class Coelho : MonoBehaviour
 
     void Multiplicar()
     {
-        var filhote = ConstrutorDeFase.Criar<Coelho>("Coelho", transform.parent, transform.position + Vector3.up * 0.2f);
+        var filhote = ConstrutorDeFase.Criar<Rato>("Rato", transform.parent, transform.position + Vector3.up * 0.2f);
         filhote.acordado = true;
         filhote.corpo.linearVelocity = new Vector2(Random.value < 0.5f ? -2.5f : 2.5f, 6f);
         Efeitos.Poeira(transform.parent, transform.position, 4, 1.5f);
@@ -137,7 +137,7 @@ public class Coelho : MonoBehaviour
         Efeitos.Poeira(transform.parent, transform.position + Vector3.down * 0.3f, 5, 2f);
         jogador.Quicar(11f, true);
         GerenciadorDoJogo.Som("pisao");
-        Conquistas.Contar("coelhos", 10);
+        Conquistas.Contar("ratos", 10);
         Destroy(gameObject, 0.4f);
     }
 }

@@ -2,17 +2,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
-// 'l' - AS FACAS DA ELSA, a Caçadora de Entranhas (a assassina de preto que mata o Subaru logo no começo do anime).
+// 'l' - AS FACAS DA COZINHEIRA, a Cozinheira do navio fantasma (a chefe da fase 13, que cozinha no porão escuro).
 //       Ela fica escondida nas sombras: de longe você só vê DOIS OLHOS que brilham e somem.
-//       Quando o Subaru chega a menos de 14 blocos na horizontal e mais ou menos na mesma altura,
-//       ela arremessa uma faca (uma kukri, a faca curvada dela) em linha reta, mirando nele, a cada 1,6 s.
+//       Quando o Grumete chega a menos de 14 blocos na horizontal e mais ou menos na mesma altura,
+//       ela arremessa uma faca (um cutelo de cozinha) em linha reta, mirando nele, a cada 1,6 s.
 //  - O AVISO: antes de cada arremesso os olhos ficam VERMELHOS e brilham forte, ela sorri e a faca aparece
 //    na mão dela, já apontando para você (0,4 s). Ela continua mirando durante o aviso: para onde a faca
 //    aponta no fim do aviso é para onde ela vai. E ela não mira muito para cima nem para baixo (no máximo 35 graus).
 //  - A faca tem LUZ PRÓPRIA: no escuro dá para ver ela vindo de longe (e ela ilumina o caminho por onde passa).
 //  - A faca crava (e some) quando bate em algo sólido: chão, parede, caixote... Esconder atrás de um bloco funciona!
-//  - A Elsa em si não mata (é só uma sombra; dá para passar por ela). Quem mata é a faca.
-//  - A faca mira no MEIO do Subaru: um pulo passa por cima dela.
+//  - A Cozinheira em si não mata (é só uma sombra; dá para passar por ela). Quem mata é a faca.
+//  - A faca mira no MEIO do Grumete: um pulo passa por cima dela.
 //
 // 'k' - IGUALZINHA... até arremessar. Essa joga TRÊS facas de uma vez, em LEQUE: uma em você,
 //       uma mais para cima e uma mais para baixo. O pulão que salvava da 'l' te leva direto para a faca de cima. :)
@@ -21,10 +21,10 @@ using UnityEngine.Rendering.Universal;
 //       Ela também enxerga mais para cima e para baixo: colocada no alto, ela joga o leque para BAIXO,
 //       em qualquer ângulo. Quem fica parado embaixo dela vira alfineteiro. Não pare!
 //
-// Como funciona: a Elsa é um objeto só com desenho (sem colisão). As facas que ela joga são objetos
+// Como funciona: a Cozinheira é um objeto só com desenho (sem colisão). As facas que ela joga são objetos
 // separados (filhos da fase, com um Perigo cada), mas quem move e quebra as facas é ela mesma, aqui no Update.
 // A fase é recriada a cada morte, então as facas no ar somem junto e ela recomeça do zero.
-public class FacasDaElsa : MonoBehaviour
+public class FacasDaCozinheira : MonoBehaviour
 {
     enum Estado { Espreitando, Cacando, Avisando }
     enum EstadoDaFaca { NaMao, Voando, Cravada }
@@ -57,14 +57,14 @@ public class FacasDaElsa : MonoBehaviour
     static readonly Vector2 TamanhoDaAreaQueMata = new Vector2(0.7f, 0.24f); // um pouco menor que o desenho (é mais justo)
     static readonly Vector2 CentroDaAreaQueMata = new Vector2(0.2f, 0f);     // a lâmina fica na frente do cabo
 
-    // (públicas: a luta contra a Elsa, em ElsaCacadora.cs, usa as mesmas cores)
+    // (públicas: a luta contra a Cozinheira, em ChefeCozinheira.cs, usa as mesmas cores)
     public static readonly Color CorDosOlhos = new Color(0.8f, 0.5f, 1f);       // lilás (os olhos dela de longe)
     public static readonly Color CorDoAviso = new Color(1f, 0.25f, 0.35f);      // vermelho: vai jogar!
     public static readonly Color CorDaFaca = new Color(1f, 0.45f, 0.5f);        // a luz da lâmina (diferente dos vaga-lumes e das moedas)
     public static readonly Color CorDoRastro = new Color(1f, 0.65f, 0.7f, 0.6f);
     public static readonly Color CorDaFaisca = new Color(1f, 0.95f, 0.7f);
 
-    // Uma faca: na mão da Elsa (durante o aviso), voando, ou cravada em algo (apagando).
+    // Uma faca: na mão da Cozinheira (durante o aviso), voando, ou cravada em algo (apagando).
     class Faca
     {
         public Transform objeto;
@@ -82,7 +82,7 @@ public class FacasDaElsa : MonoBehaviour
 
     Estado estado = Estado.Espreitando;
     float recarga;                   // tempo até o próximo arremesso
-    Vector2 alvo;                    // onde ela viu o Subaru pela última vez
+    Vector2 alvo;                    // onde ela viu o Grumete pela última vez
     bool jaRiu;                      // a 'k' ri na primeira vez que joga o leque
     float abertura;                  // 0 = olhos fechados (sumiu no escuro), 1 = olhos abertos
 
@@ -97,17 +97,17 @@ public class FacasDaElsa : MonoBehaviour
 
     void Awake()
     {
-        // A silhueta: a Elsa de capa preta, sumindo nas sombras (atrás dos blocos e na frente do cenário).
-        var objetoDaSilhueta = ConstrutorDeFase.Visual("Elsa", transform, transform.position + Vector3.up * AlturaDaSilhueta, "elsa_sombra", -6, false);
+        // A silhueta: a Cozinheira de capa preta, sumindo nas sombras (atrás dos blocos e na frente do cenário).
+        var objetoDaSilhueta = ConstrutorDeFase.Visual("Cozinheira", transform, transform.position + Vector3.up * AlturaDaSilhueta, "cozinheira_sombra", -6, false);
         silhueta = objetoDaSilhueta.transform;
         desenhoDaSilhueta = objetoDaSilhueta.GetComponent<SpriteRenderer>();
 
         // Os olhos e o sorriso ficam na frente de tudo: no escuro, é só isso que você vê.
-        olhosNormais = FabricaDeSprites.Pegar("olhos_elsa");
-        olhosBravos = FabricaDeSprites.Pegar("olhos_elsa_bravos");
-        var objetoDosOlhos = ConstrutorDeFase.Visual("Olhos", transform, transform.position + Vector3.up * AlturaDosOlhos, "olhos_elsa", 6, false);
+        olhosNormais = FabricaDeSprites.Pegar("olhos_cozinheira");
+        olhosBravos = FabricaDeSprites.Pegar("olhos_cozinheira_bravos");
+        var objetoDosOlhos = ConstrutorDeFase.Visual("Olhos", transform, transform.position + Vector3.up * AlturaDosOlhos, "olhos_cozinheira", 6, false);
         desenhoDosOlhos = objetoDosOlhos.GetComponent<SpriteRenderer>();
-        desenhoDoSorriso = ConstrutorDeFase.Visual("Sorriso", transform, transform.position + Vector3.up * AlturaDoSorriso, "sorriso_elsa", 6, false).GetComponent<SpriteRenderer>();
+        desenhoDoSorriso = ConstrutorDeFase.Visual("Sorriso", transform, transform.position + Vector3.up * AlturaDoSorriso, "sorriso_cozinheira", 6, false).GetComponent<SpriteRenderer>();
         desenhoDoSorriso.enabled = false;
 
         // A luz dos olhos (só existe no escuro). Guardamos a intensidade "cheia" para poder aumentar e diminuir.
@@ -155,7 +155,7 @@ public class FacasDaElsa : MonoBehaviour
                 break;
 
             case Estado.Avisando:
-                // mirando (as facas na mão acompanham o Subaru) até a hora de soltar
+                // mirando (as facas na mão acompanham o Grumete) até a hora de soltar
                 recarga -= dt;
                 SegurarFacas();
                 if (recarga <= 0f) Arremessar(viu);
@@ -166,7 +166,7 @@ public class FacasDaElsa : MonoBehaviour
         MoverFacas(dt);
     }
 
-    // O Subaru está perto o bastante (e na altura certa) para ela atacar?
+    // O Grumete está perto o bastante (e na altura certa) para ela atacar?
     bool JogadorNoAlcance(out Vector2 jogador)
     {
         if (!GerenciadorDoJogo.JogadorVivo(out jogador)) return false;
@@ -207,7 +207,7 @@ public class FacasDaElsa : MonoBehaviour
         // A área que mata gira junto com a faca. Na mão ela ainda não mata (só depois de solta).
         faca.perigo = Perigo.Adicionar(objeto, TamanhoDaAreaQueMata, CentroDaAreaQueMata);
         faca.perigo.ativo = false;
-        faca.perigo.conquista = "elsa";
+        faca.perigo.conquista = "cozinheira";
         Perigo.TornarMovel(objeto);
         faca.luz = luz;
         if (faca.luz != null) faca.intensidadeDaLuz = faca.luz.intensity;
@@ -215,11 +215,11 @@ public class FacasDaElsa : MonoBehaviour
     }
 
     // Só o DESENHO de uma faca, com a luz própria dela (luz = null nas fases claras).
-    // Público porque a luta contra a Elsa (ElsaCacadora.cs) usa as mesmas facas: lá quem decide
+    // Público porque a luta contra a Cozinheira (ChefeCozinheira.cs) usa as mesmas facas: lá quem decide
     // se a faca mata é a própria luta (com as "zonas"), então aqui não vai nenhum Perigo.
     public static SpriteRenderer DesenharFaca(Transform pai, Vector3 lugar, int ordem, out Light2D luz)
     {
-        var objeto = ConstrutorDeFase.Visual("FacaDaElsa", pai, lugar, "faca", ordem);
+        var objeto = ConstrutorDeFase.Visual("FacaDaCozinheira", pai, lugar, "faca", ordem);
         luz = Luzes.Ponto(objeto.transform, CorDaFaca, 2f, 1f);
         return objeto.GetComponent<SpriteRenderer>();
     }
@@ -323,7 +323,7 @@ public class FacasDaElsa : MonoBehaviour
         }
     }
 
-    // A ponta da faca está dentro de algo sólido? (o Subaru e os bichos não contam: a faca atravessa os bichos)
+    // A ponta da faca está dentro de algo sólido? (o Grumete e os bichos não contam: a faca atravessa os bichos)
     bool PontaEncostouEmAlgo(Faca faca)
     {
         Vector2 ponta = (Vector2)faca.objeto.position + faca.direcao * PontaDaFaca;
@@ -379,7 +379,7 @@ public class FacasDaElsa : MonoBehaviour
         float alvoDaAbertura = 1f;
         if (estado == Estado.Espreitando)
         {
-            // pisca num ritmo diferente para cada Elsa (pela posição): abertos 0,9 s a cada 3,2 s
+            // pisca num ritmo diferente para cada Cozinheira (pela posição): abertos 0,9 s a cada 3,2 s
             float ciclo = Mathf.Repeat(Time.time + transform.position.x * 0.73f, 3.2f);
             alvoDaAbertura = ciclo < 0.9f ? 1f : 0f;
         }
@@ -416,51 +416,52 @@ public class FacasDaElsa : MonoBehaviour
     static void RegistrarDesenhos()
     {
         FabricaDeSprites.Registrar("faca", () => FabricaDeSprites.DeArte(ArteFaca, FabricaDeSprites.Centro));
-        FabricaDeSprites.Registrar("elsa_sombra", () => FabricaDeSprites.DeArte(ArteElsa, FabricaDeSprites.Centro));
-        FabricaDeSprites.Registrar("olhos_elsa", () => FabricaDeSprites.DeArte(ArteOlhos, FabricaDeSprites.Centro));
-        FabricaDeSprites.Registrar("olhos_elsa_bravos", () => FabricaDeSprites.DeArte(ArteOlhosBravos, FabricaDeSprites.Centro));
-        FabricaDeSprites.Registrar("sorriso_elsa", () => FabricaDeSprites.DeArte(ArteSorriso, FabricaDeSprites.Centro));
+        FabricaDeSprites.Registrar("cozinheira_sombra", () => FabricaDeSprites.DeArte(ArteSilhueta, FabricaDeSprites.Centro));
+        FabricaDeSprites.Registrar("olhos_cozinheira", () => FabricaDeSprites.DeArte(ArteOlhos, FabricaDeSprites.Centro));
+        FabricaDeSprites.Registrar("olhos_cozinheira_bravos", () => FabricaDeSprites.DeArte(ArteOlhosBravos, FabricaDeSprites.Centro));
+        FabricaDeSprites.Registrar("sorriso_cozinheira", () => FabricaDeSprites.DeArte(ArteSorriso, FabricaDeSprites.Centro));
     }
 
-    // A kukri, apontando para a direita: cabo de madeira com a ponta de metal, a guarda,
-    // e a lâmina que "dobra" para baixo e engorda perto da ponta (com o entalhe perto do cabo).
+    // O cutelo, apontando para a direita: cabo de madeira, o ferro largo e retangular da lâmina (com o
+    // furinho perto da ponta, de pendurar na cozinha) e o fio embaixo.
     static readonly string[] ArteFaca =
     {
-        ".......k.kkkkk......",
-        ".kkkkkkMkwwwwwkk....",
-        "ksnnnnnSwssssswsk...",
-        "kSbbbbbSssSssssssk..",
-        "kSdddddSSSkSMMssssk.",
-        ".kkkkkkMkk.kSSMMMMsk",
-        ".......k....kkSSSSSk",
-        "..............kkkkk.",
+        "........kkkkkkkkkkk.",
+        "........kwwwwwwwkwk.",
+        ".kkkkkkkkwsssssssssk",
+        "knnnnnnkkssssssssssk",
+        "kbbbbbbkkssssssssSSk",
+        ".kkkkkkkkSSSSSSSSSSk",
+        "........kkkkkkkkkkkk",
+        "....................",
     };
 
-    // A Elsa nas sombras: cabelo preto comprido caindo dos lados, capa preta com a beirada roxa,
-    // e a parte de baixo se desfazendo no escuro. O rosto fica na sombra (os olhos são outro desenho, por cima).
-    static readonly string[] ArteElsa =
+    // A Cozinheira nas sombras: o chapéu de chef, o rosto no escuro e o avental, com a parte de baixo
+    // se desfazendo no breu. O rosto fica na sombra (os olhos são outro desenho, por cima).
+    static readonly string[] ArteSilhueta =
     {
-        ".....kkkkkk.....",
-        "...kkxxxxxxkk...",
-        "..kxxhxxxxxxxk..",
-        ".kxxhxxxxhxxxxk.",
-        ".kxxxxkxxxkxxxk.",
-        ".kxxkffxxxffkxk.",
-        "kxxkffffffffkxxk",
-        "kxxkffffffffkxxk",
-        "kxhkfffffffffxhk",
-        "kxhxkffffffkxxhk",
-        "kxhxxkkffkkxxhxk",
-        "kvhvkxxkkxxkvhvk",
-        "kvhvvxvxxvxvvhvk",
-        "kxhxxxxvvxxxxhxk",
-        "kxhxxxxvvxxxxkxk",
-        ".xhxxxxvvxxxxkx.",
-        ".x.h.x.vx.x.x.x.",
+        "....kkkkkkk.....",
+        "...kxxxxxxxk....",
+        "..kxxvxxxvxxk...",
+        "..kxxxxxxxxxk...",
+        "...kvvvvvvvvk...",
+        "..kxkffffffkxk..",
+        ".kxkffffffffkxk.",
+        ".kxkffffffffkxk.",
+        "..kkfffffffkk...",
+        "...kkffffkk.....",
+        ".kxxxxxxxxxxxk..",
+        "kxxxxvvvvxxxxxk.",
+        "kxxxvxxxxvxxxxk.",
+        "kxxxvxxxxvxxkxk.",
+        "kxxxvxxxxvxxkxk.",
+        ".xxxvxxxxvxxxx..",
+        ".x.xvx.xxv.x.x..",
         "..x.x.x.x.x.x...",
         ".x...x...x...x..",
         "....x.......x...",
     };
+
 
     // Os olhos de sempre: lilases, meio fechados, com o brilho branco no canto.
     static readonly string[] ArteOlhos =

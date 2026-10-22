@@ -2,24 +2,24 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // =====================================================================
-//  VENTO DA RAM
+//  VENTO DO MAR
 // =====================================================================
-//  A Ram (a irmã gêmea da Rem, a de cabelo ROSA) é maga de VENTO. E ela acha o Subaru ("Barusu") um inútil...
+//  O vento do mar sopra forte nas velas... e no Grumete, que é levinho.
 //
 //  'y' - RAJADA. Células 'y' encostadas formam UMA zona de vento: o RETÂNGULO em volta delas.
 //        (então dá para pôr moedas, inimigos, blocos e espinhos DENTRO da zona: basta as células 'y'
 //        em volta estarem encostadas umas nas outras)
-//        O vento vem da DIREITA e empurra o Subaru para TRÁS, em rajadas. Todas as zonas sopram juntas
-//        (a Ram "respira"), e o ritmo recomeça sempre que a fase é montada:
+//        O vento vem da DIREITA e empurra o Grumete para TRÁS, em rajadas. Todas as zonas sopram juntas
+//        (o mar "respira"), e o ritmo recomeça sempre que a fase é montada:
 //            calmo (1 s)  ->  AVISO (0,5 s: folhas e riscos de vento começam a passar e o vento sobe)
 //                         ->  RAJADA (2 s)  ->  calmo...
-//        Na rajada, quem segura para a frente QUASE fica parado (a Ram é um tiquinho mais forte que o Subaru).
+//        Na rajada, quem segura para a frente QUASE fica parado (o vento é um tiquinho mais forte que o Grumete).
 //        Quem solta o botão volta voando. Quem estava no meio de um pulo perde o embalo e cai no buraco. :)
 //        ABRIGO: o vento não atravessa paredes. Quem está até 2 blocos à ESQUERDA de algo sólido (na altura
 //        do corpo) fica protegido. Repare que os riscos de vento também não passam ali.
 //
 //  'n' - REDEMOINHO: uma corrente de ar para CIMA (a zona é um retângulo, igual à 'y'). Lá dentro a gravidade
-//        some e o Subaru sobe devagar (até 6 blocos/s), freando perto do topo: ele fica "boiando" na altura
+//        some e o Grumete sobe devagar (até 6 blocos/s), freando perto do topo: ele fica "boiando" na altura
 //        do topo da zona. Dá para atravessar abismos largos flutuando (e quem entra pulando sobe mais).
 //        TRAIÇOEIRO: se a coluna da ESQUERDA da zona for ÍMPAR (contando a partir de 0, como no mapa), o
 //        redemoinho é igualzinho aos outros... até você chegar perto (4 blocos). Aí ele ACORDA: fica ligado só
@@ -31,13 +31,13 @@ using UnityEngine;
 //  ANTES do Jogador em cada passo da física (veja o DefaultExecutionOrder), então tudo vale no mesmo passo.
 // =====================================================================
 [DefaultExecutionOrder(-10)]
-public class VentoDaRam : MonoBehaviour
+public class VentoDoMar : MonoBehaviour
 {
     public enum Tipo { Rajada, Redemoinho }
     enum Estado { Calmo, Aviso, Soprando, Ligado, Engasgando, Desligado }
 
     [Header("Rajada ('y')")]
-    public float forcaDaRajada = 7.5f;    // em blocos por segundo, para a esquerda (o Subaru anda a 7)
+    public float forcaDaRajada = 7.5f;    // em blocos por segundo, para a esquerda (o Grumete anda a 7)
     public float tempoCalmo = 1f;
     public float tempoDeAviso = 0.5f;
     public float tempoDeRajada = 2f;
@@ -76,7 +76,7 @@ public class VentoDaRam : MonoBehaviour
 
     bool jogadorDentro;
     bool abrigado;
-    float tempoDesdeOEmpurrao = 99f;  // para a conquista: o vento empurrou o Subaru para a morte?
+    float tempoDesdeOEmpurrao = 99f;  // para a conquista: o vento empurrou o Grumete para a morte?
     float tempoDesdeQueLargou = 99f;  // ...ou o redemoinho desligou com ele dentro?
     bool conquistaVerificada;
     float timerPoeira;
@@ -110,7 +110,7 @@ public class VentoDaRam : MonoBehaviour
 
     // Chamado pelo ConstrutorDeFase com as células de um grupo ('y' ou 'n' encostadas).
     // A zona é o retângulo em volta delas. alturaDoMapa = número de linhas do mapa (para virar posição no mundo).
-    public static VentoDaRam CriarZona(Transform raiz, Tipo tipo, List<Vector2Int> celulas, int alturaDoMapa)
+    public static VentoDoMar CriarZona(Transform raiz, Tipo tipo, List<Vector2Int> celulas, int alturaDoMapa)
     {
         int xMin = int.MaxValue, xMax = int.MinValue, linhaMin = int.MaxValue, linhaMax = int.MinValue;
         foreach (Vector2Int celula in celulas)
@@ -127,10 +127,10 @@ public class VentoDaRam : MonoBehaviour
         float embaixo = alturaDoMapa - 1 - linhaMax - 0.5f;
         var area = new Rect(esquerda, embaixo, xMax - xMin + 1, linhaMax - linhaMin + 1);
 
-        var objeto = new GameObject(tipo == Tipo.Rajada ? "VentoDaRam" : "Redemoinho");
+        var objeto = new GameObject(tipo == Tipo.Rajada ? "VentoDoMar" : "Redemoinho");
         objeto.transform.SetParent(raiz, false);
         objeto.transform.position = area.center;
-        var vento = objeto.AddComponent<VentoDaRam>();
+        var vento = objeto.AddComponent<VentoDoMar>();
         vento.Montar(tipo, area, tipo == Tipo.Redemoinho && xMin % 2 == 1);
         return vento;
     }
@@ -245,7 +245,7 @@ public class VentoDaRam : MonoBehaviour
             case Estado.Desligado:
                 if (jogadorDentro)
                 {
-                    GerenciadorDoJogo.Som("risada", 0.5f); // o Puck rindo de quem confiou
+                    GerenciadorDoJogo.Som("risada", 0.5f); // o Louro rindo de quem confiou
                     tempoDesdeQueLargou = 0f;
                 }
                 break;
@@ -288,7 +288,7 @@ public class VentoDaRam : MonoBehaviour
     }
 
     // Dentro do redemoinho a gravidade some e a velocidade vertical vai até a velocidade de subida
-    // (que diminui perto do topo da zona, para o Subaru parar "boiando" lá em cima).
+    // (que diminui perto do topo da zona, para o Grumete parar "boiando" lá em cima).
     void Levantar(Jogador jogador, Vector2 posicao)
     {
         float dt = Time.fixedDeltaTime;
@@ -305,7 +305,7 @@ public class VentoDaRam : MonoBehaviour
     }
 
     // O vento não atravessa paredes: tem algo sólido logo à direita, na altura do corpo?
-    // (o próprio Subaru e os bichos não contam)
+    // (o próprio Grumete e os bichos não contam)
     bool Abrigado(Vector2 posicao)
     {
         int quantidade = Physics2D.Raycast(posicao, Vector2.right, filtroSolido, acertos, alcanceDoAbrigo);
@@ -317,7 +317,7 @@ public class VentoDaRam : MonoBehaviour
         return false;
     }
 
-    // Empurrado pelo vento no chão, o Subaru vai "patinando" e levantando poeira.
+    // Empurrado pelo vento no chão, o Grumete vai "patinando" e levantando poeira.
     void Arrastar(Jogador jogador)
     {
         timerPoeira -= Time.fixedDeltaTime;
@@ -333,14 +333,14 @@ public class VentoDaRam : MonoBehaviour
         return Mathf.Max(area.xMin - jogador.x, 0f, jogador.x - area.xMax);
     }
 
-    // Conquista: morreu logo depois de ser soprado (ou largado pelo redemoinho)? Foi a Ram.
+    // Conquista: morreu logo depois de ser soprado (ou largado pelo redemoinho)? Foi o vento.
     void VerificarConquista()
     {
         if (conquistaVerificada) return;
         Jogador jogador = GerenciadorDoJogo.JogadorAtual;
         if (jogador == null || !jogador.Morto) return;
         conquistaVerificada = true;
-        if (tempoDesdeOEmpurrao < 1.2f || tempoDesdeQueLargou < 2f) Conquistas.Desbloquear("vento_da_ram");
+        if (tempoDesdeOEmpurrao < 1.2f || tempoDesdeQueLargou < 2f) Conquistas.Desbloquear("vento_forte");
     }
 
     // ------------------------------------------------------------------ ciscos (folhas e riscos de vento)
@@ -390,7 +390,7 @@ public class VentoDaRam : MonoBehaviour
         c.giro = folha ? Random.Range(-540f, 540f) : 0f;
         c.comprimento = 1f;
         c.desenho.sprite = FabricaDeSprites.Pegar(folha ? (Random.value < 0.35f ? "folha_seca" : "folha") : "risco_de_vento");
-        c.desenho.sortingOrder = folha ? 11 : 8; // folhas na frente do Subaru (10), riscos atrás
+        c.desenho.sortingOrder = folha ? 11 : 8; // folhas na frente do Grumete (10), riscos atrás
         c.desenho.gameObject.SetActive(true);
         return c;
     }
@@ -635,7 +635,7 @@ public class VentoDaRam : MonoBehaviour
     bool Solida(Vector2 ponto) =>
         SolidaNaGrade(Mathf.RoundToInt(ponto.x) - colunaDaGrade, Mathf.RoundToInt(ponto.y) - linhaDaGrade);
 
-    // Até 2 células à direita tem parede? Então o vento não passa aqui (igual ao abrigo do Subaru).
+    // Até 2 células à direita tem parede? Então o vento não passa aqui (igual ao abrigo do Grumete).
     bool NoAbrigo(Vector2 ponto)
     {
         int x = Mathf.RoundToInt(ponto.x) - colunaDaGrade, y = Mathf.RoundToInt(ponto.y) - linhaDaGrade;
@@ -670,7 +670,7 @@ public class VentoDaRam : MonoBehaviour
         return somDaRajada;
     }
 
-    // "Fu!": curtinho, para quando o Subaru entra no redemoinho (ou ele volta a ligar).
+    // "Fu!": curtinho, para quando o Grumete entra no redemoinho (ou ele volta a ligar).
     static AudioClip SomDoSopro()
     {
         if (somDoSopro == null) somDoSopro = CriarSomDeVento("sopro", 0.45f, 0.06f, 0.3f, 3);
@@ -726,7 +726,7 @@ public class VentoDaRam : MonoBehaviour
     }
 
     // O ícone do mapa: um redemoinho (funil de vento girando, com o lado direito na sombra 's'), com uma
-    // folha e uma pétala rosa (a cor do cabelo da Ram) voando em volta.
+    // folha e uma pétala rosa (um toque de cor) voando em volta.
     static readonly string[] ArteVento =
     {
         "..kkkkkkkkkkkk..",
