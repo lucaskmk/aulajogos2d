@@ -99,6 +99,15 @@ public static class Controles
         return teclado != null && teclado.f9Key.wasPressedThisFrame;
     }
 
+    // L: abre e fecha a Loja no mapa (no controle, o botão X / quadrado).
+    public static bool AbrirLoja()
+    {
+        var teclado = Keyboard.current;
+        var controle = Gamepad.current;
+        return (teclado != null && teclado.lKey.wasPressedThisFrame)
+            || (controle != null && controle.buttonWest.wasPressedThisFrame);
+    }
+
     static bool Apertou(System.Func<Keyboard, KeyControl> seta, System.Func<Keyboard, KeyControl> letra, System.Func<Gamepad, ButtonControl> direcional)
     {
         var teclado = Keyboard.current;

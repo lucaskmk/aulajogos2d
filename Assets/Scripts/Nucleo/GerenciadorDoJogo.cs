@@ -52,7 +52,16 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     [Header("Fases")]
     public float tempoAposConcluir = 2.2f;
-    public float tempoComASereia = 3.5f; // fim da última fase: um tempinho a mais com a Sereia
+    public float tempoComASereia = 3.5f; // fim da última fase: um tempinho a mais com a Sereia (antes do painel)
+    [Tooltip("No fim da fase aparece o painel com os melhores tempos. Ele fica na tela até o jogador apertar ENTER/ESPAÇO, "
+             + "mas só aceita a tecla depois desse tempo (para não pular sem querer, ainda com o dedo no pulo).")]
+    public float tempoMinimoNoPainel = 1f;
+
+    [Header("Loja")]
+    [Tooltip("Quanto custa o escudo na Loja do mapa (em moedas da campanha).")]
+    public int precoDoEscudo = 15;
+    [Tooltip("Quantos escudos o jogador pode carregar de uma vez.")]
+    public int maximoDeEscudos = 1;
 
     // ------------------------------------------------------------------ estado (lido pela Interface)
 
@@ -61,6 +70,9 @@ public class GerenciadorDoJogo : MonoBehaviour
     public int Mortes { get; private set; }
     public int MortesNaFase { get; private set; }
     public int Moedas => moedas + moedasNaFase;
+    // Escudos comprados na Loja e ainda não usados: cada um te salva de UMA morte (veja Jogador.Morrer).
+    public int Escudos { get; private set; }
+    public bool TemEscudo => Escudos > 0;
     public float TempoTotal { get; private set; }
     // Tempo nesta fase, desde que entrou pelo mapa (o tempo das mortes conta). É o tempo do recorde da fase.
     public float TempoNaFase { get; private set; }
@@ -73,7 +85,21 @@ public class GerenciadorDoJogo : MonoBehaviour
         public Progresso.Novidade novidades;    // quais recordes da fase foram batidos agora
         public Medalhas.Conjunto medalhas;      // todas as medalhas que a fase tem
         public Medalhas.Conjunto medalhasNovas; // as que vieram agora
+        // O painel de melhores tempos (Progresso.MelhoresTempos), já com este tempo, se ele entrou.
+        public List<Progresso.TempoDoRanking> ranking;
+        public int posicaoNoRanking; // 0 = o mais rápido, -1 = ficou fora dos 5
+        public int vezesConcluida;   // quantas vezes já passou dessa fase (contando esta)
+        public int numero;           // muda a cada fase concluída (a Interface remonta os textos quando muda)
     }
+    int resultadosMostrados;
+
+    // Fim da fase: há quanto tempo a tela de "fase concluída" está aberta, e se o jogador já mandou continuar.
+    public float TempoNaConclusao { get; private set; }
+    bool mandouContinuar;
+    // Na última fase a Sereia comemora primeiro; o painel de melhores tempos aparece depois.
+    float InicioDoPainel => EhUltimaFase && Sereia != null ? tempoComASereia : 0f;
+    public bool MostrandoPainel => Estado == EstadoDoJogo.FaseConcluida && TempoNaConclusao >= InicioDoPainel;
+    public bool PodeContinuar => MostrandoPainel && !mandouContinuar && TempoNaConclusao >= InicioDoPainel + tempoMinimoNoPainel;
     public ResultadoDaFase Resultado { get; private set; }
     public string Mensagem { get; private set; } = "";
     public string Aviso => timerAviso > 0f ? aviso : "";
@@ -139,6 +165,30 @@ public class GerenciadorDoJogo : MonoBehaviour
     public enum Submenu { Nenhum, Opcoes, ComoJogar }
     public Submenu SubmenuAberto { get; private set; }
 
+    // Loja: abre por cima do mapa (tecla L). Por enquanto só vende o escudo.
+    public enum ItemDaLoja { Escudo, Voltar }
+    public static readonly int TotalDaLoja = System.Enum.GetValues(typeof(ItemDaLoja)).Length;
+    public bool LojaAberta { get; private set; }
+    public int OpcaoDaLoja { get; private set; }
+    // A resposta da última tentativa de compra ("Escudo comprado!", "Faltam 3 moedas."...). Some depois de uns segundos.
+    public string MensagemDaLoja => timerMensagemDaLoja > 0f ? mensagemDaLoja : "";
+    public bool MensagemDaLojaBoa { get; private set; }
+    public bool PodeComprarEscudo => Escudos < maximoDeEscudos && moedas >= precoDoEscudo;
+    string mensagemDaLoja = "";
+    float timerMensagemDaLoja;
+
+    // A Loja só abre depois da 2ª fase (chegou na 3ª = passou da 2ª). Na primeira vez, o Louro aparece voando
+    // no mapa, explica como abrir a Loja e faz você comprar o primeiro escudo (veja "tutorial da loja").
+    public const int FaseQueLiberaALoja = 2; // índice da 3ª fase
+    public bool LojaLiberada => FaseLiberada >= FaseQueLiberaALoja;
+    public enum PassoDoTutorial { Nenhum, Chegada, Moedas, AbrirLoja, Comprar, Comprou, Fechar }
+    public PassoDoTutorial Tutorial { get; private set; }
+    public bool NoTutorial => Tutorial != PassoDoTutorial.Nenhum;
+    public float TempoNoPasso { get; private set; }  // a Interface usa para animar (o Louro chegando voando)
+    public string TextoDoTutorial { get; private set; } = "";
+    public const float DuracaoDaChegadaDoLouro = 1.1f; // a fala só aparece (e o ENTER só vale) depois disso
+    bool DeveMostrarTutorialDaLoja => LojaLiberada && !Progresso.TutorialDaLojaVisto;
+
     // Tela de opções (a ordem aqui é a ordem na tela). "Voltar" também é uma opção, para quem usa só o teclado.
     public enum ItemDasOpcoes { Musica, Efeitos, Graficos, TelaCheia, Cronometro, Voltar }
     public static readonly int TotalDasOpcoes = System.Enum.GetValues(typeof(ItemDasOpcoes)).Length;
@@ -149,7 +199,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     // Mouse: a Interface (que sabe ONDE cada opção foi desenhada) avisa quando o mouse passa por cima
     // de uma opção ou clica nela. Além do número da opção, o clique pode ser num destes "botões":
-    public const int BotaoVoltar = -2, BotaoAnterior = -3, BotaoProxima = -4;
+    public const int BotaoVoltar = -2, BotaoAnterior = -3, BotaoProxima = -4, BotaoLoja = -5;
     const int SemClique = -1;
 
     public MapaDoMundo Mapa { get; private set; }
@@ -361,6 +411,8 @@ public class GerenciadorDoJogo : MonoBehaviour
             Progresso.SecretaLiberada, andarPara, caminhoNovo, mostrarSecreta);
         cameraSeguir.Configurar(Mapa.Grumete, MapaDoMundo.Largura, MapaDoMundo.Altura);
         musica.TocarDaFase(FabricaDeMusica.MusicaDoMapa);
+        LojaAberta = false;
+        Tutorial = PassoDoTutorial.Nenhum;
         Estado = EstadoDoJogo.Mapa;
     }
 
@@ -369,6 +421,9 @@ public class GerenciadorDoJogo : MonoBehaviour
         Mortes = 0;
         MortesNaFase = 0;
         moedas = 0;
+        Escudos = 0;
+        LojaAberta = false;
+        Tutorial = PassoDoTutorial.Nenhum;
         TempoTotal = 0f;
         FaseMaisLonge = 0;
         partidaValida = true;
@@ -442,7 +497,7 @@ public class GerenciadorDoJogo : MonoBehaviour
                 break;
 
             case EstadoDoJogo.Mapa:
-                AtualizarMapa();
+                AtualizarMapa(clique);
                 break;
 
             case EstadoDoJogo.Jogando:
@@ -450,7 +505,7 @@ public class GerenciadorDoJogo : MonoBehaviour
                 TempoNaFase += Time.deltaTime;
                 timerAviso -= Time.deltaTime;
                 if (Controles.Pausar()) Pausar(true);
-                else if (Controles.Reiniciar()) jogador.Morrer(); // reiniciar conta como morte. Óbvio.
+                else if (Controles.Reiniciar()) jogador.Morrer(ignorarEscudo: true); // reiniciar conta como morte. Óbvio. (e não gasta o escudo)
                 break;
 
             case EstadoDoJogo.Pausado:
@@ -472,7 +527,17 @@ public class GerenciadorDoJogo : MonoBehaviour
                 break;
 
             case EstadoDoJogo.FaseConcluida:
+                // O painel de melhores tempos fica na tela até o jogador mandar continuar (ENTER/ESPAÇO ou clique).
+                // Até lá o timer fica parado logo antes de as sombras da transição começarem a cobrir a tela.
+                TempoNaConclusao += Time.deltaTime;
+                if (PodeContinuar && (Controles.Confirmar() || clique == BotaoProxima))
+                {
+                    mandouContinuar = true;
+                    timerEstado = Mathf.Min(timerEstado, DuracaoTransicao);
+                    Som("bloco", 0.4f);
+                }
                 timerEstado -= Time.deltaTime;
+                if (!mandouContinuar) timerEstado = Mathf.Max(timerEstado, DuracaoTransicao);
                 if (timerEstado <= 0f) ProximaFase();
                 break;
 
@@ -516,9 +581,11 @@ public class GerenciadorDoJogo : MonoBehaviour
             bool caminhoNovo = proxima > FaseLiberada;
             FaseMaisLonge = Mathf.Max(FaseMaisLonge, proxima);
             MostrarMapa(concluida, proxima, caminhoNovo, secretaNova);
-            MostrarFala(secretaNova ? Textos.SecretaLiberada : Textos.Escolher(concluida, MortesNaFase));
+            if (secretaNova || !DeveMostrarTutorialDaLoja) // (senão o Louro do tutorial chega logo que o Grumete parar)
+                MostrarFala(secretaNova ? Textos.SecretaLiberada : Textos.Escolher(concluida, MortesNaFase));
             secretaNova = false;
             Progresso.Salvar(proxima, FaseMaisLonge, Mortes, moedas, TempoTotal, partidaValida);
+            Progresso.SalvarEscudos(Escudos);
             Progresso.SalvarMortesPorFase(mortesPorFase);
             return;
         }
@@ -542,6 +609,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         Progresso.Salvar(FaseDoGrumete, FaseMaisLonge, Mortes, moedas, TempoTotal, partidaValida);
         Progresso.SalvarMortesPorFase(mortesPorFase);
+        Progresso.SalvarEscudos(Escudos);
     }
 
     void MostrarFala(Textos.Fala fala)
@@ -771,6 +839,12 @@ public class GerenciadorDoJogo : MonoBehaviour
             if (OpcaoDasOpcoes != antes) Som("bloco", 0.5f);
         }
         else if (SubmenuAberto != Submenu.Nenhum) return;
+        else if (Estado == EstadoDoJogo.Mapa && LojaAberta)
+        {
+            antes = OpcaoDaLoja;
+            if (opcao < TotalDaLoja) OpcaoDaLoja = opcao;
+            if (OpcaoDaLoja != antes) Som("bloco", 0.5f);
+        }
         else if (Estado == EstadoDoJogo.Titulo)
         {
             antes = OpcaoSelecionada;
@@ -884,6 +958,7 @@ public class GerenciadorDoJogo : MonoBehaviour
             FaseMaisLonge = maisLonge;
             Mortes = mortesSalvas;
             TempoTotal = tempoSalvo;
+            Escudos = Mathf.Max(0, Progresso.EscudosSalvos);
         }
         else
         {
@@ -896,8 +971,25 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     // No mapa: setas andam pelo caminho, Enter entra na fase, Esc volta ao título.
     // No ponto da fase do segredo, seta para baixo vai para a fase secreta (se ela já apareceu).
-    void AtualizarMapa()
+    void AtualizarMapa(int clique)
     {
+        if (LojaAberta)
+        {
+            if (NoTutorial) AtualizarTutorialNaLoja(clique);
+            else AtualizarLoja(clique);
+            return;
+        }
+        if (NoTutorial)
+        {
+            if (Controles.Pausar()) // ESC: volta ao título (o tutorial recomeça quando voltar ao mapa)
+            {
+                SalvarProgresso();
+                Trocar(VoltarAoTitulo);
+                return;
+            }
+            AtualizarTutorialNoMapa(clique);
+            return;
+        }
         if (Fala.HasValue && Controles.Confirmar())
         {
             Fala = null; // Enter fecha a fala do personagem
@@ -910,6 +1002,19 @@ public class GerenciadorDoJogo : MonoBehaviour
             return;
         }
         if (Mapa.Andando) return;
+
+        // passou da 2ª fase e ainda não conhece a Loja: o Louro chega voando (depois da fala, se tiver uma)
+        if (DeveMostrarTutorialDaLoja && !Fala.HasValue)
+        {
+            IniciarTutorialDaLoja();
+            return;
+        }
+
+        if (LojaLiberada && (Controles.AbrirLoja() || clique == BotaoLoja))
+        {
+            AbrirLoja();
+            return;
+        }
 
         if (Controles.LiberarTudo())
         {
@@ -941,6 +1046,205 @@ public class GerenciadorDoJogo : MonoBehaviour
             Som("vitoria", 0.4f);
             Trocar(() => JogarFase(fase));
         }
+    }
+
+    // ------------------------------------------------------------------ loja
+
+    void AbrirLoja()
+    {
+        LojaAberta = true;
+        OpcaoDaLoja = (int)ItemDaLoja.Escudo;
+        Fala = null;
+        timerMensagemDaLoja = 0f;
+        Som("moeda", 0.5f);
+    }
+
+    void FecharLoja()
+    {
+        LojaAberta = false;
+        Som("bloco", 0.4f);
+    }
+
+    // Na Loja: CIMA/BAIXO escolhem, ENTER compra, ESC (ou L de novo) fecha. O mouse também funciona.
+    void AtualizarLoja(int clique)
+    {
+        timerMensagemDaLoja -= Time.deltaTime;
+        if (Controles.Voltar() || Controles.Pausar() || Controles.AbrirLoja() || clique == BotaoVoltar)
+        {
+            FecharLoja();
+            return;
+        }
+        if (Controles.CimaApertou()) OpcaoDaLoja = Girar(OpcaoDaLoja, -1, TotalDaLoja);
+        else if (Controles.BaixoApertou()) OpcaoDaLoja = Girar(OpcaoDaLoja, 1, TotalDaLoja);
+
+        bool escolheu = Controles.Confirmar();
+        if (clique >= 0 && clique < TotalDaLoja)
+        {
+            OpcaoDaLoja = clique;
+            escolheu = true;
+        }
+        if (!escolheu) return;
+        if ((ItemDaLoja)OpcaoDaLoja == ItemDaLoja.Voltar) FecharLoja();
+        else ComprarEscudo();
+    }
+
+    void ComprarEscudo()
+    {
+        if (Escudos >= maximoDeEscudos)
+        {
+            AvisarNaLoja(maximoDeEscudos == 1 ? "Você já tem um escudo!" : "Você já tem o máximo de escudos!", false);
+            Som("bloco", 0.6f);
+            return;
+        }
+        if (moedas < precoDoEscudo)
+        {
+            int faltam = precoDoEscudo - moedas;
+            AvisarNaLoja(faltam == 1 ? "Falta 1 moeda." : $"Faltam {faltam} moedas.", false);
+            Som("bloco", 0.6f);
+            return;
+        }
+        moedas -= precoDoEscudo;
+        Escudos++;
+        AvisarNaLoja("Escudo comprado! Ele te salva de UMA morte.", true);
+        Som("conquista", 0.6f);
+        SalvarProgresso();
+    }
+
+    void AvisarNaLoja(string texto, bool boa)
+    {
+        mensagemDaLoja = texto;
+        MensagemDaLojaBoa = boa;
+        timerMensagemDaLoja = 3f;
+    }
+
+    // ------------------------------------------------------------------ tutorial da loja (a cutscene do Louro)
+
+    // O passo a passo (os textos ficam em Textos.Loja...):
+    //   no mapa:   Chegada (ele chega voando) > Moedas > AbrirLoja (ele voa até o botão LOJA e espera o L)
+    //   na Loja:   Comprar (só dá para comprar; se faltar moeda, ele completa) > Comprou > Fechar (ESC)
+    // Durante o tutorial o resto do mapa fica parado (dá para sair com ESC: aí ele recomeça na próxima vez).
+    void IniciarTutorialDaLoja()
+    {
+        Fala = null;
+        IrParaOPasso(PassoDoTutorial.Chegada);
+        Som("mola", 0.4f); // "fuuuu": o Louro chegando
+    }
+
+    void IrParaOPasso(PassoDoTutorial passo)
+    {
+        Tutorial = passo;
+        TempoNoPasso = 0f;
+        switch (passo)
+        {
+            case PassoDoTutorial.Chegada: TextoDoTutorial = Textos.LojaChegada; break;
+            case PassoDoTutorial.Moedas: TextoDoTutorial = Textos.LojaMoedas; break;
+            case PassoDoTutorial.AbrirLoja: TextoDoTutorial = Textos.LojaComoAbrir; break;
+            case PassoDoTutorial.Comprar: TextoDoTutorial = Textos.LojaComprar; break;
+            case PassoDoTutorial.Comprou: TextoDoTutorial = Textos.LojaComprou; break;
+            case PassoDoTutorial.Fechar: TextoDoTutorial = Textos.LojaFechar; break;
+            default: TextoDoTutorial = ""; break;
+        }
+    }
+
+    // ENTER passa a fala; um tempinho de espera em cada passo para não pular sem querer.
+    bool PassarFalaDoTutorial()
+    {
+        float espera = Tutorial == PassoDoTutorial.Chegada ? DuracaoDaChegadaDoLouro : 0.3f;
+        return TempoNoPasso >= espera && Controles.Confirmar();
+    }
+
+    void AtualizarTutorialNoMapa(int clique)
+    {
+        TempoNoPasso += Time.deltaTime;
+        switch (Tutorial)
+        {
+            case PassoDoTutorial.Chegada:
+                if (PassarFalaDoTutorial()) { Som("bloco", 0.4f); IrParaOPasso(PassoDoTutorial.Moedas); }
+                break;
+            case PassoDoTutorial.Moedas:
+                if (PassarFalaDoTutorial()) { Som("mola", 0.3f); IrParaOPasso(PassoDoTutorial.AbrirLoja); }
+                break;
+            case PassoDoTutorial.AbrirLoja:
+                if (Controles.AbrirLoja() || clique == BotaoLoja)
+                {
+                    AbrirLoja();
+                    ComecarACompraDoTutorial();
+                }
+                break;
+            default: // (os outros passos são dentro da Loja)
+                AbrirLoja();
+                ComecarACompraDoTutorial();
+                break;
+        }
+    }
+
+    // Entrou na Loja pelo tutorial: se não der para pagar o escudo, o Louro completa as moedas (só desta vez).
+    void ComecarACompraDoTutorial()
+    {
+        if (Escudos >= maximoDeEscudos) // (já tinha escudo: de uma partida salva antes da Loja ter tutorial)
+        {
+            IrParaOPasso(PassoDoTutorial.Comprou);
+            TextoDoTutorial = Textos.LojaJaTinha;
+            return;
+        }
+        IrParaOPasso(PassoDoTutorial.Comprar);
+        int faltam = precoDoEscudo - moedas;
+        if (faltam <= 0) return;
+        moedas += faltam;
+        TextoDoTutorial = string.Format(Textos.LojaComprarComAjuda, faltam == 1 ? "1 moeda" : faltam + " moedas");
+        Som("moeda", 0.7f);
+        SalvarProgresso();
+    }
+
+    // Na Loja, durante o tutorial: não dá para sair antes de comprar. Depois, ENTER passa a fala e ESC fecha.
+    void AtualizarTutorialNaLoja(int clique)
+    {
+        TempoNoPasso += Time.deltaTime;
+        switch (Tutorial)
+        {
+            case PassoDoTutorial.Comprar:
+                OpcaoDaLoja = (int)ItemDaLoja.Escudo; // só a compra (o "Voltar ao mapa" espera)
+                if (TempoNoPasso >= 0.3f && (Controles.Confirmar() || clique == (int)ItemDaLoja.Escudo))
+                {
+                    int antes = Escudos;
+                    ComprarEscudo();
+                    if (Escudos > antes) IrParaOPasso(PassoDoTutorial.Comprou);
+                }
+                break;
+            case PassoDoTutorial.Comprou:
+                OpcaoDaLoja = (int)ItemDaLoja.Escudo;
+                if (PassarFalaDoTutorial()) { Som("bloco", 0.4f); IrParaOPasso(PassoDoTutorial.Fechar); }
+                break;
+            case PassoDoTutorial.Fechar:
+                OpcaoDaLoja = (int)ItemDaLoja.Voltar;
+                if (TempoNoPasso >= 0.3f && (Controles.Voltar() || Controles.Pausar() || Controles.AbrirLoja() || Controles.Confirmar()
+                                             || clique == BotaoVoltar || clique == (int)ItemDaLoja.Voltar))
+                    TerminarTutorialDaLoja();
+                break;
+            default: // (abriu a Loja num passo do mapa: começa a compra)
+                ComecarACompraDoTutorial();
+                break;
+        }
+    }
+
+    void TerminarTutorialDaLoja()
+    {
+        IrParaOPasso(PassoDoTutorial.Nenhum);
+        Progresso.MarcarTutorialDaLoja();
+        FecharLoja();
+        MostrarFala(Textos.LojaTchau);
+    }
+
+    // Chamado pelo Jogador quando algo ia matar ele: se tiver escudo, gasta um e ele NÃO morre.
+    public bool UsarEscudo()
+    {
+        if (Estado != EstadoDoJogo.Jogando || Escudos <= 0) return false;
+        Escudos--;
+        Progresso.SalvarEscudos(Escudos); // gastou, gastou: sair do jogo agora não devolve o escudo
+        Avisar("O ESCUDO TE SALVOU!", 2f);
+        Som("pancada", 0.7f);
+        Som("moeda", 0.5f);
+        return true;
     }
 
     // ------------------------------------------------------------------ chamados pelos objetos
@@ -984,6 +1288,8 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (Estado != EstadoDoJogo.Jogando) return;
         Estado = EstadoDoJogo.FaseConcluida;
         timerEstado = EhUltimaFase && Sereia != null ? tempoComASereia : tempoAposConcluir;
+        TempoNaConclusao = 0f;
+        mandouContinuar = false;
         if (MortesNaFase == 0) Conquistas.Desbloquear("sem_morrer");
         if (nasCabines) Conquistas.Desbloquear("cabines");
         if (NaSecreta) Conquistas.Desbloquear("secreta");
@@ -1007,6 +1313,8 @@ public class GerenciadorDoJogo : MonoBehaviour
     void RegistrarRecordes()
     {
         Medalhas.Conjunto antes = Medalhas.DaFase(FaseAtual);
+        // o ranking ANTES do recorde (veja Progresso.RegistrarNoRanking)
+        int posicaoNoRanking = Progresso.RegistrarNoRanking(FaseAtual, TempoNaFase, MortesNaFase);
         var resultado = new ResultadoDaFase
         {
             tempo = TempoNaFase,
@@ -1017,6 +1325,10 @@ public class GerenciadorDoJogo : MonoBehaviour
         };
         resultado.medalhas = Medalhas.DaFase(FaseAtual);
         resultado.medalhasNovas = resultado.medalhas & ~antes;
+        resultado.ranking = Progresso.MelhoresTempos(FaseAtual);
+        resultado.posicaoNoRanking = posicaoNoRanking;
+        resultado.vezesConcluida = Progresso.VezesConcluida(FaseAtual);
+        resultado.numero = ++resultadosMostrados;
         Resultado = resultado;
         if (resultado.medalhas == Medalhas.Conjunto.Todas) Conquistas.Desbloquear("medalhas");
         // bateu recorde ou ganhou medalha: um segundinho a mais na tela, para dar tempo de ler

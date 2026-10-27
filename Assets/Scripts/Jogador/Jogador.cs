@@ -21,6 +21,10 @@ public class Jogador : MonoBehaviour
     public float tempoCoyote = 0.1f;
     public float tempoBufferPulo = 0.12f;
 
+    [Header("Escudo (Loja)")]
+    [Tooltip("Depois que o escudo quebra, por quantos segundos nada te mata (fica piscando). Cair num buraco ainda mata.")]
+    public float tempoInvencivel = 1.5f;
+
     public bool Morto { get; private set; }
     public bool NoChao { get; private set; }
     public Rigidbody2D Corpo { get; private set; }
@@ -49,6 +53,17 @@ public class Jogador : MonoBehaviour
     bool congelado;
     float timerAnimacao;
 
+    // Escudo da Loja (veja Morrer): quem guarda QUANTOS escudos você tem é o GerenciadorDoJogo.
+    float timerInvencivel;   // > 0: o escudo acabou de quebrar e nada te mata
+    Vector2 ultimoChao;      // onde pisou por último
+    // Onde ele pisou nos últimos 2 segundos (uma marca a cada 0,1 s). Se cair num buraco com o escudo, ele volta
+    // para uma dessas marcas, um pouco ANTES da beirada (voltar bem na ponta, segurando a seta, caía de novo).
+    readonly Vector2[] chaosRecentes = new Vector2[20];
+    int quantosChaos, proximoChao;
+    float timerDoChao;
+    SpriteRenderer bolha;    // a bolha azul em volta dele enquanto tem escudo
+    public bool Invencivel => timerInvencivel > 0f;
+
     readonly List<Collider2D> encostados = new List<Collider2D>();
     ContactFilter2D filtroSolido;
 
@@ -72,10 +87,15 @@ public class Jogador : MonoBehaviour
 
         filtroSolido = new ContactFilter2D { useTriggers = false };
         SombraNoChao.Adicionar(gameObject, 0.85f);
+
+        bolha = ConstrutorDeFase.Visual("Escudo", transform, transform.position, "bolha_escudo", 11, sombra: false).GetComponent<SpriteRenderer>();
+        bolha.enabled = false;
+        ultimoChao = transform.position;
     }
 
     void Update()
     {
+        AtualizarEscudo();
         if (Morto || congelado || GerenciadorDoJogo.Pausado) return;
 
         AtualizarInversao();
@@ -93,6 +113,7 @@ public class Jogador : MonoBehaviour
 
         bool estavaNoChao = NoChao;
         NoChao = ChecarChao();
+        if (NoChao) GuardarChao(dt);
         if (!NoChao) quedaMaisRapida = Mathf.Min(quedaMaisRapida, Corpo.linearVelocity.y);
         else if (!estavaNoChao) Aterrissou();
         timerCoyote = NoChao ? tempoCoyote : timerCoyote - dt;
@@ -216,9 +237,23 @@ public class Jogador : MonoBehaviour
 
     // ------------------------------------------------------------ usado pelos outros objetos
 
-    public void Morrer(bool caiuNoBuraco = false)
+    // ignorarEscudo: reiniciar a fase (R) "mata" de propósito, aí o escudo não é gasto.
+    public void Morrer(bool caiuNoBuraco = false, bool ignorarEscudo = false)
     {
         if (Morto || congelado || GerenciadorDoJogo.Pausado) return;
+        if (!ignorarEscudo)
+        {
+            if (Invencivel) // o escudo acabou de quebrar: enquanto pisca, nada te mata
+            {
+                if (caiuNoBuraco) VoltarParaOChao();
+                return;
+            }
+            if (GerenciadorDoJogo.Instancia != null && GerenciadorDoJogo.Instancia.UsarEscudo())
+            {
+                SalvoPeloEscudo(caiuNoBuraco);
+                return;
+            }
+        }
         Morto = true;
 
         colisor.enabled = false;
@@ -237,6 +272,76 @@ public class Jogador : MonoBehaviour
         }
 
         GerenciadorDoJogo.Instancia.JogadorMorreu(caiuNoBuraco);
+    }
+
+    // O escudo quebrou no lugar dele: um pulo para trás (ou de volta para o chão, se caiu num buraco)
+    // e fica piscando por tempoInvencivel segundos, sem poder morrer.
+    void SalvoPeloEscudo(bool caiuNoBuraco)
+    {
+        timerInvencivel = tempoInvencivel;
+        Vector3 lugar = transform.position;
+        if (caiuNoBuraco)
+        {
+            VoltarParaOChao();
+        }
+        else
+        {
+            float paraTras = visual.flipX ? 1f : -1f; // olhando para a direita, é jogado para a esquerda
+            Corpo.linearVelocity = new Vector2(paraTras * 6f, 11f);
+            pulando = false;
+            timerCoyote = 0f;
+        }
+        escala = new Vector2(1.3f, 0.75f);
+        Efeitos.Poeira(transform.parent, lugar, 10, 3f);
+        CameraSeguir.Tremer(0.15f, 0.2f);
+    }
+
+    void GuardarChao(float dt)
+    {
+        ultimoChao = Corpo.position;
+        timerDoChao -= dt;
+        if (timerDoChao > 0f) return;
+        timerDoChao = 0.1f;
+        chaosRecentes[proximoChao] = ultimoChao;
+        proximoChao = (proximoChao + 1) % chaosRecentes.Length;
+        quantosChaos = Mathf.Min(quantosChaos + 1, chaosRecentes.Length);
+    }
+
+    // Caiu num buraco com o escudo: volta para o chão, uns 1,5 bloco antes da beirada de onde caiu
+    // (a marca mais recente que esteja longe o bastante; se não tiver nenhuma, a própria beirada).
+    void VoltarParaOChao()
+    {
+        float paraDentro = Mathf.Sign(ultimoChao.x - transform.position.x); // da beirada para dentro do chão
+        if (paraDentro == 0f) paraDentro = visual.flipX ? 1f : -1f;
+        Vector2 destino = ultimoChao;
+        for (int i = 1; i <= quantosChaos; i++)
+        {
+            Vector2 marca = chaosRecentes[(proximoChao - i + chaosRecentes.Length) % chaosRecentes.Length];
+            if ((marca.x - ultimoChao.x) * paraDentro >= 1.5f)
+            {
+                destino = marca;
+                break;
+            }
+        }
+        Teletransportar(destino + Vector2.up * 0.3f);
+        Efeitos.Poeira(transform.parent, transform.position, 8, 2.5f);
+    }
+
+    // A bolha do escudo (aparece enquanto você tem um) e o pisca-pisca depois que ele quebra.
+    void AtualizarEscudo()
+    {
+        if (timerInvencivel > 0f) timerInvencivel -= Time.deltaTime;
+        GerenciadorDoJogo jogo = GerenciadorDoJogo.Instancia;
+        bool temEscudo = jogo != null && jogo.TemEscudo && !Morto;
+        bolha.enabled = temEscudo;
+        if (temEscudo)
+        {
+            float pulso = 1f + 0.05f * Mathf.Sin(Time.time * 4f);
+            bolha.transform.localScale = new Vector3(pulso, pulso, 1f);
+        }
+        Color cor = visual.color;
+        cor.a = Invencivel && !Morto && (int)(timerInvencivel * 12f) % 2 == 0 ? 0.25f : 1f; // pisca 6 vezes por segundo
+        visual.color = cor;
     }
 
     // Impulso para cima (pisar no inimigo, mola...). Se podeCortar, segurar o pulo deixa o salto mais alto.

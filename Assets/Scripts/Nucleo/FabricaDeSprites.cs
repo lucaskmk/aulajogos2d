@@ -26,6 +26,8 @@ public static class FabricaDeSprites
     static readonly Dictionary<char, Color32> paleta = new Dictionary<char, Color32>
     {
         { 'k', new Color32(20, 20, 28, 255) },    // contorno preto
+        { 'E', new Color32(64, 132, 226, 255) },  // azul do escudo (Loja)
+        { 'B', new Color32(34, 74, 150, 255) },   // azul escuro do escudo
         { 'w', new Color32(255, 255, 255, 255) }, // branco
         { 'r', new Color32(220, 45, 45, 255) },   // vermelho
         { 'o', new Color32(236, 150, 40, 255) },  // laranja
@@ -229,6 +231,33 @@ public static class FabricaDeSprites
         "...k...",
     };
 
+    // O escudo da Loja (te salva de uma morte): azul e dourado, dividido em 4.
+    static readonly string[] ArteEscudo =
+    {
+        ".kkkkkkkkk.",
+        "kyyyyyyyyyk",
+        "kyEEEyBBByk",
+        "kyEwEyBBByk",
+        "kyEEEyBBByk",
+        "kyyyyyyyyyk",
+        "kyBBByEEEyk",
+        ".kyBByEEyk.",
+        "..kyByEyk..",
+        "...kyyyk...",
+        "....kyk....",
+        ".....k.....",
+    };
+
+    // A bolha em volta do Grumete enquanto ele tem escudo: um anel azul claro, quase transparente por dentro.
+    static Color32 CorDaBolhaDoEscudo(int x, int y)
+    {
+        float dx = x - 10.5f, dy = y - 10.5f, d = Mathf.Sqrt(dx * dx + dy * dy);
+        if (d > 10.6f) return Transparente;
+        if (d > 9.4f) return new Color32(150, 210, 255, 210);                                // a borda
+        if (dx < -3f && dy > 3f && d > 5f && d < 8f) return new Color32(235, 248, 255, 150); // o brilho
+        return new Color32(120, 190, 255, 45);                                                 // o miolo
+    }
+
     // Casinha do porto (mapa do mundo).
     static readonly string[] ArteCasa =
     {
@@ -318,6 +347,8 @@ public static class FabricaDeSprites
             case "tentaculo": return DeArte(ArteTentaculo, Centro);
             case "marca_x": return DeArte(ArteMarcaX, Centro);
             case "coracao": return DeArte(ArteCoracao, Centro);
+            case "escudo": return DeArte(ArteEscudo, Centro);
+            case "bolha_escudo": return Procedural(22, 22, Centro, CorDaBolhaDoEscudo);
             case "caveira": return DeArte(ArteCaveira, Centro);
             case "porta": return Procedural(16, 32, Base, (x, y) => CorPorta(x, y, false));
             case "porta_aberta": return Procedural(16, 32, Base, (x, y) => CorPorta(x, y, true));
@@ -1126,6 +1157,7 @@ public static class FabricaDeSprites
         { '*', new[] { ".....", "#.#.#", ".###.", "#####", ".###.", "#.#.#", "....." } },
         { '>', new[] { "#...", "##..", "###.", "####", "###.", "##..", "#..." } },
         { '<', new[] { "...#", "..##", ".###", "####", ".###", "..##", "...#" } },
+        { 'º', new[] { ".#.", "#.#", ".#.", "...", "###", "...", "..." } }, // 1º, 2º... (painel de melhores tempos)
         { ' ', new[] { "..", "..", "..", "..", "..", "..", ".." } },
     };
 
