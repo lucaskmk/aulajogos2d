@@ -47,6 +47,21 @@ public static class Textos
     public static readonly Fala DepoisDaSecreta =
         Louro("Você achou a ilha secreta! Sério, como? Nem eu lembrava dela.");
 
+    // ------------------------------------------------------------------ tutorial da loja
+
+    // A cutscene do Louro que apresenta a Loja, logo depois da 2ª fase (uma vez só). Uma fala por passo,
+    // na ordem em que aparecem (veja GerenciadorDoJogo.PassoDoTutorial). A fonte pixel não tem "ª".
+    public const string LojaChegada = "Currupaco! Passou da segunda fase? Então você já pode conhecer a LOJA DO PORTO!";
+    public const string LojaMoedas = "Sabe as moedas que você pega nas fases? Elas ficam guardadas. Na Loja, elas viram ajudinhas!";
+    public const string LojaComoAbrir = "Para abrir a Loja, aperte L aqui no mapa (ou clique em LOJA, ali em cima). Vai, aperta!";
+    public const string LojaComprar = "Esse é o ESCUDO: ele te salva de UMA morte. Aperte ENTER e compre o seu!";
+    // {0} vira "3 moedas" (ou "1 moeda"): o que faltava para o escudo, que o Louro completa.
+    public const string LojaComprarComAjuda = "Hmm, faltam {0}... Toma, eu completo! Só desta vez, hein? Agora aperte ENTER e compre o ESCUDO.";
+    public const string LojaComprou = "Prontinho! Viu a bolha azul no Grumete? Se alguma coisa te pegar, o escudo quebra no seu lugar.";
+    public const string LojaJaTinha = "Opa, você já tem um escudo! Ele te salva de UMA morte. Guarda as moedas para o próximo.";
+    public const string LojaFechar = "A Loja fica sempre aqui: é só apertar L no mapa. Agora aperte ESC para voltar. Boa viagem!";
+    public static readonly Fala LojaTchau = Louro("E não vai gastar esse escudo à toa, hein? Currupaco!");
+
     // A fala do modo de teste (F9 no mapa).
     public static readonly Fala ModoDeTeste =
         Louro("Modo de teste! Liberei o mapa inteiro, até a Baleia. Não conta pra ninguém. :3");
@@ -171,6 +186,7 @@ public static class Textos
                 new LinhaDeAjuda("ETAPAS DO CHEFE", "cada etapa vencida vale como checkpoint da luta."),
                 new LinhaDeAjuda("BARRA NO TOPO", "o quanto falta até a bandeira (a mais longe, hehe)."),
                 new LinhaDeAjuda("SALVAR", "o jogo salva sozinho: dá para sair e Continuar depois."),
+                new LinhaDeAjuda("LOJA (L, NO MAPA)", "abre depois da fase 2. Troque moedas por um escudo: ele te salva de UMA morte."),
             },
         },
         new PaginaDeAjuda

@@ -40,6 +40,6 @@ public class MoedaAssassina : MonoBehaviour
             GerenciadorDoJogo.Som("risada");
         }
         jogador.Morrer();
-        Conquistas.Desbloquear("moeda_assassina");
+        if (jogador.Morto) Conquistas.Desbloquear("moeda_assassina"); // (o escudo pode ter salvado)
     }
 }

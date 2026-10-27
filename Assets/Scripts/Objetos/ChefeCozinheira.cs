@@ -1273,8 +1273,8 @@ public class ChefeCozinheira : Chefe
                 if (DistanciaAoSegmento(ponto, zonas[i].a, zonas[i].b) < zonas[i].raio + MeiaLarguraDoJogador - FolgaDoAcerto) encostou = true;
             }
         if (!encostou) return;
-        Conquistas.Desbloquear("cozinheira"); // "Picadinho"
         jogador.Morrer();
+        if (jogador.Morto) Conquistas.Desbloquear("cozinheira"); // "Picadinho" (o escudo pode ter salvado)
     }
 
     static float DistanciaAoSegmento(Vector2 p, Vector2 a, Vector2 b)
