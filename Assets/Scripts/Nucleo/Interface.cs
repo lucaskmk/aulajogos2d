@@ -28,6 +28,7 @@ public class Interface : MonoBehaviour
     // (montar "Mortes: " + número a cada quadro cria lixo na memória; veja FabricaDeSprites.TextoEmPixel)
     struct TextoComNumero { public int valor; public string texto; }
     TextoComNumero textoMortes, textoMoedas, textoTempo, textoDaFase, textoDoMapa, textoDoChefe, textoDaPagina;
+    TextoComNumero textoDosEscudos, textoDoSaldo, textoDoPreco, textoDaBolsa;
 
     // Mouse nos menus (veja Mouse(), lá embaixo).
     Vector2 mouseAntes;
@@ -60,10 +61,14 @@ public class Interface : MonoBehaviour
         TelaPixelada.DesenharNaTela();
         PrepararMouse();
         if (estado != EstadoDoJogo.Mapa) faseDoRecordeGuardado = -2; // ao voltar ao mapa, o recorde pode ter mudado
+        if (!jogo.NoTutorial) louroNaTela = false; // o próximo tutorial começa com o Louro chegando voando de novo
         bool submenu = jogo.SubmenuAberto != GerenciadorDoJogo.Submenu.Nenhum; // Opções ou Como Jogar abertos
 
-        DesenharFalaDoLouro();
-        DesenharDicaDasPortas();
+        if (!jogo.MostrandoPainel) // no painel de melhores tempos, a fala do Louro e a dica das portas atrapalham a leitura
+        {
+            DesenharFalaDoLouro();
+            DesenharDicaDasPortas();
+        }
         DesenharRetornoPelaMorte();
         bool lutando = jogo.Chefe != null && jogo.Chefe.EmCombate;
         if ((estado == EstadoDoJogo.Jogando || estado == EstadoDoJogo.Morreu || estado == EstadoDoJogo.FaseConcluida) && !lutando)
@@ -97,7 +102,8 @@ public class Interface : MonoBehaviour
 
         // botão direito do mouse = ESC (volta uma tela), em qualquer menu
         bool emMenu = estado == EstadoDoJogo.Titulo || estado == EstadoDoJogo.Pausado
-                      || estado == EstadoDoJogo.Conquistas || estado == EstadoDoJogo.Creditos;
+                      || estado == EstadoDoJogo.Conquistas || estado == EstadoDoJogo.Creditos
+                      || (estado == EstadoDoJogo.Mapa && jogo.LojaAberta);
         Event evento = Event.current;
         if (usarMouse && emMenu && evento.type == EventType.MouseDown && evento.button == 1)
         {
@@ -129,20 +135,31 @@ public class Interface : MonoBehaviour
         const float pixel = 2.5f;
         float margem = 20f * escala, linha2 = 46f * escala;
         string mortes = ComNumero(ref textoMortes, jogo.Mortes, n => "Mortes: " + n);
+        Rect areaDasMortes;
         if (jogo.Estado == EstadoDoJogo.Mapa)
         {
-            Texto(mortes, margem, 10f * escala, pixel, 0f, Branco);
+            areaDasMortes = Texto(mortes, margem, 10f * escala, pixel, 0f, Branco);
         }
         else
         {
             string nome = jogo.NaSecreta ? fase.nome
                 : ComNumero(ref textoDaFase, jogo.FaseAtual, f => $"Fase {f + 1}/{Fases.Todas.Length}: {Fases.Dados(f).nome}");
             Texto(nome, margem, 10f * escala, pixel, 0f, Branco, w * 0.3f);
-            Texto(mortes, margem, linha2, pixel, 0f, Branco);
+            areaDasMortes = Texto(mortes, margem, linha2, pixel, 0f, Branco);
         }
+        if (jogo.TemEscudo) DesenharEscudoNoHud(areaDasMortes);
         Texto(ComNumero(ref textoMoedas, jogo.Moedas, n => "Moedas: " + n), w - margem, 10f * escala, pixel, 1f, Amarelo);
         if (Opcoes.MostrarTempo) // o cronômetro pode ser escondido em Opções
             Texto(ComNumero(ref textoTempo, Mathf.FloorToInt(jogo.TempoTotal), t => FormatarTempo(t)), w - margem, linha2, pixel, 1f, Branco);
+    }
+
+    // O escudo comprado na Loja, ao lado das mortes (com "x2" se tiver mais de um).
+    void DesenharEscudoNoHud(Rect areaDasMortes)
+    {
+        float alto = areaDasMortes.height * 1.15f, largo = alto * 11f / 12f, x = areaDasMortes.xMax + 14f * escala;
+        GUI.DrawTexture(new Rect(x, areaDasMortes.center.y - alto / 2f, largo, alto), FabricaDeSprites.Pegar("escudo").texture);
+        if (jogo.Escudos > 1)
+            Texto(ComNumero(ref textoDosEscudos, jogo.Escudos, n => "x" + n), x + largo + 6f * escala, areaDasMortes.y, 2.5f, 0f, Branco);
     }
 
     void DesenharTitulo()
@@ -260,13 +277,24 @@ public class Interface : MonoBehaviour
         MapaDoMundo mapa = jogo.Mapa;
         if (mapa == null) return;
         float w = Screen.width, h = Screen.height;
+        if (jogo.LojaAberta)
+        {
+            DesenharLoja();
+            return;
+        }
         GUI.DrawTexture(new Rect(0, h - 135f * escala, w, 135f * escala), fundoEscuro);
 
+        if (jogo.NoTutorial)
+        {
+            DesenharTutorialNoMapa();
+            return;
+        }
         if (jogo.Fala.HasValue)
         {
             DesenharFalaNoMapa(jogo.Fala.Value);
             return;
         }
+        if (!mapa.Andando && jogo.LojaLiberada) BotaoDeTexto("LOJA (L)", w - 20f * escala, 84f * escala, 2.5f, 1f, GerenciadorDoJogo.BotaoLoja);
 
         int fase = mapa.Selecionado;
         bool secreta = fase == Fases.IndiceSecreto;
@@ -280,8 +308,142 @@ public class Interface : MonoBehaviour
             string situacao = secreta ? "a fase secreta!" : fase < jogo.FaseMaisLonge ? "já passou (dá para jogar de novo)" : "ainda não passou nesta partida";
             Texto(situacao, w / 2f, h - 78f * escala, 2f, 0.5f, secreta ? Rosa : fase < jogo.FaseMaisLonge ? Verde : Lilas, w * 0.9f);
         }
-        string comandos = mapa.Andando ? "..." : "SETAS: andar     ENTER: jogar     ESC: título";
+        string comandos = mapa.Andando ? "..."
+            : jogo.LojaLiberada ? "SETAS: andar     ENTER: jogar     L: loja     ESC: título"
+            : "SETAS: andar     ENTER: jogar     ESC: título"; // a Loja só aparece depois da 2ª fase
         Texto(comandos, w / 2f, h - 42f * escala, 2f, 0.5f, Branco, w * 0.9f);
+    }
+
+    // ------------------------------------------------------------------ loja
+
+    // A Loja do mapa: o saldo de moedas, o cartão do escudo (desenho e o que ele faz) e as opções.
+    void DesenharLoja()
+    {
+        float w = Screen.width, h = Screen.height;
+        GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
+        GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
+        Texto("LOJA DO PORTO", w / 2f, 46f * escala, 6f, 0.5f, CorDoLogo, w * 0.9f);
+        Texto("troque as moedas da campanha por uma ajudinha", w / 2f, 146f * escala, 2.2f, 0.5f, Lilas, w * 0.9f);
+
+        // o saldo: [moeda] 23 moedas
+        string saldo = ComNumero(ref textoDoSaldo, jogo.Moedas, n => n == 1 ? "1 moeda" : n + " moedas");
+        float icone = 30f * escala, ySaldo = 190f * escala;
+        Rect medida = MedirTexto(saldo, 0f, ySaldo, 3f, 0f);
+        float x = (w - (icone + 10f * escala + medida.width)) / 2f;
+        GUI.DrawTexture(new Rect(x, ySaldo + (medida.height - icone) / 2f, icone, icone), FabricaDeSprites.Pegar("moeda").texture);
+        Texto(saldo, x + icone + 10f * escala, ySaldo, 3f, 0f, Amarelo);
+
+        // o cartão do escudo (borda amarela quando ele está escolhido)
+        float largura = Mathf.Min(w * 0.8f, 640f * escala), x0 = (w - largura) / 2f, y0 = 250f * escala, folga = 16f * escala;
+        var cartao = new Rect(x0, y0, largura, 150f * escala);
+        GUI.DrawTexture(cartao, fundoEscuro);
+        bool escolhido = jogo.OpcaoDaLoja == (int)GerenciadorDoJogo.ItemDaLoja.Escudo;
+        DesenharBorda(cartao, escolhido ? (Color)Amarelo : (Color)new Color32(226, 176, 78, 255));
+        float altoDoDesenho = 112f * escala, largoDoDesenho = altoDoDesenho * 11f / 12f;
+        float pulinho = escolhido ? Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 5f * escala : 0f;
+        GUI.DrawTexture(new Rect(x0 + folga * 1.5f, y0 + (cartao.height - altoDoDesenho) / 2f - pulinho, largoDoDesenho, altoDoDesenho),
+            FabricaDeSprites.Pegar("escudo").texture);
+        float xTexto = x0 + folga * 3f + largoDoDesenho, larguraDoTexto = cartao.xMax - folga - xTexto;
+        Texto("ESCUDO", xTexto, y0 + 16f * escala, 3.5f, 0f, Branco, larguraDoTexto * 0.5f);
+        string bolsa = ComNumero(ref textoDaBolsa, jogo.Escudos, n => n == 0 ? "você não tem" : n == 1 ? "você tem 1" : $"você tem {n}");
+        Texto(bolsa, cartao.xMax - folga, y0 + 24f * escala, 1.8f, 1f, jogo.TemEscudo ? Verde : CorDoRodape, larguraDoTexto * 0.45f);
+        Texto("Te salva de UMA morte: você pula para trás", xTexto, y0 + 70f * escala, 1.8f, 0f, CorDoRodape, larguraDoTexto);
+        Texto("e fica piscando um instante. Depois ele some.", xTexto, y0 + 98f * escala, 1.8f, 0f, CorDoRodape, larguraDoTexto);
+
+        // as opções
+        float passo = 48f * escala, y = 428f * escala;
+        string comprar = ComNumero(ref textoDoPreco, jogo.precoDoEscudo, n => $"Comprar escudo ({n} moedas)");
+        OpcaoDeMenu(comprar, y, 3f, passo, (int)GerenciadorDoJogo.ItemDaLoja.Escudo, escolhido);
+        OpcaoDeMenu("Voltar ao mapa", y + passo, 3f, passo, (int)GerenciadorDoJogo.ItemDaLoja.Voltar, !escolhido);
+
+        if (jogo.NoTutorial) // a cutscene do Louro: a fala dele no lugar das mensagens e do rodapé
+        {
+            GerenciadorDoJogo.PassoDoTutorial passoDoLouro = jogo.Tutorial;
+            string dica = passoDoLouro == GerenciadorDoJogo.PassoDoTutorial.Comprar ? "ENTER: comprar"
+                : passoDoLouro == GerenciadorDoJogo.PassoDoTutorial.Fechar ? "ESC: voltar" : "ENTER >";
+            Rect caixa = DesenharCaixaDoTutorial(dica, 1f);
+            DesenharLouroVoando(PoleiroNaCaixa(caixa));
+            return;
+        }
+
+        // a resposta da compra (ou por que ainda não dá para comprar)
+        string mensagem = jogo.MensagemDaLoja;
+        float yMensagem = y + passo * 2f + 20f * escala;
+        if (mensagem != "")
+            Texto(mensagem, w / 2f, yMensagem, 2.5f, 0.5f, jogo.MensagemDaLojaBoa ? Verde : Rosa, w * 0.9f);
+        else if (!jogo.PodeComprarEscudo)
+            Texto(jogo.Escudos >= jogo.maximoDeEscudos ? "Use o seu escudo antes de comprar outro." : "Junte mais moedas nas fases!",
+                w / 2f, yMensagem, 2f, 0.5f, CorDoRodape, w * 0.9f);
+        Rodape("CIMA/BAIXO ou MOUSE: escolher    ENTER: comprar    ESC ou L: voltar");
+    }
+
+    // ------------------------------------------------------------------ tutorial da loja (a cutscene do Louro)
+
+    // No mapa: o Louro chega voando do canto de cima e pousa na caixa de fala; depois voa até o botão LOJA
+    // e fica apontando para ele (com uma seta piscando) até você apertar L.
+    void DesenharTutorialNoMapa()
+    {
+        float w = Screen.width;
+        GerenciadorDoJogo.PassoDoTutorial passo = jogo.Tutorial;
+        bool chegando = passo == GerenciadorDoJogo.PassoDoTutorial.Chegada;
+        // a caixa aparece suave quando ele termina de chegar
+        float alfa = chegando ? Mathf.Clamp01((jogo.TempoNoPasso - (GerenciadorDoJogo.DuracaoDaChegadaDoLouro - 0.35f)) / 0.35f) : 1f;
+        bool apontando = passo == GerenciadorDoJogo.PassoDoTutorial.AbrirLoja;
+        Rect caixa = DesenharCaixaDoTutorial(apontando ? "aperte L" : "ENTER >", alfa);
+        if (!apontando)
+        {
+            DesenharLouroVoando(PoleiroNaCaixa(caixa));
+            return;
+        }
+        Rect botao = MedirTexto("LOJA (L)", w - 20f * escala, 84f * escala, 2.5f, 1f);
+        BotaoDeTexto("LOJA (L)", w - 20f * escala, 84f * escala, 2.5f, 1f, GerenciadorDoJogo.BotaoLoja);
+        float vaiEVolta = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 6f)) * 8f * escala;
+        Texto(">", botao.x - 14f * escala - vaiEVolta, botao.y, 2.5f, 1f, Amarelo);
+        DesenharLouroVoando(new Vector2(botao.x - 72f * escala, botao.yMax + 10f * escala));
+    }
+
+    // A fala do Louro no tutorial: no mesmo lugar das falas do mapa (a faixa de baixo).
+    Rect DesenharCaixaDoTutorial(string dica, float alfa)
+    {
+        float w = Screen.width, h = Screen.height;
+        float largura = Mathf.Min(900f * escala, w - 40f * escala), x = (w - largura) / 2f, y = h - 112f * escala;
+        float altura = 100f * escala;
+        if (alfa > 0f) altura = CaixaDeFala(x, y, largura, "Louro", "louro", jogo.TextoDoTutorial, alfa, dica, altura);
+        return new Rect(x, y, largura, altura);
+    }
+
+    // Onde o Louro pousa: em cima da moldura da caixa de fala, perto do canto direito.
+    Vector2 PoleiroNaCaixa(Rect caixa) => new Vector2(caixa.xMax - 70f * escala, caixa.y + 4f * escala);
+
+    // O Louro do tutorial, grandão, voando de um poleiro para outro. "pes" = onde ficam os pés dele.
+    // Voando, ele "bate as asas" (estica e encolhe rápido); pousado, dá pulinhos. O desenho olha para a esquerda.
+    Vector2 posicaoDoLouro;
+    bool louroNaTela;
+
+    void DesenharLouroVoando(Vector2 pes)
+    {
+        if (!louroNaTela) // começa fora da tela, no canto de cima à direita
+        {
+            posicaoDoLouro = new Vector2(Screen.width + 80f * escala, -40f * escala);
+            louroNaTela = true;
+        }
+        Vector2 antes = posicaoDoLouro;
+        if (Event.current.type == EventType.Repaint) // (o OnGUI roda várias vezes por quadro: anda só uma)
+        {
+            float distancia = Vector2.Distance(posicaoDoLouro, pes);
+            float velocidade = Mathf.Max(500f * escala, distancia * 3.5f); // rápido longe, freando perto
+            posicaoDoLouro = Vector2.MoveTowards(posicaoDoLouro, pes, velocidade * Time.unscaledDeltaTime);
+        }
+        bool voando = Vector2.Distance(posicaoDoLouro, pes) > 1f;
+        Texture desenho = FabricaDeSprites.Pegar("louro").texture;
+        float alto = 76f * escala, largo = alto * desenho.width / desenho.height;
+        float asas = voando ? Mathf.Sin(Time.unscaledTime * 32f) : 0f;
+        float pulinho = voando ? 0f : Mathf.Round(Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 2f) * 3f * escala;
+        float lx = largo * (1f + 0.1f * asas), ly = alto * (1f - 0.14f * asas);
+        var area = new Rect(posicaoDoLouro.x - lx / 2f, posicaoDoLouro.y - ly - pulinho, lx, ly);
+        bool paraDireita = voando && pes.x > antes.x + 0.5f;
+        if (paraDireita) GUI.DrawTextureWithTexCoords(area, desenho, new Rect(1f, 0f, -1f, 1f)); // virado
+        else GUI.DrawTexture(area, desenho);
     }
 
     // Na mesma ordem de GerenciadorDoJogo.ItemDaPausa.
@@ -409,19 +571,148 @@ public class Interface : MonoBehaviour
             Texto("ESPAÇO: pular", w / 2f, h * 0.88f, 2f, 0.5f, Branco);
     }
 
+    // Fim da fase: o título, as 3 medalhas e, embaixo, o painel com os melhores tempos da fase.
+    // Fica na tela até o jogador apertar ENTER (veja GerenciadorDoJogo.PodeContinuar).
     void DesenharFaseConcluida()
     {
         float w = Screen.width, h = Screen.height;
-        if (jogo.EhUltimaFase && jogo.Sereia != null)
+        if (jogo.EhUltimaFase && jogo.Sereia != null && !jogo.MostrandoPainel)
         {
+            // última fase: primeiro a Sereia comemora (como antes); o painel vem depois
             DesenharFalaDaSereia();
             DesenharResultado(h * 0.66f);
             return;
         }
-        Texto("FASE CONCLUÍDA!", w / 2f, h * 0.3f, 7f, 0.5f, Verde, w * 0.9f);
+        GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro); // véu escuro: o painel fica fácil de ler
+        float y = 48f * escala;
+        Texto("FASE CONCLUÍDA!", w / 2f, y, 5f, 0.5f, Verde, w * 0.9f);
         string comentario = jogo.MortesNaFase == 0 ? "Sem morrer?! Impossível." : $"Só {jogo.MortesNaFase} morte(s) nessa fase.";
-        Texto(comentario, w / 2f, h * 0.3f + 110f * escala, 3f, 0.5f, Branco, w * 0.9f);
-        DesenharResultado(h * 0.3f + 175f * escala);
+        Texto(comentario, w / 2f, y + 82f * escala, 2.5f, 0.5f, Branco, w * 0.9f);
+        DesenharResultado(y + 128f * escala, avisoDePrimeiraVez: false); // o painel já diz que é a primeira vez
+        DesenharPainelDeTempos(y + 286f * escala);
+        if (jogo.PodeContinuar)
+            BotaoDeTexto("ENTER: continuar", w / 2f, h - 62f * escala, 2.2f, 0.5f, GerenciadorDoJogo.BotaoProxima);
+    }
+
+    // ------------------------------------------------------------------ painel de melhores tempos
+
+    // Textos do painel, montados uma vez por fase concluída (não a cada quadro).
+    int numeroDoPainel = -1;
+    readonly string[,] celulasDoPainel = new string[Progresso.TamanhoDoRanking, 4]; // posição, tempo, mortes, data
+    readonly bool[] linhaOcupada = new bool[Progresso.TamanhoDoRanking];
+    string vezesDoPainel, resumoDoPainel;
+    Color32 corDoResumo;
+    static readonly Color32 Apagado = new Color32(110, 110, 128, 255);
+    // Onde fica cada coluna (fração da largura do painel) e o alinhamento do texto nela.
+    static readonly float[] ColunasDoPainel = { 0.05f, 0.30f, 0.53f, 0.74f };
+    static readonly float[] AlinhamentoDasColunas = { 0f, 0.5f, 0.5f, 0.5f };
+    static readonly string[] TitulosDasColunas = { "pos.", "tempo", "mortes", "data" };
+
+    void PrepararPainelDeTempos(GerenciadorDoJogo.ResultadoDaFase r)
+    {
+        if (r.numero == numeroDoPainel) return;
+        numeroDoPainel = r.numero;
+        List<Progresso.TempoDoRanking> ranking = r.ranking ?? new List<Progresso.TempoDoRanking>();
+        for (int i = 0; i < Progresso.TamanhoDoRanking; i++)
+        {
+            linhaOcupada[i] = i < ranking.Count;
+            celulasDoPainel[i, 0] = (i + 1) + "º";
+            if (!linhaOcupada[i])
+            {
+                celulasDoPainel[i, 1] = "--:--,-";
+                celulasDoPainel[i, 2] = celulasDoPainel[i, 3] = "-";
+                continue;
+            }
+            Progresso.TempoDoRanking t = ranking[i];
+            celulasDoPainel[i, 1] = FormatarTempoFino(t.tempo);
+            celulasDoPainel[i, 2] = t.mortes < 0 ? "-" : t.mortes.ToString();
+            celulasDoPainel[i, 3] = string.IsNullOrEmpty(t.data) ? "-" : t.data;
+        }
+
+        bool primeira = (r.novidades & Progresso.Novidade.Primeira) != 0;
+        vezesDoPainel = r.vezesConcluida <= 1 ? "primeira vez aqui!" : $"concluída {r.vezesConcluida} vezes";
+        int ultimo = ranking.Count - 1;
+        if (primeira)
+        {
+            resumoDoPainel = "Primeiro tempo salvo! Volte para melhorar.";
+            corDoResumo = Lilas;
+        }
+        else if (r.posicaoNoRanking == 0)
+        {
+            // bateu o recorde: quanto mais rápido que o antigo 1º lugar (que agora é o 2º)
+            resumoDoPainel = ranking.Count > 1 ? $"NOVO MELHOR TEMPO! {FormatarDiferenca(ranking[1].tempo - r.tempo)} mais rápido" : "NOVO MELHOR TEMPO!";
+            corDoResumo = Verde;
+        }
+        else if (r.posicaoNoRanking > 0)
+        {
+            resumoDoPainel = $"{r.posicaoNoRanking + 1}º melhor tempo (+{FormatarDiferenca(r.tempo - ranking[0].tempo)} do recorde)";
+            corDoResumo = Amarelo;
+        }
+        else
+        {
+            resumoDoPainel = ultimo >= 0
+                ? $"Fora do top {Progresso.TamanhoDoRanking}: faltou {FormatarDiferenca(r.tempo - ranking[ultimo].tempo)}"
+                : $"Fora do top {Progresso.TamanhoDoRanking}";
+            corDoResumo = Rosa;
+        }
+    }
+
+    // O painel: "MELHORES TEMPOS", as colunas (posição, tempo, mortes, data) e os 5 tempos mais rápidos da fase.
+    // A linha do tempo que você acabou de fazer fica amarela, com a faixa lilás e um "< VOCÊ" na ponta.
+    void DesenharPainelDeTempos(float y)
+    {
+        GerenciadorDoJogo.ResultadoDaFase r = jogo.Resultado;
+        PrepararPainelDeTempos(r);
+        float w = Screen.width;
+        float largura = Mathf.Min(w * 0.7f, 620f * escala), x0 = (w - largura) / 2f;
+        float folga = 12f * escala, passo = 31f * escala;
+        var caixa = new Rect(x0, y, largura, 292f * escala);
+        GUI.DrawTexture(caixa, fundoEscuro);
+        GUI.DrawTexture(caixa, fundoEscuro);
+        DesenharBorda(caixa, new Color32(226, 176, 78, 255)); // o mesmo filete dourado das caixas de fala
+
+        float yTopo = y + folga;
+        Texto("MELHORES TEMPOS", x0 + folga, yTopo, 2.5f, 0f, Amarelo, largura * 0.6f);
+        Texto(vezesDoPainel, x0 + largura - folga, yTopo + 8f * escala, 1.6f, 1f, CorDoRodape, largura * 0.38f);
+
+        float yColunas = yTopo + 44f * escala;
+        for (int c = 0; c < 4; c++)
+            Texto(TitulosDasColunas[c], x0 + largura * ColunasDoPainel[c], yColunas, 1.6f, AlinhamentoDasColunas[c], CorDoRodape);
+
+        float yLinha = yColunas + 30f * escala;
+        for (int i = 0; i < Progresso.TamanhoDoRanking; i++)
+        {
+            bool voce = i == r.posicaoNoRanking;
+            if (voce) DesenharFaixa(new Rect(x0 + 4f * escala, yLinha - 2f * escala, largura - 8f * escala, passo - 2f * escala));
+            Color32 cor = !linhaOcupada[i] ? Apagado : voce ? Amarelo : i == 0 ? CorDoLogo : Branco;
+            for (int c = 0; c < 4; c++)
+                Texto(celulasDoPainel[i, c], x0 + largura * ColunasDoPainel[c], yLinha, 1.9f, AlinhamentoDasColunas[c], cor);
+            if (voce) Texto("< você", x0 + largura - folga, yLinha, 1.9f, 1f, Amarelo);
+            yLinha += passo;
+        }
+
+        Texto(resumoDoPainel, w / 2f, yLinha + 8f * escala, 2f, 0.5f, corDoResumo, largura - 2f * folga);
+    }
+
+    // Moldura fininha (2 px na tela de 720p) em volta de uma caixa.
+    void DesenharBorda(Rect caixa, Color cor)
+    {
+        float e = Mathf.Max(1f, 2f * escala);
+        Color corOriginal = GUI.color;
+        GUI.color = cor;
+        GUI.DrawTexture(new Rect(caixa.x, caixa.y, caixa.width, e), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(caixa.x, caixa.yMax - e, caixa.width, e), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(caixa.x, caixa.y, e, caixa.height), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(caixa.xMax - e, caixa.y, e, caixa.height), Texture2D.whiteTexture);
+        GUI.color = corOriginal;
+    }
+
+    // Diferença de tempo: "3,2s" (ou "01:05,3" se passar de um minuto).
+    static string FormatarDiferenca(float segundos)
+    {
+        if (segundos >= 60f) return FormatarTempoFino(segundos);
+        int decimos = Mathf.Max(0, Mathf.RoundToInt(segundos * 10f));
+        return $"{decimos / 10},{decimos % 10}s";
     }
 
     // ------------------------------------------------------------------ recordes e medalhas
@@ -429,18 +720,18 @@ public class Interface : MonoBehaviour
     // Textos da tela de resultado, montados uma vez só (não a cada quadro).
     readonly string[] textosDoResultado = new string[3];
     readonly string[] metasDoResultado = new string[3];
-    float tempoDoResultado = -1f;
+    int numeroDoResultado = -1;
     // O recorde de cada coluna (na mesma ordem de Medalhas.Ordem: tempo, mortes, moedas).
     static readonly Progresso.Novidade[] RecordeDaColuna = { Progresso.Novidade.Tempo, Progresso.Novidade.Mortes, Progresso.Novidade.Moedas };
 
     // Os números da fase em 3 colunas (tempo, mortes, moedas), cada uma com a sua medalha em cima.
     // Medalha nova pulsa; recorde batido ganha um "NOVO!" amarelo embaixo.
-    void DesenharResultado(float y)
+    void DesenharResultado(float y, bool avisoDePrimeiraVez = true)
     {
         GerenciadorDoJogo.ResultadoDaFase r = jogo.Resultado;
-        if (!Mathf.Approximately(r.tempo, tempoDoResultado))
+        if (r.numero != numeroDoResultado)
         {
-            tempoDoResultado = r.tempo;
+            numeroDoResultado = r.numero;
             textosDoResultado[0] = FormatarTempoFino(r.tempo);
             textosDoResultado[1] = r.mortes == 1 ? "1 morte" : r.mortes + " mortes";
             textosDoResultado[2] = $"{r.moedas}/{r.totalDeMoedas} moedas";
@@ -461,7 +752,7 @@ public class Interface : MonoBehaviour
             if ((r.novidades & RecordeDaColuna[i]) != 0 && Time.unscaledTime % 0.6f < 0.42f)
                 Texto("NOVO RECORDE!", x, y + icone + 64f * escala, 2f, 0.5f, Amarelo, w * 0.19f);
         }
-        if (primeira) Texto("recordes salvos para esta fase", w / 2f, y + icone + 96f * escala, 1.8f, 0.5f, Lilas, w * 0.9f);
+        if (primeira && avisoDePrimeiraVez) Texto("recordes salvos para esta fase", w / 2f, y + icone + 96f * escala, 1.8f, 0.5f, Lilas, w * 0.9f);
     }
 
     // Uma medalha: acesa (ganhou), apagada (falta) ou pulsando (acabou de ganhar).

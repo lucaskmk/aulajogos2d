@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // Tudo o que fica salvo entre uma partida e outra (PlayerPrefs):
@@ -5,7 +6,8 @@ using UnityEngine;
 //    até onde ele chegou, mortes, moedas e tempo);
 //  - a fase mais longe que você já chegou em qualquer partida (só informativo: o mapa usa a da partida);
 //  - o recorde (zerar com menos mortes);
-//  - os recordes de CADA FASE (tempo, mortes e moedas), que dão as medalhas (veja Medalhas).
+//  - os recordes de CADA FASE (tempo, mortes e moedas), que dão as medalhas (veja Medalhas);
+//  - os 5 MELHORES TEMPOS de cada fase (o painel do fim da fase: veja Interface.DesenharPainelDeTempos).
 public static class Progresso
 {
     const string ChaveRecorde = "cilada_recorde_mortes";
@@ -20,6 +22,8 @@ public static class Progresso
     const string ChaveMortesPorFase = "cilada_salvo_mortes_por_fase";
     const string ChaveSecreta = "cilada_secreta_liberada";
     const string ChaveQuantasFases = "cilada_salvo_quantas_fases";
+    const string ChaveEscudos = "cilada_salvo_escudos";
+    const string ChaveTutorialDaLoja = "cilada_tutorial_loja";
 
     // Uma partida salva quando o jogo tinha OUTRA lista de fases (ex.: a versão antiga, de 10 fases) não
     // dá para continuar: os números das fases mudaram de lugar. Nesse caso o "Continuar" some (Novo Jogo).
@@ -76,6 +80,25 @@ public static class Progresso
         moedas = PlayerPrefs.GetInt(ChaveMoedas, 0);
         tempo = PlayerPrefs.GetFloat(ChaveTempo, 0f);
         valida = PlayerPrefs.GetInt(ChaveValida, 0) == 1;
+    }
+
+    // Escudos comprados na Loja e ainda não usados. Fazem parte da partida salva (um Novo Jogo zera).
+    public static int EscudosSalvos => PlayerPrefs.GetInt(ChaveEscudos, 0);
+
+    public static void SalvarEscudos(int escudos)
+    {
+        PlayerPrefs.SetInt(ChaveEscudos, escudos);
+        PlayerPrefs.Save();
+    }
+
+    // O Louro já apresentou a Loja (a cutscene depois da 2ª fase)? Vale para sempre, como as conquistas:
+    // só acontece uma vez (um Novo Jogo NÃO mostra de novo). Para rever: menu "Cilada (teste)" no Editor.
+    public static bool TutorialDaLojaVisto => PlayerPrefs.GetInt(ChaveTutorialDaLoja, 0) == 1;
+
+    public static void MarcarTutorialDaLoja()
+    {
+        PlayerPrefs.SetInt(ChaveTutorialDaLoja, 1);
+        PlayerPrefs.Save();
     }
 
     public static void ApagarSecreta()
@@ -158,5 +181,85 @@ public static class Progresso
         PlayerPrefs.SetInt(chave + "existe", 1);
         PlayerPrefs.Save();
         return novidade;
+    }
+
+    // ------------------------------------------------------------------ melhores tempos de cada fase
+
+    // O painel do fim da fase mostra os 5 tempos mais rápidos que você já fez em cada fase, de qualquer partida
+    // (um Novo Jogo NÃO apaga, como os recordes). Usa o MESMO relógio do recorde: o TempoNaFase do
+    // GerenciadorDoJogo (desde que entrou pela fase no mapa, contando o tempo das mortes).
+    // Fica guardado como texto, do mais rápido para o mais lento: "41.234|2|27/10/26;55.1|5|26/10/26;..."
+    public const int TamanhoDoRanking = 5;
+
+    public struct TempoDoRanking
+    {
+        public float tempo;  // segundos
+        public int mortes;   // -1 = não sabemos (tempo que veio do recorde de antes de o painel existir)
+        public string data;  // "27/10/26" ("" = não sabemos)
+    }
+
+    // Número com PONTO, sempre: no Windows em português o float viraria "41,2" e quebraria a leitura.
+    static readonly System.Globalization.CultureInfo Invariante = System.Globalization.CultureInfo.InvariantCulture;
+
+    public static List<TempoDoRanking> MelhoresTempos(int fase)
+    {
+        var lista = new List<TempoDoRanking>();
+        string chave = ChaveDaFase(fase);
+        if (!PlayerPrefs.HasKey(chave + "ranking"))
+        {
+            // fase que você já tinha passado antes do painel existir: o recorde antigo vira o 1º lugar
+            RecordeDaFase recorde = RecordeDe(fase);
+            if (recorde.existe) lista.Add(new TempoDoRanking { tempo = recorde.tempo, mortes = -1, data = "" });
+            return lista;
+        }
+        foreach (string item in PlayerPrefs.GetString(chave + "ranking", "").Split(';'))
+        {
+            string[] partes = item.Split('|');
+            if (partes.Length < 3 || !float.TryParse(partes[0], System.Globalization.NumberStyles.Float, Invariante, out float tempo))
+                continue;
+            lista.Add(new TempoDoRanking
+            {
+                tempo = tempo,
+                mortes = int.TryParse(partes[1], out int mortes) ? mortes : -1,
+                data = partes[2],
+            });
+        }
+        lista.Sort((a, b) => a.tempo.CompareTo(b.tempo));
+        if (lista.Count > TamanhoDoRanking) lista.RemoveRange(TamanhoDoRanking, lista.Count - TamanhoDoRanking);
+        return lista;
+    }
+
+    // Quantas vezes você já passou dessa fase, somando todas as partidas.
+    public static int VezesConcluida(int fase) =>
+        PlayerPrefs.GetInt(ChaveDaFase(fase) + "vezes", RecordeDe(fase).existe ? 1 : 0);
+
+    // Coloca o tempo que você acabou de fazer no ranking da fase e conta mais uma vez concluída.
+    // Devolve a posição (0 = o mais rápido) ou -1 se não entrou entre os 5.
+    // Chamar ANTES de RegistrarFase (assim o recorde antigo ainda conta como o 1º lugar, se for o caso).
+    public static int RegistrarNoRanking(int fase, float tempo, int mortes)
+    {
+        string chave = ChaveDaFase(fase);
+        PlayerPrefs.SetInt(chave + "vezes", VezesConcluida(fase) + 1);
+        List<TempoDoRanking> lista = MelhoresTempos(fase);
+        int posicao = 0;
+        while (posicao < lista.Count && lista[posicao].tempo <= tempo) posicao++; // empate: quem fez antes fica na frente
+        if (posicao >= TamanhoDoRanking)
+        {
+            PlayerPrefs.Save();
+            return -1;
+        }
+        lista.Insert(posicao, new TempoDoRanking
+        {
+            tempo = tempo,
+            mortes = mortes,
+            data = System.DateTime.Now.ToString("dd/MM/yy", Invariante),
+        });
+        if (lista.Count > TamanhoDoRanking) lista.RemoveAt(lista.Count - 1);
+        var partes = new string[lista.Count];
+        for (int i = 0; i < lista.Count; i++)
+            partes[i] = lista[i].tempo.ToString("R", Invariante) + "|" + lista[i].mortes + "|" + lista[i].data;
+        PlayerPrefs.SetString(chave + "ranking", string.Join(";", partes));
+        PlayerPrefs.Save();
+        return posicao;
     }
 }
