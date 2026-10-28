@@ -61,7 +61,13 @@ public class GerenciadorDoJogo : MonoBehaviour
     [Tooltip("Quanto custa o escudo na Loja do mapa (em moedas da campanha).")]
     public int precoDoEscudo = 15;
     [Tooltip("Quantos escudos o jogador pode carregar de uma vez.")]
-    public int maximoDeEscudos = 1;
+    public int maximoDeEscudos = 3;
+    [Tooltip("Quanto custa o elixir de super salto (vale para a próxima fase em que você entrar).")]
+    public int precoDoElixir = 20;
+    [Tooltip("Quantos elixires o jogador pode carregar de uma vez.")]
+    public int maximoDeElixires = 3;
+    [Tooltip("Quanto custa o duplo salto (compra uma vez e vale para a partida inteira).")]
+    public int precoDoPuloDuplo = 45;
 
     // ------------------------------------------------------------------ estado (lido pela Interface)
 
@@ -69,10 +75,16 @@ public class GerenciadorDoJogo : MonoBehaviour
     public int FaseAtual { get; private set; }
     public int Mortes { get; private set; }
     public int MortesNaFase { get; private set; }
-    public int Moedas => moedas + moedasNaFase;
+    // (girando a roleta, o prêmio já está nas moedas, mas só APARECE quando ela para: veja GirarRoleta)
+    public int Moedas => moedas - (Girando ? premioPendente : 0) + moedasNaFase;
     // Escudos comprados na Loja e ainda não usados: cada um te salva de UMA morte (veja Jogador.Morrer).
     public int Escudos { get; private set; }
     public bool TemEscudo => Escudos > 0;
+    // Elixires de super salto guardados. Entrar numa fase pelo mapa gasta um, e ele vale a fase inteira (ElixirAtivo).
+    public int Elixires { get; private set; }
+    public bool ElixirAtivo { get; private set; }
+    // O duplo salto (comprado uma vez na Loja, vale para a partida inteira).
+    public bool TemPuloDuplo { get; private set; }
     public float TempoTotal { get; private set; }
     // Tempo nesta fase, desde que entrou pelo mapa (o tempo das mortes conta). É o tempo do recorde da fase.
     public float TempoNaFase { get; private set; }
@@ -165,8 +177,9 @@ public class GerenciadorDoJogo : MonoBehaviour
     public enum Submenu { Nenhum, Opcoes, ComoJogar }
     public Submenu SubmenuAberto { get; private set; }
 
-    // Loja: abre por cima do mapa (tecla L). Por enquanto só vende o escudo.
-    public enum ItemDaLoja { Escudo, Voltar }
+    // Loja: abre por cima do mapa (tecla L ou o botão no canto de baixo à direita). Vende o escudo, o elixir de
+    // super salto e o duplo salto, e tem a ROLETA no meio. A ordem aqui é a ordem em que CIMA/BAIXO andam.
+    public enum ItemDaLoja { Escudo, Elixir, PuloDuplo, Aposta, Cor, Girar, Voltar }
     public static readonly int TotalDaLoja = System.Enum.GetValues(typeof(ItemDaLoja)).Length;
     public bool LojaAberta { get; private set; }
     public int OpcaoDaLoja { get; private set; }
@@ -176,6 +189,25 @@ public class GerenciadorDoJogo : MonoBehaviour
     public bool PodeComprarEscudo => Escudos < maximoDeEscudos && moedas >= precoDoEscudo;
     string mensagemDaLoja = "";
     float timerMensagemDaLoja;
+
+    // A ROLETA da Loja: 15 casas (1 verde, 7 vermelhas e 7 pretas, alternando). Você escolhe quanto apostar e
+    // em que cor: vermelho e preto pagam 2x a aposta, verde paga 14x (a casa sempre leva uma vantagem).
+    public enum CorDaRoleta { Vermelho, Preto, Verde }
+    public const int CasasDaRoleta = 15;
+    public static readonly int[] ValoresDaAposta = { 1, 5, 10, 25, 50, 100 };
+    public static CorDaRoleta CorDaCasa(int casa) => casa == 0 ? CorDaRoleta.Verde : casa % 2 == 1 ? CorDaRoleta.Vermelho : CorDaRoleta.Preto;
+    public static int Multiplicador(CorDaRoleta cor) => cor == CorDaRoleta.Verde ? 14 : 2;
+    public int Aposta => ValoresDaAposta[indiceDaAposta];
+    public CorDaRoleta CorEscolhida { get; private set; }
+    public bool Girando { get; private set; }
+    public float AnguloDaRoleta { get; private set; }   // em graus, no sentido do relógio (a Interface só desenha)
+    public int UltimaCasa { get; private set; } = -1;   // onde ela parou da última vez (-1 = ainda não girou)
+    public int UltimoPremio { get; private set; }        // o que voltou na última jogada (0 = perdeu)
+    public float TempoDesdeOResultado { get; private set; } = 99f;
+    public readonly List<int> HistoricoDaRoleta = new List<int>(); // as últimas casas, da mais nova para a mais velha
+    const float DuracaoDoGiro = 4.2f;
+    int indiceDaAposta = 1, casaSorteada, premioPendente;
+    float anguloInicial, anguloFinal, tempoGirando;
 
     // A Loja só abre depois da 2ª fase (chegou na 3ª = passou da 2ª). Na primeira vez, o Louro aparece voando
     // no mapa, explica como abrir a Loja e faz você comprar o primeiro escudo (veja "tutorial da loja").
@@ -200,6 +232,8 @@ public class GerenciadorDoJogo : MonoBehaviour
     // Mouse: a Interface (que sabe ONDE cada opção foi desenhada) avisa quando o mouse passa por cima
     // de uma opção ou clica nela. Além do número da opção, o clique pode ser num destes "botões":
     public const int BotaoVoltar = -2, BotaoAnterior = -3, BotaoProxima = -4, BotaoLoja = -5;
+    // (na roleta da Loja: diminuir e aumentar a aposta, e escolher cada cor direto)
+    public const int BotaoApostaMenos = -6, BotaoApostaMais = -7, BotaoVermelho = -8, BotaoPreto = -9, BotaoVerde = -10;
     const int SemClique = -1;
 
     public MapaDoMundo Mapa { get; private set; }
@@ -413,6 +447,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         musica.TocarDaFase(FabricaDeMusica.MusicaDoMapa);
         LojaAberta = false;
         Tutorial = PassoDoTutorial.Nenhum;
+        ElixirAtivo = false; // saiu da fase: o elixir acabou
         Estado = EstadoDoJogo.Mapa;
     }
 
@@ -422,6 +457,9 @@ public class GerenciadorDoJogo : MonoBehaviour
         MortesNaFase = 0;
         moedas = 0;
         Escudos = 0;
+        Elixires = 0;
+        ElixirAtivo = false;
+        TemPuloDuplo = false;
         LojaAberta = false;
         Tutorial = PassoDoTutorial.Nenhum;
         TempoTotal = 0f;
@@ -454,6 +492,15 @@ public class GerenciadorDoJogo : MonoBehaviour
         Fala = null;
         CarregarFase(fase);
         Estado = EstadoDoJogo.Jogando;
+        // tem elixir guardado? Entrar na fase gasta um, e ele vale a fase inteira (até depois de morrer)
+        ElixirAtivo = false;
+        if (Elixires > 0)
+        {
+            Elixires--;
+            ElixirAtivo = true;
+            Avisar("ELIXIR DE SUPER SALTO! Você pula mais alto nesta fase.", 2.5f);
+            Som("mola", 0.6f);
+        }
         SalvarProgresso();
     }
 
@@ -497,7 +544,7 @@ public class GerenciadorDoJogo : MonoBehaviour
                 break;
 
             case EstadoDoJogo.Mapa:
-                AtualizarMapa(clique);
+                AtualizarMapa(clique, lado);
                 break;
 
             case EstadoDoJogo.Jogando:
@@ -585,7 +632,7 @@ public class GerenciadorDoJogo : MonoBehaviour
                 MostrarFala(secretaNova ? Textos.SecretaLiberada : Textos.Escolher(concluida, MortesNaFase));
             secretaNova = false;
             Progresso.Salvar(proxima, FaseMaisLonge, Mortes, moedas, TempoTotal, partidaValida);
-            Progresso.SalvarEscudos(Escudos);
+            SalvarItensDaLoja();
             Progresso.SalvarMortesPorFase(mortesPorFase);
             return;
         }
@@ -609,8 +656,10 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         Progresso.Salvar(FaseDoGrumete, FaseMaisLonge, Mortes, moedas, TempoTotal, partidaValida);
         Progresso.SalvarMortesPorFase(mortesPorFase);
-        Progresso.SalvarEscudos(Escudos);
+        SalvarItensDaLoja();
     }
+
+    void SalvarItensDaLoja() => Progresso.SalvarItensDaLoja(Escudos, Elixires, TemPuloDuplo);
 
     void MostrarFala(Textos.Fala fala)
     {
@@ -959,6 +1008,8 @@ public class GerenciadorDoJogo : MonoBehaviour
             Mortes = mortesSalvas;
             TempoTotal = tempoSalvo;
             Escudos = Mathf.Max(0, Progresso.EscudosSalvos);
+            Elixires = Mathf.Max(0, Progresso.ElixiresSalvos);
+            TemPuloDuplo = Progresso.PuloDuploSalvo;
         }
         else
         {
@@ -971,12 +1022,13 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     // No mapa: setas andam pelo caminho, Enter entra na fase, Esc volta ao título.
     // No ponto da fase do segredo, seta para baixo vai para a fase secreta (se ela já apareceu).
-    void AtualizarMapa(int clique)
+    void AtualizarMapa(int clique, int lado)
     {
         if (LojaAberta)
         {
+            AtualizarRoleta();
             if (NoTutorial) AtualizarTutorialNaLoja(clique);
-            else AtualizarLoja(clique);
+            else AtualizarLoja(clique, lado);
             return;
         }
         if (NoTutorial)
@@ -1065,10 +1117,12 @@ public class GerenciadorDoJogo : MonoBehaviour
         Som("bloco", 0.4f);
     }
 
-    // Na Loja: CIMA/BAIXO escolhem, ENTER compra, ESC (ou L de novo) fecha. O mouse também funciona.
-    void AtualizarLoja(int clique)
+    // Na Loja: CIMA/BAIXO escolhem, ENTER compra (ou gira a roleta), ESQUERDA/DIREITA mudam a aposta e a cor,
+    // ESC (ou L de novo) fecha. O mouse também funciona. Com a roleta girando, nada responde: espere ela parar.
+    void AtualizarLoja(int clique, int lado)
     {
         timerMensagemDaLoja -= Time.deltaTime;
+        if (Girando) return;
         if (Controles.Voltar() || Controles.Pausar() || Controles.AbrirLoja() || clique == BotaoVoltar)
         {
             FecharLoja();
@@ -1076,6 +1130,19 @@ public class GerenciadorDoJogo : MonoBehaviour
         }
         if (Controles.CimaApertou()) OpcaoDaLoja = Girar(OpcaoDaLoja, -1, TotalDaLoja);
         else if (Controles.BaixoApertou()) OpcaoDaLoja = Girar(OpcaoDaLoja, 1, TotalDaLoja);
+        int mudar = Controles.EsquerdaApertou() ? -1 : Controles.DireitaApertou() ? 1 : 0;
+        if (mudar != 0 && (ItemDaLoja)OpcaoDaLoja == ItemDaLoja.Aposta) MudarAposta(mudar);
+        else if (mudar != 0 && (ItemDaLoja)OpcaoDaLoja == ItemDaLoja.Cor) EscolherCor((CorDaRoleta)(((int)CorEscolhida + mudar + 3) % 3));
+
+        // os botões próprios da roleta (mouse)
+        switch (clique)
+        {
+            case BotaoApostaMenos: OpcaoDaLoja = (int)ItemDaLoja.Aposta; MudarAposta(-1); return;
+            case BotaoApostaMais: OpcaoDaLoja = (int)ItemDaLoja.Aposta; MudarAposta(1); return;
+            case BotaoVermelho: OpcaoDaLoja = (int)ItemDaLoja.Cor; EscolherCor(CorDaRoleta.Vermelho); return;
+            case BotaoPreto: OpcaoDaLoja = (int)ItemDaLoja.Cor; EscolherCor(CorDaRoleta.Preto); return;
+            case BotaoVerde: OpcaoDaLoja = (int)ItemDaLoja.Cor; EscolherCor(CorDaRoleta.Verde); return;
+        }
 
         bool escolheu = Controles.Confirmar();
         if (clique >= 0 && clique < TotalDaLoja)
@@ -1084,30 +1151,157 @@ public class GerenciadorDoJogo : MonoBehaviour
             escolheu = true;
         }
         if (!escolheu) return;
-        if ((ItemDaLoja)OpcaoDaLoja == ItemDaLoja.Voltar) FecharLoja();
-        else ComprarEscudo();
+        switch ((ItemDaLoja)OpcaoDaLoja)
+        {
+            case ItemDaLoja.Escudo: ComprarEscudo(); break;
+            case ItemDaLoja.Elixir: ComprarElixir(); break;
+            case ItemDaLoja.PuloDuplo: ComprarPuloDuplo(); break;
+            case ItemDaLoja.Aposta: MudarAposta(clique >= 0 && lado < 0 ? -1 : 1); break; // (clique: metade esquerda diminui)
+            case ItemDaLoja.Cor: EscolherCor((CorDaRoleta)(((int)CorEscolhida + 1) % 3)); break;
+            case ItemDaLoja.Girar: GirarRoleta(); break;
+            default: FecharLoja(); break;
+        }
+    }
+
+    // Paga "preco" (se der): devolve false e explica por que não deu.
+    bool Pagar(int preco)
+    {
+        if (moedas >= preco)
+        {
+            moedas -= preco;
+            return true;
+        }
+        int faltam = preco - moedas;
+        AvisarNaLoja(faltam == 1 ? "Falta 1 moeda." : $"Faltam {faltam} moedas.", false);
+        Som("bloco", 0.6f);
+        return false;
     }
 
     void ComprarEscudo()
     {
         if (Escudos >= maximoDeEscudos)
         {
-            AvisarNaLoja(maximoDeEscudos == 1 ? "Você já tem um escudo!" : "Você já tem o máximo de escudos!", false);
+            AvisarNaLoja(maximoDeEscudos == 1 ? "Você já tem um escudo!" : $"Você já tem {maximoDeEscudos} escudos (o máximo)!", false);
             Som("bloco", 0.6f);
             return;
         }
-        if (moedas < precoDoEscudo)
-        {
-            int faltam = precoDoEscudo - moedas;
-            AvisarNaLoja(faltam == 1 ? "Falta 1 moeda." : $"Faltam {faltam} moedas.", false);
-            Som("bloco", 0.6f);
-            return;
-        }
-        moedas -= precoDoEscudo;
+        if (!Pagar(precoDoEscudo)) return;
         Escudos++;
         AvisarNaLoja("Escudo comprado! Ele te salva de UMA morte.", true);
         Som("conquista", 0.6f);
         SalvarProgresso();
+    }
+
+    void ComprarElixir()
+    {
+        if (Elixires >= maximoDeElixires)
+        {
+            AvisarNaLoja($"Você já tem {maximoDeElixires} elixires (o máximo)!", false);
+            Som("bloco", 0.6f);
+            return;
+        }
+        if (!Pagar(precoDoElixir)) return;
+        Elixires++;
+        AvisarNaLoja("Elixir comprado! Ele vale a PRÓXIMA fase em que você entrar.", true);
+        Som("conquista", 0.6f);
+        SalvarProgresso();
+    }
+
+    void ComprarPuloDuplo()
+    {
+        if (TemPuloDuplo)
+        {
+            AvisarNaLoja("Você já tem o duplo salto!", false);
+            Som("bloco", 0.6f);
+            return;
+        }
+        if (!Pagar(precoDoPuloDuplo)) return;
+        TemPuloDuplo = true;
+        AvisarNaLoja("Duplo salto! Aperte PULAR de novo no ar.", true);
+        Som("vitoria", 0.5f);
+        SalvarProgresso();
+    }
+
+    // ------------------------------------------------------------------ a roleta
+
+    void MudarAposta(int direcao)
+    {
+        int antes = indiceDaAposta;
+        indiceDaAposta = Mathf.Clamp(indiceDaAposta + direcao, 0, ValoresDaAposta.Length - 1);
+        if (indiceDaAposta != antes) Som("moeda", 0.3f);
+    }
+
+    void EscolherCor(CorDaRoleta cor)
+    {
+        if (cor == CorEscolhida) return;
+        CorEscolhida = cor;
+        Som("bloco", 0.5f);
+    }
+
+    // GIRAR: o resultado é sorteado AGORA e o saldo final (sem a aposta, com o prêmio) já vai para o save:
+    // sair do jogo no meio do giro não devolve nem perde nada. Só a animação (e o saldo na tela) espera ela parar.
+    void GirarRoleta()
+    {
+        if (Girando) return;
+        if (moedas < Aposta)
+        {
+            AvisarNaLoja(moedas == 0 ? "Você não tem moedas para apostar." : "Aposta maior que as suas moedas!", false);
+            Som("bloco", 0.6f);
+            return;
+        }
+        casaSorteada = Random.Range(0, CasasDaRoleta);
+        premioPendente = CorDaCasa(casaSorteada) == CorEscolhida ? Aposta * Multiplicador(CorEscolhida) : 0;
+        moedas += premioPendente - Aposta;
+        Girando = true;
+        SalvarProgresso();
+
+        // a casa N fica no ângulo N * 24 (no sentido do relógio, a partir do ponteiro lá em cima). Para ela parar
+        // no ponteiro, a roleta gira até "-ângulo da casa" (com um tiquinho para um lado ou para o outro dentro
+        // da casa: parar sempre bem no meio parece de mentira), mais 5 voltas inteiras.
+        float tamanho = 360f / CasasDaRoleta;
+        float alvo = -(casaSorteada * tamanho) + Random.Range(-0.35f, 0.35f) * tamanho;
+        anguloInicial = AnguloDaRoleta;
+        float falta = Mathf.Repeat(alvo - anguloInicial, 360f);
+        anguloFinal = anguloInicial + falta + 5f * 360f;
+        tempoGirando = 0f;
+        timerMensagemDaLoja = 0f;
+        Som("serra", 0.5f);
+    }
+
+    // Anda a animação da roleta (rápida no começo, freando até parar) e paga quando ela para.
+    void AtualizarRoleta()
+    {
+        TempoDesdeOResultado += Time.deltaTime;
+        if (!Girando) return;
+        float tamanho = 360f / CasasDaRoleta;
+        int casaAntes = Mathf.FloorToInt((AnguloDaRoleta + tamanho / 2f) / tamanho);
+        tempoGirando += Time.deltaTime;
+        float p = Mathf.Clamp01(tempoGirando / DuracaoDoGiro);
+        float freando = 1f - Mathf.Pow(1f - p, 3f);
+        AnguloDaRoleta = Mathf.Lerp(anguloInicial, anguloFinal, freando);
+        if (Mathf.FloorToInt((AnguloDaRoleta + tamanho / 2f) / tamanho) != casaAntes) Som("bloco", 0.25f); // o "tec" de cada casa
+        if (p < 1f) return;
+
+        AnguloDaRoleta = Mathf.Repeat(anguloFinal, 360f);
+        Girando = false;
+        UltimaCasa = casaSorteada;
+        UltimoPremio = premioPendente;
+        premioPendente = 0;
+        TempoDesdeOResultado = 0f;
+        HistoricoDaRoleta.Insert(0, casaSorteada);
+        if (HistoricoDaRoleta.Count > 10) HistoricoDaRoleta.RemoveAt(HistoricoDaRoleta.Count - 1);
+        string onde = CorDaCasa(UltimaCasa) == CorDaRoleta.Verde ? "no VERDE" : CorDaCasa(UltimaCasa) == CorDaRoleta.Vermelho ? "no vermelho" : "no preto";
+        if (UltimoPremio > 0)
+        {
+            AvisarNaLoja($"Caiu {onde}! Você ganhou {UltimoPremio} moedas!", true);
+            Som("conquista", 0.8f);
+            Som("moeda", 0.8f);
+        }
+        else
+        {
+            AvisarNaLoja($"Caiu {onde}... a casa venceu. Currupaco!", false);
+            Som("pancada", 0.5f);
+        }
     }
 
     void AvisarNaLoja(string texto, bool boa)
@@ -1240,7 +1434,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         if (Estado != EstadoDoJogo.Jogando || Escudos <= 0) return false;
         Escudos--;
-        Progresso.SalvarEscudos(Escudos); // gastou, gastou: sair do jogo agora não devolve o escudo
+        SalvarItensDaLoja(); // gastou, gastou: sair do jogo agora não devolve o escudo
         Avisar("O ESCUDO TE SALVOU!", 2f);
         Som("pancada", 0.7f);
         Som("moeda", 0.5f);

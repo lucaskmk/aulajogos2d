@@ -53,7 +53,7 @@ public static class Textos
     // na ordem em que aparecem (veja GerenciadorDoJogo.PassoDoTutorial). A fonte pixel não tem "ª".
     public const string LojaChegada = "Currupaco! Passou da segunda fase? Então você já pode conhecer a LOJA DO PORTO!";
     public const string LojaMoedas = "Sabe as moedas que você pega nas fases? Elas ficam guardadas. Na Loja, elas viram ajudinhas!";
-    public const string LojaComoAbrir = "Para abrir a Loja, aperte L aqui no mapa (ou clique em LOJA, ali em cima). Vai, aperta!";
+    public const string LojaComoAbrir = "Para abrir a Loja, aperte L aqui no mapa (ou clique em LOJA, ali no canto de baixo). Vai, aperta!";
     public const string LojaComprar = "Esse é o ESCUDO: ele te salva de UMA morte. Aperte ENTER e compre o seu!";
     // {0} vira "3 moedas" (ou "1 moeda"): o que faltava para o escudo, que o Louro completa.
     public const string LojaComprarComAjuda = "Hmm, faltam {0}... Toma, eu completo! Só desta vez, hein? Agora aperte ENTER e compre o ESCUDO.";
@@ -186,7 +186,7 @@ public static class Textos
                 new LinhaDeAjuda("ETAPAS DO CHEFE", "cada etapa vencida vale como checkpoint da luta."),
                 new LinhaDeAjuda("BARRA NO TOPO", "o quanto falta até a bandeira (a mais longe, hehe)."),
                 new LinhaDeAjuda("SALVAR", "o jogo salva sozinho: dá para sair e Continuar depois."),
-                new LinhaDeAjuda("LOJA (L, NO MAPA)", "abre depois da fase 2. Troque moedas por um escudo: ele te salva de UMA morte."),
+                new LinhaDeAjuda("LOJA (L, NO MAPA)", "depois da fase 2: escudos, elixir de super salto, duplo salto e a roleta."),
             },
         },
         new PaginaDeAjuda

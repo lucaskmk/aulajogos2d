@@ -21,6 +21,12 @@ public class Jogador : MonoBehaviour
     public float tempoCoyote = 0.1f;
     public float tempoBufferPulo = 0.12f;
 
+    [Header("Elixir e duplo salto (Loja)")]
+    [Tooltip("Com o elixir de super salto, o pulo fica esta vez mais forte (1,22 = uns 4,2 blocos de altura, em vez de 2,85).")]
+    public float forcaDoElixir = 1.22f;
+    [Tooltip("O segundo pulo (no ar) tem esta parte da força do pulo normal.")]
+    public float forcaDoPuloDuplo = 0.9f;
+
     [Header("Escudo (Loja)")]
     [Tooltip("Depois que o escudo quebra, por quantos segundos nada te mata (fica piscando). Cair num buraco ainda mata.")]
     public float tempoInvencivel = 1.5f;
@@ -50,6 +56,9 @@ public class Jogador : MonoBehaviour
     float timerBufferPulo;
     float timerCoyote;
     bool pulando;
+    bool apertouPulo;     // apertou PULAR neste quadro (o duplo salto só sai no aperto, nunca pelo "buffer")
+    bool usouPuloDuplo;   // já deu o segundo pulo neste voo (volta quando pisa no chão)
+    float timerBrilho;    // as faíscas douradas do elixir
     bool congelado;
     float timerAnimacao;
 
@@ -101,7 +110,12 @@ public class Jogador : MonoBehaviour
         AtualizarInversao();
         entradaX = Controles.Horizontal() * (controlesInvertidos ? -1f : 1f);
         segurandoPulo = Controles.PuloSegurando();
-        if (Controles.PuloApertou()) timerBufferPulo = tempoBufferPulo;
+        if (Controles.PuloApertou())
+        {
+            timerBufferPulo = tempoBufferPulo;
+            apertouPulo = true;
+        }
+        BrilharComOElixir();
 
         Animar();
     }
@@ -113,7 +127,11 @@ public class Jogador : MonoBehaviour
 
         bool estavaNoChao = NoChao;
         NoChao = ChecarChao();
-        if (NoChao) GuardarChao(dt);
+        if (NoChao)
+        {
+            GuardarChao(dt);
+            usouPuloDuplo = false;
+        }
         if (!NoChao) quedaMaisRapida = Mathf.Min(quedaMaisRapida, Corpo.linearVelocity.y);
         else if (!estavaNoChao) Aterrissou();
         timerCoyote = NoChao ? tempoCoyote : timerCoyote - dt;
@@ -124,9 +142,13 @@ public class Jogador : MonoBehaviour
         empurrao = 0f;
         v.x = Mathf.MoveTowards(v.x, entradaX * velocidade + vento, aceleracao * dt);
 
+        GerenciadorDoJogo jogo = GerenciadorDoJogo.Instancia;
+        bool comElixir = jogo != null && jogo.ElixirAtivo;
+        float forca = forcaDoPulo * (comElixir ? forcaDoElixir : 1f);
         if (timerBufferPulo > 0f && timerCoyote > 0f)
         {
-            v.y = forcaDoPulo;
+            v.y = forca;
+            if (comElixir) Faiscas(8);
             timerBufferPulo = 0f;
             timerCoyote = 0f;
             pulando = true;
@@ -134,6 +156,22 @@ public class Jogador : MonoBehaviour
             escala = new Vector2(0.75f, 1.25f); // estica no pulo
             Efeitos.Poeira(transform.parent, transform.position + Vector3.down * 0.45f, 4, 2f);
         }
+
+        // DUPLO SALTO: apertou PULAR no ar (fora do coyote) e ainda não usou o segundo pulo neste voo.
+        // Quase chegando no chão, o aperto fica guardado para o pulo normal (senão gastaria o do ar à toa).
+        else if (apertouPulo && !NoChao && timerCoyote <= 0f && !usouPuloDuplo && jogo != null && jogo.TemPuloDuplo && !QuaseNoChao(v.y))
+        {
+            v.y = forca * forcaDoPuloDuplo;
+            usouPuloDuplo = true;
+            pulando = true; // soltar o botão também corta o segundo pulo
+            timerBufferPulo = 0f;
+            GerenciadorDoJogo.Som("pulo");
+            GerenciadorDoJogo.Som("mola", 0.25f);
+            escala = new Vector2(0.7f, 1.3f);
+            AnelDoPuloDuplo();
+            if (comElixir) Faiscas(6);
+        }
+        apertouPulo = false;
 
         // Soltou o botão no meio da subida? Corta o pulo.
         if (pulando && !segurandoPulo && v.y > 0f)
@@ -344,9 +382,55 @@ public class Jogador : MonoBehaviour
         visual.color = cor;
     }
 
+    // Caindo e com chão logo embaixo (a menos de uns 0,6 bloco)? Aí um aperto de PULAR é o pulo normal, que vem já já.
+    bool QuaseNoChao(float velocidadeY)
+    {
+        if (velocidadeY > 0f) return false;
+        Vector2 pes = (Vector2)transform.position + new Vector2(0f, -0.8f);
+        int quantidade = Physics2D.OverlapBox(pes, new Vector2(0.6f, 0.6f), 0f, filtroSolido, encostados);
+        for (int i = 0; i < quantidade; i++)
+            if (encostados[i] != colisor && !Inimigo.EhBicho(encostados[i])) return true;
+        return false;
+    }
+
+    // O "puf" do duplo salto: um anel de ar branco saindo dos pés para os lados.
+    void AnelDoPuloDuplo()
+    {
+        Vector3 pes = transform.position + Vector3.down * 0.45f;
+        for (int i = 0; i < 10; i++)
+        {
+            float angulo = Mathf.PI * (0.05f + 0.9f * i / 9f) + Mathf.PI; // um leque virado para baixo
+            var direcao = new Vector2(Mathf.Cos(angulo), Mathf.Sin(angulo) * 0.45f);
+            Particula.Criar(transform.parent, pes, direcao * 4.5f, 0.35f, 0.55f, new Color(1f, 1f, 1f, 0.9f));
+        }
+    }
+
+    // O elixir de super salto: faíscas douradas saindo do Grumete (no pulo, um punhado; parado, de vez em quando).
+    void Faiscas(int quantas)
+    {
+        for (int i = 0; i < quantas; i++)
+        {
+            Vector2 velocidadeDaFaisca = new Vector2(Random.Range(-2.5f, 2.5f), Random.Range(-1f, 2.5f));
+            Vector3 lugar = transform.position + new Vector3(Random.Range(-0.3f, 0.3f), Random.Range(-0.45f, 0.1f), 0f);
+            Particula.Criar(transform.parent, lugar, velocidadeDaFaisca, Random.Range(0.35f, 0.6f), 0.45f,
+                Random.value < 0.5f ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 0.97f, 0.7f));
+        }
+    }
+
+    void BrilharComOElixir()
+    {
+        GerenciadorDoJogo jogo = GerenciadorDoJogo.Instancia;
+        if (jogo == null || !jogo.ElixirAtivo) return;
+        timerBrilho -= Time.deltaTime;
+        if (timerBrilho > 0f) return;
+        timerBrilho = NoChao ? 0.3f : 0.08f; // no ar, um rastro mais forte
+        Faiscas(1);
+    }
+
     // Impulso para cima (pisar no inimigo, mola...). Se podeCortar, segurar o pulo deixa o salto mais alto.
     public void Quicar(float forca, bool podeCortar)
     {
+        usouPuloDuplo = false; // quicou: o duplo salto volta
         Corpo.linearVelocity = new Vector2(Corpo.linearVelocity.x, forca);
         pulando = podeCortar;
         timerCoyote = 0f;
@@ -381,6 +465,7 @@ public class Jogador : MonoBehaviour
         Corpo.position = posicao;
         Corpo.linearVelocity = Vector2.zero;
         pulando = false;
+        usouPuloDuplo = false;
     }
 
     public void Congelar()
