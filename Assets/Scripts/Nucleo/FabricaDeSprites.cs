@@ -334,6 +334,21 @@ public static class FabricaDeSprites
     public static readonly Vector2 Centro = new Vector2(0.5f, 0.5f);
     public static readonly Vector2 Base = new Vector2(0.5f, 0f);
 
+    // As ilustrações prontas (geradas com IA) ficam em Assets/Resources/Arte. Diferente do resto,
+    // elas são imagens importadas: Imagem("retrato_louro") devolve o sprite (base no meio de baixo),
+    // ou null se o arquivo não existir (aí quem chamou usa o desenho por código de sempre).
+    public static Sprite Imagem(string nome)
+    {
+        string chave = "arte:" + nome;
+        if (cache.TryGetValue(chave, out Sprite s) && s != null) return s;
+        var textura = Resources.Load<Texture2D>("Arte/" + nome);
+        if (textura == null) return null;
+        s = Sprite.Create(textura, new Rect(0, 0, textura.width, textura.height), Base, textura.height / 16f, 0, SpriteMeshType.FullRect);
+        s.name = chave;
+        cache[chave] = s;
+        return s;
+    }
+
     static Sprite Criar(string nome)
     {
         if (registrados.TryGetValue(nome, out Func<Sprite> criarRegistrado)) return criarRegistrado();

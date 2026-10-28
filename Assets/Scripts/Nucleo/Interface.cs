@@ -22,6 +22,7 @@ public class Interface : MonoBehaviour
 
     GerenciadorDoJogo jogo;
     Texture2D fundoEscuro;
+    Texture2D fundoDoTitulo; // a ilustração da tela de título (Assets/Resources/Arte/titulo_fundo.png)
     float escala;
 
     // Textos do HUD guardados: só são montados de novo quando o número muda.
@@ -185,7 +186,17 @@ public class Interface : MonoBehaviour
     void DesenharTitulo()
     {
         float w = Screen.width, h = Screen.height;
-        GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
+        // a ilustração cobre a tela inteira (corta as sobras); por cima, um véu escuro mais leve para o menu ler bem
+        if (fundoDoTitulo == null) fundoDoTitulo = Resources.Load<Texture2D>("Arte/titulo_fundo");
+        if (fundoDoTitulo != null)
+        {
+            GUI.DrawTexture(new Rect(0, 0, w, h), fundoDoTitulo, ScaleMode.ScaleAndCrop);
+            Color antes = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, 0.55f);
+            GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
+            GUI.color = antes;
+        }
+        else GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         // o logo: letras douradas com a borda de madeira escura (o nome fica em Textos.NomeDoJogo)
         DesenharTextoEmPixel(FabricaDeSprites.TextoEmPixel(Textos.NomeDoJogo, CorDoLogo, CorDaBordaDoLogo, CorDaBordaDoLogo, comAcentos: true), w / 2f, h * 0.07f, 130f * escala);
         Texto("toda morte é só o começo da viagem (de novo, e de novo...)", w / 2f, h * 0.07f + 140f * escala, 2.5f, 0.5f, Branco, w * 0.9f);
@@ -1177,12 +1188,22 @@ public class Interface : MonoBehaviour
         // o retrato (o desenho de quem fala, numa moldura pequena), pulando de leve
         var quadro = new Rect(x + m, y + (altura - lado) / 2f, lado, lado);
         Moldura(quadro, CorDoFundoDoRetrato);
-        Texture desenho = FabricaDeSprites.Pegar(retrato).texture;
-        float escalaDoDesenho = Mathf.Floor((lado - 12f * escala) / Mathf.Max(desenho.width, desenho.height));
-        if (escalaDoDesenho < 1f) escalaDoDesenho = (lado - 12f * escala) / Mathf.Max(desenho.width, desenho.height);
-        float dw = desenho.width * escalaDoDesenho, dh = desenho.height * escalaDoDesenho;
-        float pulo = Mathf.Round(Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f)) * 2f) * escalaDoDesenho * 0.5f;
-        GUI.DrawTexture(new Rect(quadro.center.x - dw / 2f, quadro.center.y - dh / 2f - pulo, dw, dh), desenho);
+        // tem retrato pintado (Assets/Resources/Arte/retrato_<nome>)? Ele preenche o quadro, sem o pulinho
+        Sprite pintado = FabricaDeSprites.Imagem("retrato_" + retrato);
+        if (pintado != null)
+        {
+            float borda = 4f * escala;
+            GUI.DrawTexture(new Rect(quadro.x + borda, quadro.y + borda, lado - 2f * borda, lado - 2f * borda), pintado.texture);
+        }
+        Texture desenho = pintado != null ? null : FabricaDeSprites.Pegar(retrato).texture;
+        if (desenho != null)
+        {
+            float escalaDoDesenho = Mathf.Floor((lado - 12f * escala) / Mathf.Max(desenho.width, desenho.height));
+            if (escalaDoDesenho < 1f) escalaDoDesenho = (lado - 12f * escala) / Mathf.Max(desenho.width, desenho.height);
+            float dw = desenho.width * escalaDoDesenho, dh = desenho.height * escalaDoDesenho;
+            float pulo = Mathf.Round(Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f)) * 2f) * escalaDoDesenho * 0.5f;
+            GUI.DrawTexture(new Rect(quadro.center.x - dw / 2f, quadro.center.y - dh / 2f - pulo, dw, dh), desenho);
+        }
 
         // a etiqueta com o nome, pendurada em cima da caixa
         float xDoTexto = quadro.xMax + m;
