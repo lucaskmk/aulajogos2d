@@ -101,6 +101,8 @@ public class Paralaxe : MonoBehaviour
 
         Color claro = noite ? new Color(0.45f, 0.45f, 0.75f) : Color.white;
 
+        bool ceuPintado = clima == Clima.Dia && FabricaDeSprites.Imagem("camada_ceu") != null;
+
         // céu em degradê: mais forte em cima, mais claro perto do horizonte
         Color topo = noite ? Color.Lerp(corDoFundo, Color.black, 0.45f) : Color.Lerp(corDoFundo, Escuro, 0.12f);
         Color horizonte = Color.Lerp(corDoFundo, claro, noite ? 0.25f : 0.45f);
@@ -113,9 +115,12 @@ public class Paralaxe : MonoBehaviour
             meio.a = 1f;
             topo = Color.Lerp(meio, zenite, noite ? 0.6f : 0.55f);
             horizonte = Color.Lerp(corDoFundo, noite ? new Color(0.45f, 0.42f, 0.7f) : new Color(1f, 0.8f, 0.58f), noite ? 0.3f : 0.55f);
-            Faixa(raiz, "Ceu", FabricaDeSprites.Degrade(topo, meio, horizonte), 1f, -30, Color.white, -1f, 17f);
+            if (!ceuPintado) Faixa(raiz, "Ceu", FabricaDeSprites.Degrade(topo, meio, horizonte), 1f, -30, Color.white, -1f, 17f);
         }
-        else Faixa(raiz, "Ceu", FabricaDeSprites.Degrade(topo, horizonte), 1f, -30, Color.white, -1f, 17f);
+        else if (!ceuPintado) Faixa(raiz, "Ceu", FabricaDeSprites.Degrade(topo, horizonte), 1f, -30, Color.white, -1f, 17f);
+
+        // de dia, no lugar do degradê, o céu pintado com as nuvens (anda bem devagar: está quase no infinito)
+        if (ceuPintado) Camada(raiz, "fundo_ceu", 0.97f, -30, Color.white, larguraFase, -1f);
 
         SolOuLua(raiz, noite, hd, clima);
 
@@ -157,6 +162,8 @@ public class Paralaxe : MonoBehaviour
         // neblina baixinha, entre o fundo e a fase
         Faixa(raiz, "Neblina", FabricaDeSprites.Pegar("neblina"), 1f, -19, new Color(claro.r, claro.g, claro.b, hd ? 0.45f : 0.35f), -0.5f, 3.5f);
 
+        Gaivotas.Criar(raiz, clima); // bandos de gaivotas em três distâncias (só de dia)
+
         if (!hd)
         {
             // folhagem bem perto da câmera, escura, só na beirada de baixo da tela (moitas redondas:
@@ -185,8 +192,37 @@ public class Paralaxe : MonoBehaviour
     // os galeões passando, encolhidos e com a base em "baseY". Quanto mais longe, mais a cor puxa para a do céu.
     public static void CriarHorizonte(Transform raiz, int largura, float baseY, float escala, Color corDoCeu, Color corDoMar)
     {
-        Camada(raiz, "fundo_ilhas", 0.7f, -24, Color.Lerp(corDoCeu, Escuro, 0.18f), largura, baseY, escala);
-        Camada(raiz, "fundo_galeao", 0.45f, -22, Color.Lerp(Color.Lerp(corDoMar, corDoCeu, 0.4f), Escuro, 0.2f), largura, baseY - 0.6f, escala);
+        // (no mapa ficam os desenhos por código: são silhuetas pintadas com a cor do céu)
+        Camada(raiz, "fundo_ilhas", 0.7f, -24, Color.Lerp(corDoCeu, Escuro, 0.18f), largura, baseY, escala, false);
+        Camada(raiz, "fundo_galeao", 0.45f, -22, Color.Lerp(Color.Lerp(corDoMar, corDoCeu, 0.4f), Escuro, 0.2f), largura, baseY - 0.6f, escala, false);
+    }
+
+    // As camadas pintadas (geradas com IA, em Assets/Resources/Arte/camada_*), cada uma com a altura
+    // que ela ocupa na tela, em blocos. Se o arquivo existir, ele entra no lugar do desenho por código
+    // (a versão "_hd" também). A fase tem uns 17 blocos de altura.
+    static float AlturaPintada(string sprite)
+    {
+        switch (sprite.Replace("_hd", ""))
+        {
+            case "fundo_ceu": return 18f;
+            case "fundo_ilhas": return 6f;
+            case "fundo_galeao": return 8f;
+            case "fundo_palmeiras": return 10f;
+            case "fundo_mato": return 5f;
+            default: return 0f;
+        }
+    }
+
+    // A pintura já tem as cores dela: a cor da camada só dá o "clima". De dia, quase branco (um toque da cor
+    // da fase); de noite, escurece mantendo o tom. Assim as camadas continuam mudando de ilha para ilha.
+    static Color CorDaPintura(Color cor)
+    {
+        float brilho = Mathf.Max(cor.r, Mathf.Max(cor.g, cor.b), 0.01f);
+        Color tom = new Color(cor.r / brilho, cor.g / brilho, cor.b / brilho, cor.a);
+        Color resultado = ultimaNoite ? Color.Lerp(new Color(0.42f, 0.45f, 0.62f), tom * 0.5f, 0.35f)
+                                      : Color.Lerp(Color.white, tom, 0.22f);
+        resultado.a = cor.a;
+        return resultado;
     }
 
     static Paralaxe NovaCamada(Transform raiz, string nome, float fator)
@@ -198,13 +234,23 @@ public class Paralaxe : MonoBehaviour
         return camada;
     }
 
-    static void Camada(Transform raiz, string sprite, float fator, int ordem, Color cor, int larguraFase, float baseY = -1f, float escala = 1f)
+    static void Camada(Transform raiz, string sprite, float fator, int ordem, Color cor, int larguraFase, float baseY = -1f, float escala = 1f, bool usarPintura = true)
     {
         Transform camada = NovaCamada(raiz, sprite, fator).transform;
 
+        // Tem a versão pintada desta camada? Ela entra no lugar, esticada até a altura certa.
+        Sprite desenho = null;
+        float altura = usarPintura ? AlturaPintada(sprite) : 0f;
+        if (altura > 0f) desenho = FabricaDeSprites.Imagem("camada_" + sprite.Replace("_hd", "").Replace("fundo_", ""));
+        if (desenho != null)
+        {
+            escala *= altura / desenho.bounds.size.y;
+            cor = CorDaPintura(cor);
+        }
+        else desenho = FabricaDeSprites.Pegar(sprite);
+
         // Repete a imagem lado a lado com folga, para cobrir a tela em qualquer ponto da fase.
         // (camada da frente anda mais que a câmera, então precisa de mais pedaços)
-        Sprite desenho = FabricaDeSprites.Pegar(sprite);
         float largura = desenho.bounds.size.x * escala;
         float ate = larguraFase * Mathf.Max(1f, 1f - fator) + 20f + largura;
         for (float x = -20f - largura; x < ate; x += largura)
