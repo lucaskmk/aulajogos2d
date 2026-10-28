@@ -23,6 +23,8 @@ public static class Progresso
     const string ChaveSecreta = "cilada_secreta_liberada";
     const string ChaveQuantasFases = "cilada_salvo_quantas_fases";
     const string ChaveEscudos = "cilada_salvo_escudos";
+    const string ChaveElixires = "cilada_salvo_elixires";
+    const string ChavePuloDuplo = "cilada_salvo_pulo_duplo";
     const string ChaveTutorialDaLoja = "cilada_tutorial_loja";
 
     // Uma partida salva quando o jogo tinha OUTRA lista de fases (ex.: a versão antiga, de 10 fases) não
@@ -82,12 +84,17 @@ public static class Progresso
         valida = PlayerPrefs.GetInt(ChaveValida, 0) == 1;
     }
 
-    // Escudos comprados na Loja e ainda não usados. Fazem parte da partida salva (um Novo Jogo zera).
+    // O que foi comprado na Loja e ainda não foi usado (escudos e elixires) e o duplo salto. Fazem parte da
+    // partida salva (um Novo Jogo zera).
     public static int EscudosSalvos => PlayerPrefs.GetInt(ChaveEscudos, 0);
+    public static int ElixiresSalvos => PlayerPrefs.GetInt(ChaveElixires, 0);
+    public static bool PuloDuploSalvo => PlayerPrefs.GetInt(ChavePuloDuplo, 0) == 1;
 
-    public static void SalvarEscudos(int escudos)
+    public static void SalvarItensDaLoja(int escudos, int elixires, bool puloDuplo)
     {
         PlayerPrefs.SetInt(ChaveEscudos, escudos);
+        PlayerPrefs.SetInt(ChaveElixires, elixires);
+        PlayerPrefs.SetInt(ChavePuloDuplo, puloDuplo ? 1 : 0);
         PlayerPrefs.Save();
     }
 

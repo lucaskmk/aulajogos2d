@@ -28,7 +28,7 @@ public class Interface : MonoBehaviour
     // (montar "Mortes: " + número a cada quadro cria lixo na memória; veja FabricaDeSprites.TextoEmPixel)
     struct TextoComNumero { public int valor; public string texto; }
     TextoComNumero textoMortes, textoMoedas, textoTempo, textoDaFase, textoDoMapa, textoDoChefe, textoDaPagina;
-    TextoComNumero textoDosEscudos, textoDoSaldo, textoDoPreco, textoDaBolsa;
+    TextoComNumero textoDosEscudos, textoDoSaldo, textoDoPreco, textoDaBolsa, textoDosElixires, textoDaAposta, textoDoPremio;
 
     // Mouse nos menus (veja Mouse(), lá embaixo).
     Vector2 mouseAntes;
@@ -147,19 +147,39 @@ public class Interface : MonoBehaviour
             Texto(nome, margem, 10f * escala, pixel, 0f, Branco, w * 0.3f);
             areaDasMortes = Texto(mortes, margem, linha2, pixel, 0f, Branco);
         }
-        if (jogo.TemEscudo) DesenharEscudoNoHud(areaDasMortes);
+        DesenharItensNoHud(areaDasMortes);
         Texto(ComNumero(ref textoMoedas, jogo.Moedas, n => "Moedas: " + n), w - margem, 10f * escala, pixel, 1f, Amarelo);
         if (Opcoes.MostrarTempo) // o cronômetro pode ser escondido em Opções
             Texto(ComNumero(ref textoTempo, Mathf.FloorToInt(jogo.TempoTotal), t => FormatarTempo(t)), w - margem, linha2, pixel, 1f, Branco);
     }
 
-    // O escudo comprado na Loja, ao lado das mortes (com "x2" se tiver mais de um).
-    void DesenharEscudoNoHud(Rect areaDasMortes)
+    // Os itens da Loja, ao lado das mortes: o escudo (com "x2" se tiver mais de um), o elixir (na fase, só se
+    // estiver valendo, piscando; no mapa, quantos você tem) e a bota do duplo salto.
+    void DesenharItensNoHud(Rect areaDasMortes)
     {
-        float alto = areaDasMortes.height * 1.15f, largo = alto * 11f / 12f, x = areaDasMortes.xMax + 14f * escala;
-        GUI.DrawTexture(new Rect(x, areaDasMortes.center.y - alto / 2f, largo, alto), FabricaDeSprites.Pegar("escudo").texture);
-        if (jogo.Escudos > 1)
-            Texto(ComNumero(ref textoDosEscudos, jogo.Escudos, n => "x" + n), x + largo + 6f * escala, areaDasMortes.y, 2.5f, 0f, Branco);
+        float alto = areaDasMortes.height * 1.15f, x = areaDasMortes.xMax + 14f * escala, y = areaDasMortes.center.y - alto / 2f;
+        if (jogo.TemEscudo)
+        {
+            float largo = alto * 11f / 12f;
+            GUI.DrawTexture(new Rect(x, y, largo, alto), FabricaDeSprites.Pegar("escudo").texture);
+            x += largo + 6f * escala;
+            if (jogo.Escudos > 1)
+                x = Texto(ComNumero(ref textoDosEscudos, jogo.Escudos, n => "x" + n), x, areaDasMortes.y, 2.5f, 0f, Branco).xMax + 10f * escala;
+        }
+        bool naFase = jogo.Estado != EstadoDoJogo.Mapa;
+        if (naFase ? jogo.ElixirAtivo : jogo.Elixires > 0)
+        {
+            float largo = alto * 12f / 13f;
+            Color antes = GUI.color;
+            if (naFase) GUI.color = new Color(1f, 1f, 1f, 0.75f + 0.25f * Mathf.Sin(Time.unscaledTime * 5f));
+            GUI.DrawTexture(new Rect(x, y, largo, alto), FabricaDeSprites.Pegar("elixir").texture);
+            GUI.color = antes;
+            x += largo + 6f * escala;
+            if (!naFase && jogo.Elixires > 1)
+                x = Texto(ComNumero(ref textoDosElixires, jogo.Elixires, n => "x" + n), x, areaDasMortes.y, 2.5f, 0f, Branco).xMax + 10f * escala;
+        }
+        if (jogo.TemPuloDuplo)
+            GUI.DrawTexture(new Rect(x, y, alto * 14f / 12f, alto), FabricaDeSprites.Pegar("bota_alada").texture);
     }
 
     void DesenharTitulo()
@@ -294,69 +314,86 @@ public class Interface : MonoBehaviour
             DesenharFalaNoMapa(jogo.Fala.Value);
             return;
         }
-        if (!mapa.Andando && jogo.LojaLiberada) BotaoDeTexto("LOJA (L)", w - 20f * escala, 84f * escala, 2.5f, 1f, GerenciadorDoJogo.BotaoLoja);
+        if (!mapa.Andando && jogo.LojaLiberada) BotaoDaLoja(false);
+        float larguraDoMeio = w - 2f * (RetanguloDoBotaoDaLoja().width + 40f * escala); // (sem passar por baixo do botão)
 
         int fase = mapa.Selecionado;
         bool secreta = fase == Fases.IndiceSecreto;
         string nome = secreta ? Fases.Secreta.nome : ComNumero(ref textoDoMapa, fase, f => $"Fase {f + 1}: {Fases.Todas[f].nome}");
-        Texto(nome, w / 2f, h - 125f * escala, 3.5f, 0.5f, Amarelo, w * 0.9f);
+        Texto(nome, w / 2f, h - 125f * escala, 3.5f, 0.5f, Amarelo, larguraDoMeio);
         // já passou dessa fase alguma vez? Mostra o recorde e as medalhas dela; senão, a situação nesta partida
         PrepararRecordeDoMapa(fase);
         if (temRecordeGuardado && !mapa.Andando) DesenharRecordeNoMapa(h - 80f * escala);
         else
         {
             string situacao = secreta ? "a fase secreta!" : fase < jogo.FaseMaisLonge ? "já passou (dá para jogar de novo)" : "ainda não passou nesta partida";
-            Texto(situacao, w / 2f, h - 78f * escala, 2f, 0.5f, secreta ? Rosa : fase < jogo.FaseMaisLonge ? Verde : Lilas, w * 0.9f);
+            Texto(situacao, w / 2f, h - 78f * escala, 2f, 0.5f, secreta ? Rosa : fase < jogo.FaseMaisLonge ? Verde : Lilas, larguraDoMeio);
         }
         string comandos = mapa.Andando ? "..."
             : jogo.LojaLiberada ? "SETAS: andar     ENTER: jogar     L: loja     ESC: título"
             : "SETAS: andar     ENTER: jogar     ESC: título"; // a Loja só aparece depois da 2ª fase
-        Texto(comandos, w / 2f, h - 42f * escala, 2f, 0.5f, Branco, w * 0.9f);
+        Texto(comandos, w / 2f, h - 42f * escala, 2f, 0.5f, Branco, larguraDoMeio);
     }
 
     // ------------------------------------------------------------------ loja
 
-    // A Loja do mapa: o saldo de moedas, o cartão do escudo (desenho e o que ele faz) e as opções.
+    // O botão da Loja no mapa: no canto de baixo à direita, dentro da faixa escura (com a moeda pulando de leve).
+    Rect RetanguloDoBotaoDaLoja()
+    {
+        float largura = 176f * escala, altura = 92f * escala;
+        return new Rect(Screen.width - largura - 18f * escala, Screen.height - altura - 22f * escala, largura, altura);
+    }
+
+    // Desenha o botão (e cuida do mouse). destaque: o Louro do tutorial está apontando para ele.
+    void BotaoDaLoja(bool destaque)
+    {
+        Rect botao = RetanguloDoBotaoDaLoja();
+        bool emCima = Mouse(botao, GerenciadorDoJogo.BotaoLoja, false);
+        float pulso = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 5f);
+        Moldura(botao, emCima || destaque ? new Color(0.25f, 0.18f, 0.08f, 0.96f) : CorDoFundoDaFala);
+        if (emCima || destaque) DesenharBorda(botao, Color.Lerp(CorDoFilete, Color.white, pulso * 0.6f));
+        float lado = 40f * escala, pulo = Mathf.Round(Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 3f) * escala;
+        GUI.DrawTexture(new Rect(botao.x + 18f * escala, botao.center.y - lado / 2f - pulo, lado * 8f / 14f, lado), FabricaDeSprites.Pegar("moeda").texture);
+        Texto("LOJA", botao.x + 52f * escala, botao.y + 18f * escala, 3.6f, 0f, emCima || destaque ? Branco : CorDoLogo);
+        Texto("tecla L", botao.x + 54f * escala, botao.y + 58f * escala, 1.8f, 0f, CorDoRodape);
+    }
+
+    // A Loja: o saldo lá em cima, os três itens à esquerda, a ROLETA no meio e a aposta à direita.
     void DesenharLoja()
     {
         float w = Screen.width, h = Screen.height;
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
-        Texto("LOJA DO PORTO", w / 2f, 46f * escala, 6f, 0.5f, CorDoLogo, w * 0.9f);
-        Texto("troque as moedas da campanha por uma ajudinha", w / 2f, 146f * escala, 2.2f, 0.5f, Lilas, w * 0.9f);
+        Texto("LOJA DO PORTO", w / 2f, 18f * escala, 5f, 0.5f, CorDoLogo, w * 0.9f);
+        DesenharSaldo(w / 2f, 100f * escala);
 
-        // o saldo: [moeda] 23 moedas
-        string saldo = ComNumero(ref textoDoSaldo, jogo.Moedas, n => n == 1 ? "1 moeda" : n + " moedas");
-        float icone = 30f * escala, ySaldo = 190f * escala;
-        Rect medida = MedirTexto(saldo, 0f, ySaldo, 3f, 0f);
-        float x = (w - (icone + 10f * escala + medida.width)) / 2f;
-        GUI.DrawTexture(new Rect(x, ySaldo + (medida.height - icone) / 2f, icone, icone), FabricaDeSprites.Pegar("moeda").texture);
-        Texto(saldo, x + icone + 10f * escala, ySaldo, 3f, 0f, Amarelo);
+        // as três colunas: a roleta no meio e as laterais com o espaço que sobrar
+        float diametro = Mathf.Min(300f * escala, w * 0.3f), margem = 24f * escala;
+        float largura = Mathf.Min(390f * escala, (w - diametro - 4f * margem) / 2f);
+        var centro = new Vector2(w / 2f, 330f * escala);
+        bool tutorial = jogo.NoTutorial;
 
-        // o cartão do escudo (borda amarela quando ele está escolhido)
-        float largura = Mathf.Min(w * 0.8f, 640f * escala), x0 = (w - largura) / 2f, y0 = 250f * escala, folga = 16f * escala;
-        var cartao = new Rect(x0, y0, largura, 150f * escala);
-        GUI.DrawTexture(cartao, fundoEscuro);
-        bool escolhido = jogo.OpcaoDaLoja == (int)GerenciadorDoJogo.ItemDaLoja.Escudo;
-        DesenharBorda(cartao, escolhido ? (Color)Amarelo : (Color)new Color32(226, 176, 78, 255));
-        float altoDoDesenho = 112f * escala, largoDoDesenho = altoDoDesenho * 11f / 12f;
-        float pulinho = escolhido ? Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 5f * escala : 0f;
-        GUI.DrawTexture(new Rect(x0 + folga * 1.5f, y0 + (cartao.height - altoDoDesenho) / 2f - pulinho, largoDoDesenho, altoDoDesenho),
-            FabricaDeSprites.Pegar("escudo").texture);
-        float xTexto = x0 + folga * 3f + largoDoDesenho, larguraDoTexto = cartao.xMax - folga - xTexto;
-        Texto("ESCUDO", xTexto, y0 + 16f * escala, 3.5f, 0f, Branco, larguraDoTexto * 0.5f);
-        string bolsa = ComNumero(ref textoDaBolsa, jogo.Escudos, n => n == 0 ? "você não tem" : n == 1 ? "você tem 1" : $"você tem {n}");
-        Texto(bolsa, cartao.xMax - folga, y0 + 24f * escala, 1.8f, 1f, jogo.TemEscudo ? Verde : CorDoRodape, larguraDoTexto * 0.45f);
-        Texto("Te salva de UMA morte: você pula para trás", xTexto, y0 + 70f * escala, 1.8f, 0f, CorDoRodape, larguraDoTexto);
-        Texto("e fica piscando um instante. Depois ele some.", xTexto, y0 + 98f * escala, 1.8f, 0f, CorDoRodape, larguraDoTexto);
+        // os itens
+        float y = 150f * escala, alto = 112f * escala, passo = alto + 14f * escala;
+        CartaoDoItem(new Rect(margem, y, largura, alto), GerenciadorDoJogo.ItemDaLoja.Escudo, "escudo", "ESCUDO", jogo.precoDoEscudo,
+            ComNumero(ref textoDaBolsa, jogo.Escudos, n => $"tem {n}/{jogo.maximoDeEscudos}"), jogo.TemEscudo,
+            "Te salva de UMA morte.", "Guarde até 3.", false);
+        CartaoDoItem(new Rect(margem, y + passo, largura, alto), GerenciadorDoJogo.ItemDaLoja.Elixir, "elixir", "ELIXIR", jogo.precoDoElixir,
+            ComNumero(ref textoDosElixires, jogo.Elixires, n => $"tem {n}/{jogo.maximoDeElixires}"), jogo.Elixires > 0,
+            "Pulo bem mais alto. Entrar", "numa fase gasta um.", tutorial);
+        CartaoDoItem(new Rect(margem, y + 2f * passo, largura, alto), GerenciadorDoJogo.ItemDaLoja.PuloDuplo, "bota_alada", "DUPLO SALTO",
+            jogo.precoDoPuloDuplo, jogo.TemPuloDuplo ? "já tem!" : "", jogo.TemPuloDuplo,
+            "Pule de novo no ar.", "Vale a partida toda.", tutorial);
 
-        // as opções
-        float passo = 48f * escala, y = 428f * escala;
-        string comprar = ComNumero(ref textoDoPreco, jogo.precoDoEscudo, n => $"Comprar escudo ({n} moedas)");
-        OpcaoDeMenu(comprar, y, 3f, passo, (int)GerenciadorDoJogo.ItemDaLoja.Escudo, escolhido);
-        OpcaoDeMenu("Voltar ao mapa", y + passo, 3f, passo, (int)GerenciadorDoJogo.ItemDaLoja.Voltar, !escolhido);
+        DesenharRoleta(centro, diametro, tutorial);
+        DesenharAposta(new Rect(w - margem - largura, y, largura, 3f * passo - 14f * escala), tutorial);
 
-        if (jogo.NoTutorial) // a cutscene do Louro: a fala dele no lugar das mensagens e do rodapé
+        // voltar
+        float yVoltar = 548f * escala;
+        OpcaoDeMenu("Voltar ao mapa", yVoltar, 2.8f, 40f * escala, (int)GerenciadorDoJogo.ItemDaLoja.Voltar,
+            jogo.OpcaoDaLoja == (int)GerenciadorDoJogo.ItemDaLoja.Voltar);
+
+        if (tutorial) // a cutscene do Louro: a fala dele no lugar das mensagens e do rodapé
         {
             GerenciadorDoJogo.PassoDoTutorial passoDoLouro = jogo.Tutorial;
             string dica = passoDoLouro == GerenciadorDoJogo.PassoDoTutorial.Comprar ? "ENTER: comprar"
@@ -366,15 +403,241 @@ public class Interface : MonoBehaviour
             return;
         }
 
-        // a resposta da compra (ou por que ainda não dá para comprar)
+        // a resposta da compra ou da roleta
         string mensagem = jogo.MensagemDaLoja;
-        float yMensagem = y + passo * 2f + 20f * escala;
         if (mensagem != "")
-            Texto(mensagem, w / 2f, yMensagem, 2.5f, 0.5f, jogo.MensagemDaLojaBoa ? Verde : Rosa, w * 0.9f);
-        else if (!jogo.PodeComprarEscudo)
-            Texto(jogo.Escudos >= jogo.maximoDeEscudos ? "Use o seu escudo antes de comprar outro." : "Junte mais moedas nas fases!",
-                w / 2f, yMensagem, 2f, 0.5f, CorDoRodape, w * 0.9f);
-        Rodape("CIMA/BAIXO ou MOUSE: escolher    ENTER: comprar    ESC ou L: voltar");
+            Texto(mensagem, w / 2f, 598f * escala, 2.5f, 0.5f, jogo.MensagemDaLojaBoa ? Verde : Rosa, w * 0.9f);
+        Rodape(jogo.Girando ? "girando... boa sorte!"
+            : "CIMA/BAIXO ou MOUSE: escolher    ESQUERDA/DIREITA: aposta e cor    ENTER: comprar/girar    ESC ou L: voltar");
+    }
+
+    // O saldo: [moeda] 23 moedas. Quando a roleta paga, um "+N" dourado sobe do lado.
+    void DesenharSaldo(float centroX, float y)
+    {
+        string saldo = ComNumero(ref textoDoSaldo, jogo.Moedas, n => n == 1 ? "1 moeda" : n + " moedas");
+        float icone = 30f * escala;
+        Rect medida = MedirTexto(saldo, 0f, y, 3f, 0f);
+        float x = centroX - (icone + 10f * escala + medida.width) / 2f;
+        GUI.DrawTexture(new Rect(x, y + (medida.height - icone) / 2f, icone * 8f / 14f, icone), FabricaDeSprites.Pegar("moeda").texture);
+        Texto(saldo, x + icone + 10f * escala, y, 3f, 0f, Amarelo);
+        float t = jogo.TempoDesdeOResultado;
+        if (!jogo.Girando && jogo.UltimoPremio > 0 && t < 1.6f)
+        {
+            Color antes = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, Mathf.Clamp01((1.6f - t) / 0.5f));
+            Texto(ComNumero(ref textoDoPremio, jogo.UltimoPremio, n => "+" + n), x + icone + 22f * escala + medida.width, y - t * 30f * escala, 3f, 0f, Verde);
+            GUI.color = antes;
+        }
+    }
+
+    // Um cartão de item: o desenho, o nome, o preço, quantos você tem e o que ele faz. Escolhido: borda dourada.
+    void CartaoDoItem(Rect cartao, GerenciadorDoJogo.ItemDaLoja item, string sprite, string nome, int preco, string tem, bool temAlgum,
+        string linha1, string linha2, bool apagado)
+    {
+        bool escolhido = jogo.OpcaoDaLoja == (int)item;
+        Color antes = GUI.color;
+        if (apagado) GUI.color = new Color(1f, 1f, 1f, 0.35f);
+        Moldura(cartao, CorDoFundoDaFala);
+        if (escolhido) DesenharBorda(cartao, Color.Lerp(CorDoFilete, Color.white, 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6f)));
+        float m = 12f * escala, lado = cartao.height - 2f * m - 8f * escala;
+        Texture desenho = FabricaDeSprites.Pegar(sprite).texture;
+        float escalaDoDesenho = lado / Mathf.Max(desenho.width, desenho.height);
+        float pulo = escolhido ? Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 5f * escala : 0f;
+        GUI.DrawTexture(new Rect(cartao.x + m + 4f * escala + (lado - desenho.width * escalaDoDesenho) / 2f,
+            cartao.center.y - desenho.height * escalaDoDesenho / 2f - pulo, desenho.width * escalaDoDesenho, desenho.height * escalaDoDesenho), desenho);
+        float x = cartao.x + 2f * m + lado, larguraDoTexto = cartao.xMax - m - x;
+        Texto(nome, x, cartao.y + m, 2.6f, 0f, escolhido ? Amarelo : Branco, larguraDoTexto * 0.62f);
+        if (tem != "") Texto(tem, cartao.xMax - m, cartao.y + m + 4f * escala, 1.7f, 1f, temAlgum ? Verde : CorDoRodape, larguraDoTexto * 0.36f);
+        Texto(linha1, x, cartao.y + m + 34f * escala, 1.6f, 0f, CorDoRodape, larguraDoTexto);
+        Texto(linha2, x, cartao.y + m + 54f * escala, 1.6f, 0f, CorDoRodape, larguraDoTexto);
+        // o preço, com a moedinha
+        float icone = 16f * escala, yPreco = cartao.yMax - m - icone;
+        GUI.DrawTexture(new Rect(x, yPreco, icone * 8f / 14f, icone), FabricaDeSprites.Pegar("moeda").texture);
+        Texto(preco.ToString(), x + icone * 0.75f, yPreco - 2f * escala, 2f, 0f, jogo.Moedas >= preco ? Amarelo : Rosa);
+        GUI.color = antes;
+        if (!apagado && !jogo.Girando) Mouse(cartao, (int)item, true);
+    }
+
+    // ------------------------------------------------------------------ a roleta (desenho)
+
+    // As moedas que pulam da roleta quando você ganha (só desenho: andam no Repaint, com o tempo real).
+    struct MoedaVoando { public Vector2 lugar, velocidade; public float vida, giro; }
+    readonly List<MoedaVoando> moedasVoando = new List<MoedaVoando>();
+    float resultadoFestejado = -1f; // o TempoDesdeOResultado de quando a chuva de moedas começou (para não repetir)
+
+    void DesenharRoleta(Vector2 centro, float diametro, bool apagada)
+    {
+        Color antes = GUI.color;
+        if (apagada) GUI.color = new Color(1f, 1f, 1f, 0.35f);
+        float t = jogo.TempoDesdeOResultado;
+        bool acabouDeParar = !jogo.Girando && jogo.UltimaCasa >= 0 && t < 2.5f;
+        bool ganhou = acabouDeParar && jogo.UltimoPremio > 0;
+
+        // perdeu: a roleta treme um pouquinho; ganhou: um brilho da cor da casa pulsa em volta
+        if (acabouDeParar && !ganhou && t < 0.4f) centro.x += Mathf.Sin(t * 70f) * 5f * escala * (1f - t / 0.4f);
+        if (ganhou && Mathf.Repeat(t * 3f, 1f) < 0.6f)
+        {
+            Color brilho = CorDaCasaNaTela(jogo.UltimaCasa);
+            brilho.a = 0.35f * GUI.color.a;
+            Retangulo(new Rect(centro.x - diametro * 0.56f, centro.y - diametro * 0.56f, diametro * 1.12f, diametro * 1.12f), brilho);
+        }
+        // a sombra embaixo
+        Retangulo(new Rect(centro.x - diametro * 0.46f + 8f * escala, centro.y - diametro * 0.46f + 10f * escala, diametro * 0.92f, diametro * 0.92f), new Color(0f, 0f, 0f, 0.35f));
+
+        // a roda (girando em volta do centro: o GUI.matrix é guardado e devolvido)
+        Matrix4x4 matriz = GUI.matrix;
+        GUIUtility.RotateAroundPivot(jogo.AnguloDaRoleta, centro);
+        GUI.DrawTexture(new Rect(centro.x - diametro / 2f, centro.y - diametro / 2f, diametro, diametro), FabricaDeSprites.Pegar("roleta").texture);
+        GUI.matrix = matriz;
+
+        // o ponteiro: dá um "tranco" para o lado cada vez que um pino passa por ele
+        float tamanhoDaCasa = 360f / GerenciadorDoJogo.CasasDaRoleta;
+        float fracao = Mathf.Repeat(jogo.AnguloDaRoleta + tamanhoDaCasa / 2f, tamanhoDaCasa) / tamanhoDaCasa;
+        float tranco = jogo.Girando ? -22f * Mathf.Pow(1f - fracao, 4f) : 0f;
+        Texture ponteiro = FabricaDeSprites.Pegar("ponteiro_da_roleta").texture;
+        float pw = 30f * escala, ph = pw * ponteiro.height / ponteiro.width;
+        var topo = new Vector2(centro.x, centro.y - diametro / 2f - 8f * escala);
+        GUIUtility.RotateAroundPivot(tranco, topo);
+        GUI.DrawTexture(new Rect(topo.x - pw / 2f, topo.y, pw, ph), ponteiro);
+        GUI.matrix = matriz;
+
+        // no meio: o prêmio, quando você ganha
+        if (ganhou)
+        {
+            int multiplicador = GerenciadorDoJogo.Multiplicador(GerenciadorDoJogo.CorDaCasa(jogo.UltimaCasa));
+            float pulso = 1f + 0.15f * Mathf.Sin(t * 14f) * Mathf.Clamp01(1.5f - t);
+            Texto(multiplicador == 14 ? "x14!" : "x2!", centro.x, centro.y - 18f * escala * pulso, 4.5f * pulso, 0.5f, Branco);
+        }
+        DesenharMoedasVoando(centro, ganhou, t);
+
+        // o histórico: as últimas casas, da mais nova (à esquerda, com a borda) para a mais velha
+        float lado = 18f * escala, folga = 6f * escala;
+        int quantas = jogo.HistoricoDaRoleta.Count;
+        float x0 = centro.x - (10 * (lado + folga) - folga) / 2f, yHistorico = centro.y + diametro / 2f + 20f * escala;
+        for (int i = 0; i < 10; i++)
+        {
+            var quadrado = new Rect(x0 + i * (lado + folga), yHistorico, lado, lado);
+            if (i >= quantas) { Retangulo(quadrado, new Color(1f, 1f, 1f, 0.08f)); continue; }
+            Retangulo(quadrado, CorDaCasaNaTela(jogo.HistoricoDaRoleta[i]));
+            if (i == 0) DesenharBorda(quadrado, CorDoFilete);
+        }
+        GUI.color = antes;
+    }
+
+    static Color CorDaCasaNaTela(int casa)
+    {
+        switch (GerenciadorDoJogo.CorDaCasa(casa))
+        {
+            case GerenciadorDoJogo.CorDaRoleta.Verde: return new Color32(52, 196, 100, 255);
+            case GerenciadorDoJogo.CorDaRoleta.Vermelho: return new Color32(222, 52, 60, 255);
+            default: return new Color32(40, 36, 54, 255);
+        }
+    }
+
+    // Ganhou: moedas pulam da roleta para cima e caem girando (mais moedas para prêmios maiores).
+    void DesenharMoedasVoando(Vector2 centro, bool ganhou, float t)
+    {
+        if (ganhou && t < 0.2f && resultadoFestejado != jogo.HistoricoDaRoleta.Count + jogo.UltimoPremio * 1000f)
+        {
+            resultadoFestejado = jogo.HistoricoDaRoleta.Count + jogo.UltimoPremio * 1000f;
+            int quantas = Mathf.Clamp(10 + jogo.UltimoPremio / 4, 10, 60);
+            for (int i = 0; i < quantas; i++)
+                moedasVoando.Add(new MoedaVoando
+                {
+                    lugar = centro,
+                    velocidade = new Vector2(Random.Range(-420f, 420f), Random.Range(-720f, -320f)) * escala,
+                    vida = Random.Range(1.1f, 1.8f),
+                    giro = Random.Range(0f, 10f),
+                });
+        }
+        if (Event.current.type == EventType.Repaint) // (o OnGUI roda várias vezes por quadro: anda uma vez só)
+        {
+            float dt = Time.unscaledDeltaTime;
+            for (int i = moedasVoando.Count - 1; i >= 0; i--)
+            {
+                MoedaVoando m = moedasVoando[i];
+                m.velocidade.y += 1500f * escala * dt;
+                m.lugar += m.velocidade * dt;
+                m.vida -= dt;
+                m.giro += dt * 12f;
+                if (m.vida <= 0f) moedasVoando.RemoveAt(i);
+                else moedasVoando[i] = m;
+            }
+        }
+        Texture moeda = FabricaDeSprites.Pegar("moeda").texture;
+        float alto = 22f * escala;
+        foreach (MoedaVoando m in moedasVoando)
+        {
+            float largura = alto * 8f / 14f * Mathf.Abs(Mathf.Cos(m.giro)); // girando: fica fininha e volta
+            GUI.DrawTexture(new Rect(m.lugar.x - largura / 2f, m.lugar.y - alto / 2f, Mathf.Max(1f, largura), alto), moeda);
+        }
+    }
+
+    // A aposta, à direita da roleta: o valor (com - e +), as três cores (com quanto cada uma paga) e o GIRAR.
+    void DesenharAposta(Rect area, bool apagada)
+    {
+        Color antes = GUI.color;
+        if (apagada) GUI.color = new Color(1f, 1f, 1f, 0.35f);
+        Moldura(area, CorDoFundoDaFala);
+        float m = 16f * escala, x = area.x + m, larguraDentro = area.width - 2f * m;
+        bool livre = !apagada && !jogo.Girando;
+        Texto("ROLETA", area.center.x, area.y + m, 3f, 0.5f, CorDoLogo, larguraDentro);
+
+        // o valor da aposta: [-]  10  [+]
+        float yAposta = area.y + 62f * escala, alto = 44f * escala;
+        var linha = new Rect(x, yAposta, larguraDentro, alto);
+        bool escolhida = jogo.OpcaoDaLoja == (int)GerenciadorDoJogo.ItemDaLoja.Aposta;
+        if (escolhida) DesenharFaixa(linha);
+        var menos = new Rect(x, yAposta, alto, alto);
+        var mais = new Rect(linha.xMax - alto, yAposta, alto, alto);
+        BotaoQuadrado(menos, "-", livre ? GerenciadorDoJogo.BotaoApostaMenos : 0, livre);
+        BotaoQuadrado(mais, "+", livre ? GerenciadorDoJogo.BotaoApostaMais : 0, livre);
+        Texto(ComNumero(ref textoDaAposta, jogo.Aposta, n => "aposta " + n), linha.center.x, yAposta + 10f * escala, 2.5f, 0.5f,
+            jogo.Moedas >= jogo.Aposta ? Amarelo : Rosa, larguraDentro - 2f * alto - 8f * escala);
+
+        // as cores
+        float yCores = yAposta + alto + 18f * escala, largo = (larguraDentro - 2f * 8f * escala) / 3f, altoDaCor = 64f * escala;
+        var cores = new[] { GerenciadorDoJogo.CorDaRoleta.Vermelho, GerenciadorDoJogo.CorDaRoleta.Preto, GerenciadorDoJogo.CorDaRoleta.Verde };
+        var nomes = new[] { "VERM.", "PRETO", "VERDE" };
+        var botoes = new[] { GerenciadorDoJogo.BotaoVermelho, GerenciadorDoJogo.BotaoPreto, GerenciadorDoJogo.BotaoVerde };
+        var casas = new[] { 1, 2, 0 }; // uma casa de cada cor (só para pegar a cor do desenho)
+        bool corEscolhida = jogo.OpcaoDaLoja == (int)GerenciadorDoJogo.ItemDaLoja.Cor;
+        for (int i = 0; i < 3; i++)
+        {
+            var botao = new Rect(x + i * (largo + 8f * escala), yCores, largo, altoDaCor);
+            bool essa = jogo.CorEscolhida == cores[i];
+            bool emCima = livre && Mouse(botao, botoes[i], false);
+            Retangulo(botao, Color.Lerp(CorDaCasaNaTela(casas[i]), Color.black, essa || emCima ? 0f : 0.4f));
+            DesenharBorda(botao, essa ? (corEscolhida ? Color.Lerp(CorDoFilete, Color.white, 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6f)) : CorDoFilete)
+                                      : new Color(0f, 0f, 0f, 0.6f));
+            Texto(nomes[i], botao.center.x, botao.y + 10f * escala, 1.8f, 0.5f, Branco, largo - 8f * escala);
+            Texto(cores[i] == GerenciadorDoJogo.CorDaRoleta.Verde ? "x14" : "x2", botao.center.x, botao.y + 36f * escala, 2.2f, 0.5f,
+                essa ? Amarelo : Branco, largo - 8f * escala);
+        }
+
+        // GIRAR!
+        float yGirar = yCores + altoDaCor + 22f * escala;
+        var girar = new Rect(x, yGirar, larguraDentro, 56f * escala);
+        bool girarEscolhido = jogo.OpcaoDaLoja == (int)GerenciadorDoJogo.ItemDaLoja.Girar;
+        bool emCimaDoGirar = livre && Mouse(girar, (int)GerenciadorDoJogo.ItemDaLoja.Girar, true);
+        float pulso = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6f);
+        Moldura(girar, jogo.Girando ? new Color(0.2f, 0.2f, 0.25f, 0.95f)
+            : girarEscolhido || emCimaDoGirar ? new Color(0.55f, 0.32f, 0.08f, 0.98f) : new Color(0.35f, 0.2f, 0.06f, 0.95f));
+        if (girarEscolhido) DesenharBorda(girar, Color.Lerp(CorDoFilete, Color.white, pulso));
+        Texto(jogo.Girando ? "GIRANDO..." : "GIRAR!", girar.center.x, girar.y + 14f * escala, 3f, 0.5f,
+            jogo.Girando ? CorDoRodape : Amarelo, larguraDentro);
+
+        Texto("vermelho e preto pagam 2x", area.center.x, girar.yMax + 16f * escala, 1.6f, 0.5f, CorDoRodape, larguraDentro);
+        Texto("o verde (só uma casa) paga 14x", area.center.x, girar.yMax + 38f * escala, 1.6f, 0.5f, CorDoRodape, larguraDentro);
+        GUI.color = antes;
+    }
+
+    // Um botãozinho quadrado com um sinal ("-", "+"). botao = o número do clique (0 = desligado).
+    void BotaoQuadrado(Rect area, string sinal, int botao, bool ligado)
+    {
+        bool emCima = ligado && Mouse(area, botao, false);
+        Moldura(area, emCima ? new Color(0.45f, 0.3f, 0.1f, 0.98f) : new Color(0.25f, 0.16f, 0.07f, 0.95f));
+        Texto(sinal, area.center.x, area.y + 10f * escala, 3f, 0.5f, ligado ? Branco : CorDoRodape);
     }
 
     // ------------------------------------------------------------------ tutorial da loja (a cutscene do Louro)
@@ -395,18 +658,18 @@ public class Interface : MonoBehaviour
             DesenharLouroVoando(PoleiroNaCaixa(caixa));
             return;
         }
-        Rect botao = MedirTexto("LOJA (L)", w - 20f * escala, 84f * escala, 2.5f, 1f);
-        BotaoDeTexto("LOJA (L)", w - 20f * escala, 84f * escala, 2.5f, 1f, GerenciadorDoJogo.BotaoLoja);
+        Rect botao = RetanguloDoBotaoDaLoja();
+        BotaoDaLoja(true);
         float vaiEVolta = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 6f)) * 8f * escala;
-        Texto(">", botao.x - 14f * escala - vaiEVolta, botao.y, 2.5f, 1f, Amarelo);
-        DesenharLouroVoando(new Vector2(botao.x - 72f * escala, botao.yMax + 10f * escala));
+        Texto(">", botao.x - 10f * escala - vaiEVolta, botao.center.y - 14f * escala, 3f, 1f, Amarelo);
+        DesenharLouroVoando(new Vector2(botao.center.x, botao.y - 4f * escala)); // pousado em cima do botão
     }
 
     // A fala do Louro no tutorial: no mesmo lugar das falas do mapa (a faixa de baixo).
     Rect DesenharCaixaDoTutorial(string dica, float alfa)
     {
         float w = Screen.width, h = Screen.height;
-        float largura = Mathf.Min(900f * escala, w - 40f * escala), x = (w - largura) / 2f, y = h - 112f * escala;
+        float largura = Mathf.Min(900f * escala, w - 2f * (RetanguloDoBotaoDaLoja().width + 40f * escala)), x = (w - largura) / 2f, y = h - 112f * escala;
         float altura = 100f * escala;
         if (alfa > 0f) altura = CaixaDeFala(x, y, largura, "Louro", "louro", jogo.TextoDoTutorial, alfa, dica, altura);
         return new Rect(x, y, largura, altura);
