@@ -88,6 +88,16 @@ Os controles abaixo são os de `Assets/Scripts/Nucleo/Controles.cs`. Teclado e c
 
 ---
 
+### Loja do Porto
+Depois da fase 2, o mapa ganha o botão **LOJA** no canto de baixo à direita (ou a tecla **L**). Com as moedas das fases você compra:
+- **Escudo** (15 moedas, até 3): te salva de uma morte;
+- **Elixir de super salto** (20, até 3): entrar numa fase gasta um, e o Grumete pula bem mais alto a fase inteira;
+- **Duplo salto** (45, compra uma vez): um segundo pulo no ar, para a partida toda.
+
+No meio da Loja fica a **roleta**: escolha quanto apostar (de 1 a 100) e a cor. Vermelho e preto pagam 2x, verde (uma casa só) paga 14x.
+
+---
+
 ## Segredos
 
 > ⚠️ Spoilers!
