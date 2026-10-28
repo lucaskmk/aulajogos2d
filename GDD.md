@@ -173,6 +173,12 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - O recorde é zerar com o menor número de mortes, jogando em ordem.
 - No fim, o número de mortes dá um título ao jogador, de "Suspeito de hack" até "Grumete imortal".
 
+### Loja do Porto
+- Abre no mapa depois da fase 2 (o Louro apresenta numa cutscene e dá o primeiro escudo).
+- Vende o escudo, o elixir de super salto e o duplo salto, e tem a roleta no meio (veja 2.5).
+- A roleta sorteia o resultado e salva o saldo no começo do giro: fechar o jogo no meio não muda nada.
+- Os itens ficam na partida salva; um Novo jogo zera.
+
 ### Recordes por fase e medalhas (rejogabilidade)
 - Cada fase guarda o **melhor tempo**, o **menor número de mortes** e o **maior número de moedas** (cada um por si).
   Valem para sempre: um Novo jogo não apaga.
@@ -254,8 +260,13 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - Cada rodada termina na **janela de dano** (pular na cabeça). Erro significa recomeçar a rodada, não a luta.
 
 ## 2.5 Economia (moedas e recordes)
-- As moedas não compram nada. Elas funcionam como **isca** (puxam o jogador para o perigo) e como **desafio opcional**
-  (a secreta e a medalha de moedas de cada fase).
+- As moedas são **isca** (puxam o jogador para o perigo), **desafio opcional** (a secreta e a medalha de moedas de cada fase)
+  e o dinheiro da **Loja do Porto** (no mapa, depois da fase 2; o botão fica no canto de baixo à direita, ou a tecla L):
+  - **escudo** (15 moedas, até 3): te salva de uma morte;
+  - **elixir de super salto** (20, até 3): entrar numa fase gasta um, e o pulo fica bem mais alto a fase inteira;
+  - **duplo salto** (45, uma vez): um segundo pulo no ar, para a partida toda;
+  - **roleta**: aposte de 1 a 100 moedas numa cor. São 15 casas (7 vermelhas, 7 pretas e 1 verde): vermelho e preto pagam 2x,
+    o verde paga 14x. A casa leva uma pequena vantagem, como numa roleta de verdade: é um jeito de arriscar, não de enriquecer.
 - As mortes são a "moeda" que importa: aparecem no HUD, nas caveiras do mapa, no recorde, na medalha do coração e no título final.
 - O tempo vira desafio na volta: depois de decorar as armadilhas, a medalha do relógio puxa o jogador para refazer a fase rápido.
 
