@@ -1,28 +1,29 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 'N' - a MARÉ NEGRA DO KRAKEN: uma PAREDE de tinta roxa (o Kraken, o monstro das profundezas, vem atrás
-// de você), cheia de olhos e de tentáculos, que PERSEGUE o Grumete pela fase inteira. Encostou nela, morreu.
-//  - O 'N' marca a coluna de onde ela começa, atrás do jogador. Ela fica "dormindo" (olhos fechados)
-//    até o jogador se afastar uns 4 blocos; aí ela RI, a tela treme e ela começa a andar para a direita.
+// 'N' - o TSUNAMI DO KRAKEN: uma ONDA GIGANTE (o Kraken Vermelho, lá do fundo do mar, levantou ela atrás de você)
+// que PERSEGUE o Grumete pela fase inteira. Encostou nela, morreu.
+//  - O 'N' marca a coluna de onde ela começa, atrás do jogador. Ela fica "parada" (a água só borbulhando)
+//    até o jogador se afastar uns 4 blocos; aí ela RUGE, a tela treme e ela começa a andar para a direita.
 //  - Ela anda a 5,2 blocos por segundo e o Grumete anda 7: correndo sem parar você abre vantagem.
 //    Mas cada vez que você PARA para pensar (ou erra um pulo e tem que voltar) é tempo que ela recupera:
 //    ficou uns 2 segundos parado, ela te pega. Por isso a fase dela é só CORRER e PULAR (parkour).
 //  - "Elástico": se você abrir vantagem demais, ela acelera. Correndo perfeito ela fica uns 11 blocos atrás
 //    (bem na beirada da tela) e NUNCA mais de 14. Não dá para "guardar" vantagem para depois.
-//  - Quando você fica perto dela (3,5 blocos), um dos TENTÁCULOS se estica para te agarrar. O aviso é ele
-//    recuar para dentro da parede e piscar (0,35 s). Corra ou pule por cima!
-//  - Renasceu num checkpoint? A parede nasce 9 blocos ATRÁS de você (senão o checkpoint não serviria de nada).
-//  - Ela para antes da bandeira de verdade. Passou de fase? Ela desiste e vai embora... por enquanto.
+//  - Quando você fica perto dela (3,5 blocos), um JATO d'água sai da onda para te pegar. O aviso é ele
+//    recuar para dentro da onda e piscar (0,35 s). Corra ou pule por cima!
+//  - Renasceu num checkpoint? A onda nasce 9 blocos ATRÁS de você (senão o checkpoint não serviria de nada).
+//  - Ela para antes da bandeira de verdade. Passou de fase? Ela quebra e vai embora... por enquanto.
 //
 // O desenho é todo feito de pedaços (todos filhos do objeto "Parede", que anda junto com a frente):
-//  fundo escuro liso + faixa de névoa com fiapos subindo + "bolhas" na borda (trocam de forma o tempo todo)
-//  + olhos que piscam + tentáculos de gomos. Na frente, fumaça roxa (partículas).
-//  Uma vinheta roxa presa na câmera escurece a tela quando ela chega perto (junto com um "coração" batendo).
+//  fundo azul-escuro liso + faixa de água com riscos de luz subindo + ESPUMA na borda (troca de forma o tempo todo)
+//  + a CRISTA enrolando lá em cima + destroços boiando (barris, tábuas, um chapéu de pirata) + os jatos d'água.
+//  Na frente, respingos (partículas). Uma vinheta azul presa na câmera escurece a tela quando ela chega perto
+//  (junto com um "coração" batendo).
 [DefaultExecutionOrder(100)] // roda depois da CameraSeguir: a vinheta acompanha a câmera sem tremer
-public class MareNegra : MonoBehaviour
+public class Tsunami : MonoBehaviour
 {
-    enum Estado { Dormindo, Acordando, Perseguindo, IndoEmbora }
+    enum Estado { Dormindo, Acordando, Perseguindo, IndoEmbora }  // ("dormindo" = parada, só borbulhando)
     enum EstadoDaMao { Balancando, Preparando, Agarrando, Voltando }
 
     [Header("Perseguição")]
@@ -34,11 +35,11 @@ public class MareNegra : MonoBehaviour
     public float distanciaAoRenascer = 9f;    // renasceu num checkpoint? Ela aparece isso atrás de você
     public float tempoAcordando = 0.7f;       // a "espreguiçada" (risada) antes de começar a andar
 
-    [Header("Tentáculos")]
-    public float distanciaDoBote = 3.5f;      // jogador mais perto que isso da frente: um tentáculo tenta agarrar
-    public float tempoDePreparo = 0.35f;      // o aviso: o tentáculo recua e pisca
-    public float alcanceDoBote = 2.6f;        // até onde o tentáculo estica (a partir da frente da parede)
-    public float recargaDaMao = 0.9f;         // descanso de cada tentáculo depois de um bote
+    [Header("Jatos d'água")]
+    public float distanciaDoBote = 3.5f;      // jogador mais perto que isso da frente: um jato tenta te pegar
+    public float tempoDePreparo = 0.35f;      // o aviso: o jato recua e pisca
+    public float alcanceDoBote = 2.6f;        // até onde o jato estica (a partir da frente da onda)
+    public float recargaDaMao = 0.9f;         // descanso de cada jato depois de um bote
 
     // A "linha da morte" é a frente da parede. O colisor do Grumete tem uns 0,36 de cada lado do centro.
     const float MeiaLarguraDoJogador = 0.36f;
@@ -46,20 +47,21 @@ public class MareNegra : MonoBehaviour
     // Até onde a parede vai na vertical (a câmera mostra de -0,5 a 14,5 nas fases de 15 linhas).
     const float Baixo = -1.5f, Alto = 16.5f;
 
-    // Ordem de desenho: tudo bem na frente da fase (a parede "engole" o cenário), atrás só da interface.
-    const int OrdemDoFundo = 38, OrdemDaNevoa = 39, OrdemDosOlhos = 40, OrdemDosBracos = 41,
-              OrdemDaBorda = 42, OrdemDasMaos = 44, OrdemDaVinheta = 60;
+    // Ordem de desenho: tudo bem na frente da fase (a onda "engole" o cenário), atrás só da interface.
+    const int OrdemDoFundo = 38, OrdemDaNevoa = 39, OrdemDosDestrocos = 40, OrdemDosBracos = 41,
+              OrdemDaBorda = 42, OrdemDaCrista = 43, OrdemDasMaos = 44, OrdemDaVinheta = 60;
 
-    const int QuantidadeDeBolhas = 4;  // variações do desenho da borda ("mare_negra_borda_0" a "_3")
+    const int QuantidadeDeBolhas = 4;  // variações do desenho da espuma da borda ("tsunami_borda_0" a "_3")
     const float LarguraDaNevoa = 8f, AlturaDaNevoa = 4f;
     const int GomosDoBraco = 8;
 
-    // Cores da fumaça (as partículas usam o desenho da poeira pintado com essas cores).
-    static readonly Color FumacaClara = new Color(0.69f, 0.38f, 0.9f, 0.85f);
-    static readonly Color FumacaEscura = new Color(0.22f, 0.07f, 0.32f, 0.9f);
-    static readonly Color CorDoAviso = new Color(1f, 0.75f, 1f);
+    // Cores dos respingos (as partículas usam o desenho da poeira pintado com essas cores).
+    static readonly Color FumacaClara = new Color(0.92f, 0.98f, 1f, 0.9f);   // espuma
+    static readonly Color FumacaEscura = new Color(0.45f, 0.72f, 0.95f, 0.85f); // água
+    static readonly Color CorDoAviso = new Color(1f, 0.6f, 0.6f);
+    static readonly Color LuzDaAgua = new Color(0.5f, 0.85f, 1f);
 
-    // Um tentáculo do Kraken: a ponta (que mata), os "gomos" e o que ele está fazendo agora.
+    // Um jato d'água: a ponta de espuma (que mata), as "gotas" do corpo e o que ele está fazendo agora.
     class Mao
     {
         public Transform mao;
@@ -73,12 +75,12 @@ public class MareNegra : MonoBehaviour
         public bool fechada;               // já se enrolou neste bote?
     }
 
-    // Um olho que pisca no meio da sombra.
-    class Olho
+    // Um destroço boiando dentro da onda (barril, tábua, chapéu...): sobe e desce, gira e passa.
+    class Destroco
     {
         public SpriteRenderer desenho;
-        public float timer;   // até a próxima piscada (ou a próxima espiada, dormindo)
-        public float piscando; // > 0 enquanto pisca
+        public Vector2 lugar;  // em relação à frente da onda
+        public float fase, giro;
     }
 
     Estado estado = Estado.Dormindo;
@@ -91,12 +93,13 @@ public class MareNegra : MonoBehaviour
     float relogio;         // relógio próprio das animações (congela na pausa, como o Time.deltaTime)
     float timerFumaca, timerRuido, timerBatida;
     float batida;          // 1 = o "coração" acabou de bater (a vinheta pulsa), cai até 0
-    bool jaSussurrou;      // o "Eu te amo..." aparece uma vez por tentativa
+    bool jaSussurrou;      // o "Glub, glub..." aparece uma vez por tentativa
 
     Transform parede;
     readonly List<SpriteRenderer> bolhas = new List<SpriteRenderer>();
     readonly List<Transform> nevoas = new List<Transform>();
-    readonly List<Olho> olhos = new List<Olho>();
+    readonly List<Destroco> destrocos = new List<Destroco>();
+    SpriteRenderer crista;
     readonly List<Mao> maos = new List<Mao>();
     SpriteRenderer vinheta;
 
@@ -107,43 +110,50 @@ public class MareNegra : MonoBehaviour
         parede = new GameObject("Parede").transform;
         parede.SetParent(transform, false);
 
-        // Fundo: um retângulo escuro liso, comprido para a esquerda (você nunca vê o fim dele).
-        var fundo = ConstrutorDeFase.Visual("Fundo", parede, transform.position, "mare_negra_fundo", OrdemDoFundo, false).transform;
+        // Fundo: um retângulo azul-escuro liso, comprido para a esquerda (você nunca vê o fim dele).
+        var fundo = ConstrutorDeFase.Visual("Fundo", parede, transform.position, "tsunami_fundo", OrdemDoFundo, false).transform;
         fundo.localPosition = new Vector3(-LarguraDaNevoa - 25f, (Baixo + Alto) / 2f, 0f);
         fundo.localScale = new Vector3(52f, Alto - Baixo, 1f);
 
-        // Faixa de névoa logo atrás da borda, com fiapos roxos que sobem (o desenho se repete na vertical).
+        // Faixa de água logo atrás da borda, com riscos de luz que sobem pela onda (o desenho se repete na vertical).
         for (int i = 0; i < 6; i++)
-            nevoas.Add(ConstrutorDeFase.Visual("Nevoa", parede, transform.position, "mare_negra_nevoa", OrdemDaNevoa, false).transform);
+            nevoas.Add(ConstrutorDeFase.Visual("Agua", parede, transform.position, "tsunami_agua", OrdemDaNevoa, false).transform);
 
-        // Borda: "bolhas" de fumaça empilhadas, uma por bloco de altura. Elas tremem e trocam de forma.
+        // Borda: a espuma, empilhada, uma por bloco de altura. Ela treme e troca de forma.
         for (float y = Baixo; y <= Alto; y += 1f)
         {
-            var bolha = ConstrutorDeFase.Visual("Borda", parede, transform.position, "mare_negra_borda_0", OrdemDaBorda, false);
+            var bolha = ConstrutorDeFase.Visual("Espuma", parede, transform.position, "tsunami_borda_0", OrdemDaBorda, false);
             bolha.transform.localPosition = new Vector3(0f, y, 0f);
             bolhas.Add(bolha.GetComponent<SpriteRenderer>());
         }
 
-        // Olhos espalhados pela sombra (e uma luzinha roxa em cada um, nas fases escuras).
-        Vector2[] lugaresDosOlhos = { new Vector2(-1.7f, 2.7f), new Vector2(-3.6f, 6.1f), new Vector2(-2.1f, 9.5f), new Vector2(-3.9f, 12.8f) };
-        foreach (Vector2 lugar in lugaresDosOlhos)
+        // A crista lá em cima, enrolando para a frente (só enfeite: quem mata é a frente da onda e os jatos).
+        crista = ConstrutorDeFase.Visual("Crista", parede, transform.position, "tsunami_crista", OrdemDaCrista, false).GetComponent<SpriteRenderer>();
+
+        // Destroços que a onda arrastou, boiando lá dentro.
+        (string desenho, Vector2 lugar)[] lugares =
         {
-            var olho = ConstrutorDeFase.Visual("Olho", parede, transform.position, "mare_negra_olho_0", OrdemDosOlhos, false);
-            olho.transform.localPosition = lugar;
-            Luzes.Ponto(olho.transform, Luzes.Lilas, 1.6f, 0.6f);
-            olhos.Add(new Olho { desenho = olho.GetComponent<SpriteRenderer>(), timer = Random.Range(0.5f, 3f) });
+            ("tsunami_barril", new Vector2(-1.6f, 2.6f)), ("tsunami_tabua", new Vector2(-3.4f, 6.2f)),
+            ("tsunami_chapeu", new Vector2(-2f, 9.4f)), ("tsunami_tabua", new Vector2(-3.8f, 12.4f)), ("tsunami_barril", new Vector2(-4.6f, 4.3f)),
+        };
+        for (int i = 0; i < lugares.Length; i++)
+        {
+            var destroco = ConstrutorDeFase.Visual("Destroco", parede, transform.position, lugares[i].desenho, OrdemDosDestrocos, false);
+            destroco.transform.localPosition = lugares[i].lugar;
+            destrocos.Add(new Destroco { desenho = destroco.GetComponent<SpriteRenderer>(), lugar = lugares[i].lugar, fase = i * 1.9f,
+                                         giro = (i % 2 == 0 ? 1f : -1f) * Random.Range(40f, 90f) });
         }
 
-        // Os tentáculos, em alturas diferentes (a de baixo pega quem corre no chão; as outras, quem pula).
+        // Os jatos, em alturas diferentes (o de baixo pega quem corre no chão; os outros, quem pula).
         float[] alturas = { 1.9f, 4.6f, 7.4f, 10.2f, 13f };
         for (int i = 0; i < alturas.Length; i++) maos.Add(CriarMao(alturas[i], i * 2.1f));
 
-        // Luz roxa ao longo da frente (só existe nas fases escuras: Luzes.Ponto devolve null de dia).
+        // Luz azulada ao longo da frente (só existe nas fases escuras: Luzes.Ponto devolve null de dia).
         for (float y = 2f; y < 14f; y += 5f)
-            Luzes.Ponto(parede, Luzes.Lilas, 5f, 0.9f, new Vector3(0.3f, y, 0f));
+            Luzes.Ponto(parede, LuzDaAgua, 5f, 0.9f, new Vector3(0.3f, y, 0f));
 
         // A vinheta: um desenho do tamanho da tela, preso na câmera (veja LateUpdate). Começa invisível.
-        vinheta = ConstrutorDeFase.Visual("Vinheta", transform, transform.position, "mare_negra_vinheta", OrdemDaVinheta, false).GetComponent<SpriteRenderer>();
+        vinheta = ConstrutorDeFase.Visual("Vinheta", transform, transform.position, "tsunami_vinheta", OrdemDaVinheta, false).GetComponent<SpriteRenderer>();
         vinheta.color = new Color(1f, 1f, 1f, 0f);
 
         frente = xDoN = transform.position.x;
@@ -153,19 +163,19 @@ public class MareNegra : MonoBehaviour
     {
         var mao = new Mao { alturaBase = altura, altura = altura, fase = fase };
         for (int i = 0; i < GomosDoBraco; i++)
-            mao.gomos.Add(ConstrutorDeFase.Visual("Braco", parede, transform.position, "mare_negra_braco", OrdemDosBracos, false).transform);
+            mao.gomos.Add(ConstrutorDeFase.Visual("Gota", parede, transform.position, "tsunami_gota", OrdemDosBracos, false).transform);
 
-        var objeto = ConstrutorDeFase.Visual("TentaculoDaMare", parede, transform.position, "tentaculo_da_mare", OrdemDasMaos, false);
+        var objeto = ConstrutorDeFase.Visual("Jato", parede, transform.position, "tsunami_jato", OrdemDasMaos, false);
         mao.mao = objeto.transform;
         mao.desenho = objeto.GetComponent<SpriteRenderer>();
 
-        // Só a PONTA mata (os gomos são só enfeite). Como ela se mexe, precisa do corpo cinemático.
+        // Só a PONTA mata (as gotas são só enfeite). Como ela se mexe, precisa do corpo cinemático.
         var area = objeto.AddComponent<CircleCollider2D>();
         area.isTrigger = true;
         area.radius = 0.33f;
-        objeto.AddComponent<Perigo>().conquista = "mare_negra";
+        objeto.AddComponent<Perigo>().conquista = "mare_negra"; // (o id antigo da conquista: quem já tinha continua tendo)
         Perigo.TornarMovel(objeto);
-        Luzes.Ponto(mao.mao, Luzes.Lilas, 1.4f, 0.5f);
+        Luzes.Ponto(mao.mao, LuzDaAgua, 1.4f, 0.5f);
         return mao;
     }
 
@@ -212,7 +222,7 @@ public class MareNegra : MonoBehaviour
         bool vivo = GerenciadorDoJogo.JogadorVivo(out Vector2 jogador);
 
         // O jogador sumiu de um lugar e apareceu em outro (porta, bandeira que manda de volta...)?
-        // A parede reaparece atrás dele, como num checkpoint.
+        // A onda reaparece atrás dele, como num checkpoint.
         if (vivo && Mathf.Abs(jogador.x - ultimoX) > 3f) Reposicionar(jogador.x);
         if (vivo) ultimoX = jogador.x;
         float distancia = vivo ? jogador.x - frente : 99f;
@@ -241,7 +251,8 @@ public class MareNegra : MonoBehaviour
         parede.position = new Vector3(frente, 0f, 0f);
         AnimarBorda();
         AnimarNevoa();
-        AnimarOlhos(dt);
+        AnimarDestrocos();
+        AnimarCrista();
         AnimarMaos(dt, vivo, jogador, distancia);
         SoltarFumaca(dt);
         TocarSons(dt, distancia);
@@ -255,7 +266,7 @@ public class MareNegra : MonoBehaviour
         GerenciadorDoJogo.Som("rugido", 0.45f);
         CameraSeguir.Tremer(0.25f, 0.5f);
         if (GerenciadorDoJogo.Instancia.MortesNaFase < 3) GerenciadorDoJogo.Instancia.Avisar("CORRE!", 1.2f);
-        // um "estouro" de fumaça e todos os tentáculos se esticam de uma vez
+        // um "estouro" de espuma e todos os jatos se esticam de uma vez
         EstouroDeFumaca(24);
         foreach (Mao mao in maos) mao.alcance = 1.1f;
     }
@@ -284,11 +295,11 @@ public class MareNegra : MonoBehaviour
         else if (distancia < 2.5f && !jaSussurrou)
         {
             jaSussurrou = true;
-            GerenciadorDoJogo.Instancia.Avisar("Glub, glub...", 1f); // a Maré Negra está BEM perto
+            GerenciadorDoJogo.Instancia.Avisar("Glub, glub...", 1f); // o tsunami está BEM perto
         }
     }
 
-    // Encostou na parede: o Kraken te agarra. Todos os tentáculos se enrolam de uma vez.
+    // Encostou na onda: ela te engole. Todos os jatos estouram de uma vez.
     void Abracar()
     {
         Jogador jogador = GerenciadorDoJogo.JogadorAtual;
@@ -302,19 +313,20 @@ public class MareNegra : MonoBehaviour
         {
             mao.estado = EstadoDaMao.Voltando;
             mao.timer = 0.8f;
-            mao.desenho.sprite = FabricaDeSprites.Pegar("tentaculo_da_mare_enrolado");
+            mao.desenho.sprite = FabricaDeSprites.Pegar("tsunami_jato_estourado");
         }
+        EstouroDeFumaca(16);
     }
 
     void IrEmbora()
     {
         estado = Estado.IndoEmbora;
-        foreach (Olho olho in olhos) olho.desenho.sprite = FabricaDeSprites.Pegar("mare_negra_olho_0");
+        EstouroDeFumaca(30); // a onda quebra
     }
 
     // ------------------------------------------------------------------ animações
 
-    // As bolhas da borda tremem para os lados e trocam de forma umas 3 vezes por segundo (cada uma no seu ritmo).
+    // A espuma da borda treme para os lados e troca de forma umas 3 vezes por segundo (cada pedaço no seu ritmo).
     // Acordando, ela "infla" e treme mais.
     void AnimarBorda()
     {
@@ -327,15 +339,15 @@ public class MareNegra : MonoBehaviour
             bolha.transform.localPosition = new Vector3(x, p.y, 0f);
             bolha.transform.localScale = new Vector3(1f + 0.12f * Mathf.Sin(relogio * 3.1f + i * 2.3f), 1f, 1f); // "respirando"
             int forma = (i * 3 + Mathf.FloorToInt(relogio * 3f * agitacao + i * 0.37f)) % QuantidadeDeBolhas;
-            bolha.sprite = FabricaDeSprites.Pegar("mare_negra_borda_" + forma);
+            bolha.sprite = FabricaDeSprites.Pegar("tsunami_borda_" + forma);
             bolha.flipY = i % 2 == 1; // de ponta-cabeça a cada duas: parece que tem mais formas
         }
     }
 
-    // A névoa sobe devagar: os pedaços andam para cima e o de cima volta para baixo (o desenho se repete).
+    // A água sobe pela onda: os pedaços andam para cima e o de cima volta para baixo (o desenho se repete).
     void AnimarNevoa()
     {
-        float sobe = Mathf.Repeat(relogio * 0.7f, AlturaDaNevoa);
+        float sobe = Mathf.Repeat(relogio * (estado == Estado.Dormindo ? 0.6f : 2.2f), AlturaDaNevoa);
         for (int i = 0; i < nevoas.Count; i++)
         {
             float y = Baixo - AlturaDaNevoa + AlturaDaNevoa / 2f + i * AlturaDaNevoa + sobe;
@@ -343,34 +355,30 @@ public class MareNegra : MonoBehaviour
         }
     }
 
-    // Dormindo, os olhos ficam fechados (e de vez em quando ESPIAM). Acordada, ficam abertos e piscam.
-    void AnimarOlhos(float dt)
+    // Os destroços sobem e descem devagar, girando (parada, a onda só balança eles).
+    void AnimarDestrocos()
     {
-        foreach (Olho olho in olhos)
+        float agitacao = estado == Estado.Dormindo ? 0.4f : 1f;
+        foreach (Destroco destroco in destrocos)
         {
-            olho.timer -= dt;
-            olho.piscando -= dt;
-            if (olho.timer <= 0f)
-            {
-                olho.piscando = estado == Estado.Dormindo ? 0.5f : 0.15f;
-                olho.timer = Random.Range(2f, 5f);
-            }
-
-            string quadro;
-            if (estado == Estado.IndoEmbora) quadro = "mare_negra_olho_0";
-            else if (estado == Estado.Dormindo) quadro = olho.piscando > 0f ? "mare_negra_olho_1" : "mare_negra_olho_0"; // espiando...
-            else if (olho.piscando > 0f) quadro = olho.piscando > 0.05f && olho.piscando < 0.1f ? "mare_negra_olho_0" : "mare_negra_olho_1";
-            else quadro = "mare_negra_olho_2";
-            olho.desenho.sprite = FabricaDeSprites.Pegar(quadro);
-
-            float pulso = 1f + 0.06f * Mathf.Sin(relogio * 3f + olho.desenho.transform.localPosition.y);
-            olho.desenho.transform.localScale = Vector3.one * 1.4f * pulso; // olhos grandes (o desenho tem 15 pixels)
+            Vector2 lugar = destroco.lugar + new Vector2(0.35f * Mathf.Sin(relogio * 0.8f + destroco.fase),
+                                                         0.6f * Mathf.Sin(relogio * 1.3f * agitacao + destroco.fase * 2f));
+            destroco.desenho.transform.localPosition = lugar;
+            destroco.desenho.transform.localRotation = Quaternion.Euler(0f, 0f, relogio * destroco.giro * agitacao);
         }
+    }
+
+    // A crista fica lá no alto da onda e "respira": cresce um pouco para a frente e volta, enrolando.
+    void AnimarCrista()
+    {
+        float onda = Mathf.Sin(relogio * (estado == Estado.Dormindo ? 1.2f : 3f));
+        crista.transform.localPosition = new Vector3(0.15f + 0.2f * onda, 12.6f + 0.15f * onda, 0f);
+        crista.transform.localScale = new Vector3(1f + 0.06f * onda, 1f, 1f);
     }
 
     void AnimarMaos(float dt, bool vivo, Vector2 jogador, float distancia)
     {
-        // Jogador perto da parede e nenhum tentáculo no meio de um bote? O mais perto da altura dele ataca.
+        // Jogador perto da onda e nenhum jato no meio de um bote? O mais perto da altura dele ataca.
         if (estado == Estado.Perseguindo && vivo && distancia < distanciaDoBote && !AlgumaMaoAtacando())
         {
             Mao escolhida = null;
@@ -390,7 +398,7 @@ public class MareNegra : MonoBehaviour
             switch (mao.estado)
             {
                 case EstadoDaMao.Balancando:
-                    // vai e volta devagar, com os dedos para fora da sombra (dormindo, quase toda escondida)
+                    // vai e volta devagar, com a espuma para fora da onda (parada, quase todo escondido)
                     float onda = 0.5f + 0.5f * Mathf.Sin(relogio * 1.3f + mao.fase);
                     float alvo = estado == Estado.Dormindo ? -0.2f + 0.3f * onda : 0.05f + 0.35f * onda;
                     if (estado == Estado.Acordando) alvo = 0.6f + 0.5f * Mathf.Sin(relogio * 14f + mao.fase); // se debatendo
@@ -399,7 +407,7 @@ public class MareNegra : MonoBehaviour
                     break;
 
                 case EstadoDaMao.Preparando:
-                    // O AVISO: recua para dentro da sombra, mira na altura do jogador e pisca
+                    // O AVISO: recua para dentro da onda, mira na altura do jogador e pisca
                     mao.alcance = Mathf.Lerp(mao.alcance, -0.7f, 12f * dt);
                     mao.altura = Mathf.Lerp(mao.altura, mao.alturaDoBote, 10f * dt);
                     if ((mao.timer * 14f) % 2f < 1f) cor = CorDoAviso;
@@ -411,13 +419,13 @@ public class MareNegra : MonoBehaviour
                     break;
 
                 case EstadoDaMao.Agarrando:
-                    // estica rapidinho (0,1 s), segura esticado e se enrola no fim
+                    // estica rapidinho (0,1 s), segura esticado e estoura no fim
                     float quanto = Mathf.SmoothStep(0f, 1f, (0.3f - mao.timer) / 0.1f);
                     mao.alcance = Mathf.Lerp(-0.7f, alcanceDoBote, quanto);
                     if (mao.timer < 0.12f && !mao.fechada)
                     {
                         mao.fechada = true;
-                        mao.desenho.sprite = FabricaDeSprites.Pegar("tentaculo_da_mare_enrolado");
+                        mao.desenho.sprite = FabricaDeSprites.Pegar("tsunami_jato_estourado");
                         GerenciadorDoJogo.Som("bloco", 0.5f);
                         Fumaca(mao.alcance + 0.4f, mao.altura, 4);
                     }
@@ -434,7 +442,7 @@ public class MareNegra : MonoBehaviour
                     {
                         mao.estado = EstadoDaMao.Balancando;
                         mao.recarga = recargaDaMao;
-                        mao.desenho.sprite = FabricaDeSprites.Pegar("tentaculo_da_mare");
+                        mao.desenho.sprite = FabricaDeSprites.Pegar("tsunami_jato");
                     }
                     break;
             }
@@ -457,15 +465,15 @@ public class MareNegra : MonoBehaviour
         mao.timer = tempoDePreparo;
         mao.alturaDoBote = Mathf.Clamp(alturaDoJogador, mao.alturaBase - 1.6f, mao.alturaBase + 1.6f);
         mao.fechada = false;
-        mao.desenho.sprite = FabricaDeSprites.Pegar("tentaculo_da_mare");
+        mao.desenho.sprite = FabricaDeSprites.Pegar("tsunami_jato");
         GerenciadorDoJogo.Som("armadilha", 0.35f);
     }
 
-    // A ponta fica no fim do tentáculo; o resto é uma fileira de "gomos" que sai de dentro da sombra
-    // e ondula um pouquinho (os gomos de perto da ponta são menores).
+    // A ponta fica no fim do jato; o resto é uma fileira de "gotas" que sai de dentro da onda
+    // e ondula um pouquinho (as gotas de perto da ponta são menores).
     void PosicionarMao(Mao mao)
     {
-        Vector2 raiz = new Vector2(-0.8f, mao.alturaBase); // escondida embaixo da borda
+        Vector2 raiz = new Vector2(-0.8f, mao.alturaBase); // escondido embaixo da espuma
         Vector2 ponta = new Vector2(mao.alcance, mao.altura);
         Vector2 pulso = ponta - new Vector2(0.4f, 0f);
         Vector2 direcao = (pulso - raiz).normalized;
@@ -480,12 +488,12 @@ public class MareNegra : MonoBehaviour
         }
 
         float angulo = Mathf.Atan2(direcao.y, direcao.x) * Mathf.Rad2Deg;
-        float mexe = mao.estado == EstadoDaMao.Balancando ? 10f * Mathf.Sin(relogio * 2.2f + mao.fase) : 0f; // dedos "chamando"
+        float mexe = mao.estado == EstadoDaMao.Balancando ? 10f * Mathf.Sin(relogio * 2.2f + mao.fase) : 0f; // a espuma balançando
         mao.mao.localPosition = ponta;
         mao.mao.localRotation = Quaternion.Euler(0f, 0f, angulo + mexe);
     }
 
-    // Fumaça roxa saindo da frente da parede (mais devagar enquanto ela dorme).
+    // Respingos saindo da frente da onda (menos enquanto ela está parada).
     void SoltarFumaca(float dt)
     {
         if (estado == Estado.IndoEmbora) return;
@@ -495,19 +503,19 @@ public class MareNegra : MonoBehaviour
         Fumaca(Random.Range(-0.2f, 0.4f), Random.Range(-0.5f, 14.5f), 1);
     }
 
-    // Solta "quantidade" partículas de fumaça perto de um ponto (x em relação à frente da parede).
+    // Solta "quantidade" respingos perto de um ponto (x em relação à frente da onda). Eles voam para a frente e caem.
     void Fumaca(float x, float y, int quantidade)
     {
         for (int i = 0; i < quantidade; i++)
         {
             var posicao = new Vector3(frente + x, y, 0f) + (Vector3)(Random.insideUnitCircle * 0.2f);
-            var velocidadeDaFumaca = new Vector2(Random.Range(0.6f, 2.8f), Random.Range(-0.2f, 1f));
+            var velocidadeDaFumaca = new Vector2(Random.Range(0.8f, 3.2f), Random.Range(-1.2f, 0.6f));
             Color cor = Random.value < 0.5f ? FumacaClara : FumacaEscura;
             Particula.Criar(transform.parent, posicao, velocidadeDaFumaca, Random.Range(0.4f, 0.9f), Random.Range(0.9f, 1.8f), cor);
         }
     }
 
-    // O "estouro" de quando ela acorda: fumaça clara (e mais rápida) em toda a altura.
+    // O "estouro" de quando ela acorda (ou quebra): espuma (e mais rápida) em toda a altura.
     void EstouroDeFumaca(int quantidade)
     {
         for (int i = 0; i < quantidade; i++)
@@ -541,7 +549,7 @@ public class MareNegra : MonoBehaviour
         if (distancia < 3f) CameraSeguir.Tremer(0.04f, 0.1f);
     }
 
-    // A vinheta acompanha a câmera e escurece a tela quanto mais perto a parede está (pulsando com o "coração").
+    // A vinheta acompanha a câmera e escurece a tela quanto mais perto a onda está (pulsando com o "coração").
     void LateUpdate()
     {
         Camera cam = Camera.main;
@@ -563,147 +571,155 @@ public class MareNegra : MonoBehaviour
 
     // ------------------------------------------------------------------ desenhos
 
-    // Registra os desenhos na FabricaDeSprites (Pegar("mare_negra") funciona em qualquer lugar, até no mapa do mundo).
+    // As cores da água (do fundo da onda até a espuma).
+    static readonly Color32 Fundo = new Color32(22, 56, 120, 255);      // o corpo da onda
+    static readonly Color32 Meio = new Color32(40, 92, 165, 255);       // degradê
+    static readonly Color32 Clara = new Color32(78, 146, 214, 255);     // riscos de luz
+    static readonly Color32 Brilho = new Color32(158, 214, 246, 255);   // o brilho mais forte
+    static readonly Color32 Espuma = new Color32(244, 251, 255, 255);   // espuma
+    static readonly Color32 EspumaSombra = new Color32(196, 230, 248, 255);
+    static readonly Color32 Contorno = new Color32(12, 30, 70, 255);    // contorno azul-marinho (a água não tem contorno preto)
+    static readonly Color32 Funda = new Color32(10, 28, 66, 255);       // o "tubo" escuro dentro da crista
+
+    // Registra os desenhos na FabricaDeSprites (Pegar("tsunami") funciona em qualquer lugar, até no mapa do mundo).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void RegistrarDesenhos()
     {
         Vector2 centro = FabricaDeSprites.Centro;
-        FabricaDeSprites.Registrar("mare_negra", () => FabricaDeSprites.DeArte(ArteIcone, centro));
-        FabricaDeSprites.Registrar("tentaculo_da_mare", () => FabricaDeSprites.DeArte(ArteMao, centro));
-        FabricaDeSprites.Registrar("tentaculo_da_mare_enrolado", () => FabricaDeSprites.DeArte(ArteMaoFechada, centro));
-        FabricaDeSprites.Registrar("mare_negra_braco", () => FabricaDeSprites.DeArte(ArteGomo, centro));
-        FabricaDeSprites.Registrar("mare_negra_olho_0", () => FabricaDeSprites.DeArte(ArteOlhoFechado, centro));
-        FabricaDeSprites.Registrar("mare_negra_olho_1", () => FabricaDeSprites.DeArte(ArteOlhoMeio, centro));
-        FabricaDeSprites.Registrar("mare_negra_olho_2", () => FabricaDeSprites.DeArte(ArteOlhoAberto, centro));
-        FabricaDeSprites.Registrar("mare_negra_fundo", () => FabricaDeSprites.Procedural(16, 16, centro, (x, y) => FabricaDeSprites.Cor('x')));
-        FabricaDeSprites.Registrar("mare_negra_nevoa", () => FabricaDeSprites.Procedural(128, 64, centro, CorDaNevoa));
-        FabricaDeSprites.Registrar("mare_negra_vinheta", () => FabricaDeSprites.Procedural(128, 72, centro, CorDaVinheta));
+        FabricaDeSprites.Registrar("tsunami", () => FabricaDeSprites.DeArte(ArteIcone, centro));
+        FabricaDeSprites.Registrar("tsunami_jato", () => FabricaDeSprites.DeArte(ArteJato, centro));
+        FabricaDeSprites.Registrar("tsunami_jato_estourado", () => FabricaDeSprites.DeArte(ArteJatoEstourado, centro));
+        FabricaDeSprites.Registrar("tsunami_gota", () => FabricaDeSprites.DeArte(ArteGota, centro));
+        FabricaDeSprites.Registrar("tsunami_barril", () => FabricaDeSprites.DeArte(ArteBarril, centro));
+        FabricaDeSprites.Registrar("tsunami_tabua", () => FabricaDeSprites.DeArte(ArteTabua, centro));
+        FabricaDeSprites.Registrar("tsunami_chapeu", () => FabricaDeSprites.DeArte(ArteChapeu, centro));
+        FabricaDeSprites.Registrar("tsunami_fundo", () => FabricaDeSprites.Procedural(16, 16, centro, (x, y) => Fundo));
+        FabricaDeSprites.Registrar("tsunami_agua", () => FabricaDeSprites.Procedural(128, 64, centro, CorDaAgua));
+        FabricaDeSprites.Registrar("tsunami_vinheta", () => FabricaDeSprites.Procedural(128, 72, centro, CorDaVinheta));
+        // a crista: o pivô fica na base, no pixel 4 (onde ela encosta na frente da onda)
+        FabricaDeSprites.Registrar("tsunami_crista", () => FabricaDeSprites.Procedural(48, 40, new Vector2(4f / 48f, 0f), CorDaCrista));
 
-        // A borda: o pivô fica no pixel 15 de 24 (a "frente" da parede passa no meio das bolhas).
+        // A borda: o pivô fica no pixel 15 de 24 (a "frente" da onda passa no meio da espuma).
         var pivoDaBorda = new Vector2(15f / 24f, 0.5f);
         for (int i = 0; i < QuantidadeDeBolhas; i++)
         {
             int forma = i;
-            FabricaDeSprites.Registrar("mare_negra_borda_" + forma, () => FabricaDeSprites.Procedural(24, 24, pivoDaBorda, (x, y) => CorDaBorda(x, y, forma)));
+            FabricaDeSprites.Registrar("tsunami_borda_" + forma, () => FabricaDeSprites.Procedural(24, 24, pivoDaBorda, (x, y) => CorDaBorda(x, y, forma)));
         }
-        FabricaDeSprites.Registrar("mare_negra_borda", () => FabricaDeSprites.Pegar("mare_negra_borda_0"));
     }
 
-    // Ícone (mapa do mundo): o Kraken espiando da maré, com os olhos roxos e os tentáculos.
+    // Ícone (mapa do mundo): a onda gigante enrolando, com a espuma em cima.
     static readonly string[] ArteIcone =
     {
-        ".......vvvvvvv.......",
-        ".....vvxxxxxxxvv.....",
-        "....vxxxxxxxxxxxv....",
-        "...vxxxxxxxxxxxxxv...",
-        "...vxxvvvxxxvvvxxv...",
-        "..vxxvPPkvxvPPkvxxv..",
-        "..vxxvPwkvxvPwkvxxv..",
-        "..vxxxvvvxxxvvvxxxv..",
-        "..vxxxxxxxxxxxxxxxv..",
-        "...vxxxxxxxxxxxxxv...",
-        "..vxxvxxvxxxvxxvxxv..",
-        "...vxv.vxv.vxv.vxv...",
-        "...vPv.vxv.vxv.vPv...",
-        "..vxv..vPv.vPv..vxv..",
-        ".vxv...vxv.vxv...vxv.",
-        ".vxv..vxv...vxv..vxv.",
-        "..vxv.vxv...vxv.vxv..",
-        "...v...v.....v...v...",
+        "........kkkkkk......",
+        "......kkwwwwwwkk....",
+        ".....kwwllllllwwk...",
+        "....kwlEEEEEEEllwk..",
+        "...kwlEEBBBBBEEElwk.",
+        "...kwEEBBkkkkBBEEwk.",
+        "..kwlEBBk....kkBEwk.",
+        "..kwEEBk.......kwwk.",
+        "..kwEBBk........kk..",
+        ".kwlEBBk............",
+        ".kwEEBBBk...........",
+        "kwlEEBBBBkk.........",
+        "kwEEEBBBBBBkk...k...",
+        "kwEEEEBBBBBBBkkkwk..",
+        "klllEEEEEBBBBBBBwwk.",
+        "kwwwwlllllEEEEEEllwk",
+        "kkkkkkkkkkkkkkkkkkkk",
     };
 
-    // A ponta do tentáculo esticada para a direita, com a pontinha enrolada e as ventosas lilás embaixo.
-    static readonly string[] ArteMao =
+    // A ponta do jato d'água, indo para a direita: espuma na frente, água azul atrás.
+    static readonly string[] ArteJato =
     {
-        "...........vvv..",
-        "..........vxxxv.",
-        "..........vxvxxv",
-        "...........v.vxv",
-        "............vxxv",
-        "..vvvvvvvvvvxxv.",
-        ".vxxxxxxxxxxxxv.",
-        "vxxxxxxxxxxxxv..",
-        "vxxxxxxxxxxvv...",
-        "vxPxxPxxPxv.....",
-        "vxxxxxxxxv......",
-        ".vvvvvvvv.......",
+        "....kkkk........",
+        "..kkwwwwkk......",
+        ".kwwlwwwwwk.....",
+        "kBElllwwwwwk....",
+        "kBEEllllwwwwk...",
+        "kBBEEElllwwwk...",
+        "kBBEEElllwwwk...",
+        "kBEEllllwwwwk...",
+        "kBElllwwwwwk....",
+        ".kwwlwwwwwk.....",
+        "..kkwwwwkk......",
+        "....kkkk........",
     };
 
-    // O tentáculo enrolado (agarrando).
-    static readonly string[] ArteMaoFechada =
+    // O jato estourando (pegou ou errou): um "splash" de espuma.
+    static readonly string[] ArteJatoEstourado =
     {
-        "................",
-        ".....vvvvv......",
-        "...vvxxxxxvv....",
-        "..vxxvvvvvxxv...",
-        ".vxxv.....vxxv..",
-        ".vxv..vvv..vxv..",
-        "vxxv.vxxxv.vxv..",
-        "vxxv.vxvxv.vxv..",
-        "vxxv..vxxv.vxv..",
-        "vxPxv..vv.vxxv..",
-        "vxxxxvvvvvxxv...",
-        ".vxPxxxPxxxv....",
-        "..vvvvvvvvv.....",
-        "................",
+        "..k....k....k...",
+        "...kw..w...wk...",
+        ".k..ww.w.ww..k..",
+        "..ww.lwwwl.ww...",
+        "k...lwwEwwl...k.",
+        ".wwwwEEBEEwwww..",
+        "k...lwwEwwl...k.",
+        "..ww.lwwwl.ww...",
+        ".k..ww.w.ww..k..",
+        "...kw..w...wk...",
+        "..k....k....k...",
     };
 
-    // Um "gomo" do tentáculo (bolinha de sombra).
-    static readonly string[] ArteGomo =
+    // Uma "gota" do corpo do jato.
+    static readonly string[] ArteGota =
     {
-        "...vvvv...",
-        ".vvxxxxvv.",
-        ".vxxxxxxv.",
-        "vxxvxxxxxv",
-        "vxxxxxxxxv",
-        "vxxxxxxxxv",
-        "vxxxxxvxxv",
-        ".vxxxxxxv.",
-        ".vvxxxxvv.",
-        "...vvvv...",
+        "...kkkk...",
+        ".kklllEkk.",
+        ".klwllEEk.",
+        "klwlEEEEBk",
+        "klllEEEEBk",
+        "kllEEEEEBk",
+        "kEEEEEEBBk",
+        ".kEEEEBBk.",
+        ".kkBBBBkk.",
+        "...kkkk...",
     };
 
-    // O olho: fechado (dormindo), meio aberto (espiando / piscando) e aberto, com a pupila fininha.
-    static readonly string[] ArteOlhoAberto =
+    // Os destroços que a onda arrastou.
+    static readonly string[] ArteBarril =
     {
-        ".....vvvvv.....",
-        "..vvvVPPPVvvv..",
-        ".vVPPPwkPPPPVv.",
-        "vVPPPPPkPPPPPVv",
-        ".vVPPPPkPPPPVv.",
-        "..vvvVPPPVvvv..",
-        ".....vvvvv.....",
+        "..kkkkkk..",
+        ".kbbbbbbk.",
+        "kssssssssk",
+        "kbbdbbdbbk",
+        "kbbdbbdbbk",
+        "kssssssssk",
+        "kbbdbbdbbk",
+        "kbbdbbdbbk",
+        "kssssssssk",
+        ".kbbbbbbk.",
+        "..kkkkkk..",
     };
 
-    static readonly string[] ArteOlhoMeio =
+    static readonly string[] ArteTabua =
     {
-        "...............",
-        "...............",
-        "..vvvvvvvvvvv..",
-        "vVPPPPPkPPPPPVv",
-        "..vvvvvvvvvvv..",
-        "...............",
-        "...............",
+        "kkkkkkkkkkkkkkkkkkkk",
+        "knnnnnnbnnnnnnnnbnnk",
+        "knnbnnnnnnnnbnnnnnnk",
+        "kbbbbbbbbbbbbbbbbbbk",
+        "kkkkkkkkkkkkkkkkkkkk",
     };
 
-    static readonly string[] ArteOlhoFechado =
+    static readonly string[] ArteChapeu =
     {
-        "...............",
-        "...............",
-        "...............",
-        "vv...........vv",
-        ".vvv.......vvv.",
-        "....vvvvvvv....",
-        "...............",
+        "......kkkk......",
+        "....kkjjjjkk....",
+        "...kjjjwwjjjk...",
+        "..kjjjwkwjjjjk..",
+        "..kjjjjwwjjjjk..",
+        ".kjjjjjjjjjjjjk.",
+        "kyyyyyyyyyyyyyyk",
+        "kjjjjjjjjjjjjjjk",
+        ".kkkkkkkkkkkkkk.",
     };
 
-    // Entre o 'x' (sombra) e o 'v' (roxo): usado nos degradês da névoa e da borda.
-    static readonly Color32 Meio = new Color32(52, 20, 76, 255);
-
-    // Ruído "fixo" (o mesmo pixel sempre dá o mesmo número), para os brilhinhos.
+    // Ruído "fixo" (o mesmo pixel sempre dá o mesmo número), para as bolinhas de espuma.
     static int Ruido(int x, int y) => ((x * 73856093) ^ (y * 19349663) ^ 0x5bd1e995) & 0x7fffffff;
 
-    // --- Borda: cada forma é um punhado de meias-bolhas saindo de uma base, mais um fiapo comprido.
+    // --- Borda: cada forma é um punhado de meias-bolhas de espuma saindo de uma base, mais um fiapo comprido.
     // (centro em y, raio) de cada bolha, em pixels; e o fiapo: (linha, comprimento).
     static readonly Vector2[][] Bolhas =
     {
@@ -713,9 +729,9 @@ public class MareNegra : MonoBehaviour
         new[] { new Vector2(6f, 7f), new Vector2(15f, 4f), new Vector2(21.5f, 6f) },
     };
     static readonly Vector2Int[] Fiapos = { new Vector2Int(16, 4), new Vector2Int(7, 5), new Vector2Int(13, 3), new Vector2Int(19, 4) };
-    const int BaseDaBorda = 9; // até o pixel 9 é tudo sombra (fica por cima da névoa)
+    const int BaseDaBorda = 9; // até o pixel 9 é tudo água (fica por cima da faixa de água)
 
-    // Até onde (em x) a sombra vai na linha y.
+    // Até onde (em x) a água vai na linha y.
     static float Extensao(int y, int forma)
     {
         float extensao = BaseDaBorda;
@@ -737,52 +753,86 @@ public class MareNegra : MonoBehaviour
         return x < Extensao(y, forma);
     }
 
+    // A espuma: branca na beirada, azul-clarinha logo atrás, e a água por dentro.
     static Color32 CorDaBorda(int x, int y, int forma)
     {
         if (!DentroDaBorda(x, y, forma))
         {
-            // contorno preto em volta da sombra (pixel vazio encostado nela)
+            // contorno azul-marinho em volta da espuma (pixel vazio encostado nela)
             bool encostado = DentroDaBorda(x + 1, y, forma) || DentroDaBorda(x - 1, y, forma)
                           || DentroDaBorda(x, y + 1, forma) || DentroDaBorda(x, y - 1, forma);
-            return encostado ? FabricaDeSprites.Cor('k') : FabricaDeSprites.Transparente;
+            return encostado ? Contorno : FabricaDeSprites.Transparente;
         }
 
-        // A que distância (1, 2 ou 3 pixels) está a beirada mais perto? Perto da beirada a sombra brilha roxo.
-        for (int r = 1; r <= 3; r++)
+        // A que distância (1 a 4 pixels) está a beirada mais perto?
+        for (int r = 1; r <= 4; r++)
             for (int a = -r; a <= r; a++)
             {
                 int b = r - Mathf.Abs(a);
                 if (DentroDaBorda(x + a, y + b, forma) && DentroDaBorda(x + a, y - b, forma)) continue;
-                if (r == 1) return FabricaDeSprites.Cor(Ruido(x, y + forma * 31) % 9 == 0 ? 'P' : 'V');
-                if (r == 2) return FabricaDeSprites.Cor('v');
-                return (x + y) % 2 == 0 ? FabricaDeSprites.Cor('v') : Meio; // xadrezinho = degradê de pixel art
+                if (r == 1) return Espuma;
+                if (r == 2) return Ruido(x, y + forma * 31) % 5 == 0 ? Espuma : EspumaSombra;
+                if (r == 3) return (x + y) % 2 == 0 ? EspumaSombra : Clara; // xadrezinho = degradê de pixel art
+                return (x + y) % 2 == 0 ? Clara : Meio;
             }
-        return FabricaDeSprites.Cor('x');
+        return Ruido(x, y + forma * 7) % 23 == 0 ? Meio : Fundo; // umas bolhinhas no meio da água
     }
 
-    // --- Névoa: fiapos roxos feitos com senos. Na vertical, os senos dão um número INTEIRO de voltas
-    // em 64 pixels, então o desenho se repete certinho (dá para empilhar e "rolar" para cima).
-    static Color32 CorDaNevoa(int x, int y)
+    // --- Água: riscos de luz feitos com senos (a água subindo pela onda). Na vertical, os senos dão um número
+    // INTEIRO de voltas em 64 pixels, então o desenho se repete certinho (dá para empilhar e "rolar" para cima).
+    static Color32 CorDaAgua(int x, int y)
     {
         float t = 2f * Mathf.PI * y / 64f;
         float a = Mathf.Sin(2f * t + x * 0.09f + 1.6f * Mathf.Sin(t + x * 0.045f));
         float b = Mathf.Sin(3f * t - x * 0.06f + 2f + 0.8f * Mathf.Sin(2f * t - x * 0.03f));
-        float fiapo = 0.6f * a + 0.4f * b;
+        float risco = 0.6f * a + 0.4f * b;
 
-        // escura nas pontas: à esquerda emenda no fundo liso, à direita fica embaixo da borda
+        // escura nas pontas: à esquerda emenda no fundo liso, à direita fica embaixo da espuma
         float u = x / 127f;
         float meio = u < 0.85f ? Mathf.Pow(Mathf.Sin(Mathf.PI * u / 0.85f), 1.3f) : 0f;
-        float brilho = fiapo * meio;
+        float brilho = risco * meio;
 
         bool xadrez = (x + y) % 2 == 0;
-        if (brilho > 0.72f || (brilho > 0.62f && xadrez)) return FabricaDeSprites.Cor('V');
-        if (brilho > 0.42f) return FabricaDeSprites.Cor('v');
-        if (brilho > 0.3f) return xadrez ? FabricaDeSprites.Cor('v') : Meio;
+        if (brilho > 0.78f || (brilho > 0.7f && xadrez)) return Brilho;
+        if (brilho > 0.45f) return Clara;
+        if (brilho > 0.32f) return xadrez ? Clara : Meio;
         if (brilho > 0.12f || (brilho > 0.02f && xadrez)) return Meio;
-        return FabricaDeSprites.Cor('x');
+        return Fundo;
     }
 
-    // --- Vinheta: sombra forte do lado esquerdo (de onde a parede vem), com a beirada ondulada,
+    // --- Crista: o "lábio" da onda enrolando para a frente lá em cima, com o tubo escuro por dentro
+    // e uma gota de espuma pingando da ponta. Os pixels 0-4 da esquerda emendam na onda.
+    static bool DentroDaCrista(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= 48 || y >= 40) return false;
+        float d1 = Vector2.Distance(new Vector2(x, y), new Vector2(20f, 20f));
+        float d2 = Vector2.Distance(new Vector2(x, y), new Vector2(29f, 14f));
+        if (x <= 4) return y < 34;                                 // emenda na onda
+        if (d1 >= 18f) return x >= 37 && x <= 40 && y >= 5 && y <= 12 && (x - 38.5f) * (x - 38.5f) + (y - 9f) * (y - 9f) < 9f; // a gota pingando
+        if (d2 < 8f) return false;                                 // o buraco do tubo
+        if (y < 14 && x > 24) return false;                        // embaixo do lábio é vazio
+        return true;
+    }
+
+    static Color32 CorDaCrista(int x, int y)
+    {
+        if (!DentroDaCrista(x, y))
+        {
+            bool encostado = DentroDaCrista(x + 1, y) || DentroDaCrista(x - 1, y) || DentroDaCrista(x, y + 1) || DentroDaCrista(x, y - 1);
+            return encostado && x > 4 ? Contorno : FabricaDeSprites.Transparente;
+        }
+        float d1 = Vector2.Distance(new Vector2(x, y), new Vector2(20f, 20f));
+        float d2 = Vector2.Distance(new Vector2(x, y), new Vector2(29f, 14f));
+        if (d1 >= 18f) return Espuma;                              // a gota
+        if (d1 > 16f && y > 12) return Espuma;                     // a espuma em cima do lábio
+        if (d1 > 14.5f && y > 12) return (x + y) % 2 == 0 ? Espuma : EspumaSombra;
+        if (d2 < 10f) return Funda;                                // a sombra dentro do tubo
+        if (d2 < 11.5f) return (x + y) % 2 == 0 ? Funda : Fundo;
+        float onda = Mathf.Sin(x * 0.35f + y * 0.2f) + Mathf.Sin(y * 0.5f - x * 0.1f);
+        return onda > 1.2f ? Clara : onda > 0.6f ? Meio : Fundo;
+    }
+
+    // --- Vinheta: sombra azul forte do lado esquerdo (de onde a onda vem), com a beirada ondulada,
     // e uma moldura fraquinha em volta da tela toda. O resto é transparente.
     static Color32 CorDaVinheta(int x, int y)
     {
@@ -791,7 +841,7 @@ public class MareNegra : MonoBehaviour
         float esquerda = Mathf.Pow(Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.6f, 0f, u + onda)), 1.4f);
         float beirada = Mathf.Min(Mathf.Min(u, 1f - u), Mathf.Min(v, 1f - v));
         float moldura = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.2f, 0f, beirada)) * 0.55f;
-        Color32 cor = FabricaDeSprites.Cor('x');
+        Color32 cor = new Color32(6, 18, 46, 255);
         cor.a = (byte)Mathf.RoundToInt(Mathf.Max(esquerda * 0.95f, moldura) * 255f);
         return cor;
     }

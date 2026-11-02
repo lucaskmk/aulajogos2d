@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 'w' - a BALEIA BRANCA, o chefe final (a última fase é só dela). Ela é uma ORCA gigante com um
+// 'w' - a BALEIA BRANCA, a chefe da fase 10 (quem mandou ela foi o Kraken Vermelho). Ela é uma ORCA gigante com um
 // CHIFRE na testa (os desenhos ficam em ArteDaBaleia.cs).
 //
 // O 'w' marca o começo da arena (na linha em que o jogador anda); a arena tem larguraDaArena blocos
@@ -533,7 +533,7 @@ public class BaleiaBranca : Chefe
         Conquistas.Desbloquear("baleia");
         // a partir daqui, se morrer (caiu num buraco...), renasce DEPOIS da arena
         GerenciadorDoJogo.Instancia.ChefeVencido(new Vector3(direita + 1.5f, chao + 0.5f, 0f));
-        GerenciadorDoJogo.Instancia.Avisar("A BALEIA BRANCA FOI DERROTADA!", 3f);
+        GerenciadorDoJogo.Instancia.Avisar("A BALEIA BRANCA FOI DERROTADA! (mas quem mandou ela?)", 3f);
 
         // treme, pisca e afunda na névoa girando (e a escuridão vai embora)
         GerenciadorDoJogo.Som("rugido");

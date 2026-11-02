@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Os desenhos da CAPITÃ ÂNCORA (o chefe da fase 6), feitos com texto como o resto do jogo.
+// Os desenhos da CAPITÃ ÂNCORA (o chefe da fase 4), feitos com texto como o resto do jogo.
 // Ela é a capitã pirata: chapéu de três pontas preto com a borda dourada e a caveira na frente, cabelo
 // castanho preso, casaco vermelho com o cinto e a fivela dourada, e botas. A arma dela é a ÂNCORA na corrente
 // (os desenhos da âncora e dos elos ficam em Ancora.cs).

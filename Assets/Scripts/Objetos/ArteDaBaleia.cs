@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Os desenhos da BALEIA BRANCA (o chefe final), feitos por código como o resto do jogo.
+// Os desenhos da BALEIA BRANCA (a chefe da fase 10), feitos por código como o resto do jogo.
 // Ela é uma ORCA gigante com um CHIFRE de osso espiralado na testa:
 //  - corpo BRANCO (é a Baleia BRANCA) com sombras lilás, e o desenho de orca em branco mais quente:
 //    barriga e a "mancha" atrás do olho (a marca da orca) aparecem pelo contorno e pelo tom;

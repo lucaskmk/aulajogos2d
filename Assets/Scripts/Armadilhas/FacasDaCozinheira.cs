@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
-// 'l' - AS FACAS DA COZINHEIRA, a Cozinheira do navio fantasma (a chefe da fase 13, que cozinha no porão escuro).
+// 'l' - AS FACAS DA COZINHEIRA, a ex-cozinheira do navio fantasma (a chefe da fase 7, que cozinha na gruta escura).
 //       Ela fica escondida nas sombras: de longe você só vê DOIS OLHOS que brilham e somem.
 //       Quando o Grumete chega a menos de 14 blocos na horizontal e mais ou menos na mesma altura,
 //       ela arremessa uma faca (um cutelo de cozinha) em linha reta, mirando nele, a cada 1,6 s.

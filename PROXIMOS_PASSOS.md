@@ -4,10 +4,13 @@ Arquivo de passagem de bastão: dá para continuar daqui (no Claude Code ou na m
 O README explica o jogo e o código; o GDD explica o design. Aqui fica só o estado do trabalho.
 
 ## Pronto
-- **16 fases + a secreta**, todas integradas (`Fases.cs`), com o mapa do mundo (`MapaDoMundo.cs`) e as falas (`Textos.cs`).
-- **Os 3 chefes no molde Helltaker** (3 etapas de 2 golpes, aviso antes de todo ataque, padrões fixos, checkpoint por etapa):
-  `ChefeCapita.cs` (fase 6), `ChefeCozinheira.cs` (fase 13) e `BaleiaBranca.cs` (fase 16), com a base em `Chefe.cs`.
-  O dano é **pular na cabeça no momento de vulnerabilidade** de cada um (âncora presa, clarão do lampião, atordoada depois do mergulho).
+- **13 fases + a secreta** (3 fases e um chefe, depois 2 fases e um chefe, três vezes), cada uma com um tema próprio, todas integradas
+  (`Fases.cs`), com o mapa do mundo (`MapaDoMundo.cs`) e as falas (`Textos.cs`). As fases parecidas da versão de 16 viraram uma só, mais longa.
+- **Os 4 chefes no molde Helltaker** (3 etapas de 2 golpes, aviso antes de todo ataque, padrões fixos, checkpoint por etapa):
+  `ChefeCapita.cs` (fase 4), `ChefeCozinheira.cs` (fase 7), `BaleiaBranca.cs` (fase 10) e `ChefeKraken.cs` (fase 13, o final, que rouba moedas),
+  com a base em `Chefe.cs`. O dano é **pular na cabeça no momento de vulnerabilidade** de cada um (âncora presa, clarão do lampião,
+  atordoada depois do mergulho, cansada com a cabeça no convés).
+- **O tsunami** (`Tsunami.cs`, a letra `N`) no lugar da Maré Negra, e os tentáculos do jogo (cano e tela de morte) vermelhos, do Kraken.
 - **Recordes por fase e medalhas** (`Progresso.cs`, `Medalhas.cs`, `Interface.cs`, `MapaDoMundo.cs`) e a conquista "Perfeccionista".
 - **Atalhos de teste:** F9 no mapa (libera tudo só na partida atual) e F10 (painel de gráficos, FPS e pior quadro).
 - **Visual v3 (HD-2D):** blocos (`ArteDosBlocos.cs`), fundo nítido com a luz pintada, raios de sol, sombras de nuvens, vento nas plantas e a tela pixelada
@@ -17,7 +20,7 @@ O README explica o jogo e o código; o GDD explica o design. Aqui fica só o est
 O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora é **CILADA À VISTA!**, uma aventura de pirata:
 - **Nomes e textos:** o Grumete, a Marina (sereia), o Louro (papagaio), a Dóris (fantasminha), a Capitã Âncora, a Cozinheira,
   o Kraken e a Baleia Branca; fases, falas, conquistas, mensagens de morte, créditos, README e GDD.
-- **Desenhos novos:** os personagens, a âncora, os cutelos, os caranguejos e ratos, o tentáculo e os tentáculos da Maré Negra (no lugar das mãos).
+- **Desenhos novos:** os personagens, a âncora, os cutelos, os caranguejos e ratos e o tentáculo.
 - **Áudio 100% próprio:** os dois MP3 do anime foram apagados. A Volta da Maré agora é gerada por código (`SomDaMare.cs`: a onda, o sino do navio e um lamento de acordeão).
 - **Trilha pirata** (`Musicas.cs`, sintetizador próprio com acordeão, apito, violão, tambor de mão, pisadas e sino):
   - "Jiga do Grumete" nas fases (6/8, ré menor, AABB), num tom por fase (`FabricaDeMusica.DaFase`);
@@ -25,7 +28,7 @@ O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora �
   - as músicas dos 3 chefes reorquestradas com os instrumentos de pirata.
   - A `FabricaDeEpico.cs` (a música antiga, "abertura de anime") foi apagada.
 - **Mapa do arquipélago:** as ilhas separadas por estreitos (as pontes de madeira atravessam), o mar no norte e no sul com navios,
-  palmeiras, o farol, o forte da Capitã, o navio fantasma das Cabines, naufrágios, baús e a Rocha da Caveira.
+  palmeiras, o farol, o forte da Capitã, o navio fantasma, naufrágios, baús e a Rocha da Caveira.
   Os caminhos são os mesmos de antes (só ganharam pontes onde passam por cima do mar), então a ordem das fases e os atalhos não mudaram.
 - **Fundos das fases:** ilhas com um vulcão lá longe, um galeão no horizonte, palmeiras e o mato da praia (as camadas de `Paralaxe.cs`).
   No chão das fases, barris e estrelas-do-mar no lugar das cercas e dos cogumelos.
@@ -48,12 +51,14 @@ O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora �
 - **Fundos das fases:** o galeão e as palmeiras no HD-2D e no Simples; se nada pontudo no fundo parece espinho.
 
 ## Ainda falta
-- **Página do itch.io:** como jogar e os segredos (fase secreta: todas as moedas da fase 5 e depois seta para baixo no ponto 5).
+- **Página do itch.io:** como jogar e os segredos (fase secreta: todas as moedas da fase 3 e depois seta para baixo no ponto 3).
+- **Testar as fases novas jogando:** o checador confere o terreno, mas não as plataformas, o vento, as portas e o tsunami. Jogar os trechos novos
+  (fases 4, 6, 7, 9, 10, 11 e 12) e as emendas (2, 3, 5 e 8), e a luta do Kraken inteira, e ajustar se algum ficar injusto.
 - **Tempos-alvo das medalhas:** são estimativas. Ajustar o campo `tempoAlvo` em `Fases.cs` depois de jogar,
   e conferir se TODAS as moedas de cada fase dá para pegar (senão a medalha de moeda fica impossível).
 - **Narrativa (opcional):** um prólogo curto (o Grumete cai do navio, e a maré sempre o traz de volta), um cartão de capítulo ao entrar em cada fase e um epílogo com a Marina.
 - **Modo Justo (opcional, desligado por padrão):** o save nunca "muda de lugar" e a bandeira `W` não manda para o começo.
-- **Sons das mecânicas:** efeitos para a âncora, o vento, as facas, a Maré Negra, o tic do ritmo e as plataformas.
+- **Sons das mecânicas:** efeitos para a âncora, o vento, as facas, o tsunami, o tic do ritmo e as plataformas.
 - **Equipe:** pôr os nomes em `Textos.Equipe` (créditos), no README e no GDD.
 
 ## Como integrar uma mecânica ou fase nova

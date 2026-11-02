@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // 's' - ponto de save da Volta da Maré. Encostou: daqui pra frente você renasce aqui.
-// Mas às vezes (só de maldade) o ponto de save "muda de lugar" e você volta para o começo. :)
+// Mas às vezes (só de maldade) o ponto de save "muda de lugar" e você volta para o checkpoint anterior. :)
 // (quem decide isso é o GerenciadorDoJogo, quando você morre)
 public class PontoDeSave : MonoBehaviour
 {

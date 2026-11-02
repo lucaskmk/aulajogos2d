@@ -24,8 +24,10 @@ public class BandeiraVolta : MonoBehaviour
         var jogador = outro.GetComponent<Jogador>();
         if (jogador == null || jogador.Morto) return;
 
-        jogador.Teletransportar(GerenciadorDoJogo.Instancia.PosicaoInicial);
+        // volta para o último checkpoint (nas fases compridas, voltar para o começo de tudo seria maldade demais)
+        Vector3? save = GerenciadorDoJogo.Instancia.PontoDeSave;
+        jogador.Teletransportar(save ?? GerenciadorDoJogo.Instancia.PosicaoInicial);
         GerenciadorDoJogo.Som("risada");
-        GerenciadorDoJogo.Instancia.Avisar("VOLTA PRO COMEÇO! :)", 2.5f);
+        GerenciadorDoJogo.Instancia.Avisar(save.HasValue ? "VOLTA PRO CHECKPOINT! :)" : "VOLTA PRO COMEÇO! :)", 2.5f);
     }
 }

@@ -8,11 +8,11 @@ using UnityEngine;
 // O mapa começa coberto pela NÉVOA (a névoa do alto-mar): você só enxerga em volta das fases
 // que já liberou. Ninguém sabe onde fica a última fase até chegar lá. Quando passa de fase,
 // a névoa vai sumindo ao longo do caminho novo e o ponto da próxima fase aparece.
-// Quando a última fase (o covil da Baleia Branca) aparece, a névoa do mapa INTEIRO vai embora.
+// Quando a última fase (o covil do Kraken Vermelho) aparece, a névoa do mapa INTEIRO vai embora.
 //
 // Cores dos pontos: verde = já passou nesta partida, amarelo = liberada.
 // Embaixo de cada ponto, uma caveira com quantas vezes você morreu nela nesta partida.
-// Tem também uma fase SECRETA numa ilhota da lagoa (aparece quando você pega todas as moedas da fase 5).
+// Tem também uma fase SECRETA numa ilhota da lagoa (aparece quando você pega todas as moedas da fase 3).
 // Quem lê as teclas é o GerenciadorDoJogo; aqui só tem o desenho, a névoa e a caminhada.
 //
 // A ARTE (visual v3, o mesmo acabamento das fases) fica em outros arquivos:
@@ -29,21 +29,22 @@ public class MapaDoMundo : MonoBehaviour
     //  K  o castelo do porto
     //  a  abismo (o fundo do desfiladeiro)      #  ponte de corda (caminho por cima do abismo)
     //  o  pedra            R  naufrágio         *  baú do tesouro
-    //  p  palmeira morta (das ilhas do Kraken)  L  o navio fantasma das Cabines Assombradas
-    //  Y  a Rocha da Caveira (perto do covil da Baleia Branca)
+    //  p  palmeira morta (das ilhas do Kraken)  L  o Navio Fantasma (as cabines da Dóris)
+    //  Y  a Rocha da Caveira (perto do covil do Kraken)
     //  n  um navio pirata navegando (fica no mar)                l  o farol do porto
     //  c  céu (o horizonte lá em cima, com as camadas de paralaxe; a névoa não cobre)
-    //  1 a 9, A a G  as fases (A = 10, B = 11 ... G = 16). O caminho de '+', '=' e '#' tem que ligar
+    //  1 a 9, A a D  as fases (A = 10, B = 11, C = 12, D = 13). O caminho de '+', '=' e '#' tem que ligar
     //         o 1 ao 2, o 2 ao 3, e assim por diante (o 9 ao A, o A ao B...).
     //         Cuidado: dois caminhos encostados viram um atalho (a busca anda nas 4 direções).
     //  S  a fase secreta (ligada por caminho ao ponto da Fases.FaseDoSegredo)
     //
     // A viagem é de ilha em ilha, da esquerda para a direita (as pontes de madeira atravessam os estreitos):
-    //   a Ilha do Porto, com o castelo e o farol (1); a Ilha da Selva, cheia de palmeiras (2, 3 e 4);
-    //   a Ilha da Lagoa, com a ilhota secreta (5), o forte da Capitã (6) e a vila (7);
-    //   a Ilha do Desfiladeiro (8), com a mesa de pedra no meio do abismo (9) e a beirada do vento (10),
-    //   que continua nos rochedos do navio fantasma das Cabines Assombradas (11) e dos baús de tesouro (12);
-    //   as ilhas mortas do Kraken (13, 14 e 15) e, lá longe, no mar escuro, o covil da Baleia Branca (16).
+    //   a Ilha do Porto, com o castelo e o farol (1); a Ilha da Selva, cheia de palmeiras (2);
+    //   a Ilha da Lagoa, com a ilhota secreta (3), o forte da Capitã (4) e a vila (5);
+    //   a Ilha do Desfiladeiro, com a mesa de pedra no meio do abismo (6) e a gruta da Cozinheira na beirada (7),
+    //   que continua nos rochedos do Navio Fantasma (8) e dos baús de tesouro, no penhasco dos ventos (9);
+    //   as ilhas mortas do Kraken (a Baleia, 10; o tsunami, 11; o rochedo, 12) e, lá longe, no mar escuro,
+    //   o covil do Kraken Vermelho (13), perto da Rocha da Caveira.
     // As 3 primeiras linhas são o céu. As 4 últimas ficam atrás da faixa escura da interface:
     // lá embaixo é só enfeite (nenhum ponto): o mar aberto, com navios passando.
     static readonly string[] Desenho =
@@ -53,17 +54,17 @@ public class MapaDoMundo : MonoBehaviour
             "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
             "~~........~~~~~~~TT...TTTTT~~~~...~~~....T~~T.T~~n~...........~~~~..aaaaaaa..~~^.^~~~~^...~~.p.p.~~~~.pp^^.p..^~",
             "h.........~~~~.....TTT.TT..TT^....~~...f.f.T.....Tf..........R.~~..aaaaaaaaa...^....^.^^^^~~.......R...^.p.p^p..",
-            "..........~~~.T....T.TTTT.TTT++4++~~...T..Tf.T.T..T............~~.aaaaaoaaaaa.^^^.L..^^^^.~~.....p.p^....p......",
-            ".....K....~~~+++2+++.TTTTT.TT+...+~~......f......f............+==8+###+..aaa.o^^^......^^^~~.D+++p.......p......",
-            ".h.....h.h~~~+T....+..T..TT..+...+~~++++++++++++++f....M......+~~..aaa+.oaaa..^o++B++^....~~.+..+.....F+++......",
+            "..........~~~.T....T.TTTT.TTT+++++~~...T..Tf.T.T..T............~~.aaaaaoaaaaa.^^^.L..^^^^.~~.....p.p^....p......",
+            ".....K....~~~+++2+++.TTTTT.TT+...+~~......f......f............+==++###+..aaa.o^^^......^^^~~.A+++p.......p......",
+            ".h.....h.h~~~+T....+..T..TT..+...+~~++++++++++++++f....M......+~~..aaa+.oaaa..^o++8++^....~~.+..+.....C+++......",
             "..........~~~+TT...+.T....T..+.^^+~~+...f.....f..+.f.......h..+~~..aa.+..aaao.^.+...+.^^.^~~.+p.+.p...+..+......",
-            "h...1+++++===+.T.T.+TTTT.T++++..^+==5...~~~~~....++++++6++....+~~oRaaa+..aa...^o+.^^+....+==++.p+pRpp.+.p+..Y..~",
-            "..........~~~..TT.T+T....T+TT....^~~+.~~~~~~~~~~..fff....+.hfh+~~..oaa+9+aaa...o+...+....+~~.p.p++..+++pp+..~~~~",
+            "h...1+++++===+.T.T.+TTTT.T++++..^+==3...~~~~~....++++++4++....+~~oRaaa+..aa...^o+.^^+....+==++.p+pRpp.+.p+..Y..~",
+            "..........~~~..TT.T+T....T+TT....^~~+.~~~~~~~~~~..fff....+.hfh+~~..oaa+6+aaa...o+...+....+~~.p.p++..+++pp+..~~~~",
             ".h.h..h.h.~~~.TT..T+++....+.T....^~~+~~~~~..~~~~~f.ffff..+....+~~R.aaa..+aaao...+^^.+^...+~~.pRp.+..+ppR.+~~~~~~",
-            "....f.....~~~~TTTTTT.+....+TT^^.^.~~=====+S..~~~~...f.f..+f...+~~..aaa.o+aaa....+^^*+++C++~~.....+..+p..~=~~~~~~",
-            "..h.h..h.h~~~~T..TTTT++3+++^T.....~~~~~~~~..~~~~~...T....+++7++~~.oaaaa.+###++A++....^....~~...p.E+++pp~~=~~~~~~",
+            "....f.....~~~~TTTTTT.+....+TT^^.^.~~=====+S..~~~~...f.f..+f...+~~..aaa.o+aaa....+^^*+++9++~~.....+..+p..~=~~~~~~",
+            "..h.h..h.h~~~~T..TTTT++++++^T.....~~~~~~~~..~~~~~...T....+++5++~~.oaaaa.+###++7++....^....~~...p.B+++pp~~=~~~~~~",
             ".ff...f...~~~~.TTT.TTT....TTT^^...~~.~~~~~~~~~~~~.T..TTT..T....~~T.aaaaaaaaaa....^.^..^.^^~~p.p.....p.~~~=~~..~~",
-            ".hl..h..h.~~~.TTTTTT..T.T.T.T....^~~..~~~~~~~~~~f...ff..TTTT..T~~Taaaaaaaaaa..^^^..^^..^^.~~R.p..p...~~~~===G..~",
+            ".hl..h..h.~~~.TTTTTT..T.T.T.T....^~~..~~~~~~~~~~f...ff..TTTT..T~~Taaaaaaaaaa..^^^..^^..^^.~~R.p..p...~~~~===D..~",
             "~~~~~~~.~.~~~.~~~.~~~~~~TT.T..T^^~~~~~~~~~~~~~~f~~~~.~~~~~T.h.T~~T.aaaaaaaaa....*^^~~~~~~~~~~p...~~~~~~~~~~~..~~",
             "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~T~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
             "~~~~~~~n~~~~~~~~~~~~~.T~~~~n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~n~~~~~~~~~~~~~",
@@ -74,8 +75,8 @@ public class MapaDoMundo : MonoBehaviour
     // O "personagem" de cada fase, que fica do lado do ponto (o primeiro é o da fase 1).
     static readonly string[] Personagens =
     {
-        "louro", "inimigo", "serra", "nuvem_malvada", "rato", "ancora", "inimigo_espinhos", "esmagador",
-        "plataforma", "vento", "fantasma", "bloco_ritmo", "faca", "mare_negra", "bandeira_falsa", "baleia",
+        "louro", "serra", "rato", "ancora", "esmagador", "plataforma", "faca",
+        "fantasma", "vento", "baleia", "tsunami", "bandeira_falsa", "kraken",
     };
 
     // Os personagens têm tamanhos bem diferentes (o Louro tem 1 bloco; a Baleia, uns 6!).
@@ -388,7 +389,8 @@ public class MapaDoMundo : MonoBehaviour
     Vector3 ArrumarPersonagem(int i, SpriteRenderer desenho)
     {
         Bounds caixa = desenho.sprite.bounds; // tamanho do desenho em blocos (com escala 1)
-        bool voa = Personagens[i % Personagens.Length] == "baleia"; // a Baleia Branca "nada" no ar, mais alto
+        string quem = Personagens[i % Personagens.Length];
+        bool voa = quem == "baleia" || quem == "kraken"; // a Baleia e o Kraken "nadam" no ar, mais alto
         bool emPe = !voa && caixa.center.y - caixa.extents.y > -0.01f; // o desenho começa no pivô: pivô na base
         float escala = emPe ? 1f : EscalaDosPersonagens;
         escala = Mathf.Min(escala, LarguraMaxima / caixa.size.x, AlturaMaxima / caixa.size.y);
@@ -644,7 +646,7 @@ public class MapaDoMundo : MonoBehaviour
         if (nevoa != null) nevoa.Revelar(centro, raio);
     }
 
-    // No fim, a névoa do mapa INTEIRO vai embora numa onda que sai do covil da Baleia.
+    // No fim, a névoa do mapa INTEIRO vai embora numa onda que sai do covil do Kraken.
     IEnumerator RevelarTudo(Vector2Int centro)
     {
         for (float raio = RaioDoPonto; raio <= Largura + Altura; raio += VelocidadeDaOnda * Time.deltaTime)
@@ -692,7 +694,7 @@ public class MapaDoMundo : MonoBehaviour
             Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.3f, 0.8f, 0.5f);
         }
 
-        // em cima da região sombria o céu vai escurecendo (a Maré Negra do Kraken está perto)
+        // em cima da região sombria o céu vai escurecendo (o covil do Kraken está perto)
         float inicio = InicioDaSombra - 8f;
         var ceuSombrio = ConstrutorDeFase.Visual("CeuSombrio", transform, new Vector3(inicio, horizonte - 0.2f, 0f), "mapa_ceu_sombrio", -20, false);
         Vector3 tamanho = FabricaDeSprites.Pegar("mapa_ceu_sombrio").bounds.size;
@@ -815,7 +817,7 @@ public class MapaDoMundo : MonoBehaviour
             }
 
             // a fase nova "nasce" com um pulinho e a névoa em volta dela vai embora
-            // (na última fase, a névoa do mapa INTEIRO vai embora e a Baleia Branca ruge)
+            // (na última fase, a névoa do mapa INTEIRO vai embora e o Kraken ruge)
             bool ultima = destino == pontos.Count - 1;
             if (ultima)
             {

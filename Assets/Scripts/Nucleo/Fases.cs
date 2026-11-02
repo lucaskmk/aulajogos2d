@@ -6,6 +6,9 @@ using UnityEngine;
 //  Cada fase é desenhada com texto! Cada caractere é um bloco de 1x1.
 //  A linha de cima do texto é o topo da tela. Todas as fases têm 15 linhas.
 //
+//  A VIAGEM (13 fases, cada uma com um lugar e um clima só dela): 3 fases e a Capitã, 2 fases e a Cozinheira,
+//  2 fases e a Baleia Branca, 2 fases e o Kraken Vermelho (o chefe final, que mandou todo mundo atrás de você).
+//
 //  LEGENDA
 //   #  chão                       B  tijolo
 //   P  início do jogador          G  bandeira (fim da fase)
@@ -22,7 +25,7 @@ using UnityEngine;
 //   m  moeda assassina (igual à moeda normal)
 //   e  inimigo disfarçado (igual ao normal, mas tem espinhos: NÃO pise!)
 //   M  bloco que foge quando você pula perto dele
-//   W  bandeira que te manda de volta pro começo
+//   W  bandeira que te manda de volta pro último checkpoint (sem checkpoint: pro começo)
 //   X  linha invisível que inverte os controles quase na hora (0,4 s) (cruzou de novo, desinverte).
 //      Só UMA fase usa isso, e só num trecho (é difícil demais para usar sempre)
 //   U  cano (2 de largura, desce até o chão): de tempos em tempos sai uma MÃO dele. Encostou, morreu
@@ -33,12 +36,15 @@ using UnityEngine;
 //   u  CAPITÃ (CHEFE): começo da arena de 20 blocos, na linha em que o jogador anda (chão LISO, sem buracos).
 //      Entrou, a arena fecha e a luta começa (3 etapas; quando a âncora dela ficar PRESA no chão, pule na cabeça dela).
 //      Na etapa 3 ela fica FURIOSA. Veja ChefeCapita.cs
+//   g  KRAKEN VERMELHO (CHEFE FINAL): começo da arena de 21 blocos, na linha em que o jogador anda (chão LISO), e logo
+//      depois dela a POÇA da lula: 4 colunas SEM chão (é de lá que ela sai). Os tentáculos VERMELHOS matam; o AMARELO (o agarrão) não mata,
+//      mas ROUBA suas moedas. Quando ela CANSA e encosta a cabeça no chão, pule nela. Veja ChefeKraken.cs
 //   L  Sereia (esperando no fim da última fase)
 //   0-9  porta da Dóris (2 de altura), com o número em cima: aperte S/seta para baixo na frente dela.
 //      Para onde cada porta leva fica na lista "portas" da fase, em pares de ida e volta: "1-4" = a 1 leva
 //      para a 4 e a 4 volta para a 1. É SEMPRE igual (dá para decorar o caminho)
 //   Y  Dóris (fala como as placas do Louro; os textos entram na mesma lista "placas")
-//   s  ponto de save: encostou, você renasce ali. Mas às vezes ele "muda de lugar"... :)
+//   s  ponto de save: encostou, você renasce ali. Mas às vezes ele "muda de lugar" (volta pro anterior)... :)
 //   j  plataforma mágica: vai para a direita e volta (até 6 blocos ou até encostar em algo) e leva você junto.
 //      Blocos 'j' lado a lado na mesma linha = uma plataforma só. Todas começam juntas, indo para a direita
 //   J  IGUAL à 'j'... mas 0,5 s depois que você sobe, o cristal fica VERMELHO, ela treme e DESPENCA
@@ -66,7 +72,7 @@ using UnityEngine;
 //   H  COZINHEIRA (CHEFE): começo da arena de 24 blocos, na linha em que o jogador anda (chão reto; o resto da arena
 //      vazio: os dois degraus de dentro ela mesma cria). Luta no ESCURO (use com escura = true): só os olhos aparecem.
 //      3 etapas; ache o LAMPIÃO, e no clarão pule na cabeça dela (veja ChefeCozinheira.cs)
-//   N  MARÉ NEGRA: parede de tinta do Kraken, com tentáculos, que PERSEGUE você a partir desta coluna (acorda quando você se
+//   N  TSUNAMI: a onda gigante que o Kraken levantou, que PERSEGUE você a partir desta coluna (acorda quando você se
 //      afasta 4 blocos; anda 5,2 b/s e acelera se você abrir vantagem). Encostou, morreu. No checkpoint ela nasce 9 blocos atrás
 //
 //  As placas (quem fala é o Louro) recebem os textos na ordem da esquerda para a direita.
@@ -84,10 +90,11 @@ public class Fase
     public string[] mapa;
     public string[] placas;
     public string[][] mudancas;
-    public string[] portas; // pares de portas ligadas, ex.: "1-4" (só nas Cabines Assombradas)
+    public string[] portas; // pares de portas ligadas, ex.: "1-4" (só nas cabines do Navio Fantasma)
     public bool noite;      // fase de noite: céu escuro com lua e estrelas, luzinhas acesas, vaga-lumes
     public bool escura;     // fase no ESCURO: quase não se vê nada, só em volta do Grumete e das luzinhas
     public bool petalas;    // pétalas caindo (no lugar do pólen)
+    public Ambiente.Tipo? clima; // as partículas da fase (folhas, chuva, bolhas...); null = pelo jeito da fase (veja PrepararClima)
     public Color32? corDoFundo; // cor do céu da fase (tons pastel, de livro ilustrado)
     // Medalha do relógio: passar a fase em até tantos segundos (contando desde a entrada pelo mapa, com as mortes).
     // 0 = automático, pelo tamanho da fase (veja Medalhas.TempoAlvo).
@@ -98,6 +105,7 @@ public static class Fases
 {
     public static readonly Fase[] Todas =
     {
+        // o PORTO do Cilada, de manhã
         new Fase
         {
             nome = "Bem-vindo :)",
@@ -128,15 +136,19 @@ public static class Fases
             },
         },
 
+        // a SELVA das palmeiras, folhas caindo (a serra mora no fim dela)
         new Fase
         {
-            nome = "Confia em mim",
+            nome = "Confia em mim (e corre!)",
             corDoFundo = new Color32(245, 190, 120, 255),
+            clima = Ambiente.Tipo.Folhas,
             placas = new[]
             {
                 "Essa fase é tranquila. Juro.",
                 "Chão 100% seguro à frente.",
                 "Última bandeira. Agora é sério.",
+                "Sobreviveu à bandeira? A selva continua!\nE não olhe para trás.",
+                "Cuidado com o que vem pela frente!",
             },
             mapa = new[]
             {
@@ -146,56 +158,30 @@ public static class Fases
                 "",
                 "",
                 "                           BBBBBBBBB",
-                "                             T   T",
+                "                             T   T                                                                                                  BBBBBBBB           *",
+                "                  ######                                                                                                              v  v          BBBBBB",
                 "                  ######",
-                "                  ######",
-                "          o       ######   ?",
-                "                  ######",
-                "         B        ######     $$$           $$",
-                "  P i    B      S ######         E  i        i  E B Z   G",
-                "######################################FFF#################",
-                "######################################FFF#################",
+                "          o       ######   ?                                                    ??                    $$$",
+                "                  ######                                                             $$               BBB                            $$$",
+                "         B        ######     $$$           $$                                                                s    i         >                 R   S",
+                "  P i    B      S ######         E  i        i  E B Z            <s i                     E   ###############################CCCC###########################",
+                "######################################FFF###################################  ######   ######################################CCCC###########################",
+                "######################################FFF###################################  ######   ######################################CCCC###########################",
             },
         },
 
+        // a LAGOA cor-de-rosa, com pétalas
         new Fase
         {
-            nome = "Corre!",
-            corDoFundo = new Color32(130, 210, 200, 255),
-            placas = new[]
-            {
-                "Não olhe para trás.",
-                "Cuidado com o que vem pela frente!",
-            },
-            mapa = new[]
-            {
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "                                                                    BBBBBBBB           *",
-                "                                                                      v  v          BBBBBB",
-                "",
-                "                ??                    $$$",
-                "                     $$               BBB                            $$$",
-                "                                             s    i         >                 R   S",
-                " <P i                     E   ###############################CCCC###########################",
-                "############  ######   ######################################CCCC###########################",
-                "############  ######   ######################################CCCC###########################",
-            },
-        },
-
-        new Fase
-        {
-            nome = "O Final (sem pegadinhas)",
+            nome = "O Final (mudei de ideia)",
             corDoFundo = new Color32(240, 150, 205, 255),
             petalas = true,
             placas = new[]
             {
                 "Última fase. Sem pegadinhas.\nPalavra de escoteiro.",
                 "Pula com força! (ou não)",
+                "Mudei de ideia: a fase continua! Pegue as moedas!\nTODAS! (as de trás também contam)",
+                "Decorou a fase? Que pena.",
             },
             mapa = new[]
             {
@@ -206,50 +192,22 @@ public static class Fases
                 "",
                 "                              BBBBB",
                 "                                T",
-                "",
-                "",
-                "                    ##    ?K?                            IIII",
-                "                                              o",
-                "              ##  FF                U        $$",
-                "  P i h                        $$$     r          E   i           G",
-                "###########            ##################CCC#############    #########",
-                "###########            ##################CCC#############    #########",
+                "                                                                                                              BBBBBB",
+                "                                                                                                                v",
+                "                    ##    ?K?                            IIII                                                               ?K",
+                "                                              o                                                                                    $$",
+                "              ##  FF                U        $$                                                                           U",
+                "  P i h                        $$$     r          E   i                   s i  $$ m$            h             rr                 i    E  G",
+                "###########            ##################CCC#############    ##########################   #############CCC############   #####################",
+                "###########            ##################CCC#############    ##########################   #############CCC############   #####################",
             },
         },
 
-        new Fase
-        {
-            nome = "Eu mudo de ideia",
-            corDoFundo = new Color32(245, 222, 110, 255),
-            placas = new[]
-            {
-                "Pegue as moedas! Todas!",
-                "Decorou a fase? Que pena.",
-            },
-            mapa = new[]
-            {
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "                                      BBBBBB",
-                "                                        v",
-                "                                                    ?K",
-                "                                                           $$",
-                "                                                  U",
-                "  P i  $$ m$            h             rr                 i    E  G",
-                "###############   #############CCC############   #####################",
-                "###############   #############CCC############   #####################",
-            },
-        },
-
+        // o FORTE da Capitã, de tarde
         new Fase
         {
             nome = "A Capitã Âncora",
-            tempoAlvo = 150f, // chefe: a luta conta (estimativa; ajuste depois de testar)
+            tempoAlvo = 170f, // chefe: a luta conta (estimativa; ajuste depois de testar)
             corDoFundo = new Color32(165, 185, 240, 255),
             placas = new[]
             {
@@ -270,52 +228,26 @@ public static class Fases
                 "",
                 "",
                 "",
-                "      ?B?                    Q      Q",
-                "            $$   $",
+                "      ?B?                    Q      Q                            Q",
+                "            $$   $                                 $$                  $$$",
                 "",
-                "  P i      i     Q     E        $$       i    s i   u                      i     G",
-                "######################################################################################",
-                "######################################################################################",
+                "  P i      i     Q     E        $$       i     Q        ^^                  q   E     s i   u                      i     G",
+                "####################################################  ########  #####   ######################################################",
+                "####################################################  ########  #####   ######################################################",
             },
         },
 
+        // a VILA de ponta-cabeça, poeira dourada no fim da tarde
         new Fase
         {
-            nome = "Cadê a direita?",
+            nome = "Cadê a direita? (Foge, bloco!)",
             corDoFundo = new Color32(195, 165, 230, 255),
+            clima = Ambiente.Tipo.Poeira,
             placas = new[]
             {
                 "Tudo normal por aqui. Pode andar.",
                 "Esquerda é direita. Ou era?",
-            },
-            mapa = new[]
-            {
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "                    ?     ?",
-                "                                                                            $$",
-                "          $$$",
-                "  P i           e                e   E       is X                   ^               X   G",
-                "#####################   #################CCC##################   ######   ##################",
-                "#####################   #################CCC##################   ######   ##################",
-            },
-        },
-
-        new Fase
-        {
-            nome = "Foge, bloco!",
-            corDoFundo = new Color32(245, 185, 195, 255),
-            petalas = true,
-            placas = new[]
-            {
-                "Esses blocos são meio tímidos...",
+                "Os controles voltaram ao normal. Acho.\nEsses blocos daqui são meio tímidos...",
                 "Chegada logo ali!",
             },
             mapa = new[]
@@ -327,17 +259,18 @@ public static class Fases
                 "",
                 "",
                 "",
-                "                                                                    BBBBB",
-                "                                                 $                    T",
-                "                                                BBB",
-                "",
-                "                              $$$                      U",
-                "  P i                 i B  W             E  $m$           rr  >        G",
-                "########### MM     ################   ######################################",
-                "###########        ################   ######################################",
+                "                                                                                                                                                                    BBBBB",
+                "                                                                                                                                                 $                    T",
+                "                    ?     ?                                                                                                                     BBB",
+                "                                                                            $$",
+                "          $$$                                                                                                                 $$$                      U",
+                "  P i           e                e   E       is X                   ^               X             s i                 i B  W             E  $m$           rr  >        G",
+                "#####################   #################CCC##################   ######   ################################# MM     ################   ######################################",
+                "#####################   #################CCC##################   ######   #################################        ################   ######################################",
             },
         },
 
+        // o DESFILADEIRO de noite, com vaga-lumes
         new Fase
         {
             nome = "Ponte para o Porto",
@@ -361,124 +294,26 @@ public static class Fases
                 "",
                 "                                                              v",
                 "                                            BBBBB",
-                "                           ?                  T            o",
+                "                           ?                  T            o                                                                                                                ?",
                 "      ?K?                                                    $ $ $     ?K                  ?                  $$        ?",
-                "                                    $ $  $$               jj                                               JJ",
-                "          $$                $$     jj                                        $$                          $m$           $                         $ $ $",
-                "  P i            $$$    i         $               s  jjj                   i  h    $$$         >B s  jjj                    i      $ $ $ $            i   G",
-                "###############jj      #########JJ      #############               #############jj      ############                #########DDD             ##############",
-                "###############        #########        #############               #############        ############                #########                ##############",
+                "                                    $ $  $$               jj                                               JJ                                                    $$             $m$",
+                "          $$                $$     jj                                        $$                          $m$           $                         $ $                                         $",
+                "  P i            $$$    i         $               s  jjj                   i  h    $$$         >B s  jjj                    i      $ $ $ $             s      jjj        h    >          E    i   G",
+                "###############jj      #########JJ      #############               #############jj      ############                #########DDD             #############          ##########  ####   ############",
+                "###############        #########        #############               #############        ############                #########                #############          ##########  ####   ############",
             },
         },
 
+        // a GRUTA escura (a cozinha que ela montou depois de ser expulsa do navio fantasma)
         new Fase
         {
-            nome = "Vento em Popa!",
-            corDoFundo = new Color32(245, 195, 215, 255),
-            placas = new[]
-            {
-                "O vento do mar tá de mau humor hoje.\nQuando as FOLHAS vierem, segure pra frente ou se esconda atrás de um bloco!",
-                "Redemoinho! Entra que ele te leva lá pra cima.\nDepois é só segurar pra direita.",
-                "Outro redemoinho, igualzinho ao primeiro!\nPode ir direto, sem medo. :)",
-                "Dica de graça: espere o redemoinho te levantar antes de sair.\n(essa é de verdade. A outra... nem tanto)",
-                "Pronto! O vento cansou e foi tirar um cochilo.\nAcabou a ventania. A bandeira é logo ali!",
-            },
-            mapa = new[]
-            {
-                "",
-                "",
-                "",
-                "                                                                                                 nnnnn$$$$nnnnn           yyyy                   yyyyyyyyyyyyyyyyyyyy",
-                "                                                                          yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         $nyyyynnn  n$n           yyyyyyyyy$$$yyyyyyyy",
-                "            $$                                            nnnn$$$$nn      yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         nnyyyynnn  nnn           yyyyyyyyyyyyyyy?yyyy",
-                "                                                          nnnnnnnnnn      yyyyyyy$yyy$m$yyyyyy   nnnnnnnnnnnnnn         nnyy$ynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
-                "                                                          nnnnnnnnnn      yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         nnyyyynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
-                "              yyyyyyyyyyyyyyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn   s  yyyByyyyyyyyyyEyByyyi  nnnnnnnnnnnnnn   s i   nnyyyynnn  nnn      i    yyyyBByyZyyyyByyyyBy  G",
-                "        I ?K  yyyyyyyyy?yyyyyyyy yyyyyyyy?yyyy$yyyyyy?yy  nnnnn$$nnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######CC#####################",
-                "       $$     yyy$$yyyyy$$yyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
-                "              yyyyyyyyyyyyyyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
-                "  P i       S yyyyyyByyyyyyByyyy yy^^yyEyyByyyyyyyyhyyyy innnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
-                "#############################################   #############nnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
-                "#############################################   #############nnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
-            },
-        },
-
-        new Fase
-        {
-            nome = "Cabines Assombradas",
-            tempoAlvo = 90f, // as portas tomam tempo
-            corDoFundo = new Color32(185, 150, 120, 255),
-            placas = new[]
-            {
-                "Cada porta tem um número e SEMPRE leva para o mesmo lugar.\nDecore o caminho! (S para entrar)",
-                "Beco sem saída! Mas tem caranguejo.\nA porta 9 sempre volta para a 2.",
-                "Achou a porta certa. Buuu.\nNão que eu estivesse esperando, viu?",
-            },
-            // A sai pela 1 ou 3 (sala das armadilhas), a 6 vai para a sala das moedas, a 8 vai para a Dóris.
-            // A 2 é o beco sem saída com os caranguejos.
-            portas = new[] { "1-4", "3-5", "2-9", "6-7", "8-0" },
-            mapa = new[]
-            {
-                "#############################################################",
-                "#############################################################",
-                "#           #         v #           #           #           #",
-                "#           #           #           #           #           #",
-                "#           #           #           #           #           #",
-                "#           #           #           #           #           #",
-                "#           #           #           #           #           #",
-                "#           #           #           #           #  BBBBBB   #",
-                "#  BBBBBB   #           #           #           #           #",
-                "#           #           #  BBBBBB   #           #           #",
-                "#           #           #           #      $    #           #",
-                "#           #           #   $$$m    #           #           #",
-                "# Pi 1  2 3 # 4 h 5 h 6 # 7   E   8 # 9 i e  E  # 0   Y  G  #",
-                "#############################################################",
-                "#############################################################",
-            },
-        },
-
-        new Fase
-        {
-            nome = "Dança das Marés",
-            noite = true,
-            corDoFundo = new Color32(150, 120, 200, 255),
-            placas = new[]
-            {
-                "Blocos da maré (azul) e do coral (rosa) se revezam.\nTic, tic, TAC: trocou! Pise no que tá aceso.",
-                "Pule no TIC, caia no TAC.\nA maré não espera ninguém.",
-                "Esses aí caem quando o AZUL acende.\nRosa aceso = caminho livre. (dessa vez é sério)",
-                "Agora é só ritmo puro, sem pegadinha.\nPalavra de papagaio! :3",
-                "Ufa, chegou! A bandeira tá logo ali.\nPode ir andando, sem pressa. :)",
-            },
-            mapa = new[]
-            {
-                "",
-                "",
-                "                                                      ?",
-                "",
-                "                                                $",
-                "                                                 bb ####",
-                "        $                              v     $      ####                                                                 $$",
-                "                                              aa    ####                                                             $       m",
-                "                                                    ####     BBBBBBBBBBBBBBBBBBBBBBBBBB                      $                   $",
-                "       ?B?                ?                bb       ####      tt      tt      ttt                   ?K?                aa                       $$",
-                "                    $m$         $$                  ####                                      $                aa              bb",
-                "                                        aa          ####                                                           bb      bb",
-                "  P i             h      i                ^^^^^^^^^^#### s i           $       $        i            s     bb                      aaa  i   b Z       G",
-                "############aaaa####bbbb#####aaa  bbb############################bbb####bbbb#######aaa#####aaaAaaa########                             ########aaaa#######",
-                "############^^^^####^^^^#####^^^^^^^^############################^^^####^^^^#######^^^#####^^^^^^^########^^^^^^^^^^^^^^^^^^^^^^^^^^^^^########^^^^#######",
-            },
-        },
-
-        new Fase
-        {
-            nome = "A Cozinheira do Porão",
-            tempoAlvo = 180f, // chefe
+            nome = "A Gruta da Cozinheira",
+            tempoAlvo = 190f, // chefe
             escura = true,
             corDoFundo = new Color32(55, 35, 80, 255),
             placas = new[]
             {
-                "Aqui mora a Cozinheira do navio fantasma.\nNo escuro, viu OLHOS VERMELHOS? PULA. Ou corre. Ou reza.",
+                "A gruta da Cozinheira. Expulsaram ela do navio fantasma...\nNo escuro, viu OLHOS VERMELHOS? PULA. Ou corre. Ou reza.",
                 "Esse caixote é à prova de faca. Se esconde atrás dele!\nE a moeda ali em cima também é de confiança. :)",
                 "A cozinha dela. Tá um BREU. Ache o LAMPIÃO,\ndepois pule na CABEÇA dela. Morreu? Volta na mesma ETAPA.",
                 "Você venceu a Cozinheira! Ela fugiu rindo, mas conta.\nA bandeira é logo ali. Essa não tem faca. Eu acho.",
@@ -493,24 +328,135 @@ public static class Fases
                 "",
                 "",
                 "",
-                "",
-                "       $$     $$    m          $$",
+                "                                                   k",
+                "       $$     $$    m                $$                  $$    $$",
                 "                         l",
                 "                         B",
-                "  P i           l  i  B  B       s i    H                          i      G",
-                "##########  ################  ##################################################",
-                "##########  ################  ##################################################",
+                "  P i           l  i  B  B       l        B   h    B   ^   B  l  s i    H                          i      G",
+                "##########  ################  #####   ##########################################################################",
+                "##########  ################  #####   ##########################################################################",
             },
         },
 
+        // o NAVIO FANTASMA: as cabines da Dóris e, no convés, o baile das marés (almas flutuando)
         new Fase
         {
-            nome = "A Maré Negra (CORRE!)",
+            nome = "O Navio Fantasma",
+            // As cabines: a 1 ou a 3 levam à sala das armadilhas, a 6 à sala das moedas, a 8 à Dóris (a 2 é o beco
+            // dos caranguejos). Da sala da Dóris, a parede da direita está aberta: o convés do baile.
+            portas = new[] { "1-4", "3-5", "2-9", "6-7", "8-0" },
+            tempoAlvo = 170f, // as portas tomam tempo
             noite = true,
-            corDoFundo = new Color32(95, 60, 110, 255),
+            corDoFundo = new Color32(120, 150, 150, 255),
+            clima = Ambiente.Tipo.Almas,
             placas = new[]
             {
-                "Ouviu isso? É a Maré Negra do Kraken.\nNão olha para trás. Só CORRE e PULA!",
+                "Cada porta tem um número e SEMPRE leva para o mesmo lugar.\nDecore o caminho! (S para entrar)",
+                "Beco sem saída! Mas tem caranguejo.\nA porta 9 sempre volta para a 2.",
+                "Achou a porta certa. Buuu.\nAgora sai pela direita e vai DANÇAR no convés.",
+                "Blocos da maré (azul) e do coral (rosa) se revezam.\nTic, tic, TAC: trocou! Pise no que tá aceso.",
+                "Pule no TIC, caia no TAC.\nA maré não espera ninguém.",
+                "Esses aí caem quando o AZUL acende.\nRosa aceso = caminho livre. (dessa vez é sério)",
+                "Agora é só ritmo puro, sem pegadinha.\nPalavra de papagaio! :3",
+                "Ufa, chegou! A bandeira tá logo ali.\nPode ir andando, sem pressa. :)",
+            },
+            mapa = new[]
+            {
+                "#############################################################",
+                "#############################################################",
+                "#           #         v #           #           #                                                                     ?",
+                "#           #           #           #           #",
+                "#           #           #           #           #                                                               $",
+                "#           #           #           #           #                                                                bb ####",
+                "#           #           #           #           #                       $                              v     $      ####                                                                 $$",
+                "#           #           #           #           #  BBBBBB                                                     aa    ####                                                             $       m",
+                "#  BBBBBB   #           #           #           #                                                                   ####     BBBBBBBBBBBBBBBBBBBBBBBBBB                      $                   $",
+                "#           #           #  BBBBBB   #           #                      ?B?                ?                bb       ####      tt      tt      ttt                   ?K?                aa                       $$",
+                "#           #           #           #      $    #                                   $m$         $$                  ####                                      $                aa              bb",
+                "#           #           #   $$$m    #           #                                                       aa          ####                                                           bb      bb",
+                "# Pi 1  2 3 # 4 h 5 h 6 # 7   E   8 # 9 i e  E  # 0   Y           s i             h      i                ^^^^^^^^^^#### s i           $       $        i            s     bb                      aaa  i   b Z       G",
+                "############################################################################aaaa####bbbb#####aaa  bbb############################bbb####bbbb#######aaa#####aaaAaaa########                             ########aaaa#######",
+                "############################################################################^^^^####^^^^#####^^^^^^^^############################^^^####^^^^#######^^^#####^^^^^^^########^^^^^^^^^^^^^^^^^^^^^^^^^^^^^########^^^^#######",
+            },
+        },
+
+        // o PENHASCO DOS VENTOS, rosado
+        new Fase
+        {
+            nome = "Vento em Popa!",
+            corDoFundo = new Color32(245, 195, 215, 255),
+            clima = Ambiente.Tipo.Folhas,
+            placas = new[]
+            {
+                "O vento do mar tá de mau humor hoje.\nQuando as FOLHAS vierem, segure pra frente ou se esconda atrás de um bloco!",
+                "Redemoinho! Entra que ele te leva lá pra cima.\nDepois é só segurar pra direita.",
+                "Outro redemoinho, igualzinho ao primeiro!\nPode ir direto, sem medo. :)",
+                "Dica de graça: espere o redemoinho te levantar antes de sair.\n(essa é de verdade. A outra... nem tanto)",
+                "Pronto! O vento cansou e foi tirar um cochilo.\nAcabou a ventania. A bandeira é logo ali!",
+            },
+            mapa = new[]
+            {
+                "",
+                "",
+                "",
+                "                                                                                                                                         nnnnn$$$$nnnnn           yyyy                   yyyyyyyyyyyyyyyyyyyy",
+                "                                                                                                                  yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         $nyyyynnn  n$n           yyyyyyyyy$$$yyyyyyyy",
+                "                                                    $$                                            nnnn$$$$nn      yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         nnyyyynnn  nnn           yyyyyyyyyyyyyyy?yyyy",
+                "                                                                                                  nnnnnnnnnn      yyyyyyy$yyy$m$yyyyyy   nnnnnnnnnnnnnn         nnyy$ynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
+                "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy                                                           nnnnnnnnnn      yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         nnyyyynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
+                "           yyyyyyyy$$yyyyyyyyyyyy?yyyyy               yyyyyyyyyyyyyyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn   s  yyyByyyyyyyyyyEyByyyi  nnnnnnnnnnnnnn   s i   nnyyyynnn  nnn      i    yyyyBByyZyyyyByyyyBy  G",
+                "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy         I ?K  yyyyyyyyy?yyyyyyyy yyyyyyyy?yyyy$yyyyyy?yy  nnnnn$$nnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######CC#####################",
+                "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy        $$     yyy$$yyyyy$$yyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
+                "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy               yyyyyyyyyyyyyyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
+                "  P i      yyyyyyByy^^yyyyyyyyyyByyyEyy             S yyyyyyByyyyyyByyyy yy^^yyEyyByyyyyyyyhyyyy innnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
+                "###########################   #######################################################   #############nnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
+                "###########################   #######################################################   #############nnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
+            },
+        },
+
+        // o MAR ABERTO de noite
+        new Fase
+        {
+            nome = "A Baleia Branca",
+            tempoAlvo = 250f, // chefe
+            noite = true,
+            corDoFundo = new Color32(70, 60, 120, 255),
+            placas = new[]
+            {
+                "O mar da Baleia Branca.\nDizem que ela já afundou cem navios. Não afunda você, tá?",
+                "É agora. Respira.\nMorreu? Volta na mesma ETAPA. Decora os padrões!",
+                "Você venceu a Baleia Branca!\nMas quem mandou ela atrás de você? Algo VERMELHO lá no fundo...",
+            },
+            mapa = new[]
+            {
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "                                                          BBBBBBB",
+                "                                                           v  v",
+                "",
+                "           o      o          BBBBBBBBB            o                      $$$",
+                "                               v   v                                     BBB    o",
+                "                                         o",
+                "  P i           ^  ^^                  h             E       $      h        E       E  h  s i  w                             i        G",
+                "###########   ##########CCC##############  #####   #######CCCC####   ######   #########################  ######  ###########################",
+                "###########   ##########CCC##############  #####   #######CCCC####   ######   #########################  ######  ###########################",
+            },
+        },
+
+        // as ILHAS DO KRAKEN debaixo de tempestade
+        new Fase
+        {
+            nome = "O Tsunami (CORRE!)",
+            noite = true,
+            corDoFundo = new Color32(70, 85, 115, 255),
+            clima = Ambiente.Tipo.Chuva,
+            placas = new[]
+            {
+                "Ouviu isso? O Kraken levantou um TSUNAMI.\nNão olha para trás. Só CORRE e PULA!",
                 "Buraquinho de nada!\nPula bem na beiradinha. :)",
                 "Mola para o alto! Lá em cima tem moedas...\ne nuvens fofinhas. MUITO fofinhas.",
                 "Reta final! A bandeira tá logo ali.\nDessa vez ela não foge. Juro pela Marina.",
@@ -524,17 +470,18 @@ public static class Fases
                 "",
                 "                                                                                       $$$",
                 "",
-                "                                                    ?                                   BBBBBB    $m$                                                ?",
-                "                                                                                                                            $",
-                "                 ?         $                 $$                  $       $$                      BBBBBB                                                 $$",
-                "         $$           $$              $$                    $$      $$                                      $$                         $$$",
-                "                                                  ######                                                                    h                        ##                *",
-                " N  P i             ######     i             ^^   ######                       s i  S                                  > #######  s i           ##   ##    ##  R $  ######",
-                "##############  ##########   ########CC  ###################CC##CCC#CC##CCCC#########                    ##############################FFF###   ##   ##    ######C  ######",
-                "##############  ##########   ########CC  ###################CC##CCC#CC##CCCC#########                    ##############################FFF###   ##   ##    ######C  ######",
+                "                                                    ?                                   BBBBBB    $m$                                                                                        ?",
+                "                                                                                                                                                                    $",
+                "                 ?         $                 $$                  $       $$                      BBBBBB                   $$$             ?                                                     $$",
+                "         $$           $$              $$                    $$      $$                                      $$                                                                 $$$",
+                "                                                  ######                                                                                                            h                        ##                *",
+                " N  P i             ######     i             ^^   ######                       s i  S                                      ^^       h        h                 > #######  s i           ##   ##    ##  R $  ######",
+                "##############  ##########   ########CC  ###################CC##CCC#CC##CCCC#########                    ##########   ##########  ##CCCC####   ###### #########################FFF###   ##   ##    ######C  ######",
+                "##############  ##########   ########CC  ###################CC##CCC#CC##CCCC#########                    ##########   ##########  ##CCCC####   ###### #########################FFF###   ##   ##    ######C  ######",
             },
         },
 
+        // o ROCHEDO do pôr do sol
         new Fase
         {
             nome = "O Verdadeiro Final (juro)",
@@ -552,29 +499,32 @@ public static class Fases
                 "",
                 "",
                 "",
-                "                     BBBBB",
-                "                       T                                                          BBBB",
-                "                                                                                    v",
+                "                                       BBBBBBB                                               BBBBB",
+                "                                         T  T                                                  T                                                          BBBB",
+                "                                                                                                                                                            v",
                 "",
-                "                                                  ?K                  $$$          $$",
-                "                 $$$               $$                                                                        $m$",
-                "                      U                                U    i R    h       s   h        E        iB Z               *",
-                "  P i $m$                r  e           <                 ##################################    #########CCC############",
-                "#############   ############### MM     ########CC###########################################    #########CCC############",
-                "#############   ###############        ########CC###########################################    #########CCC############",
+                "                 $$                                     ?K?                                                               ?K                  $$$          $$",
+                "                                                                                         $$$               $$                                                                        $m$",
+                "                             $$$                                                              U                                U    i R    h       s   h        E        iB Z               *",
+                "  P i    e      $    ^^^                     E     h     B Z          >   E   $m$                r  e           <                 ##################################    #########CCC############",
+                "###############FFF###########    ##############MM##############CCCC##################   ############### MM     ########CC###########################################    #########CCC############",
+                "###############FFF###########    ##############  ##############CCCC##################   ###############        ########CC###########################################    #########CCC############",
             },
         },
+
+        // o COVIL DO KRAKEN, no fundo do mar escuro (bolhas subindo)
         new Fase
         {
-            nome = "A Baleia Branca",
-            tempoAlvo = 240f, // chefe final
+            nome = "O Kraken Vermelho",
+            tempoAlvo = 260f, // chefe final
             noite = true,
-            corDoFundo = new Color32(70, 60, 120, 255),
+            corDoFundo = new Color32(95, 30, 45, 255),
+            clima = Ambiente.Tipo.Bolhas,
             placas = new[]
             {
-                "O mar da Baleia Branca.\nDizem que ela já afundou cem navios. Não afunda você, tá?",
-                "É agora. Respira.\nMorreu? Volta na mesma ETAPA. Decora os padrões!",
-                "Você venceu a Baleia Branca!\nA Marina tá logo ali. Dessa vez é de verdade. Palavra de Louro.",
+                "O covil do Kraken. A lula gigante VERMELHA que mandou\na Baleia e o tsunami atrás de você. A Marina tá lá dentro!",
+                "Ela ROUBA moedas: tentáculo AMARELO não mata, mas leva as suas!\nQuando ela CANSAR e encostar a cabeça no chão, PULA NELA!",
+                "Você venceu o Kraken! Ela devolveu suas moedas e fugiu\npro fundo do mar. A Marina tá logo ali. Agora é de verdade!",
             },
             mapa = new[]
             {
@@ -586,13 +536,13 @@ public static class Fases
                 "",
                 "",
                 "",
+                "                        BBBBB",
+                "        ?K?               T                $$$",
                 "",
-                "           o      o          BBBBBBBBB",
-                "                               v   v",
-                "                                         o",
-                "  P i           ^  ^^                  h     E  h  s i  w                             i       L",
-                "###########   ##########CCC##############  ####################  ######  ###########################",
-                "###########   ##########CCC##############  ####################  ######  ###########################",
+                "                U",
+                "  P i       h      $m$      E           r       s i   g                         i         L",
+                "##########   ############CC######    ######################################    #####################",
+                "##########   ############CC######    ######################################    #####################",
             },
         },
 
@@ -600,7 +550,7 @@ public static class Fases
 
     // A fase secreta: aparece no mapa (numa ilha do lago) se você pegar TODAS as moedas da fase do segredo.
     public const int IndiceSecreto = 99;
-    public const int FaseDoSegredo = 4; // "Eu mudo de ideia" (o Louro avisa: "Pegue as moedas! Todas!")
+    public const int FaseDoSegredo = 2; // "O Final (mudei de ideia)" (o Louro avisa: "Pegue as moedas! TODAS!")
 
     public static readonly Fase Secreta = new Fase
     {
@@ -671,8 +621,14 @@ public static class Fases
         "Quem apagou a luz? Spoiler: foi a Cozinheira. Em você.",
         "O Kraken só queria um abraço de oito braços.",
         "Glub. Glub. Glub. Glub.",
-        "Parou para respirar? A Maré Negra agradece.",
+        "Parou para respirar? O tsunami agradece.",
         "Volta da Maré, patrocinada pelo Kraken.",
+        "Tsunami: 1. Grumete: 0.",
+        "O Kraken levantou uma onda só pra você. Que honra.",
+        "O tentáculo era VERMELHO. Vermelho mata, lembra?",
+        "O Kraken te deu um abraço. Oito, na verdade.",
+        "Ela cansou e você não pulou. Agora quem cansou foi você.",
+        "Pelo menos ela não levou suas moedas dessa vez. Ou levou?",
         "A Baleia Branca te engoliu. E cuspiu. Eca.",
         "Pula na CABEÇA dela, não na boca.",
         "O capitão Ahab levou anos caçando ela. Calma.",

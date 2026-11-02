@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
-// 'H' - a COZINHEIRA do navio fantasma (CHEFE). A fase dela é o porão escuro e a luta é no breu:
+// 'H' - a COZINHEIRA (CHEFE da fase 7), a ex-cozinheira do navio fantasma. A fase dela é a gruta escura e a luta é no breu:
 // no claro ela é uma cozinheira de chapéu de chef e avental; no escuro, só se veem os OLHOS dela (roxos), andando pela cozinha.
 //
 // O 'H' marca o começo da arena (na linha em que o jogador anda); a arena tem larguraDaArena blocos

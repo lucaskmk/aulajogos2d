@@ -74,6 +74,13 @@ public static class Progresso
         PlayerPrefs.Save();
     }
 
+    // Só as moedas guardadas (o Kraken roubou ou devolveu no meio da fase: salva na hora).
+    public static void SalvarMoedas(int moedas)
+    {
+        PlayerPrefs.SetInt(ChaveMoedas, moedas);
+        PlayerPrefs.Save();
+    }
+
     public static void Carregar(out int fase, out int maisLonge, out int mortes, out int moedas, out float tempo, out bool valida)
     {
         fase = PlayerPrefs.GetInt(ChaveFase, 0);
@@ -136,7 +143,9 @@ public static class Progresso
 
     // Valem para sempre, como as conquistas (um Novo Jogo NÃO apaga). Cada número é o MELHOR que você já fez
     // naquela fase, cada um por si: o menor tempo, o menor número de mortes e o maior número de moedas.
-    // Ficam guardados pelo NÚMERO da fase ("secreta" para a fase secreta).
+    // Ficam guardados pelo NOME da fase ("secreta" para a fase secreta): assim dá para reordenar as fases sem um
+    // recorde ir parar na fase errada. O "v2" é a versão da lista de fases: as 13 fases novas (mais longas)
+    // começam do zero, sem herdar os tempos das fases antigas.
     public struct RecordeDaFase
     {
         public bool existe;  // já passou dessa fase alguma vez?
@@ -149,7 +158,36 @@ public static class Progresso
     [System.Flags]
     public enum Novidade { Nada = 0, Primeira = 1, Tempo = 2, Mortes = 4, Moedas = 8 }
 
-    static string ChaveDaFase(int fase) => "cilada_recorde_" + (fase == Fases.IndiceSecreto ? "secreta" : "fase" + fase) + "_";
+    // (a secreta não mudou: continua com a chave de sempre; um número fora da lista, como o das fases de mentira do
+    // teste do painel, também usa o jeito antigo, pelo número)
+    static string ChaveDaFase(int fase)
+    {
+        if (fase == Fases.IndiceSecreto) return "cilada_recorde_secreta_";
+        if (fase < 0 || fase >= Fases.Todas.Length) return "cilada_recorde_fase" + fase + "_";
+        if (chavesDasFases == null)
+        {
+            chavesDasFases = new string[Fases.Todas.Length];
+            for (int i = 0; i < chavesDasFases.Length; i++) chavesDasFases[i] = "cilada_recorde_v2_" + Apelido(Fases.Todas[i].nome) + "_";
+        }
+        return chavesDasFases[fase];
+    }
+    static string[] chavesDasFases; // calculadas uma vez só
+
+    // O nome da fase só com letras e números, sem acento ("A Capitã Âncora" vira "acapitaancora").
+    // (com uma tabela própria de acentos, sem string.Normalize: assim funciona igual em qualquer plataforma, até no WebGL)
+    const string ComAcento = "áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ";
+    const string SemAcento = "aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC";
+    static string Apelido(string nome)
+    {
+        var texto = new System.Text.StringBuilder();
+        foreach (char letra in nome)
+        {
+            int acento = ComAcento.IndexOf(letra);
+            char c = acento >= 0 ? SemAcento[acento] : letra;
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) texto.Append(char.ToLowerInvariant(c));
+        }
+        return texto.ToString();
+    }
 
     public static RecordeDaFase RecordeDe(int fase)
     {

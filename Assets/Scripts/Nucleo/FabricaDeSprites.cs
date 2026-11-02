@@ -84,7 +84,8 @@ public static class FabricaDeSprites
 
     // ---------------------------------------------------------------- desenhos
 
-    // Tentáculo do Kraken (com as ventosas), que sobe das bordas da tela na Volta da Maré.
+    // Tentáculo do Kraken (com as ventosas), que sobe das bordas da tela na Volta da Maré e sai dos canos.
+    // As letras x/v/V/P viram os vermelhos do Kraken (ArteDoKraken.Pintar), não o roxo dos blocos mágicos.
     static readonly string[] ArteTentaculo =
     {
         "........vvvv....",
@@ -359,7 +360,7 @@ public static class FabricaDeSprites
             case "mola_apertada": return DeArte(ArteMolaApertada, Centro);
             case "esmagador": return DeArte(ArteEsmagador, Centro);
             case "placa": return DeArte(ArtePlaca, Centro);
-            case "tentaculo": return DeArte(ArteTentaculo, Centro);
+            case "tentaculo": return ArteDoKraken.Pintar(ArteTentaculo, Centro); // vermelho: é um braço do Kraken
             case "marca_x": return DeArte(ArteMarcaX, Centro);
             case "coracao": return DeArte(ArteCoracao, Centro);
             case "escudo": return DeArte(ArteEscudo, Centro);
@@ -1074,7 +1075,7 @@ public static class FabricaDeSprites
         return Transparente;
     }
 
-    // Porta das Cabines Assombradas: madeira com moldura lilás e topo em arco. Aberta, mostra a escuridão mágica.
+    // Porta das cabines do Navio Fantasma: madeira com moldura lilás e topo em arco. Aberta, mostra a escuridão mágica.
     static bool DentroDaPorta(int x, int y) =>
         x >= 1 && x <= 14 && y >= 0 && (y < 24 || (x - 7.5f) * (x - 7.5f) + (y - 24f) * (y - 24f) <= 6.6f * 6.6f);
 

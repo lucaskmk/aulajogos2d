@@ -9,10 +9,14 @@ using System.Collections.Generic;
 //  - Fases:             "Jiga do Grumete": ré menor, 6/8, dança de taverna (forma AABB), acordeão e apito.
 //                       Cada fase toca num tom um pouco diferente (veja FabricaDeMusica.DaFase).
 //  - Mapa:              "Balada do Arquipélago": lá menor, 3/4, violão dedilhado, ondas e o sino.
-//  - Capitã (fase 6):   mi menor, 160 bpm, 4/4. Gancho no ritmo 3-3-2 no acordeão, violino e violão "girando".
-//  - Cozinheira (13):   dó menor, 6/8 (uma valsa sombria e rápida), acordeão + violino + caixinha de música.
-//  - Baleia (fase 16):  ré menor, 172 bpm. Estalos de orquestra, coro, baixo "galopando", o canto da baleia
+//  - Capitã:           mi menor, 160 bpm, 4/4. Gancho no ritmo 3-3-2 no acordeão, violino e violão "girando".
+//  - Cozinheira:        dó menor, 6/8 (uma valsa sombria e rápida), acordeão + violino + caixinha de música.
+//  - Capitã (fase 4), Cozinheira (fase 7) e Baleia (fase 10): veja cada uma abaixo.
+//  - Baleia:            ré menor, 172 bpm. Estalos de orquestra, coro, baixo "galopando", o canto da baleia
 //                       (notas que deslizam) e, na segunda vez do gancho, a música sobe um tom.
+//  - Kraken (fase 13, o chefe final): fá FRÍGIO (a escala menor com o segundo grau abaixado: o som "do fundo do mar"),
+//                       150 bpm. Tímpanos, coro, o "lamento" da lula (notas deslizando para baixo) e um riff que
+//                       se enrola como um tentáculo (fá, sol bemol, fá). Na volta do gancho, tudo sobe meio tom.
 //
 // Este arquivo NÃO usa a Unity (só C# puro): assim dá para gerar as músicas num programa de teste fora da
 // Unity e ouvir os WAVs. Quem transforma o resultado num AudioClip é a FabricaDeMusica.
@@ -35,7 +39,7 @@ using System.Collections.Generic;
 //  Os acordes são um por compasso ("Em C D B7"); com vírgula, dois no mesmo compasso ("Am,D").
 public static class Musicas
 {
-    public enum Tema { Capita, Cozinheira, Baleia, Fase, Mapa }
+    public enum Tema { Capita, Cozinheira, Baleia, Kraken, Fase, Mapa }
 
     public const int Taxa = 22050;
 
@@ -43,7 +47,7 @@ public static class Musicas
     public static float[] Compor(Tema tema, int transpor = 0)
     {
         Partitura partitura = tema == Tema.Capita ? Capita() : tema == Tema.Cozinheira ? Cozinheira() : tema == Tema.Baleia ? Baleia()
-            : tema == Tema.Fase ? Fase() : Mapa();
+            : tema == Tema.Kraken ? Kraken() : tema == Tema.Fase ? Fase() : Mapa();
         partitura.transporTudo = transpor;
         return partitura.Sintetizar();
     }
@@ -60,6 +64,7 @@ public static class Musicas
     // ==================================================================================================
 
     static readonly int[] Menor = { 0, 2, 3, 5, 7, 8, 10 }; // escala menor natural
+    static readonly int[] Frigio = { 0, 1, 3, 5, 7, 8, 10 }; // menor com o 2º grau meio tom abaixo (sombrio, "de outro mundo")
 
     // Repete um padrão de um compasso "vezes" vezes (para pôr uma virada de bateria só no último).
     static string Vezes(string padrao, int vezes)
@@ -69,7 +74,7 @@ public static class Musicas
         return string.Join(" | ", partes);
     }
 
-    // ---------------------------------------------------------------- CAPITÃ (fase 6): "Âncora Giratória"
+    // ---------------------------------------------------------------- CAPITÃ (fase 4): "Âncora Giratória"
     static Partitura Capita()
     {
         var m = new Partitura(bpm: 160f, passosPorCompasso: 16, tonica: 4, escala: Menor) // mi menor
@@ -140,7 +145,7 @@ public static class Musicas
         return m;
     }
 
-    // ---------------------------------------------------------------- COZINHEIRA (fase 13): "Valsa das Lâminas"
+    // ---------------------------------------------------------------- COZINHEIRA (fase 7): "Valsa das Lâminas"
     static Partitura Cozinheira()
     {
         var m = new Partitura(bpm: 132f, passosPorCompasso: 12, tonica: 0, escala: Menor) // dó menor, 6/8
@@ -203,7 +208,7 @@ public static class Musicas
         return m;
     }
 
-    // ---------------------------------------------------------------- BALEIA (fase 16, chefe final): "Leviatã"
+    // ---------------------------------------------------------------- BALEIA (fase 10): "Leviatã"
     static Partitura Baleia()
     {
         var m = new Partitura(bpm: 172f, passosPorCompasso: 16, tonica: 2, escala: Menor) // ré menor
@@ -274,6 +279,85 @@ public static class Musicas
             .Notas(Timbre.Canto, Bus.Sala, 0.9f,
                 "f4>bb4 - - - - - - - - - - - - - - - | g4>c5 - - - - - - - - - - - - - - - | " +
                 "g4>eb5 - - - - - - - - - - - - - - - | e4>a4 - - - - - - - . . . . . . . .")
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, "1 - - - - - - - - - - - 8 - - -")
+            .Bateria("pc . . . . . . . s . . . . . . . | p . . . . . . . s . . . . . . . | " +
+                     "p . . . . . . . s . . . . . . . | k . k . s . k . k k s s S S S S");
+        return m;
+    }
+
+    // ---------------------------------------------------------------- KRAKEN (fase 13, chefe final): "Abraço do Abismo"
+    static Partitura Kraken()
+    {
+        var m = new Partitura(bpm: 150f, passosPorCompasso: 16, tonica: 5, escala: Frigio) // fá frígio
+        {
+            eco = 0.24f, sala = 0.18f, bombear = 0.36f,
+        };
+        const string pista = "kh h h h ksh h h h kh h h h ksh h h h"; // bumbo em todo tempo
+        const string rock = "kh . h . sh . h . kh . kh . sh . h h";
+        const string virada = "kh h h h ksh h h h t t t t m m S S";
+        const string galope = "1 . 1 1 8 . 8 8 1 . 1 1 8 . 8 8";
+        // o riff "tentáculo": fá, sol bemol, fá (o meio tom do frígio), enrolando para baixo
+        const string tentaculo = "1 - 1 . 8 . 1 - 1 . 8 . 7 . 5 .";
+
+        // O gancho: a nota repetida que "agarra" (3-3), cai meio tom e escorrega para baixo.
+        const string gancho =
+            "f5 - . f5 - . ab5 - gb5 - f5 - c5 - . . | gb5 - . gb5 - . bb5 - ab5 - gb5 - db5 - . . | " +
+            "f5 - . f5 - . ab5 - c6 - - - bb5 - ab5 - | g5 - - - e5 - - - c5 - - - bb4 - - - | " +
+            "f5 - . f5 - . ab5 - gb5 - f5 - c6 - . . | db6 - . db6 - . c6 - bb5 - ab5 - gb5 - . . | " +
+            "eb6 - - - db6 - - - bb5 - - - ab5 - - - | g5 - - - - - - - e5 - f5 - g5 - c6 -";
+        const string acordesDoGancho = "Fm Gb Fm C7 Fm Gb Ebm,Db C";
+
+        // INTRO: tímpanos, o coro e o LAMENTO da lula (a nota desliza, como um gemido debaixo d'água).
+        m.Parte(4, "Fm Gb Fm C7")
+            .DosAcordes(Timbre.Estalo, Bus.Sala, 1f, 4, "x - - - - - - - . . . . . . . .")
+            .Acordes(Timbre.Coro, Bus.Sala, 0.9f, 3)
+            .Notas(Timbre.Canto, Bus.Sala, 1f,
+                "c5>f4 - - - - - - - - - - - - - - - | db5>gb4 - - - - - - - - - - - - - - - | " +
+                "ab4>f5 - - - - - - - - - - - - - - - | . . . . . . . . . . . . . . . .")
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 0.9f, 2, "1 - - - - - - - - - - - - - - -")
+            .Bateria("pcg . . . . . . . . . . . . . . . | p . . . . . . . p . . . . . . . | " +
+                     "pc . . . . . . . . . . . . . . . | m . m . t . t . m m t t S S S S");
+
+        // A: o gancho no acordeão e na quadrada, com o riff "tentáculo" no baixo.
+        m.Parte(8, acordesDoGancho)
+            .Notas(Timbre.Acordeao, Bus.Eco, 1f, gancho)
+            .Notas(Timbre.Quadrada, Bus.Eco, 0.45f, gancho)
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, tentaculo)
+            .DosAcordes(Timbre.Violao, Bus.Seco, 0.75f, 4, "1 5 8 5 10 5 8 5")
+            .Acordes(Timbre.Pad, Bus.Sala, 0.7f, 3)
+            .Bateria(Vezes(pista, 7) + " | " + virada, prato: true);
+
+        // B: o violino sobe lá no alto, com o coro atrás e o baixo galopando.
+        const string mar =
+            "ab5 - - - - - - - db6 - - - - - c6 - | bb5 - - - - - - - g5 - - - - - eb5 - | f5 - - - - - - - - - - - - - - - | " +
+            ". . . . c6 - bb5 - ab5 - - - f5 - g5 - | ab5 - - - - - - - db6 - - - f6 - - - | eb6 - - - - - - - bb5 - - - g5 - - - | " +
+            "e6 - - - - - - - g6 - - - - - - - | c6 - - - - - - - . . . . . . . .";
+        m.Parte(8, "Db Eb Fm Fm Db Eb C C")
+            .Notas(Timbre.Violino, Bus.Eco, 1f, mar)
+            .Notas(Timbre.Acordeao, Bus.Sala, 0.55f, mar, transpor: -12)
+            .Acordes(Timbre.Coro, Bus.Sala, 1f, 3)
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, galope)
+            .DosAcordes(Timbre.Sino, Bus.Sala, 0.35f, 5, "1 . . . 5 . . . 8 . . . 5 . . .")
+            .Bateria(Vezes(rock, 7) + " | ksh . ksh . ksh . ksh . t t t t S S S S", prato: true);
+
+        // A2: o gancho MEIO TOM ACIMA (é o clímax), com a segunda voz no violino e o apito brilhando.
+        m.Parte(8, acordesDoGancho, transpor: 1)
+            .Notas(Timbre.Acordeao, Bus.Eco, 1f, gancho)
+            .Notas(Timbre.Quadrada, Bus.Eco, 0.4f, gancho)
+            .Harmonia(Timbre.Violino, Bus.Sala, 0.75f, gancho)
+            .Notas(Timbre.Apito, Bus.Eco, 0.35f, gancho, transpor: 12)
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, tentaculo)
+            .DosAcordes(Timbre.Violao, Bus.Seco, 0.7f, 4, "1 5 8 5 10 5 8 5")
+            .Acordes(Timbre.Pad, Bus.Sala, 0.7f, 3)
+            .Bateria(Vezes(pista, 7) + " | " + virada, prato: true);
+
+        // PONTE: meio-tempo no fundo do mar: o sino, o coro e o lamento de novo... e os tímpanos chamando a volta.
+        m.Parte(4, "Db C Db C")
+            .Acordes(Timbre.Coro, Bus.Sala, 1f, 3)
+            .Notas(Timbre.Canto, Bus.Sala, 0.9f,
+                "f4>db5 - - - - - - - - - - - - - - - | e4>c5 - - - - - - - - - - - - - - - | " +
+                "f4>ab4 - - - - - - - - - - - - - - - | g4>e5 - - - - - - - . . . . . . . .")
+            .DosAcordes(Timbre.Sino, Bus.Sala, 0.7f, 5, "1 . 5 . 3 . 8 . 5 . 3 . 1 . 5 .")
             .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, "1 - - - - - - - - - - - 8 - - -")
             .Bateria("pc . . . . . . . s . . . . . . . | p . . . . . . . s . . . . . . . | " +
                      "p . . . . . . . s . . . . . . . | k . k . s . k . k k s s S S S S");
