@@ -31,7 +31,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         new Color32(245, 222, 110, 255), // amarelo
         new Color32(195, 165, 230, 255), // lilás
         new Color32(245, 185, 195, 255), // rosa claro
-        new Color32(185, 150, 120, 255), // madeira (as Cabines Assombradas)
+        new Color32(185, 150, 120, 255), // madeira (as cabines do Navio Fantasma)
         new Color32(60, 80, 170, 255),   // azul-marinho (o "verdadeiro final")
     };
     public Color corDaFaseSecreta = new Color32(250, 230, 150, 255); // dourado
@@ -264,6 +264,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     // Ponto de save: onde você renasce nesta fase (null = no começo).
     Vector3? pontoDeSave;
+    readonly List<Vector3> savesPegos = new List<Vector3>(); // os checkpoints desta fase, na ordem em que você pegou
 
     // Troca de tela com as sombras: primeiro cobre a tela, depois executa a troca.
     System.Action trocaPendente;
@@ -412,16 +413,19 @@ public class GerenciadorDoJogo : MonoBehaviour
         else musica.TocarDaFase(indice); // se a música já é essa, continua de onde estava
     }
 
-    // Partículas de cada fase (a luz é ajustada em CarregarFase, antes de montar a fase): noite com vaga-lumes, cabines com poeira dourada,
-    // fases com "petalas" (Fases.cs) com pétalas, a secreta com brilhos e as outras com pólen.
+    // Partículas de cada fase (a luz é ajustada em CarregarFase, antes de montar a fase): a que a fase escolheu (Fase.clima);
+    // senão, noite com vaga-lumes, cabines com poeira dourada, fases com "petalas" (Fases.cs) com pétalas, a secreta com brilhos
+    // e as outras com pólen.
     void PrepararClima(int indice, bool noite)
     {
         Ambiente.Tipo tipo = Ambiente.Tipo.Polen;
-        if (noite) tipo = Ambiente.Tipo.VagaLumes;
+        if (Fases.Dados(indice).clima.HasValue) tipo = Fases.Dados(indice).clima.Value; // a fase escolheu (Fases.cs)
+        else if (noite) tipo = Ambiente.Tipo.VagaLumes;
         else if (nasCabines) tipo = Ambiente.Tipo.Poeira;
         else if (indice == Fases.IndiceSecreto) tipo = Ambiente.Tipo.Brilhos;
         else if (Fases.Dados(indice).petalas) tipo = Ambiente.Tipo.Petalas;
-        Ambiente.Criar(raizDaFase, tipo, tipo == Ambiente.Tipo.VagaLumes ? 16 : tipo == Ambiente.Tipo.Poeira ? 40 : 26);
+        Ambiente.Criar(raizDaFase, tipo, tipo == Ambiente.Tipo.VagaLumes || tipo == Ambiente.Tipo.Almas ? 16
+            : tipo == Ambiente.Tipo.Poeira ? 40 : tipo == Ambiente.Tipo.Chuva ? 70 : 26);
     }
 
     // Mostra o mapa do mundo com o Grumete no ponto "no".
@@ -467,6 +471,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         partidaValida = true;
         faseDasMarcas = -1; // partida nova: apaga as marcas das mortes
         pontoDeSave = null;
+        savesPegos.Clear();
         Fala = null;
         System.Array.Clear(mortesPorFase, 0, mortesPorFase.Length);
         MostrarMapa(Progresso.TemJogoSalvo ? Progresso.FaseSalva : faseInicial);
@@ -487,6 +492,9 @@ public class GerenciadorDoJogo : MonoBehaviour
         MortesNaFase = 0;
         TempoNaFase = 0f;
         pontoDeSave = null;
+        savesPegos.Clear();
+        MoedasComOKraken = 0;
+        KrakenRoubou = false;
         ChefeDerrotado = false;
         EtapaDoChefe = 0;
         Fala = null;
@@ -1453,12 +1461,13 @@ public class GerenciadorDoJogo : MonoBehaviour
         Conquistas.Desbloquear("primeira_morte");
         if (Mortes >= 100) Conquistas.Desbloquear("cem_mortes");
 
-        // Às vezes o ponto de save "muda de lugar" e você volta para o começo. :)
-        // (menos nas fases de chefe: aí já seria maldade demais)
+        // Às vezes o ponto de save "muda de lugar" e você volta para o checkpoint ANTERIOR (ou para o começo, se era o
+        // primeiro). :) (menos nas fases de chefe: aí já seria maldade demais)
         bool saveMudou = pontoDeSave.HasValue && Chefe == null && Random.value < chanceDoSaveMudar;
         if (saveMudou)
         {
-            pontoDeSave = null;
+            savesPegos.Remove(pontoDeSave.Value);
+            pontoDeSave = savesPegos.Count > 0 ? savesPegos[savesPegos.Count - 1] : (Vector3?)null;
             Conquistas.Desbloquear("save_mudou");
         }
 
@@ -1533,6 +1542,39 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     public void GanharMoeda() => moedasNaFase++;
 
+    // ------------------------------------------------------------------ o Kraken rouba moedas (ChefeKraken.cs)
+
+    // As moedas que o Kraken roubou e ainda não devolveu (só valem nesta visita à fase: sair dela, perdeu).
+    public int MoedasComOKraken { get; private set; }
+    public bool KrakenRoubou { get; private set; } // ela roubou alguma vez nesta luta? (a conquista "Bolso fechado")
+
+    // Tira até "quantas" moedas: primeiro as desta tentativa, depois as guardadas (nunca fica negativo).
+    // As guardadas são salvas na hora: fechar o jogo não devolve. Devolve quantas ela levou.
+    public int RoubarMoedas(int quantas)
+    {
+        int daFase = Mathf.Clamp(quantas, 0, moedasNaFase);
+        int guardadas = Mathf.Clamp(quantas - daFase, 0, moedas);
+        moedasNaFase -= daFase;
+        moedas -= guardadas;
+        int levou = daFase + guardadas;
+        if (levou == 0) return 0;
+        MoedasComOKraken += levou;
+        KrakenRoubou = true;
+        if (guardadas > 0) Progresso.SalvarMoedas(moedas);
+        return levou;
+    }
+
+    // O Kraken devolve (até) "quantas" das moedas que roubou, direto para as moedas guardadas (morrer depois não perde).
+    public int DevolverMoedas(int quantas)
+    {
+        int volta = Mathf.Clamp(quantas, 0, MoedasComOKraken);
+        if (volta == 0) return 0;
+        MoedasComOKraken -= volta;
+        moedas += volta;
+        Progresso.SalvarMoedas(moedas);
+        return volta;
+    }
+
     // Chamado pelos chefes quando a luta começa: cada chefe tem a sua música (Musicas).
     // Se ela já está tocando (morreu e voltou para a luta), continua de onde estava.
     public void TocarMusicaDoChefe()
@@ -1548,7 +1590,11 @@ public class GerenciadorDoJogo : MonoBehaviour
     }
 
     // Ponto de save (chamados pelo PontoDeSave).
-    public void SalvarPonto(Vector3 lugar) => pontoDeSave = lugar;
+    public void SalvarPonto(Vector3 lugar)
+    {
+        if (!EhPontoDeSave(lugar)) savesPegos.Add(lugar);
+        pontoDeSave = lugar;
+    }
     public Vector3? PontoDeSave => pontoDeSave; // onde o Grumete renasce (null = no começo da fase)
     public bool EhPontoDeSave(Vector3 lugar) => pontoDeSave.HasValue && Vector3.Distance(pontoDeSave.Value, lugar) < 0.1f;
 

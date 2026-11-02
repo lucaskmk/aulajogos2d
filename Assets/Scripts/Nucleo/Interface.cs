@@ -1324,7 +1324,7 @@ public class Interface : MonoBehaviour
     {
         float w = Screen.width, h = Screen.height;
         Color corOriginal = GUI.color;
-        GUI.color = new Color(0.06f, 0f, 0.1f, Mathf.SmoothStep(0f, escuridaoMaxima, p));
+        GUI.color = new Color(0.12f, 0f, 0.03f, Mathf.SmoothStep(0f, escuridaoMaxima, p)); // o fundo do mar do Kraken (vermelho-escuro)
         GUI.DrawTexture(new Rect(0, 0, w, h), Texture2D.whiteTexture);
 
         Texture mao = FabricaDeSprites.Pegar("tentaculo").texture;

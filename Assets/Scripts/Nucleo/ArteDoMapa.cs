@@ -41,7 +41,7 @@ public static partial class ArteDoMapa
     {
         C(92, 66, 62), C(138, 102, 80), C(182, 144, 100), C(212, 180, 124), C(234, 208, 150), C(248, 234, 188),
     };
-    static readonly Color32[] CapimSombrio = // a "grama morta" da região sombria (a Maré Negra do Kraken)
+    static readonly Color32[] CapimSombrio = // a "grama morta" da região sombria (as ilhas do Kraken)
     {
         C(16, 12, 28), C(28, 22, 44), C(42, 34, 60), C(58, 50, 76), C(76, 68, 92), C(98, 90, 108), C(124, 118, 124),
     };

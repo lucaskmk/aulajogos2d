@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // 'i' - o Louro (o papagaio da Marina, a Sereia) voando parado, com uma "dica". Não confie nele.
-// 'Y' - a Dóris, nas Cabines Assombradas (em pé, não flutua).
+// 'Y' - a Dóris, nas cabines do Navio Fantasma (em pé, não flutua).
 // O texto aparece na tela quando o jogador chega perto (desenhado pela Interface).
 public class Placa : MonoBehaviour
 {

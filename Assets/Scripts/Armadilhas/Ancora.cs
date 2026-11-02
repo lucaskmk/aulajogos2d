@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 'Q' - a ÂNCORA DA CAPITÃ: a âncora de ferro (a arma da Capitã Âncora, a pirata da fase 6) girando sem
+// 'Q' - a ÂNCORA DA CAPITÃ: a âncora de ferro (a arma da Capitã Âncora, a pirata da fase 4) girando sem
 // parar, presa numa corrente, em volta de um bloco de ferro (o eixo).
 //  - Só a ÂNCORA mata. A corrente é só enfeite (pode encostar à vontade).
 //  - O eixo é um bloco sólido: dá para subir nele. E lá em cima é o "olho do furacão":

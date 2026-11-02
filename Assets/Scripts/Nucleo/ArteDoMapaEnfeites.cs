@@ -646,7 +646,7 @@ public static partial class ArteDoMapa
 
     // ---------------------------------------------------------------- navio fantasma, naufrágio, baú, navio e farol
 
-    // As Cabines Assombradas: um navio fantasma encalhado nas pedras, com as velas rasgadas e as janelas
+    // O Navio Fantasma (as cabines da Dóris): um navio encalhado nas pedras, com as velas rasgadas e as janelas
     // da popa brilhando de roxo (a magia da Dóris).
     static Sprite NavioFantasma()
     {

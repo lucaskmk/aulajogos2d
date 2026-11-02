@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 'u' - a CAPITÃ ÂNCORA, chefe da fase 6 ("A Capitã Âncora"). A capitã pirata com a ÂNCORA presa numa corrente
+// 'u' - a CAPITÃ ÂNCORA, chefe da fase 4 ("A Capitã Âncora"). A capitã pirata com a ÂNCORA presa numa corrente
 // (os desenhos dela ficam em ArteDaCapita.cs e os da âncora em Ancora.cs).
 //
 // O 'u' marca o começo da arena (na linha em que o jogador anda); a arena tem larguraDaArena blocos

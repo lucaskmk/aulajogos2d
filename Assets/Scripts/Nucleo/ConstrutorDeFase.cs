@@ -9,7 +9,7 @@ public class InfoFase
     public List<float> inversores = new List<float>(); // posições x das linhas 'X'
     public List<Transform> bandeiras = new List<Transform>(); // todas as bandeiras (verdadeiras ou não)
     public int totalDeMoedas;  // moedas '$' + blocos '?' (para a fase secreta: "pegue TODAS")
-    public bool temPortas;     // é as Cabines Assombradas?
+    public bool temPortas;     // tem as cabines da Dóris (o Navio Fantasma)?
 }
 
 // Lê o mapa de texto de uma fase (veja Fases.cs) e cria todos os objetos na cena.
@@ -131,18 +131,19 @@ public static class ConstrutorDeFase
                     case 't': Criar<EsmagadorDoRitmo>("EsmagadorDoRitmo", raiz, pos); break;
                     case 'l': Criar<FacasDaCozinheira>("Cozinheira", raiz, pos); break;
                     case 'k': Criar<FacasDaCozinheira>("CozinheiraDoLeque", raiz, pos).Montar(true); break;
-                    case 'N': Criar<MareNegra>("MareNegra", raiz, pos); break;
+                    case 'N': Criar<Tsunami>("Tsunami", raiz, pos); break;
                     case 'y': celulasDeVento.Add(new Vector2Int(x, linha)); break;
                     case 'n': celulasDeRedemoinho.Add(new Vector2Int(x, linha)); break;
                     case 'Q': case 'q': // com chão em cima = ENTERRADO (disfarçado de chão)
                         Criar<Ancora>("Mangual", raiz, pos).Montar(x, c == 'q', PareceChao(Celula(x, linha - 1)) ? SpriteDoChao(x, linha) : null);
                         break;
-                    case 'u': Criar<ChefeCapita>("ChefeCapita", raiz, pos); break; // a Capitã (chefe da fase 6)
+                    case 'u': Criar<ChefeCapita>("ChefeCapita", raiz, pos); break; // a Capitã (chefe da fase 4)
                     case 'W': info.bandeiras.Add(Criar<BandeiraVolta>("BandeiraVolta", raiz, chaoDaCelula).transform); break;
                     case 'X': info.inversores.Add(x); break;
                     case 'r': Criar<Rato>("Rato", raiz, pos); break;
                     case 'w': Criar<BaleiaBranca>("BaleiaBranca", raiz, pos); break;
                     case 'H': Criar<ChefeCozinheira>("ChefeCozinheira", raiz, pos); break;
+                    case 'g': Criar<ChefeKraken>("ChefeKraken", raiz, pos); break; // o Kraken Vermelho (o chefe final)
                     case 'L': Criar<Sereia>("Sereia", raiz, pos); break;
                     case 's': Criar<PontoDeSave>("PontoDeSave", raiz, chaoDaCelula); break;
                     case 'U':

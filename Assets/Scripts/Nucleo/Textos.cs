@@ -22,27 +22,24 @@ public static class Textos
     static readonly Dictionary<string, Fala> DepoisDaFase = new Dictionary<string, Fala>
     {
         { "Bem-vindo :)", Louro("Viu só? Tranquilo! Só {0} morte(s)... por enquanto. Currupaco!") },
-        { "Confia em mim", Louro("Eu disse \"confia em mim\". Você confiou. {0} vez(es).") },
-        { "Corre!", Marina("Grumete, você estava fugindo de uma SERRA? Toma cuidado, tá?") },
-        { "O Final (sem pegadinhas)", Louro("\"O Final (sem pegadinhas)\". Hahaha. Você acreditou mesmo?") },
-        { "Eu mudo de ideia", Louro("Pegou TODAS as moedas? Dizem que isso abre um caminho escondido...") },
-        { "Cadê a direita?", Louro("Bombordo é estibordo, estibordo é bombordo. {0} morte(s). Faz sentido.") },
-        { "Foge, bloco!", Doris("Buuu. Você está chegando perto das minhas cabines.") },
-        { "Ponte para o Porto", Louro("Vermelho cai, amarelo dispara. E você caiu {0} vez(es). Anotou?") },
-        { "Cabines Assombradas", Doris("Você achou a porta certa. Não que eu estivesse esperando. Buuu.") },
+        { "Confia em mim (e corre!)", Marina("Grumete, você confiou no Louro E fugiu de uma SERRA? Toma cuidado, tá?") },
+        { "O Final (mudei de ideia)", Louro("\"O Final\". Hahaha. Você acreditou mesmo? E pegou TODAS as moedas? Dizem que isso abre um caminho...") },
         { "A Capitã Âncora", Louro("Venceu a Capitã! Ela mandou pedir desculpas pelas {0} vez(es). Mentira, ela não mandou.") },
+        { "Cadê a direita? (Foge, bloco!)", Doris("Bombordo é estibordo... e os blocos fogem. Buuu. Você está chegando perto do meu navio.") },
+        { "Ponte para o Porto", Louro("Vermelho cai, amarelo dispara. E você caiu {0} vez(es). Anotou?") },
+        { "A Gruta da Cozinheira", Louro("Venceu a Cozinheira! Ela quase te cozinhou {0} vez(es). E fugiu pro navio fantasma. Adivinha pra onde a gente vai?") },
+        { "O Navio Fantasma", Doris("Você achou a porta certa E dançou no meu convés. Não que eu estivesse esperando. Buuu.") },
         { "Vento em Popa!", Louro("O vento mandou dizer: \"o grumete voou {0} vez(es). Previsível.\"") },
-        { "Dança das Marés", Louro("Tic, tic, TAC... e você caiu {0} vez(es). A maré mandou dizer que você dança muito mal.") },
-        { "A Cozinheira do Porão", Louro("Venceu a Cozinheira! Ela quase te cozinhou {0} vez(es). E disse que volta. Ela SEMPRE volta.") },
-        { "A Maré Negra (CORRE!)", Louro("A Maré Negra te pegou {0} vezes. Ela gosta MESMO de você, hein? Eu ficaria preocupado.") },
-        { "O Verdadeiro Final (juro)", Louro("Ops. Esqueci de falar da Baleia Branca. Boa sorte! :)") },
+        { "A Baleia Branca", Marina("Grumete! Foi o KRAKEN que mandou a Baleia. A lula vermelha me prendeu no covil dela. Vem logo!") },
+        { "O Tsunami (CORRE!)", Louro("O tsunami te pegou {0} vez(es). Isso foi o Kraken espirrando. Imagina quando ela ficar brava.") },
+        { "O Verdadeiro Final (juro)", Louro("Ops. Esqueci de falar do Kraken Vermelho. Ela rouba moedas. Boa sorte! :)") },
     };
 
     // Fala genérica para uma fase sem fala própria.
     static readonly Fala FalaPadrao = Louro("Passou! Com só {0} morte(s). Eu tô impressionado. Um pouco.");
 
     public static readonly Fala SecretaLiberada =
-        Louro("Todas as moedas?! Abriu um caminho na lagoa! Aperte S no ponto 5.");
+        Louro("Todas as moedas?! Abriu um caminho na lagoa! Aperte S no ponto 3.");
 
     public static readonly Fala DepoisDaSecreta =
         Louro("Você achou a ilha secreta! Sério, como? Nem eu lembrava dela.");
@@ -64,7 +61,7 @@ public static class Textos
 
     // A fala do modo de teste (F9 no mapa).
     public static readonly Fala ModoDeTeste =
-        Louro("Modo de teste! Liberei o mapa inteiro, até a Baleia. Não conta pra ninguém. :3");
+        Louro("Modo de teste! Liberei o mapa inteiro, até o Kraken. Não conta pra ninguém. :3");
 
     static readonly Fala[] SemMorrer =
     {
@@ -124,6 +121,7 @@ public static class Textos
             "Super Mario World (o mapa)",
             "Helltaker (as lutas de chefe)",
             "Moby Dick, de Herman Melville (a Baleia Branca)",
+            "As lendas de marinheiro do Kraken (a lula vermelha)",
             "",
             "FEITO EM UNITY 6",
             "",

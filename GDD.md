@@ -20,7 +20,7 @@ a onda traz o Grumete de volta, ele lembra onde errou e passa, de ilha em ilha, 
 - **Gênero:** plataforma 2D "troll" / *masocore* leve, com lutas de chefe no estilo *Helltaker*.
 - **Público:** fãs de jogos de "raiva" (*Level Devil*, *Cat Mario*, *I Wanna Be the Guy*) e de aventuras de pirata, de 12 anos para cima. Também quem só quer rir das próprias mortes.
 - **Plataforma:** navegador (WebGL no itch.io), com teclado ou controle. Também roda no editor e em build de PC.
-- **Duração:** 16 fases + 1 secreta, de 45 a 90 minutos na primeira vez (estimativa: depende muito das mortes).
+- **Duração:** 13 fases (com 4 chefes) + 1 secreta, de 45 a 90 minutos na primeira vez (estimativa: depende muito das mortes).
 - **Engine:** Unity 6 (URP 2D), C#. Toda a arte e todo o áudio são procedurais.
 
 ## Referências
@@ -28,7 +28,8 @@ a onda traz o Grumete de volta, ele lembra onde errou e passa, de ilha em ilha, 
 - **Helltaker**: o chefe com etapas, checkpoints, padrões fixos e ataques telegrafados.
 - **Super Mario World**: o mapa do mundo com caminhos e pontos.
 - **Octopath Traveler** (HD-2D) e **Stardew Valley** com mods: pixel art com luz, profundidade, raios de sol e sombras de nuvem.
-- **Histórias de pirata** (mapas do tesouro, navios fantasmas, o Kraken) e **Moby Dick**, de Herman Melville (a Baleia Branca): o tema e o tom.
+- **Histórias de pirata** (mapas do tesouro, navios fantasmas, o Kraken das lendas nórdicas, aqui uma lula gigante vermelha) e **Moby Dick**,
+  de Herman Melville (a Baleia Branca): o tema e o tom.
 
 ## Pilares
 1. **Passar raiva com graça.** A morte é a piada. O jogo ri junto (mensagens de morte, o Louro mentiroso, a bandeira que foge), mas nunca humilha.
@@ -48,22 +49,22 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 1. a **Ilha do Porto**, com o castelo e o farol;
 2. a **Ilha da Selva**, cheia de palmeiras;
 3. a **Ilha da Lagoa**, com a **ilhota secreta**, o **forte da Capitã** e a vila;
-4. a **Ilha do Desfiladeiro** (o abismo), com a mesa de pedra no meio e a beirada do vento;
-5. os rochedos com o **navio fantasma** encalhado (as Cabines Assombradas) e os baús de tesouro;
-6. as **ilhas mortas do Kraken**, de palmeiras secas;
-7. o mar escuro, com a **Rocha da Caveira** e o **covil da Baleia Branca**.
+4. a **Ilha do Desfiladeiro** (o abismo), com a mesa de pedra no meio e a gruta da Cozinheira na beirada;
+5. os rochedos com o **navio fantasma** encalhado (as cabines da Dóris) e o penhasco dos ventos, com os baús de tesouro;
+6. as **ilhas mortas do Kraken**, de palmeiras secas (o mar da Baleia, o tsunami e o rochedo do pôr do sol);
+7. o mar escuro, com a **Rocha da Caveira** e o **covil do Kraken Vermelho**.
 
 ### Personagens
 | Personagem | Papel no jogo |
 |---|---|
 | **Grumete** | O jogador. O marujo mais novo do navio, de bandana vermelha e camisa listrada. Morre e volta com a maré. |
 | **Louro** | O papagaio das "placas" de dica. Às vezes ajuda, às vezes mente. Comenta no mapa depois das fases. |
-| **Marina** | A sereia: o objetivo final. Espera no fim da fase 16 e comemora. Também comenta no mapa. |
-| **Capitã Âncora** | Chefe da fase 6, com a âncora presa na corrente. Fica **furiosa** na etapa 3. |
-| **Dóris** | A fantasminha das Cabines Assombradas (fase 11), o navio fantasma com as portas embaralhadas. |
-| **Cozinheira** | A cozinheira do navio fantasma. Joga cutelos das sombras e é a chefe da fase 13, no porão escuro. |
-| **Kraken** | A morte em si: o tentáculo no cano, as sombras da transição e a **Maré Negra** que persegue na fase 14. |
-| **Baleia Branca** | O chefe final (fase 16): uma orca gigante com chifre. Também aparece nadando no céu do mapa. |
+| **Marina** | A sereia: o objetivo final. O Kraken prendeu ela no covil; ela espera no fim da fase 13 e comemora. Também comenta no mapa. |
+| **Capitã Âncora** | Chefe da fase 4, com a âncora presa na corrente. Fica **furiosa** na etapa 3. |
+| **Cozinheira** | A ex-cozinheira do navio fantasma (foi expulsa). Joga cutelos das sombras e é a chefe da fase 7, na gruta escura. |
+| **Dóris** | A fantasminha do Navio Fantasma (fase 8), com as portas embaralhadas. |
+| **Baleia Branca** | Chefe da fase 10: uma orca gigante com chifre, mandada pelo Kraken. Também aparece nadando no céu do mapa. |
+| **Kraken Vermelho** | O **chefe final** (fase 13): a lula gigante vermelha por trás de tudo. Os tentáculos vermelhos dos canos e da tela de morte são dela, e foi ela que levantou o **tsunami** da fase 11. Os ataques dela **roubam moedas**. |
 | Caranguejos e Ratos do Porão | Inimigos comuns. Os ratos se multiplicam. |
 
 ### Narrativa e tom
@@ -105,12 +106,12 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - **Nuvem assassina (`o`):** igual às nuvens do cenário, mas tem dentes.
 - **Esmagador (`T`):** despenca quando você chega perto. Se você já passou, ele se arrasta atrás de você.
 - **Serra (`<` / `>`):** uma vem por trás e persegue, a outra vem pela frente. Depois de passar, volta uma vez.
-- **Cano (`U`):** de tempos em tempos sai um tentáculo do Kraken. Dá para pular por cima no tempo certo.
+- **Cano (`U`):** de tempos em tempos sai um tentáculo (vermelho) do Kraken. Dá para pular por cima no tempo certo.
 - **Mola (`S`):** lança para o alto, às vezes direto num espinho.
 - **Bloco tímido (`M`):** foge quando você pula perto. O truque é assustá-lo antes com um pulinho.
 - **Bandeira fujona (`R`):** foge para outro lugar quando você chega perto.
 - **Bandeira falsa (`Z`):** fica vermelha, brotam espinhos e você morre.
-- **Bandeira volta (`W`):** manda você de volta para o começo. Não conta como morte, "só como raiva".
+- **Bandeira volta (`W`):** manda você de volta para o último checkpoint (ou para o começo, se não pegou nenhum). Não conta como morte, "só como raiva".
 - **Inimigos:**
   - **Caranguejo (`E`):** pise para derrotar. Se ele passar de você, volta.
   - **Caranguejo espinhoso (`e`):** não pise.
@@ -120,23 +121,27 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - **Âncora da Capitã (`Q` / `q`):** a âncora gira na corrente e só a **âncora** mata. Em cima do eixo é seguro ("olho do furacão").
   O `q` fica bravo e inverte o giro, 2x mais rápido.
 - **Controles invertidos (`X`):** cruzar a linha avisa "Invertendo os controles em..." e inverte depois de **0,4 s** ("bombordo é estibordo"). Voltar antes cancela.
-  Só a fase 7 usa isso, e só num trecho.
+  Só a fase 5 usa isso, e só num trecho.
 - **Plataformas mágicas (`j` / `J` / `D`):** vão e voltam até 6 blocos.
   - `J`: o cristal fica vermelho e ela despenca depois de 0,5 s.
   - `D`: o cristal fica amarelo, ela **dispara** e freia de repente. Quem pula enquanto ela treme cai.
 - **Vento do mar (`y`):** rajadas para a esquerda (calmo 1 s, aviso 0,5 s com folhas, rajada 2 s). Segure para a frente ou se esconda atrás de um bloco.
 - **Redemoinho (`n`):** levanta o Grumete até o topo da zona. Os "traiçoeiros" engasgam e desligam por 1,5 s.
-- **Portas das Cabines Assombradas (`0`–`9`):** pares fixos de ida e volta (`1-4`, `3-5`, `2-9`, `6-7`, `8-0`). Uma leva a um beco cheio de caranguejos.
+- **Portas das cabines do Navio Fantasma (`0`–`9`):** pares fixos de ida e volta (`1-4`, `3-5`, `2-9`, `6-7`, `8-0`). Uma leva a um beco cheio de caranguejos.
 - **Blocos do ritmo (`a` / `b` / `A`):** o azul (da maré) e o rosa (do coral) se revezam a cada **1,4 s**, piscando e fazendo "tic, tic, TAC" antes da troca.
   O `A` pisca junto com o azul, mas nunca fica sólido.
 - **Esmagador do ritmo (`t`):** cai toda vez que o azul acende. "Rosa aceso = caminho livre."
 - **Facas da Cozinheira (`l` / `k`):** dois olhos nas sombras. A menos de 14 blocos e na mesma altura, ela joga um cutelo a cada 1,6 s (olhos vermelhos 0,4 s antes).
   O `k` joga três em leque. A faca crava em blocos, então esconder funciona.
-- **Maré Negra (`N`):** uma parede de tinta do Kraken, com tentáculos, persegue você a **5,2 blocos/s** (o Grumete anda a 7). Parar para pensar custa caro.
+- **Tsunami (`N`):** a onda gigante que o Kraken levantou persegue você a **5,2 blocos/s** (o Grumete anda a 7). Parar para pensar custa caro.
+  Quando você fica perto, um jato d'água sai da onda (avisa recuando e piscando). Ela tem espuma, a crista enrolando lá em cima e destroços boiando.
+- **Kraken Vermelho (`g`):** a arena do chefe final, com a poça dela no fim (4 colunas sem chão).
 
 ### Checkpoints que "mudam de lugar"
 - O **cristal de save (`s`)** marca onde você renasce.
-- Em **25%** das mortes o save "muda de lugar" ("O ponto de save mudou de lugar... :)") e você volta para o começo da fase.
+- Em **25%** das mortes o save "muda de lugar" ("O ponto de save mudou de lugar... :)") e você volta para o **checkpoint anterior**
+  (ou para o começo, se era o primeiro). Antes voltava sempre para o começo, mas com as fases mais longas isso virou maldade demais.
+- A **bandeira que volta (`W`)** também manda para o último checkpoint (sem checkpoint, para o começo).
 - Isso nunca acontece em fase com chefe.
 
 ### Chefes (molde Helltaker)
@@ -144,10 +149,15 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - Todo ataque tem aviso: 0,6 s na etapa 1, 0,48–0,5 s na etapa 2 e 0,38–0,4 s na etapa 3, mas nunca menos de 0,55 s para o que pede pulo.
 - Os padrões são fixos. Morreu, volta na mesma etapa, sem a introdução.
 - O único jeito de dar dano é **pular na cabeça** do chefe no momento de vulnerabilidade:
-  - **Capitã Âncora:** a âncora fica presa no chão e ela fica parada puxando a corrente. Essa janela é a mais longa dos três chefes
+  - **Capitã Âncora:** a âncora fica presa no chão e ela fica parada puxando a corrente. Essa janela é a mais longa dos chefes
     (3 s, 2,7 s e 2,4 s por etapa), porque a Capitã é o primeiro chefe e o que ensina a regra;
   - **Cozinheira:** o clarão do lampião (ela cai tonta, à vista);
-  - **Baleia:** fica atordoada depois do mergulho.
+  - **Baleia:** fica atordoada depois do mergulho;
+  - **Kraken:** cansa no fim de cada rodada e deita a cabeça no convés (3 s, 2,6 s e 2,2 s). Os ataques dela: chicotada (baixa = pule,
+    alta = não pule), pancada do céu (a marca segue você), **agarrão amarelo** (não mata, rouba moedas e te joga para trás) e tinta (etapa 2 em diante).
+- **O roubo do Kraken:** cada agarrão leva até 5 / 7 / 10 moedas (primeiro as da tentativa, depois as guardadas, nunca negativo).
+  É salvo na hora. A cada pisão ela devolve metade e, derrotada, devolve o resto. Morrer não devolve, e o escudo não protege do roubo.
+  A ideia: o chefe final mexe com a economia do jogo inteiro (a Loja), e acertar a cabeça dela vira também "recuperar o tesouro".
 - **A tempestade de âncoras da Capitã:** ela salta para o meio da arena e dispara várias âncoras rápidas (19 a 23 blocos/s) para todos os lados.
   Elas cravam na parede, no chão ou nas vigas do teto e voltam pelo mesmo caminho (a volta também mata; a corrente não).
   As linhas mostram cada caminho antes: a linha baixa pede pulo (na ida e na volta) e a que bate no chão pede distância.
@@ -156,17 +166,18 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 ### Moedas
 - Moedas `$` e blocos `?` somam no HUD e no save.
 - Muitas são **isca** para uma armadilha.
-- Pegar **todas** as da fase 5 (numa mesma tentativa, sem pegar a moeda assassina) libera a fase secreta.
+- Pegar **todas** as da fase 3 (a fase inteira, numa mesma tentativa, sem pegar a moeda assassina) libera a fase secreta.
 
 ### Fase secreta
 - A **Ilha do Louro** fica numa ilhota da lagoa.
-- Para chegar lá: no ponto 5 do mapa, aperte ↓.
+- Para chegar lá: no ponto 3 do mapa, aperte ↓.
 - "Sem pegadinha"... só uma.
 
 ### Conquistas
-- São 24, salvas para sempre. Alguns exemplos:
+- São 27, salvas para sempre. Alguns exemplos:
   - A maré te trouxe, Grumete imortal (100 mortes), Confiou na bandeira, Ganância, Olhou para o céu, Suspeito de hack (passar de fase sem morrer);
-  - Pescador de caranguejos, Controle de pragas, Buuu!, Mudaram meu save!, Explorador, Passageiro da Expressa, Lanche do Kraken;
+  - Pescador de caranguejos, Controle de pragas, Buuu!, Mudaram meu save!, Explorador, Passageiro da Expressa, Caldo do Tsunami;
+  - do Kraken: Assaltado (ter moedas roubadas), Calamar à doré (vencer) e Bolso fechado (vencer sem ela roubar nenhuma moeda);
   - as vitórias contra os chefes, Fora do Ritmo, Perfeccionista (as 3 medalhas de uma fase) e Terra à vista! (zerar o jogo).
 
 ### Recorde
@@ -184,7 +195,7 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
   Valem para sempre: um Novo jogo não apaga.
 - O tempo conta desde que você entra na fase pelo mapa, com o tempo das mortes. As moedas são as da tentativa em que você passou.
 - Cada recorde dá uma **medalha**:
-  - **relógio:** passar dentro do tempo da meta (estimado pelo tamanho da fase; os chefes e as Cabines têm a meta deles);
+  - **relógio:** passar dentro do tempo da meta (estimado pelo tamanho da fase; os chefes e o Navio Fantasma têm a meta deles);
   - **coração:** passar sem morrer;
   - **moeda:** pegar todas as moedas numa tentativa só (fase sem moeda: vem com a primeira vitória).
 - As medalhas aparecem do lado de cada fase no **mapa** (apagadas = faltam), com a linha de recorde embaixo,
@@ -226,17 +237,19 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 ## 2.1 Loops
 - **Micro (segundos):** ver → tentar → morrer → **voltar na hora** (1,3 s, ou 0,7 s a partir da 3ª morte, e pode pular) → tentar de outro jeito.
 - **Médio (minutos):** atravessar a fase de save em save, decorando as armadilhas. O X vermelho mostra onde você já morreu.
-- **Macro (sessão):** passar a fase → o Grumete anda no mapa → a névoa se abre → uma fala → a próxima fase. A cada 5 a 7 fases vem um chefe.
+- **Macro (sessão):** passar a fase → o Grumete anda no mapa → a névoa se abre → uma fala → a próxima fase. A cada 2 ou 3 fases vem um chefe.
 - **Meta:** conquistas, a fase secreta, as medalhas de cada fase (tempo, sem morrer e todas as moedas) e o recorde de mortes.
 
 ## 2.2 Curva de dificuldade
-- **Fases 1 a 5:** ensinam a "regra do jogo" (nada é confiável), uma trollagem clássica por vez.
-- **Fase 6:** o primeiro chefe, o mais "didático" (o Louro dá dicas na etapa 1, e a janela de dano é a mais longa).
-- **Fases 7 a 12:** uma mecânica temática nova por fase, cada vez mais longas (até 168 blocos), com 2 saves.
-- **Fase 13:** o segundo chefe, que junta escuridão e leitura de aviso.
-- **Fase 14:** pressão contínua (a Maré Negra persegue).
-- **Fase 15:** "prova final" que revisita as trollagens.
-- **Fase 16:** o chefe final, o mais rápido e com mais ataques.
+- **Fase 1:** o tutorial curto (82 blocos). Daqui em diante, toda fase é longa (112 a 218 blocos) e tem checkpoints.
+- **Fases 2 e 3:** ensinam a "regra do jogo" (nada é confiável), duas trollagens clássicas por fase.
+- **Fase 4:** o primeiro chefe, o mais "didático" (o Louro dá dicas na etapa 1, e a janela de dano é a mais longa).
+- **Fases 5 e 6:** controles invertidos, blocos tímidos e plataformas sobre o abismo.
+- **Fase 7:** o segundo chefe, que junta escuridão e leitura de aviso.
+- **Fases 8 e 9:** a mais longa (portas e ritmo no Navio Fantasma) e o vento.
+- **Fase 10:** a Baleia Branca, rápida e com muitos ataques.
+- **Fase 11:** pressão contínua (o tsunami persegue). **Fase 12:** "prova final" que revisita as trollagens.
+- **Fase 13:** o chefe final, que além de tudo mexe nas suas moedas.
 - A **secreta** é um respiro.
 
 ## 2.3 Como as trollagens subvertem a expectativa
@@ -247,7 +260,7 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
   - nuvem → dentes.
 - **O Louro mente**, mas nem sempre: "Pula com força! (ou não)". O jogador aprende a ler o tom.
 - **"Igualzinho ao anterior"**: a segunda plataforma, o segundo redemoinho e a segunda âncora são iguais na aparência e diferentes no comportamento.
-- **Nomes que mentem:** "O Final (sem pegadinhas)" é a fase 4. "Eu mudo de ideia" diz "Decorou a fase? Que pena."
+- **Nomes que mentem:** "O Final (mudei de ideia)" é a fase 3, e o "final" continua depois da primeira metade.
 - **O save que muda de lugar:** a "promessa" de checkpoint também pode trair (só fora dos chefes).
 
 ## 2.4 Ritmo dos chefes
@@ -256,7 +269,8 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - **Etapa 3:** tudo mais rápido, mais o "twist":
   - a Capitã fica furiosa;
   - a escuridão da Cozinheira fecha;
-  - o chão da Baleia desmorona e a arena escurece.
+  - o chão da Baleia desmorona e a arena escurece;
+  - o Kraken fica furioso e os ataques vêm juntos.
 - Cada rodada termina na **janela de dano** (pular na cabeça). Erro significa recomeçar a rodada, não a luta.
 
 ## 2.5 Economia (moedas e recordes)
@@ -274,7 +288,7 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - **Bandos de ratos** que se multiplicam e lotam a tela se o jogador demora.
 - **Esmagadores e serras** que perseguem e às vezes matam inimigos ou bloqueiam o caminho de um jeito diferente a cada tentativa.
 - **Speedrun natural:**
-  - correr sem parar contra a Maré Negra;
+  - correr sem parar contra o tsunami;
   - pular a animação da morte;
   - ir de save em save.
 - **Jogadores testando o Louro:** depois de algumas mortes, o jogador passa a fazer o contrário da placa (e o jogo às vezes recompensa ser honesto: "dessa vez é sério").
@@ -296,22 +310,19 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 
 ## 3.2 Emoção por fase (alvo)
 1. **Bem-vindo :)** — surpresa ("até o tutorial mente").
-2. **Confia em mim** — desconfiança.
-3. **Corre!** — urgência.
-4. **O Final (sem pegadinhas)** — ironia.
-5. **Eu mudo de ideia** — ganância punida.
-6. **A Capitã Âncora** — primeiro "boss rush" de adrenalina e aprendizado.
-7. **Cadê a direita?** — confusão controlada.
-8. **Foge, bloco!** — frustração cômica (a bandeira que volta).
-9. **Ponte para o Porto** — vertigem e paranoia.
-10. **Vento em Popa!** — luta contra a força invisível.
-11. **Cabines Assombradas** — quebra-cabeça e memória.
-12. **Dança das Marés** — fluxo e ritmo.
-13. **A Cozinheira do Porão** — medo do escuro.
-14. **A Maré Negra (CORRE!)** — pânico.
-15. **Verdadeiro Final** — "eu já sei de tudo" (domínio).
-16. **Baleia** — clímax épico.
-17. **Secreta** — recompensa.
+2. **Confia em mim (e corre!)** — desconfiança que vira urgência.
+3. **O Final (mudei de ideia)** — ironia e ganância punida.
+4. **A Capitã Âncora** — primeiro "boss rush" de adrenalina e aprendizado.
+5. **Cadê a direita? (Foge, bloco!)** — confusão controlada e frustração cômica.
+6. **Ponte para o Porto** — vertigem e paranoia.
+7. **A Gruta da Cozinheira** — medo do escuro.
+8. **O Navio Fantasma** — quebra-cabeça e memória, depois fluxo e ritmo.
+9. **Vento em Popa!** — luta contra a força invisível.
+10. **A Baleia Branca** — clímax épico (e a revelação: foi o Kraken).
+11. **O Tsunami (CORRE!)** — pânico.
+12. **Verdadeiro Final** — "eu já sei de tudo" (domínio).
+13. **O Kraken Vermelho** — o confronto final, com o tesouro em jogo.
+14. **Secreta** — recompensa.
 
 ## 3.3 Estética
 - **Visual HD-2D de pixel art:**
@@ -319,7 +330,8 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
   - **profundidade:** fundo em camadas com paralaxe e desfoque de profundidade (as ilhas e o vulcão lá longe, um galeão no horizonte,
     palmeiras e o mato da praia), tudo nítido: a distância vem da cor (as camadas de longe ficam mais claras e azuladas);
   - **luz:** raios de sol que somem quando uma nuvem passa, sombras de nuvens, hora do dia (manhã no início, entardecer dourado no fim) e luzes 2D;
-  - **vida no cenário:** vento nas plantas e partículas de clima (pólen, pétalas, vaga-lumes, poeira dourada); no chão, barris, estrelas-do-mar e lampiões;
+  - **vida no cenário:** vento nas plantas e partículas de clima, uma por tema (pólen, folhas, pétalas, poeira dourada, vaga-lumes, almas, chuva e bolhas);
+    no chão, barris, estrelas-do-mar e lampiões;
   - **o mapa:** um arquipélago com mar fundo e praias, palmeiras, o farol, navios navegando, o forte da Capitã, o navio fantasma e a Rocha da Caveira;
   - **pixel nítido:** a tela é pixelada em escala inteira.
 - **Trilha sonora de pirata, procedural** (`Musicas.cs`): toda composta e sintetizada por código, com um sintetizador próprio
@@ -331,6 +343,8 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
     - **Capitã Âncora:** mi menor, 160 bpm, gancho no ritmo 3-3-2 no acordeão, violino e o violão "girando" em semicolcheias, pisadas e palmas;
     - **Cozinheira:** dó menor, uma valsa sombria em 6/8 com acordeão, violino e caixinha de música;
     - **Baleia:** ré menor, 172 bpm, com estalos de orquestra, coro, baixo galopando, o "canto da baleia" (notas que deslizam) e o gancho subindo um tom no clímax;
+    - **Kraken:** "Abraço do Abismo", fá frígio, 150 bpm: tímpanos, coro, o "lamento" da lula (notas deslizando para baixo), um riff no baixo que se enrola
+      como um tentáculo (fá, sol bemol, fá) e o gancho subindo meio tom na volta;
   - morrer na luta não recomeça a música: ela continua de onde estava.
 - **Sons:**
   - efeitos 8-bit gerados por código (pulo, moeda, pisão, mola, serra, porta, risada, rugido, conquista, vitória);
@@ -345,7 +359,7 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - **Morte:**
   - a tela perde a cor;
   - aberração cromática;
-  - os tentáculos do Kraken avançam;
+  - os tentáculos do Kraken (vermelhos) avançam, com o fundo vermelho-escuro;
   - a onda e o sino da Volta da Maré;
   - uma mensagem de morte (são mais de 60).
 - **Renascimento:** um "soco" de distorção de lente e uma tremidinha de tela.
@@ -359,30 +373,39 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 
 Dificuldade de 1 a 5 (estimativa da equipe). "Saves" = cristais `s` na fase. A largura está em blocos (todas as fases têm 15 de altura).
 
-| # | Fase | Largura | Mecânica nova | Trollagem principal | Saves | Dif. |
+| # | Fase (tema) | Largura | Mecânica nova | Trollagem principal | Saves | Dif. |
 |---|---|---|---|---|---|---|
-| 1 | Bem-vindo :) | 82 | Chão que cai, `?`/`K`, bloco invisível, espinho escondido, espinho do teto, cano, bandeira fujona | O tutorial manda "pular BEM alto" para dentro do bloco invisível, e a bandeira foge | 0 | 1 |
-| 2 | Confia em mim | 58 | Esmagador, nuvem assassina, mola, chão falso, bandeira falsa | "Chão 100% seguro à frente" e a primeira bandeira que mata | 0 | 2 |
-| 3 | Corre! | 92 | Serras (por trás e pela frente), save | "Não olhe para trás": uma serra persegue desde o primeiro passo | 1 | 2 |
-| 4 | O Final (sem pegadinhas) | 70 | Ratos do Porão | O nome: é só a fase 4 | 0 | 2 |
-| 5 | Eu mudo de ideia | 70 | Moeda assassina | "Pegue as moedas! Todas!", e uma delas mata (e a secreta exige todas as outras) | 0 | 2 |
-| 6 | A Capitã Âncora | 86 | Âncora giratória; **chefe Capitã Âncora** | "Vai lá dar oi. Eu espero aqui. Bem aqui. Longe." | 1 | 3 |
-| 7 | Cadê a direita? | 92 | Controles invertidos, caranguejo espinhoso, espinho comum | "Tudo normal por aqui", e depois do save tudo inverte | 1 | 3 |
-| 8 | Foge, bloco! | 76 | Bloco tímido, bandeira que volta | A primeira "bandeira" manda você de volta ao começo | 0 | 3 |
-| 9 | Ponte para o Porto | 156 | Plataformas `j`, `J` (despenca) e `D` (expressa) | "Essa aqui é IGUALZINHA à outra", e não é | 2 | 3 |
-| 10 | Vento em Popa! | 168 | Vento do mar e redemoinho | O segundo redemoinho, "igualzinho", desliga no meio | 2 | 4 |
-| 11 | Cabines Assombradas | 61 | Portas do navio fantasma | Uma porta leva a um beco cheio de caranguejos | 0 | 3 |
-| 12 | Dança das Marés | 154 | Blocos do ritmo, bloco falso `A`, esmagador do ritmo | "Agora é só ritmo puro, sem pegadinha", e vem uma bandeira falsa no fim | 2 | 4 |
-| 13 | A Cozinheira do Porão | 80 | Fase escura, facas da Cozinheira; **chefe Cozinheira** | "A moeda ali em cima também é de confiança. :)" (não é) | 1 | 4 |
-| 14 | A Maré Negra (CORRE!) | 170 | Maré Negra do Kraken | Mola "para as moedas", que leva às nuvens assassinas | 2 | 4 |
-| 15 | O Verdadeiro Final (juro) | 120 | — (revisão) | "Pode encostar na bandeira. Essa é de verdade", mas há uma bandeira falsa (com degrau para pular por cima) e chão que cai | 1 | 3 |
-| 16 | A Baleia Branca | 100 | **Chefe final Baleia Branca** | Aquecimento noturno com nuvens e espinhos, depois a arena | 1 | 5 |
+| 1 | Bem-vindo :) (porto) | 82 | Chão que cai, `?`/`K`, bloco invisível, espinho escondido, espinho do teto, cano, bandeira fujona | O tutorial manda "pular BEM alto" para dentro do bloco invisível, e a bandeira foge | 0 | 1 |
+| 2 | Confia em mim (e corre!) (selva) | 156 | Esmagador, nuvem assassina, mola, chão falso, bandeira falsa; serras (por trás e pela frente) | "Última bandeira. Agora é sério." é uma bandeira falsa, e logo depois "Não olhe para trás" | 2 | 2 |
+| 3 | O Final (mudei de ideia) (lagoa) | 142 | Ratos do Porão, moeda assassina | O "final" continua; "Pegue as moedas! TODAS!", e uma delas mata (a secreta exige todas as outras) | 1 | 2 |
+| 4 | A Capitã Âncora (forte) | 126 | Âncora giratória (também sobre buracos); **chefe Capitã Âncora** | "Vai lá dar oi. Eu espero aqui. Bem aqui. Longe." | 1 | 3 |
+| 5 | Cadê a direita? (Foge, bloco!) (vila) | 172 | Controles invertidos, caranguejo espinhoso, bloco tímido, bandeira que volta | "Tudo normal por aqui", e depois do save tudo inverte; a primeira "bandeira" do fim manda você de volta ao checkpoint | 2 | 3 |
+| 6 | Ponte para o Porto (desfiladeiro, noite) | 196 | Plataformas `j`, `J` (despenca) e `D` (expressa) | "Essa aqui é IGUALZINHA à outra", e não é | 3 | 3 |
+| 7 | A Gruta da Cozinheira (gruta escura) | 112 | Fase escura, facas da Cozinheira (na frente e atrás); **chefe Cozinheira** | "A moeda ali em cima também é de confiança. :)" (não é) | 1 | 4 |
+| 8 | O Navio Fantasma (cabines e convés) | 218 | Portas das cabines, blocos do ritmo, bloco falso `A`, esmagador do ritmo | Uma porta leva a um beco cheio de caranguejos; "Agora é só ritmo puro, sem pegadinha", e vem uma bandeira falsa | 3 | 4 |
+| 9 | Vento em Popa! (penhasco) | 208 | Vento do mar e redemoinho | O segundo redemoinho, "igualzinho", desliga no meio | 2 | 4 |
+| 10 | A Baleia Branca (mar aberto, noite) | 140 | **Chefe Baleia Branca** | Aquecimento noturno com nuvens, espinhos que caem e chão que despenca, depois a arena | 1 | 5 |
+| 11 | O Tsunami (CORRE!) (ilhas do Kraken, chuva) | 210 | O tsunami do Kraken | Mola "para as moedas", que leva às nuvens assassinas | 2 | 4 |
+| 12 | O Verdadeiro Final (juro) (pôr do sol) | 192 | — (revisão, bem mais longa) | "Pode encostar na bandeira. Essa é de verdade", mas há bandeiras falsas e chão que cai | 1 | 4 |
+| 13 | O Kraken Vermelho (covil, fundo do mar) | 100 | Canos com tentáculos; **chefe final Kraken Vermelho** (rouba moedas) | O tentáculo AMARELO "não mata"... mas leva as suas moedas | 1 | 5 |
 | ★ | Ilha do Louro (secreta) | 72 | — | "Aqui não tem pegadinha"... "tá, só uma." | 0 | 1 |
+
+### A estrutura (13 fases e 4 chefes)
+- **3 fases e a Capitã, 2 fases e a Cozinheira, 2 fases e a Baleia, 2 fases e o Kraken.** Antes eram 16 fases curtas; as que eram parecidas
+  viraram uma fase só, mais longa (Confia + Corre, O Final + Eu mudo de ideia, Cadê a direita + Foge bloco, Cabines + Dança das Marés),
+  e as outras ganharam um trecho novo e mais difícil (manguais sobre buracos, atiradoras de facas, plataforma com serra, rajada logo no começo,
+  mais parkour no tsunami e uma revisão bem mais longa no Verdadeiro Final). A fase 1 continua sendo o tutorial curto.
+- Na emenda de duas fases, a bandeira da primeira some e no lugar do começo da segunda fica um **checkpoint**.
+- **Cada fase tem um tema único:** um lugar (porto, selva, lagoa, forte, vila, desfiladeiro, gruta, navio fantasma, penhasco, mar aberto,
+  ilhas do Kraken, rochedo, covil), a cor do céu, a hora (dia, noite ou escuro) e as partículas de clima (pólen, folhas, pétalas, poeira,
+  vaga-lumes, almas, chuva, bolhas).
+- **A história fecha no Kraken Vermelho:** é ela que está por trás de tudo (os tentáculos dos canos e da tela de morte são dela, vermelhos),
+  mandou a Baleia e levantou o tsunami.
 
 ### Princípios usados
 - **Uma ideia nova por fase**, apresentada num lugar seguro e depois combinada com o que já se conhece.
 - **Ensinar com o Louro, trair com o Louro:** a placa é tutorial e armadilha ao mesmo tempo. Nos chefes as dicas dele são sempre verdadeiras.
-- **Saves antes dos trechos longos** nas fases grandes (9, 10, 12 e 14 têm 2 saves cada).
+- **Saves antes dos trechos longos:** toda fase longa tem pelo menos um checkpoint, e as emendas de duas fases ganharam um no lugar do começo da segunda.
 - **Fases desenhadas em texto** (`Fases.cs`): iterar é editar uma linha e dar Play.
 - **O mapa também é texto** (`MapaDoMundo.cs`): as ilhas, o mar e as pontes. Um script de apoio confere se cada fase continua ligada à próxima, sem atalhos.
 
@@ -443,7 +466,10 @@ Dificuldade de 1 a 5 (estimativa da equipe). "Saves" = cristais `s` na fase. A l
   - o recorde;
   - os recordes de cada fase (tempo, mortes e moedas), que dão as medalhas;
   - as conquistas e as opções.
-- **Validação de versão:** o save guarda quantas fases o jogo tinha. Se a lista de fases mudou (um save antigo de 9 ou 10 fases), o "Continuar" some, em vez de carregar a fase errada.
+- **Validação de versão:** o save guarda quantas fases o jogo tinha. Se a lista de fases mudou (um save antigo de 16 fases), o "Continuar" some, em vez de carregar a fase errada.
+- **Recordes pelo nome da fase:** os recordes e medalhas são guardados pelo nome (`cilada_recorde_v2_<nome>`), não pelo número: reordenar as fases não manda
+  um recorde para a fase errada. O "v2" fez as 13 fases novas começarem do zero (a secreta, que não mudou, manteve os recordes).
+- **O roubo do Kraken** salva as moedas na hora (fechar o jogo no meio da luta não devolve nada).
 - Os índices são limitados (`Mathf.Clamp`) ao carregar o mapa.
 - A leitura das mortes por fase tolera texto inválido (vira 0).
 - O jogo salva ao entrar numa fase, ao passar de fase, ao voltar ao mapa e ao fechar.

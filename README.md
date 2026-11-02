@@ -39,8 +39,8 @@ a fase é uma captura do jogo rodando no editor da Unity.*
 ## Como jogar
 
 ### Objetivo
-Leve o Grumete do começo de cada fase até a **bandeira de verdade**. São 16 fases ligadas por um **mapa do mundo** (estilo *Super Mario World*): um arquipélago, atravessado de ilha em ilha pelas pontes de madeira.
-No caminho há 3 chefes, e na última fase a Marina, a sereia, espera o Grumete.
+Leve o Grumete do começo de cada fase até a **bandeira de verdade**. São 13 fases ligadas por um **mapa do mundo** (estilo *Super Mario World*): um arquipélago, atravessado de ilha em ilha pelas pontes de madeira.
+Cada fase tem um lugar e um clima próprios. No caminho há 4 chefes (o último é o **Kraken Vermelho**), e depois dele a Marina, a sereia, espera o Grumete.
 Você vai morrer muito, e é assim que o jogo funciona: cada armadilha só pega uma vez, se você prestar atenção.
 
 ### Controles
@@ -56,7 +56,7 @@ Os controles abaixo são os de `Assets/Scripts/Nucleo/Controles.cs`. Teclado e c
 | Escolher nos menus | **↑ / ↓** (ou W / S) | direcional |
 | Mudar um valor (volume, gráficos) | **← / →** | direcional |
 | Pular a animação da morte (depois de 0,5 s) | **Espaço / Enter** | botão de baixo |
-| Entrar numa porta das Cabines Assombradas | **S** ou **↓** | direcional para baixo |
+| Entrar numa porta do Navio Fantasma | **S** ou **↓** | direcional para baixo |
 | No mapa: andar pelo caminho / entrar na fase | **setas** / **Enter** | direcional / botão de baixo |
 | No mapa: voltar ao título | **Esc** | Start |
 | Voltar um nível nos menus | **Esc** ou **Backspace** | botão da direita (B / ◯) |
@@ -72,7 +72,7 @@ Os controles abaixo são os de `Assets/Scripts/Nucleo/Controles.cs`. Teclado e c
   O mapa começa coberto pela névoa do alto-mar, que vai sumindo conforme você avança.
 
 ### HUD
-- Em cima, à esquerda: o nome da fase ("Fase 3/16: Corre!") e o total de mortes.
+- Em cima, à esquerda: o nome da fase ("Fase 3/13: O Final (mudei de ideia)") e o total de mortes.
 - Em cima, à direita: as moedas e o tempo de jogo.
 - Uma barrinha de progresso até a bandeira mais distante (de propósito: ela não entrega qual bandeira é a de verdade).
 - Nas lutas: a barra de vida do chefe, dividida em 3 etapas.
@@ -102,42 +102,44 @@ No meio da Loja fica a **roleta**: escolha quanto apostar (de 1 a 100) e a cor. 
 
 > ⚠️ Spoilers!
 
-- **Fase secreta, a "Ilha do Louro":** na fase 5, *"Eu mudo de ideia"*, pegue **todas as moedas** (as moedas `$` e os blocos `?`) **numa mesma tentativa** e chegue à bandeira.
+- **Fase secreta, a "Ilha do Louro":** na fase 3, *"O Final (mudei de ideia)"*, pegue **todas as moedas** da fase inteira (as moedas `$` e os blocos `?`) **numa mesma tentativa** e chegue à bandeira.
   Cuidado: uma das moedas é uma **moeda assassina**, e essa não conta. Se você conseguir, o Louro avisa e uma ilhota aparece na lagoa do mapa.
-  No **ponto 5** do mapa, aperte **↓ (ou S)** para atravessar a ponte até a ilhota.
-  (No código: `Fases.FaseDoSegredo = 4` e `GerenciadorDoJogo.FaseConcluida`. Um Novo jogo esconde a secreta de novo.)
-- **Conquistas:** são 24 (lista no título, salvas para sempre). Algumas são segredos, como "Olhou para o céu" (ser mordido por uma nuvem),
-  "Mudaram meu save!", "Passageiro da Expressa" (ir até o fim na plataforma expressa sem pular), "Buuu!" e "Fora do Ritmo".
+  No **ponto 3** do mapa, aperte **↓ (ou S)** para atravessar a ponte até a ilhota.
+  (No código: `Fases.FaseDoSegredo = 2` e `GerenciadorDoJogo.FaseConcluida`. Um Novo jogo esconde a secreta de novo.)
+- **Conquistas:** são 27 (lista no título, salvas para sempre). Algumas são segredos, como "Olhou para o céu" (ser mordido por uma nuvem),
+  "Mudaram meu save!", "Passageiro da Expressa" (ir até o fim na plataforma expressa sem pular), "Buuu!", "Fora do Ritmo" e "Bolso fechado"
+  (vencer o Kraken sem ela roubar nenhuma moeda).
 - **Recorde:** zere o jogo **em ordem, desde a fase 1**, com o menor número de mortes. O recorde aparece no título.
 - **Recordes por fase e medalhas:** cada fase guarda o seu melhor tempo, o menor número de mortes e o maior número de moedas (valem para sempre).
   Cada um dá uma medalha: **relógio** (passar dentro do tempo da meta; o tempo conta desde a entrada pelo mapa, com as mortes),
   **coração** (passar sem morrer) e **moeda** (pegar todas as moedas numa tentativa só). Ganhar as 3 numa fase dá a conquista "Perfeccionista".
   Se você pular fases pelo mapa, a partida não vale para o recorde.
+  Os recordes são guardados pelo **nome** da fase. Com as 13 fases novas (mais longas), os recordes das fases antigas não valem mais: cada fase começa do zero.
 - **Título no final:** o número de mortes dá um título ao jogador, de "Suspeito de hack" até "Grumete imortal".
 
 ---
 
 ## As fases
 
-| # | Fase | Mecânica principal |
-|---|---|---|
-| 1 | Bem-vindo :) | Tutorial "mentiroso": chão que cai, bloco invisível, espinho escondido, bloco `?` que solta inimigo, cano com o tentáculo do Kraken e a **bandeira que foge**. |
-| 2 | Confia em mim | Esmagadores, **nuvem assassina**, mola, chão falso e a primeira **bandeira falsa** (que mata). |
-| 3 | Corre! | **Serras**: uma persegue você por trás desde o começo e outra vem pela frente. Primeiro cristal de save. |
-| 4 | O Final (sem pegadinhas) | Nada é "o final". Estreia dos **Ratos do Porão**, que pulam atrás de você e se multiplicam. |
-| 5 | Eu mudo de ideia | **Moeda assassina** no meio das moedas de verdade. É a fase que libera a secreta. |
-| 6 | A Capitã Âncora | **Âncora giratória** (só a âncora mata, a corrente não) e o **CHEFE: Capitã Âncora**. |
-| 7 | Cadê a direita? | **Controles invertidos** ("bombordo é estibordo"), só num trecho e com aviso. Também tem o caranguejo "espinhoso" (não pise nele). |
-| 8 | Foge, bloco! | **Blocos tímidos** que fogem quando você pula perto, e a bandeira que te manda **de volta ao começo**. |
-| 9 | Ponte para o Porto | **Plataformas mágicas** sobre o abismo (de noite). Umas despencam e a "expressa" dispara. |
-| 10 | Vento em Popa! | **Vento do mar**: rajadas que empurram para trás, e **redemoinhos** que levantam (um deles é traiçoeiro). |
-| 11 | Cabines Assombradas | **Portas do navio fantasma**, um quebra-cabeça de salas com a Dóris, a fantasminha. Cada porta sempre leva ao mesmo lugar, então dá para decorar. |
-| 12 | Dança das Marés | **Blocos do ritmo** azul (da maré) e rosa (do coral), que se revezam a cada 1,4 s ("tic, tic, TAC"), e esmagadores no compasso. |
-| 13 | A Cozinheira do Porão | Fase **no escuro**. A Cozinheira joga cutelos das sombras e é o **CHEFE: Cozinheira**. |
-| 14 | A Maré Negra (CORRE!) | **Maré Negra do Kraken**: uma parede de tinta com tentáculos que persegue você pela fase inteira. Só correr e pular. |
-| 15 | O Verdadeiro Final (juro) | Revisão de tudo (serra, ratos, bandeira que foge, bandeira falsa com degrau, chão que cai). |
-| 16 | A Baleia Branca | Aquecimento à noite e o **CHEFE FINAL: Baleia Branca**. A Marina espera no fim. |
-| ★ | Ilha do Louro (secreta) | Só moedas e molas, "sem pegadinha"... ("tá, só uma"). |
+| # | Fase | Tema (lugar e clima) | Mecânica principal |
+|---|---|---|---|
+| 1 | Bem-vindo :) | O **porto**, de manhã | Tutorial "mentiroso": chão que cai, bloco invisível, espinho escondido, bloco `?` que solta inimigo, cano com o tentáculo do Kraken e a **bandeira que foge**. |
+| 2 | Confia em mim (e corre!) | A **selva**, com folhas caindo | Esmagadores, **nuvem assassina**, chão falso e a primeira **bandeira falsa**; depois, as **serras** (uma persegue você por trás). |
+| 3 | O Final (mudei de ideia) | A **lagoa** cor-de-rosa, com pétalas | O "final" que continua: estreia dos **Ratos do Porão** e a **moeda assassina**. É a fase que libera a secreta. |
+| 4 | A Capitã Âncora | O **forte** da Capitã | **Âncora giratória** (só a âncora mata), um trecho novo de manguais sobre buracos e o **CHEFE: Capitã Âncora**. |
+| 5 | Cadê a direita? (Foge, bloco!) | A **vila** de ponta-cabeça, com poeira dourada | **Controles invertidos** num trecho, caranguejo espinhoso, **blocos tímidos** e a bandeira que te manda **de volta ao checkpoint**. |
+| 6 | Ponte para o Porto | O **desfiladeiro**, de noite | **Plataformas mágicas** sobre o abismo (umas despencam, a "expressa" dispara) e um trecho novo com serra. |
+| 7 | A Gruta da Cozinheira | A **gruta** escura | Fase **no escuro**, com atiradoras de facas na frente e atrás, e o **CHEFE: Cozinheira**. |
+| 8 | O Navio Fantasma | O **navio fantasma**, com almas flutuando | As **portas** das cabines da Dóris (um quebra-cabeça de salas) e, saindo pela última, o baile no convés: **blocos do ritmo** ("tic, tic, TAC"). |
+| 9 | Vento em Popa! | O **penhasco dos ventos** | **Vento do mar** (agora já no começo, sobre um buraco) e **redemoinhos** (um é traiçoeiro). |
+| 10 | A Baleia Branca | O **mar aberto**, de noite | Aquecimento mais longo (espinhos que caem, chão que despenca) e o **CHEFE: Baleia Branca**. |
+| 11 | O Tsunami (CORRE!) | As **ilhas do Kraken**, debaixo de chuva | O **tsunami** que o Kraken levantou persegue você pela fase inteira. Só correr e pular. |
+| 12 | O Verdadeiro Final (juro) | O **rochedo** do pôr do sol | Revisão de tudo, agora bem mais longa: chão falso com isca, esmagadores, blocos que fogem, bandeira falsa, serras e ratos. |
+| 13 | O Kraken Vermelho | O **covil do Kraken**, no fundo do mar (bolhas subindo) | Canos com tentáculos e o **CHEFE FINAL: Kraken Vermelho**, que rouba moedas. A Marina espera no fim. |
+| ★ | Ilha do Louro (secreta) | A ilhota dourada | Só moedas e molas, "sem pegadinha"... ("tá, só uma"). |
+
+A viagem tem **4 chefes**: 3 fases e a Capitã, 2 fases e a Cozinheira, 2 fases e a Baleia, 2 fases e o Kraken.
+Fora a primeira, todas as fases são longas (de 112 a 218 blocos) e têm checkpoints no meio.
 
 As fases são desenhadas em texto em `Assets/Scripts/Nucleo/Fases.cs`. Cada caractere é um bloco, e a legenda completa fica no topo do arquivo.
 
@@ -145,7 +147,7 @@ As fases são desenhadas em texto em `Assets/Scripts/Nucleo/Fases.cs`. Cada cara
 
 ## Os chefes
 
-Os três seguem o mesmo molde, inspirado no chefe final de *Helltaker*: **3 etapas de 2 golpes**, ataques que matam com um toque mas sempre **avisam antes**,
+Os quatro seguem o mesmo molde, inspirado no chefe final de *Helltaker*: **3 etapas de 2 golpes**, ataques que matam com um toque mas sempre **avisam antes**,
 **padrões fixos** (nada é sorteado) e checkpoint por etapa (morreu, volta na mesma etapa sem a introdução longa). A barra de vida fica no topo da tela.
 
 O único jeito de dar dano é **pular na cabeça** do chefe **no momento certo**: quando ele fica vulnerável (descrito em "Como vencer").
@@ -153,7 +155,7 @@ Cada chefe tem **a sua própria música** de luta, e morrer não recomeça a mú
 
 ![A Capitã Âncora: parada, girando a âncora, no golpe, tonta e furiosa](Ferramentas/previews/capita_chefe.png)
 
-### Capitã Âncora (fase 6)
+### Capitã Âncora (fase 4)
 - Ataques com a âncora presa na corrente:
   - **arremesso:** linha baixa = pule, linha alta = não pule;
   - **tempestade de âncoras:** ela salta para o meio da arena e dispara várias âncoras **rápidas para todos os lados**. Elas cravam na parede,
@@ -168,13 +170,13 @@ Cada chefe tem **a sua própria música** de luta, e morrer não recomeça a mú
 
 ![A tempestade de âncoras da Capitã](Ferramentas/previews/tempestade_de_ancoras.png)
 
-### Cozinheira (fase 13)
-- A luta é **no escuro**, no porão do navio fantasma: só aparecem os olhos dela. Olhos vermelhos = vai atacar.
+### Cozinheira (fase 7)
+- A luta é **no escuro**, na gruta onde ela cozinha desde que foi expulsa do navio fantasma: só aparecem os olhos dela. Olhos vermelhos = vai atacar.
 - Ataques com o cutelo: faca mirada, leque de facas, chuva de facas, corte rente (pule), corte alto (não pule), bumerangue e "atrás de você".
 - Na etapa 3 a escuridão fecha.
 - **Como vencer:** no fim de cada rodada aparece um **lampião**. Encoste nele: o clarão deixa a Cozinheira **tonta** e à vista. **Pule na cabeça dela.**
 
-### Baleia Branca (fase 16, chefe final)
+### Baleia Branca (fase 10)
 - Uma orca gigante com chifre. Ataques:
   - **investida:** alta = não pule, baixa = pule;
   - barbatana rasgando o chão;
@@ -184,7 +186,20 @@ Cada chefe tem **a sua própria música** de luta, e morrer não recomeça a mú
   - raio do chifre.
 - Na etapa 2 vêm dois ataques ao mesmo tempo. Na etapa 3 o chão desmorona em dois lugares, ela faz uma finta e a arena escurece.
 - **Como vencer:** no fim de cada rodada ela dá um **mergulho** (a marca no chão segue você e trava). Saia de baixo: ela fica **atordoada**, e você **pula na cabeça dela**.
-  Depois de vencê-la, a névoa se abre e o caminho até a bandeira e a Marina fica livre.
+  Depois de vencê-la, a Marina conta quem mandou a Baleia: o Kraken.
+
+### Kraken Vermelho (fase 13, chefe final)
+- A **lula gigante vermelha** que prendeu a Marina, mandou a Baleia e levantou o tsunami. Ela mora numa **poça** no fim da arena e ataca com os tentáculos.
+  **Só a ponta dos tentáculos mata.** Vermelho mata, **amarelo rouba**:
+  - **chicotada:** a linha vermelha mostra a altura e o tentáculo varre a arena e volta. Baixa = pule, alta = não pule (a partir da etapa 2 a volta pode vir na outra altura);
+  - **pancada:** a marca no chão segue você, trava e um tentáculo despenca do céu;
+  - **agarrão (amarelo):** bolhas amarelas na poça e o tentáculo vem rente ao chão atrás de você. **Não mata, rouba moedas** (5, 7 ou 10, conforme a etapa) e te joga para trás. Pule por cima;
+  - **tinta** (etapa 2 em diante): as marcas mostram onde as bolas de tinta vão cair.
+- Na etapa 3 ela fica **furiosa** e os ataques vêm juntos (o agarrão enquanto caem pancadas, a tinta junto com as chicotadas).
+- **Como vencer:** no fim de cada rodada ela **cansa** e deita a cabeça no convés, tonta (olho em espiral). **Pule na cabeça dela** (3 s, 2,6 s e 2,2 s). Cuidado com a poça!
+- **As moedas roubadas:** primeiro saem as que você pegou nesta tentativa, depois as guardadas (nunca fica negativo, e sem moedas ela só empurra).
+  O roubo é salvo na hora. A cada pisão ela devolve **metade** do que roubou, e ao ser derrotada devolve **o resto**. Morrer não devolve nada, e o escudo não protege do roubo.
+- Música própria: "Abraço do Abismo", em fá frígio, com o "lamento" da lula (notas deslizando) e um riff que se enrola como um tentáculo.
 
 ---
 
@@ -261,20 +276,20 @@ Ferramentas/     scripts de apoio (checador de fases, gerador das músicas em WA
 
 ### Nucleo/
 - `GerenciadorDoJogo.cs`: a máquina de estados (Título, Conquistas, Mapa, Jogando, Pausado, Morreu, FaseConcluida, Vitória, Créditos), as mortes, as moedas, o tempo e os checkpoints.
-- `Fases.cs`: as 16 fases e a secreta desenhadas em texto, a legenda das mecânicas e as mensagens de morte.
+- `Fases.cs`: as 13 fases e a secreta desenhadas em texto (cada uma com o seu tema: cor do céu, noite, escuro e partículas), a legenda das mecânicas e as mensagens de morte.
 - `ConstrutorDeFase.cs`: lê o texto da fase e cria os objetos (o chão vira um único `CompositeCollider2D`).
 - `MapaDoMundo.cs`: o mapa do mundo em texto (o arquipélago), com caminhos, pontes, névoa e o Grumete andando.
   A arte do mapa fica em `ArteDoMapa.cs` (o chão, o mar e as praias) e `ArteDoMapaEnfeites.cs` (palmeiras, forte, navios, farol, Rocha da Caveira...),
   e a névoa e a animação em `NevoaDoMapa.cs` e `VidaDoMapa.cs`.
 - `Interface.cs`: tudo o que é desenhado por cima do jogo (HUD, menus, pausa, morte, falas, barra do chefe, transições). Usa IMGUI e a fonte pixel própria.
 - `Controles.cs`: a leitura de teclado e controle (Input System).
-- `Progresso.cs`: o save em PlayerPrefs (continuar, mortes por fase, secreta, recorde e os recordes de cada fase), com validação de versão.
+- `Progresso.cs`: o save em PlayerPrefs (continuar, mortes por fase, secreta, recorde e os recordes de cada fase, guardados pelo nome da fase), com validação de versão.
 - `Medalhas.cs`: as 3 medalhas de cada fase (tempo, sem morrer, todas as moedas), o tempo-alvo e o desenho delas.
-- `Conquistas.cs`, `Opcoes.cs` e `Textos.cs`: as 24 conquistas, o volume e os gráficos, e as falas do mapa e os créditos.
+- `Conquistas.cs`, `Opcoes.cs` e `Textos.cs`: as 27 conquistas, o volume e os gráficos, e as falas do mapa e os créditos.
 - `ArteDosPersonagens.cs`: o Grumete, o Louro, os caranguejos, o rato, a Marina, a Dóris e a moeda, com uma paleta de três tons por material.
 - `FabricaDeSprites.cs` e `ArteDosBlocos.cs`: a arte procedural dos blocos, dos enfeites e dos fundos, o sombreamento automático dos desenhos grandes
   e a fonte pixel com acentos.
-- `Musicas.cs`: **todas** as músicas (a jiga das fases, a balada do mapa e a música de luta de cada chefe), escritas em texto (como as fases)
+- `Musicas.cs`: **todas** as músicas (a jiga das fases, a balada do mapa e a música de luta de cada um dos 4 chefes), escritas em texto (como as fases)
   e tocadas por um sintetizador próprio. É C# puro, sem Unity, então dá para gerar os WAVs fora do jogo.
 - `FabricaDeMusica.cs` e `Musica.cs`: transformam as músicas em AudioClips (cada fase num tom um pouco diferente) e tocam a música de fundo.
 - `FabricaDeSons.cs`, `SomDaMare.cs` e `SonsDaMorte.cs`: os efeitos 8-bit e o som da Volta da Maré (a onda, o sino do navio e o lamento do acordeão), sincronizado com o renascimento.
@@ -291,11 +306,12 @@ Ferramentas/     scripts de apoio (checador de fases, gerador das músicas em WA
 ### Armadilhas/
 - `Perigo.cs`: a base ("encostou, morreu").
 - Armadilhas clássicas: `ChaoQueCai`, `EspinhoEscondido`, `EspinhoQueCai`, `Espinho`, `BlocoInvisivel`, `BlocoSurpresa`, `BlocoQueFoge`, `Mola`, `Serra`, `Esmagador`, `Cano`, `NuvemAssassina` e `MoedaAssassina`.
-- Mecânicas temáticas: `Ancora`, `PlataformaMovel`, `VentoDoMar`, `BlocoDoRitmo`, `EsmagadorDoRitmo`, `FacasDaCozinheira` e `MareNegra`.
+- Mecânicas temáticas: `Ancora`, `PlataformaMovel`, `VentoDoMar`, `BlocoDoRitmo`, `EsmagadorDoRitmo`, `FacasDaCozinheira` e `Tsunami` (a onda que persegue).
 
 ### Objetos/
 - `Chefe.cs`: a base dos chefes (as rodadas de ataques e o pisão na cabeça, que só vale no momento em que o chefe fica vulnerável).
-- Os chefes: `ChefeCapita.cs` (com a tempestade de âncoras), `ChefeCozinheira.cs` e `BaleiaBranca.cs`, com a arte em `ArteDaCapita.cs` e `ArteDaBaleia.cs`.
+- Os chefes: `ChefeCapita.cs` (com a tempestade de âncoras), `ChefeCozinheira.cs`, `BaleiaBranca.cs` e `ChefeKraken.cs` (o chefe final, que rouba moedas),
+  com a arte em `ArteDaCapita.cs`, `ArteDaBaleia.cs` e `ArteDoKraken.cs` (que também pinta de vermelho os tentáculos do cano e da tela de morte).
 - `Inimigo` (o caranguejo) e `Rato` (o Rato do Porão).
 - `Bandeira`, `BandeiraFalsa`, `BandeiraFujona` e `BandeiraVolta`.
 - `Placa` (o Louro e a Dóris), `Porta`, `PontoDeSave`, `Moeda` e `Sereia` (a Marina).
@@ -338,6 +354,7 @@ Ferramentas/     scripts de apoio (checador de fases, gerador das músicas em WA
 - O mundo (o arquipélago, o porto, o navio fantasma, as ilhas do Kraken) e os personagens (o Grumete, a Marina, o Louro, a Dóris,
   a Capitã Âncora e a Cozinheira) foram **criados pela equipe** para este jogo.
 - A **Baleia Branca** é uma homenagem a *Moby Dick*, de **Herman Melville** (1851, obra em domínio público). O desenho e a luta são nossos.
+- O **Kraken** vem das lendas de marinheiros da Escandinávia (folclore, domínio público). Aqui ele é uma lula gigante vermelha; o desenho, a luta e a música são nossos.
 - Todos os desenhos foram feitos para este jogo, em pixel art por código.
 
 ### Áudio
