@@ -25,6 +25,14 @@ public class Paralaxe : MonoBehaviour
     static Color ultimaCor;
     static bool ultimaNoite, ultimoHD;
     static Clima ultimoClima;
+    static Bioma ultimoBioma; // o lugar da fase: escolhe as camadas pintadas (Resources/Arte/<lugar>/camada_*.png)
+
+    // De onde vêm as 5 camadas do fundo desta fase:
+    //   Padrao = as de sempre (Resources/Arte/camada_*.png);
+    //   DaIA   = as pintadas para o lugar (Resources/Arte/<lugar>/camada_*.png), só se tiver as 5 (misturar fica estranho).
+    enum Fonte { Padrao, DaIA }
+    static Fonte fonte;
+    static readonly string[] NomesDasCamadas = { "ceu", "ilhas", "galeao", "palmeiras", "mato" };
 
     // A largura da fase atual (em blocos): os efeitos de luz usam para saber a "hora do dia" (LuzDoDia).
     public static int LarguraDaFase => ultimaLargura;
@@ -81,7 +89,7 @@ public class Paralaxe : MonoBehaviour
         if (fundoAtual != null && fundoAtual.parent == null)
         {
             bool igual = larguraFase == ultimaLargura && corDoFundo == ultimaCor && noite == ultimaNoite
-                         && hd == ultimoHD && clima == ultimoClima;
+                         && hd == ultimoHD && clima == ultimoClima && BiomaAtual() == ultimoBioma;
             if (igual)
             {
                 fundoAtual.SetParent(raiz, false);
@@ -95,13 +103,16 @@ public class Paralaxe : MonoBehaviour
         ultimaNoite = noite;
         ultimoHD = hd;
         ultimoClima = clima;
+        ultimoBioma = BiomaAtual();
+        fonte = EscolherFonte(ultimoBioma);
         fundoAtual = new GameObject("Cenario de fundo").transform;
         fundoAtual.SetParent(raiz, false);
         raiz = fundoAtual;
 
         Color claro = noite ? new Color(0.45f, 0.45f, 0.75f) : Color.white;
 
-        bool ceuPintado = clima == Clima.Dia && FabricaDeSprites.Imagem("camada_ceu") != null;
+        // O céu pintado: o do lugar ou, de dia, o de sempre.
+        bool ceuPintado = fonte != Fonte.Padrao || (clima == Clima.Dia && FabricaDeSprites.Imagem("camada_ceu") != null);
 
         // céu em degradê: mais forte em cima, mais claro perto do horizonte
         Color topo = noite ? Color.Lerp(corDoFundo, Color.black, 0.45f) : Color.Lerp(corDoFundo, Escuro, 0.12f);
@@ -162,18 +173,20 @@ public class Paralaxe : MonoBehaviour
         // neblina baixinha, entre o fundo e a fase
         Faixa(raiz, "Neblina", FabricaDeSprites.Pegar("neblina"), 1f, -19, new Color(claro.r, claro.g, claro.b, hd ? 0.45f : 0.35f), -0.5f, 3.5f);
 
-        Gaivotas.Criar(raiz, clima); // bandos de gaivotas em três distâncias (só de dia)
+        if (Biomas.TemGaivotas(ultimoBioma)) Gaivotas.Criar(raiz, clima); // bandos de gaivotas em três distâncias (só de dia)
 
         if (!hd)
         {
             // folhagem bem perto da câmera, escura, só na beirada de baixo da tela (moitas redondas:
-            // nada pontudo, para ninguém confundir com espinho)
-            Camada(raiz, "frente_folhas", -0.4f, 40, Color.Lerp(corDoFundo, Escuro, 0.8f) * new Color(1f, 1f, 1f, 0.8f), larguraFase, -1.3f);
+            // nada pontudo, para ninguém confundir com espinho). Só onde tem árvore.
+            if (Biomas.TemGalhosNaFrente(ultimoBioma))
+                Camada(raiz, "frente_folhas", -0.4f, 40, Color.Lerp(corDoFundo, Escuro, 0.8f) * new Color(1f, 1f, 1f, 0.8f), larguraFase, -1.3f);
             return;
         }
 
         // ---- só no HD-2D ----
-        FeixesDeLuz.Criar(raiz, clima); // raios de sol e poeira dourada (no escuro não cria nada)
+        // (o céu pintado do lugar tem o sol dele em outro canto: os feixes saindo do alto-esquerdo ficariam soltos)
+        if (Biomas.TemSolOuLua(ultimoBioma) && fonte != Fonte.DaIA) FeixesDeLuz.Criar(raiz, clima); // raios de sol e poeira dourada (no escuro não cria nada)
         SombrasDeNuvens.Criar(raiz, clima); // manchas de sombra das nuvens passando (só de dia e de noite)
 
         // Primeiro plano desfocado: escuro (contra a luz) e meio transparente nas bordas borradas.
@@ -182,9 +195,9 @@ public class Paralaxe : MonoBehaviour
         {
             Color frente = Color.Lerp(corDoFundo, Escuro, noite ? 0.9f : 0.82f);
             frente.a = 0.8f; // meio transparente e mais baixo: nunca pode esconder um espinho do chão
-            PrimeiroPlano.Criar(raiz, "capim", "hd2d_frente_capim", -0.55f, false, frente, 1.35f);
+            if (Biomas.TemCapimNaFrente(ultimoBioma)) PrimeiroPlano.Criar(raiz, "capim", "hd2d_frente_capim", -0.55f, false, frente, 1.35f);
             frente.a = 0.7f;
-            PrimeiroPlano.Criar(raiz, "galho", "hd2d_frente_galho", -0.75f, true, frente, 1f, 5f);
+            if (Biomas.TemGalhosNaFrente(ultimoBioma)) PrimeiroPlano.Criar(raiz, "galho", "hd2d_frente_galho", -0.75f, true, frente, 1f, 5f);
         }
     }
 
@@ -213,6 +226,34 @@ public class Paralaxe : MonoBehaviour
         }
     }
 
+    // As camadas do lugar vêm com as cores delas; as de perto ficam um pouco mais escuras, para a fase (chão, bichos,
+    // moedas) sempre se destacar do fundo e nenhuma amurada ou muro do fundo parecer uma plataforma.
+    static Color TomDoLugar(string nome, float alfa)
+    {
+        float f = nome == "mato" ? 0.65f : nome == "palmeiras" ? 0.8f : nome == "galeao" ? 0.9f : 1f;
+        return new Color(f, f, f, alfa);
+    }
+
+    // As camadas de cada lugar (Resources/Arte/<lugar>) foram preparadas com 40 pixels por bloco.
+    const float PixelsPorBlocoDoLugar = 40f;
+
+    // A camada pintada do LUGAR da fase (Resources/Arte/<pasta do lugar>/camada_<nome>.png), ou null se ainda não tem.
+    static Sprite ImagemDoLugar(string nome) => FabricaDeSprites.Imagem(Biomas.Pasta(ultimoBioma) + "/camada_" + nome);
+
+    // As do lugar, se ele tiver as 5; senão, as de sempre.
+    static Fonte EscolherFonte(Bioma bioma)
+    {
+        foreach (string nome in NomesDasCamadas)
+            if (ImagemDoLugar(nome) == null) return Fonte.Padrao;
+        return Fonte.DaIA;
+    }
+
+    static Bioma BiomaAtual()
+    {
+        var jogo = GerenciadorDoJogo.Instancia;
+        return jogo != null && jogo.DadosDaFase != null ? jogo.DadosDaFase.bioma : Bioma.Porto;
+    }
+
     // A pintura já tem as cores dela: a cor da camada só dá o "clima". De dia, quase branco (um toque da cor
     // da fase); de noite, escurece mantendo o tom. Assim as camadas continuam mudando de ilha para ilha.
     static Color CorDaPintura(Color cor)
@@ -239,13 +280,28 @@ public class Paralaxe : MonoBehaviour
         Transform camada = NovaCamada(raiz, sprite, fator).transform;
 
         // Tem a versão pintada desta camada? Ela entra no lugar, esticada até a altura certa.
+        // (primeiro a do LUGAR da fase, que já vem pintada com a luz do lugar; senão, a de sempre)
         Sprite desenho = null;
         float altura = usarPintura ? AlturaPintada(sprite) : 0f;
-        if (altura > 0f) desenho = FabricaDeSprites.Imagem("camada_" + sprite.Replace("_hd", "").Replace("fundo_", ""));
+        string nome = sprite.Replace("_hd", "").Replace("fundo_", "");
+        bool doLugar = false;
+        if (altura > 0f)
+        {
+            if (fonte == Fonte.DaIA) desenho = ImagemDoLugar(nome);
+            doLugar = desenho != null;
+            if (desenho == null) desenho = FabricaDeSprites.Imagem("camada_" + nome);
+        }
         if (desenho != null)
         {
+            // As do lugar já vêm na escala certa (40 pixels por bloco) e recortadas no conteúdo: a altura sai da
+            // própria imagem. O horizonte delas desce até o chão, para nunca aparecer céu embaixo das ilhas.
+            if (doLugar)
+            {
+                altura = desenho.texture.height / PixelsPorBlocoDoLugar;
+                if (nome == "ilhas") baseY = 1f;
+            }
             escala *= altura / desenho.bounds.size.y;
-            cor = CorDaPintura(cor);
+            cor = doLugar ? TomDoLugar(nome, cor.a) : CorDaPintura(cor);
         }
         else desenho = FabricaDeSprites.Pegar(sprite);
 
@@ -291,9 +347,13 @@ public class Paralaxe : MonoBehaviour
     static void SolOuLua(Transform raiz, bool noite, bool hd, Clima clima)
     {
         Transform ceu = NovaCamada(raiz, "SolOuLua", 0.97f).transform;
+        // Sem sol nem lua: na gruta, nas tempestades e quando o céu veio pintado pela IA (ele já tem o dele).
+        // No pôr do sol, o sol fica baixo, quase no mar.
+        if (!Biomas.TemSolOuLua(ultimoBioma) || fonte == Fonte.DaIA) return;
+        Vector3 posicao = Biomas.SolBaixo(ultimoBioma) && !noite ? PosicaoDoSol + Vector3.down * 4.5f : PosicaoDoSol;
         var astro = ConstrutorDeFase.Visual(noite ? "Lua" : "Sol", ceu, Vector3.zero, noite ? "lua" : "sol", -29, false);
-        astro.transform.localPosition = PosicaoDoSol;
-        astro.transform.localScale = Vector3.one * 1.4f;
+        astro.transform.localPosition = posicao;
+        astro.transform.localScale = Vector3.one * (Biomas.SolBaixo(ultimoBioma) && !noite ? 2.2f : 1.4f);
 
         if (hd && clima != Clima.Escuro)
         {
@@ -303,7 +363,7 @@ public class Paralaxe : MonoBehaviour
             // do Octopath Traveler. Ela anda junto com a câmera (está na camada do sol).
             var objetoDaLuz = new GameObject("Luz do sol");
             objetoDaLuz.transform.SetParent(ceu, false);
-            objetoDaLuz.transform.localPosition = PosicaoDoSol + new Vector3(-2f, 2f, 0f);
+            objetoDaLuz.transform.localPosition = posicao + new Vector3(-2f, 2f, 0f);
             var luz = objetoDaLuz.AddComponent<Light2D>();
             luz.lightType = Light2D.LightType.Point;
             luz.color = noite ? new Color(0.55f, 0.65f, 1f) : clima == Clima.Cabines ? new Color(1f, 0.75f, 0.45f) : new Color(1f, 0.8f, 0.52f);
@@ -316,7 +376,7 @@ public class Paralaxe : MonoBehaviour
         if (hd)
         {
             var aureola = ConstrutorDeFase.Visual("Aureola", ceu, Vector3.zero, "hd2d_aureola", -28, false);
-            aureola.transform.localPosition = PosicaoDoSol;
+            aureola.transform.localPosition = posicao;
             aureola.transform.localScale = Vector3.one * (noite ? 2.2f : 3.2f);
             var brilho = aureola.GetComponent<SpriteRenderer>();
             brilho.color = noite ? new Color(0.7f, 0.8f, 1f, 0.35f) : new Color(1f, 0.85f, 0.55f, 0.55f);
@@ -345,7 +405,7 @@ public class Paralaxe : MonoBehaviour
         for (int i = 0; i < angulos.Length; i++)
         {
             var raio = ConstrutorDeFase.Visual("RaioDeLuz", ceu, Vector3.zero, "raio_de_luz", -26, false);
-            raio.transform.localPosition = PosicaoDoSol;
+            raio.transform.localPosition = posicao;
             raio.transform.localRotation = Quaternion.Euler(0f, 0f, -angulos[i]); // o sol está à esquerda: os raios descem para a direita
             raio.transform.localScale = new Vector3(1.6f + i * 0.4f, 1.6f, 1f);
             raio.AddComponent<Pulsar>().fase = i * 1.7f;

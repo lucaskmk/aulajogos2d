@@ -47,8 +47,8 @@ public class GerenciadorDoJogo : MonoBehaviour
     public float tempoParaPularMorte = 0.5f;
     [Tooltip("Quantos X vermelhos ficam no lugar das últimas mortes.")]
     public int marcasDeMorte = 5;
-    [Tooltip("Chance de o ponto de save \"mudar de lugar\" quando você morre (0 a 1).")]
-    public float chanceDoSaveMudar = 0.25f;
+    [Tooltip("Com quantas mortes o ponto de save \"muda de lugar\" (volta para o anterior). Sempre o mesmo número: dá para contar.")]
+    public int mortesParaOSaveMudar = 3;
 
     [Header("Fases")]
     public float tempoAposConcluir = 2.2f;
@@ -265,6 +265,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     // Ponto de save: onde você renasce nesta fase (null = no começo).
     Vector3? pontoDeSave;
     readonly List<Vector3> savesPegos = new List<Vector3>(); // os checkpoints desta fase, na ordem em que você pegou
+    int mortesNoSave; // mortes desde que você pegou o ponto de save atual (na 3ª ele "muda de lugar")
 
     // Troca de tela com as sombras: primeiro cobre a tela, depois executa a troca.
     System.Action trocaPendente;
@@ -385,7 +386,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         Fase dados = Fases.Dados(indice);
         bool cabines = dados.portas != null;
         if (dados.escura) Luzes.Ambiente(0.22f, new Color(0.7f, 0.72f, 1f));
-        else if (dados.noite) Luzes.Ambiente(0.55f, new Color(0.75f, 0.8f, 1f));
+        else if (dados.noite) Luzes.Ambiente(0.68f, new Color(0.75f, 0.8f, 1f)); // (de noite o fundo pintado ainda aparece bem)
         else if (cabines) Luzes.Ambiente(0.72f, new Color(1f, 0.92f, 0.8f));
         else Luzes.Ambiente(indice == Fases.IndiceSecreto ? 1f : 0.93f, Color.white);
         InfoFase info = ConstrutorDeFase.Construir(dados, raizDaFase, MortesNaFase);
@@ -472,6 +473,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         faseDasMarcas = -1; // partida nova: apaga as marcas das mortes
         pontoDeSave = null;
         savesPegos.Clear();
+        mortesNoSave = 0;
         Fala = null;
         System.Array.Clear(mortesPorFase, 0, mortesPorFase.Length);
         MostrarMapa(Progresso.TemJogoSalvo ? Progresso.FaseSalva : faseInicial);
@@ -493,6 +495,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         TempoNaFase = 0f;
         pontoDeSave = null;
         savesPegos.Clear();
+        mortesNoSave = 0;
         MoedasComOKraken = 0;
         KrakenRoubou = false;
         ChefeDerrotado = false;
@@ -1461,13 +1464,16 @@ public class GerenciadorDoJogo : MonoBehaviour
         Conquistas.Desbloquear("primeira_morte");
         if (Mortes >= 100) Conquistas.Desbloquear("cem_mortes");
 
-        // Às vezes o ponto de save "muda de lugar" e você volta para o checkpoint ANTERIOR (ou para o começo, se era o
-        // primeiro). :) (menos nas fases de chefe: aí já seria maldade demais)
-        bool saveMudou = pontoDeSave.HasValue && Chefe == null && Random.value < chanceDoSaveMudar;
+        // Na 3ª morte desde que você pegou o ponto de save, ele "muda de lugar" e você volta para o checkpoint ANTERIOR
+        // (ou para o começo, se era o primeiro). :) Sempre na 3ª: nunca antes, nunca depois.
+        // (menos nas fases de chefe: lá o save da arena e a etapa da luta nunca se perdem)
+        if (pontoDeSave.HasValue && Chefe == null) mortesNoSave++;
+        bool saveMudou = pontoDeSave.HasValue && Chefe == null && mortesNoSave >= mortesParaOSaveMudar;
         if (saveMudou)
         {
             savesPegos.Remove(pontoDeSave.Value);
             pontoDeSave = savesPegos.Count > 0 ? savesPegos[savesPegos.Count - 1] : (Vector3?)null;
+            mortesNoSave = 0;
             Conquistas.Desbloquear("save_mudou");
         }
 
@@ -1592,7 +1598,11 @@ public class GerenciadorDoJogo : MonoBehaviour
     // Ponto de save (chamados pelo PontoDeSave).
     public void SalvarPonto(Vector3 lugar)
     {
-        if (!EhPontoDeSave(lugar)) savesPegos.Add(lugar);
+        if (!EhPontoDeSave(lugar))
+        {
+            savesPegos.Add(lugar);
+            mortesNoSave = 0; // save novo: a contagem das 3 mortes recomeça
+        }
         pontoDeSave = lugar;
     }
     public Vector3? PontoDeSave => pontoDeSave; // onde o Grumete renasce (null = no começo da fase)
@@ -1638,7 +1648,16 @@ public class GerenciadorDoJogo : MonoBehaviour
             return "Ah, e eu mudei umas coisinhas. :)";
         if (nasCabines && Random.value < 0.4f) return "Lembra para onde cada porta leva? Buuu.";
         if (MortesNaFase == 5) return "Dica: nem tudo é o que parece.";
-        return Fases.MensagensDeMorte[Random.Range(0, Fases.MensagensDeMorte.Length)];
+        // só as frases que combinam com esta fase (as com etiqueta: "cozinheira:..." só onde tem a Cozinheira)
+        var combinam = new List<string>();
+        foreach (string frase in Fases.MensagensDeMorte)
+        {
+            int doisPontos = frase.IndexOf(':');
+            bool temEtiqueta = doisPontos > 0 && doisPontos < 12 && frase.Substring(0, doisPontos).ToLowerInvariant() == frase.Substring(0, doisPontos);
+            if (!temEtiqueta) combinam.Add(frase);
+            else if (Fases.TemNaFase(fase, frase.Substring(0, doisPontos))) combinam.Add(frase.Substring(doisPontos + 1));
+        }
+        return combinam[Random.Range(0, combinam.Count)];
     }
 
     public static string Titulo(int mortes)

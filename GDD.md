@@ -113,8 +113,7 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - **Bandeira falsa (`Z`):** fica vermelha, brotam espinhos e você morre.
 - **Bandeira volta (`W`):** manda você de volta para o último checkpoint (ou para o começo, se não pegou nenhum). Não conta como morte, "só como raiva".
 - **Inimigos:**
-  - **Caranguejo (`E`):** pise para derrotar. Se ele passar de você, volta.
-  - **Caranguejo espinhoso (`e`):** não pise.
+  - **Caranguejo (`E` / `e`):** pise para derrotar (todos morrem com um pisão). Se ele passar de você, volta.
   - **Rato do Porão (`r`):** persegue você e **se multiplica**.
 
 ### Mecânicas temáticas (uma por fase nova)
@@ -135,12 +134,13 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
   O `k` joga três em leque. A faca crava em blocos, então esconder funciona.
 - **Tsunami (`N`):** a onda gigante que o Kraken levantou persegue você a **5,2 blocos/s** (o Grumete anda a 7). Parar para pensar custa caro.
   Quando você fica perto, um jato d'água sai da onda (avisa recuando e piscando). Ela tem espuma, a crista enrolando lá em cima e destroços boiando.
-- **Kraken Vermelho (`g`):** a arena do chefe final, com a poça dela no fim (4 colunas sem chão).
+- **Kraken Vermelho (`g`):** a arena do chefe final, no convés de um navio (as tábuas são dela e quebram), com o mar no fim (4 colunas sem chão).
 
 ### Checkpoints que "mudam de lugar"
 - O **cristal de save (`s`)** marca onde você renasce.
-- Em **25%** das mortes o save "muda de lugar" ("O ponto de save mudou de lugar... :)") e você volta para o **checkpoint anterior**
-  (ou para o começo, se era o primeiro). Antes voltava sempre para o começo, mas com as fases mais longas isso virou maldade demais.
+- Na **3ª morte** depois de pegar o save, ele "muda de lugar" ("O ponto de save mudou de lugar... :)") e você volta para o **checkpoint anterior**
+  (ou para o começo, se era o primeiro). Antes era uma chance de 25% a cada morte: às vezes mudava na primeira, às vezes demorava muito, e
+  parecia bug. Agora é sempre na 3ª (a contagem recomeça em cada save novo).
 - A **bandeira que volta (`W`)** também manda para o último checkpoint (sem checkpoint, para o começo).
 - Isso nunca acontece em fase com chefe.
 
@@ -153,9 +153,14 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
     (3 s, 2,7 s e 2,4 s por etapa), porque a Capitã é o primeiro chefe e o que ensina a regra;
   - **Cozinheira:** o clarão do lampião (ela cai tonta, à vista);
   - **Baleia:** fica atordoada depois do mergulho;
-  - **Kraken:** cansa no fim de cada rodada e deita a cabeça no convés (3 s, 2,6 s e 2,2 s). Os ataques dela: chicotada (baixa = pule,
-    alta = não pule), pancada do céu (a marca segue você), **agarrão amarelo** (não mata, rouba moedas e te joga para trás) e tinta (etapa 2 em diante).
-- **O roubo do Kraken:** cada agarrão leva até 5 / 7 / 10 moedas (primeiro as da tentativa, depois as guardadas, nunca negativo).
+  - **Kraken:** cansa no fim de cada rodada e deita a cabeça no convés (3 s, 2,6 s e 2,2 s, a janela padrão; 3 etapas de 2 golpes, como todo chefe).
+    É o chefe final e a luta mais difícil, e a dificuldade vem de ataques que pedem coordenação (não de janelas menores):
+    rajadas de chicotadas (mesmo lado e mesmo ritmo, então o intervalo entre as passagens é igual em qualquer ponto da arena: 0,95 / 0,9 / 0,88 s,
+    mais que o pulo de ~0,82 s), o pêndulo (rente ao chão no meio, alto nas pontas), o convés podre (as tábuas caem só onde você pisa, então é preciso
+    ficar se mexendo, com chicotadas junto), chuva e erupção de até 13 tentáculos em ondas alternadas (de parede a parede, sem canto seguro), agarrão
+    (duplo da etapa 2 em diante), tinta, sucção (puxa para o bico) e tinta na cara (borrões na tela, como a lula do Mario Kart).
+    Só se combinam ataques que se desviam do mesmo jeito; a exceção, na etapa 3, é o pêndulo com a erupção (pular dentro do buraco).
+- **O roubo do Kraken:** cada agarrão leva até 6 / 9 / 12 moedas (primeiro as da tentativa, depois as guardadas, nunca negativo).
   É salvo na hora. A cada pisão ela devolve metade e, derrotada, devolve o resto. Morrer não devolve, e o escudo não protege do roubo.
   A ideia: o chefe final mexe com a economia do jogo inteiro (a Loja), e acertar a cabeça dela vira também "recuperar o tesouro".
 - **A tempestade de âncoras da Capitã:** ela salta para o meio da arena e dispara várias âncoras rápidas (19 a 23 blocos/s) para todos os lados.
@@ -314,7 +319,7 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 3. **O Final (mudei de ideia)** — ironia e ganância punida.
 4. **A Capitã Âncora** — primeiro "boss rush" de adrenalina e aprendizado.
 5. **Cadê a direita? (Foge, bloco!)** — confusão controlada e frustração cômica.
-6. **Ponte para o Porto** — vertigem e paranoia.
+6. **Abordagem!** — vertigem e paranoia, de navio em navio.
 7. **A Gruta da Cozinheira** — medo do escuro.
 8. **O Navio Fantasma** — quebra-cabeça e memória, depois fluxo e ritmo.
 9. **Vento em Popa!** — luta contra a força invisível.
@@ -339,11 +344,13 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
   - **fases:** "Jiga do Grumete", uma dança de taverna em 6/8 (forma AABB) em ré menor, com o acordeão e o apito revezando a melodia;
     cada fase toca num tom um pouco diferente;
   - **mapa:** "Balada do Arquipélago", calma, em 3/4 e lá menor: violão dedilhado, ondas indo e vindo e o sino de vez em quando;
-  - **uma música para cada chefe**, no clima de "música de chefe" de jogo indie (rápida, com um gancho que gruda), misturando os instrumentos de pirata com ondas 8-bit:
-    - **Capitã Âncora:** mi menor, 160 bpm, gancho no ritmo 3-3-2 no acordeão, violino e o violão "girando" em semicolcheias, pisadas e palmas;
+  - **uma música para cada chefe**, cada uma com uma identidade própria (compasso, andamento e instrumentos diferentes), no clima de "música de chefe" de jogo indie:
+    - **Capitã Âncora:** "Reel da Âncora", um reel irlandês em mi dórico, 168 bpm: rabeca e apito em colcheias corridas, tambor de mão, pisadas, palmas e violão batido (a luta com cara de taverna);
     - **Cozinheira:** dó menor, uma valsa sombria em 6/8 com acordeão, violino e caixinha de música;
-    - **Baleia:** ré menor, 172 bpm, com estalos de orquestra, coro, baixo galopando, o "canto da baleia" (notas que deslizam) e o gancho subindo um tom no clímax;
-    - **Kraken:** "Abraço do Abismo", fá frígio, 150 bpm: tímpanos, coro, o "lamento" da lula (notas deslizando para baixo), um riff no baixo que se enrola
+    - **Baleia:** "Leviatã", uma marcha orquestral lenta em ré menor, 120 bpm: tímpanos e caixa marcial, estalos de orquestra, violino e coro no gancho, pizzicato, o baixo galopando e o canto da baleia; o gancho sobe um tom no clímax;
+    - **Kraken:** "Oito Braços", em 7/8 (2 + 2 + 3: o compasso "manca", como tentáculos se arrastando), si bemol frígio, 156 bpm: um cravo
+      martelando um ostinato, a quadrada fina na melodia, coro, pizzicato, tímpanos e o "lamento" da lula na ponte. Feita para NÃO lembrar
+      os outros chefes (sem acordeão, sem baixo galopando, sem bumbo em todo tempo);
       como um tentáculo (fá, sol bemol, fá) e o gancho subindo meio tom na volta;
   - morrer na luta não recomeça a música: ela continua de onde estava.
 - **Sons:**
@@ -379,16 +386,28 @@ Dificuldade de 1 a 5 (estimativa da equipe). "Saves" = cristais `s` na fase. A l
 | 2 | Confia em mim (e corre!) (selva) | 156 | Esmagador, nuvem assassina, mola, chão falso, bandeira falsa; serras (por trás e pela frente) | "Última bandeira. Agora é sério." é uma bandeira falsa, e logo depois "Não olhe para trás" | 2 | 2 |
 | 3 | O Final (mudei de ideia) (lagoa) | 142 | Ratos do Porão, moeda assassina | O "final" continua; "Pegue as moedas! TODAS!", e uma delas mata (a secreta exige todas as outras) | 1 | 2 |
 | 4 | A Capitã Âncora (forte) | 126 | Âncora giratória (também sobre buracos); **chefe Capitã Âncora** | "Vai lá dar oi. Eu espero aqui. Bem aqui. Longe." | 1 | 3 |
-| 5 | Cadê a direita? (Foge, bloco!) (vila) | 172 | Controles invertidos, caranguejo espinhoso, bloco tímido, bandeira que volta | "Tudo normal por aqui", e depois do save tudo inverte; a primeira "bandeira" do fim manda você de volta ao checkpoint | 2 | 3 |
-| 6 | Ponte para o Porto (desfiladeiro, noite) | 196 | Plataformas `j`, `J` (despenca) e `D` (expressa) | "Essa aqui é IGUALZINHA à outra", e não é | 3 | 3 |
+| 5 | Cadê a direita? (Foge, bloco!) (vila) | 172 | Controles invertidos, bloco tímido, bandeira que volta | "Tudo normal por aqui", e depois do save tudo inverte; a primeira "bandeira" do fim manda você de volta ao checkpoint | 2 | 3 |
+| 6 | Abordagem! (baía dos navios, noite) | 196 | De navio em navio; plataformas `j`, `J` (despenca) e `D` (expressa) nos vãos | "Essa aqui é IGUALZINHA à outra", e não é | 3 | 3 |
 | 7 | A Gruta da Cozinheira (gruta escura) | 112 | Fase escura, facas da Cozinheira (na frente e atrás); **chefe Cozinheira** | "A moeda ali em cima também é de confiança. :)" (não é) | 1 | 4 |
 | 8 | O Navio Fantasma (cabines e convés) | 218 | Portas das cabines, blocos do ritmo, bloco falso `A`, esmagador do ritmo | Uma porta leva a um beco cheio de caranguejos; "Agora é só ritmo puro, sem pegadinha", e vem uma bandeira falsa | 3 | 4 |
 | 9 | Vento em Popa! (penhasco) | 208 | Vento do mar e redemoinho | O segundo redemoinho, "igualzinho", desliga no meio | 2 | 4 |
 | 10 | A Baleia Branca (mar aberto, noite) | 140 | **Chefe Baleia Branca** | Aquecimento noturno com nuvens, espinhos que caem e chão que despenca, depois a arena | 1 | 5 |
-| 11 | O Tsunami (CORRE!) (ilhas do Kraken, chuva) | 210 | O tsunami do Kraken | Mola "para as moedas", que leva às nuvens assassinas | 2 | 4 |
+| 11 | O Tsunami (CORRE!) (praia, tempestade) | 210 | O tsunami do Kraken | Mola "para as moedas", que leva às nuvens assassinas | 2 | 4 |
 | 12 | O Verdadeiro Final (juro) (pôr do sol) | 192 | — (revisão, bem mais longa) | "Pode encostar na bandeira. Essa é de verdade", mas há bandeiras falsas e chão que cai | 1 | 4 |
-| 13 | O Kraken Vermelho (covil, fundo do mar) | 100 | Canos com tentáculos; **chefe final Kraken Vermelho** (rouba moedas) | O tentáculo AMARELO "não mata"... mas leva as suas moedas | 1 | 5 |
+| 13 | O Kraken Vermelho (alto-mar, tempestade) | 100 | Canos com tentáculos; **chefe final Kraken Vermelho** (rouba moedas) | O tentáculo AMARELO "não mata"... mas leva as suas moedas | 1 | 5 |
 | ★ | Ilha do Louro (secreta) | 72 | — | "Aqui não tem pegadinha"... "tá, só uma." | 0 | 1 |
+
+### Os lugares (biomas)
+- Cada fase tem um **lugar** (`Fase.bioma`), e ele muda o que se vê sem mudar as regras:
+  - **o chão:** grama (porto, selva, lagoa, vila), pedra (o forte), tábuas de navio (a abordagem e o alto-mar), pedra escura com musgo (a gruta),
+    madeira fantasma (o navio fantasma), terra seca vermelha (o penhasco e o rochedo), pedra molhada com algas (o recife) e areia (a praia);
+  - **os enfeites:** barris e lampiões no convés, estrelas-do-mar e conchas na praia, pedras na gruta, flores só na grama;
+  - **o bicho** (o mesmo inimigo, com outro desenho): gaivota (porto), sapo (selva), tartaruga (lagoa), caveira-pirata (forte), galinha (vila), macaco pirata (navios), aranha (gruta), fantasminha (navio fantasma), escorpião (deserto), estrela-do-mar (recife), caranguejo (praia), lagarto (rochedo) e polvinho (alto-mar).
+    Todos de frente e do mesmo tamanho do caranguejo (ninguém fica mais fácil ou mais difícil de pisar), e todos morrem com um pisão;
+  - **o fundo pintado** com paralaxe: 5 camadas por lugar, pintadas com IA (os prompts estão em `Ferramentas/prompts_dos_fundos.md`),
+    em `Assets/Resources/Arte/<lugar>/`, recortadas e emendadas para repetir sem costura (40 pixels por bloco).
+    Um lugar sem as 5 camadas usa o fundo das ilhas.
+- **As mensagens de morte combinam com a fase:** as que falam de uma coisa (a Cozinheira, o tsunami, o vento...) só aparecem onde ela existe.
 
 ### A estrutura (13 fases e 4 chefes)
 - **3 fases e a Capitã, 2 fases e a Cozinheira, 2 fases e a Baleia, 2 fases e o Kraken.** Antes eram 16 fases curtas; as que eram parecidas

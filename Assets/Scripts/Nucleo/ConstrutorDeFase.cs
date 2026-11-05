@@ -22,6 +22,9 @@ public static class ConstrutorDeFase
     public static InfoFase Construir(Fase fase, Transform raiz, int tentativa)
     {
         string[] mapa = AplicarMudancas(fase, tentativa);
+        // o lugar da fase escolhe o chão e o bicho (veja Biomas)
+        ArteDosBlocos.EstiloAtual = Biomas.Estilo(fase.bioma);
+        Inimigo.Desenho = Biomas.Inimigo(fase.bioma);
         int altura = mapa.Length;
         int largura = 0;
         foreach (string linha in mapa) largura = Mathf.Max(largura, linha.Length);
@@ -124,7 +127,7 @@ public static class ConstrutorDeFase
                     case 'Y': placas.Add((pos, true)); break;
                     case '$': Criar<Moeda>("Moeda", raiz, pos); info.totalDeMoedas++; break;
                     case 'm': Criar<MoedaAssassina>("MoedaAssassina", raiz, pos); break;
-                    case 'e': Criar<Inimigo>("InimigoDisfarcado", raiz, pos).espinhoso = true; break;
+                    case 'e': Criar<Inimigo>("Inimigo", raiz, pos); break; // (era o caranguejo espinhoso: agora todos morrem com um pisão)
                     case 'M': celulasQueFogem.Add(new Vector2Int(x, linha)); break;
                     case 'j': case 'J': case 'D': celulasDePlataforma[new Vector2Int(x, linha)] = c; break; // plataformas móveis
                     case 'a': case 'b': case 'A': celulasDoRitmo[new Vector2Int(x, linha)] = c; break; // blocos do ritmo (juntados depois do laço)
@@ -224,7 +227,7 @@ public static class ConstrutorDeFase
         ParedeInvisivel(chaoSolido.transform, new Vector3(largura, altura / 2f, 0f), altura * 3);
         composto.GenerateGeometry();
 
-        Decorar(raiz, mapa, largura, altura, fase.nome.GetHashCode());
+        Decorar(raiz, mapa, largura, altura, fase.nome.GetHashCode(), fase.bioma);
         return info;
     }
 
@@ -344,15 +347,16 @@ public static class ConstrutorDeFase
         return grupos;
     }
 
-    // Nuvens, tufos de grama, flores e brilhinhos de enfeite (sem colisão).
+    // Nuvens, tufos de grama, flores e brilhinhos de enfeite (sem colisão). Os enfeites do chão dependem do lugar
+    // (Biomas.EnfeitesDe): no convés de navio, barris e lampiões; na praia, estrelas-do-mar; na gruta, pedras...
     // Repare que as nuvens de enfeite são IGUAIS à nuvem assassina. ;)
-    static void Decorar(Transform raiz, string[] mapa, int largura, int altura, int semente)
+    static void Decorar(Transform raiz, string[] mapa, int largura, int altura, int semente, Bioma bioma)
     {
         var decoracao = new GameObject("Decoracao").transform;
         decoracao.SetParent(raiz, false);
         var sorteio = new System.Random(semente);
 
-        for (int x = sorteio.Next(2, 6); x < largura + 4; x += sorteio.Next(7, 13))
+        for (int x = sorteio.Next(2, 6); x < largura + 4 && Biomas.TemNuvens(bioma); x += sorteio.Next(7, 13))
         {
             var nuvem = Visual("Nuvem", decoracao, new Vector3(x, altura - 2 - sorteio.Next(0, 5), 0f), "nuvem", -10, false);
             Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.4f, 0.4f, ParalaxeDasNuvens);
@@ -368,25 +372,30 @@ public static class ConstrutorDeFase
             bool chaoDosLados = LinhaDoChao(mapa, x - 1, altura) == linha && LinhaDoChao(mapa, x + 1, altura) == linha;
 
             int sorte = sorteio.Next(100);
-            if (sorte < 5 && x - ultimoLampiao > 10 && chaoDosLados)
+            Biomas.Enfeites quanto = Biomas.EnfeitesDe(bioma);
+            int ateLampiao = quanto.lampiao, ateArbusto = ateLampiao + quanto.arbusto, ateBarril = ateArbusto + quanto.barril;
+            int atePedra = ateBarril + quanto.pedra, ateEstrela = atePedra + quanto.estrela, atePlanta = ateEstrela + quanto.plantas;
+            bool grama = Biomas.Estilo(bioma) == ArteDosBlocos.Estilo.Grama;
+            if (sorte < ateLampiao && x - ultimoLampiao > 10 && chaoDosLados)
             {
                 var lampiao = Visual("Lampiao", decoracao, base_, "lampiao", -7, parado: true);
                 Luzes.Ponto(lampiao.transform, Luzes.Quente, 4.5f, 0.85f, Vector3.up * 2.15f);
                 ultimoLampiao = x;
             }
-            else if (sorte < 18 && chaoDosLados)
+            else if (sorte < ateArbusto && chaoDosLados)
             {
                 // o arbusto balança pouquinho no vento (veja Vento.cs)
                 var arbusto = Visual("Arbusto", decoracao, base_, "arbusto", -7, parado: true);
                 Vento.Plantar(arbusto.GetComponent<SpriteRenderer>(), "arbusto", decoracao, rigidez: 0.7f);
             }
-            else if (sorte < 26 && chaoDosLados) Visual("Barril", decoracao, base_, "barril", -7, parado: true);
-            else if (sorte < 35) Visual("Pedra", decoracao, base_, "pedra", -7, parado: true);
-            else if (sorte < 42) Visual("EstrelaDoMar", decoracao, base_, "estrela_do_mar", -7, parado: true);
-            else
+            else if (sorte < ateBarril && chaoDosLados) Visual("Barril", decoracao, base_, "barril", -7, parado: true);
+            else if (sorte < atePedra) Visual("Pedra", decoracao, base_, "pedra", -7, parado: true);
+            else if (sorte < ateEstrela) Visual("EstrelaDoMar", decoracao, base_, "estrela_do_mar", -7, parado: true);
+            else if (sorte < atePlanta)
             {
                 // flores e capim balançam no vento: o topo mexe mais e a base fica presa no chão (Vento.cs)
-                string planta = sorte < 65 ? "flor" : "tufo";
+                // (flor só na grama; nos outros lugares, só o capim)
+                string planta = grama && sorte < 65 ? "flor" : "tufo";
                 var enfeite = Visual("Enfeite", decoracao, base_, planta, -8, parado: true);
                 Vento.Plantar(enfeite.GetComponent<SpriteRenderer>(), planta, decoracao);
             }

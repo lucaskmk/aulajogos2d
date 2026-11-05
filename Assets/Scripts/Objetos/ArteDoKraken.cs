@@ -74,6 +74,13 @@ public static class ArteDoKraken
         FabricaDeSprites.Registrar("kraken_saco", () => FabricaDeSprites.DeArte(ArteSaco, centro));
         FabricaDeSprites.Registrar("kraken_tinta", () => FabricaDeSprites.Procedural(12, 12, centro, BolaDeTinta));
         FabricaDeSprites.Registrar("kraken_mancha", () => FabricaDeSprites.Procedural(28, 6, new Vector2(0.5f, 0f), Mancha));
+        // a TINTA NA CARA (os borrões grudados na tela, três formas) e a MARÉ DE TINTA (1 bloco de largura: esticada na arena)
+        for (int i = 0; i < 3; i++)
+        {
+            int forma = i;
+            FabricaDeSprites.Registrar("kraken_borrao_" + forma, () => FabricaDeSprites.Procedural(64, 64, FabricaDeSprites.Centro, (x, y) => Borrao(x, y, forma)));
+        }
+        FabricaDeSprites.Registrar("kraken_mare", () => FabricaDeSprites.Procedural(16, 16, new Vector2(0.5f, 0f), Mare));
     }
 
     // ------------------------------------------------------------------ o desenhista
@@ -307,6 +314,46 @@ public static class ArteDoKraken
         if (d > 6f) return FabricaDeSprites.Transparente;
         if (d > 5f) return Contorno;
         if (dx < -0.5f && dy > 0.5f && d < 3.5f && d > 1.8f) return TintaBrilho;
+        return Tinta;
+    }
+
+    // Um borrão de tinta: uma mancha grande, gotas em volta e dois ou três escorridos para baixo. (forma: 0, 1 ou 2)
+    static bool DentroDoBorrao(int x, int y, int forma)
+    {
+        float dx = x - 32f, dy = y - 34f;
+        if (dx * dx + dy * dy < 17f * 17f) return true;
+        for (int i = 0; i < 6; i++)
+        {
+            float angulo = (i * 61f + forma * 23f) * Mathf.Deg2Rad;
+            float distancia = 17f + 4f * ((i + forma) % 3);
+            float raio = 4f + ((i * 7 + forma * 3) % 4);
+            float gx = 32f + Mathf.Cos(angulo) * distancia, gy = 34f + Mathf.Sin(angulo) * distancia;
+            if ((x - gx) * (x - gx) + (y - gy) * (y - gy) < raio * raio) return true;
+        }
+        for (int i = 0; i < 2 + forma % 2; i++) // os escorridos
+        {
+            float ex = 22f + i * 9f + forma * 3f;
+            float fundo = 4f + ((i + forma) % 3) * 4f;
+            if (Mathf.Abs(x - ex) < 2.2f && y > fundo && y < 30f) return true;
+            if ((x - ex) * (x - ex) + (y - fundo) * (y - fundo) < 9f) return true; // a gota na ponta
+        }
+        return false;
+    }
+
+    static Color32 Borrao(int x, int y, int forma)
+    {
+        if (!DentroDoBorrao(x, y, forma)) return FabricaDeSprites.Transparente;
+        bool beirada = !DentroDoBorrao(x + 1, y, forma) || !DentroDoBorrao(x - 1, y, forma) || !DentroDoBorrao(x, y + 1, forma) || !DentroDoBorrao(x, y - 1, forma);
+        if (beirada) return Contorno;
+        float bx = x - 25f, by = y - 41f; // o brilho molhado, em cima à esquerda
+        if (bx * bx + by * by < 10f || (x == 31 && y == 45)) return TintaBrilho;
+        return Tinta;
+    }
+
+    static Color32 Mare(int x, int y)
+    {
+        if (y >= 14) return y == 15 ? TintaBrilho : Tinta;           // a superfície brilhando
+        if ((x * 5 + y * 3) % 23 == 0) return TintaBrilho;           // bolhinhas
         return Tinta;
     }
 
