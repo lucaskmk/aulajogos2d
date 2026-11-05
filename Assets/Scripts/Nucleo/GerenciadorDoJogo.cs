@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum EstadoDoJogo { Titulo, Conquistas, Mapa, Jogando, Pausado, Morreu, FaseConcluida, Vitoria, Creditos }
+public enum EstadoDoJogo { Titulo, Conquistas, Mapa, Jogando, Pausado, Morreu, FaseConcluida, Vitoria, Creditos, Historia }
 
 // O "cérebro" do jogo: carrega as fases e o mapa, conta mortes e moedas e cuida dos estados
 // (título, conquistas, mapa do mundo, jogando, pausa, morte, fase concluída, vitória, créditos).
@@ -127,6 +127,10 @@ public class GerenciadorDoJogo : MonoBehaviour
     // 0 = acabou de morrer, 1 = vai renascer
     public float ProgressoDaMorte => Estado == EstadoDoJogo.Morreu ? Mathf.Clamp01(1f - timerEstado / duracaoDaMorte) : 0f;
     public bool PodePularMorte => Estado == EstadoDoJogo.Morreu && duracaoDaMorte - timerEstado >= tempoParaPularMorte;
+    // A transição está levando para dentro de uma fase? (a tela vermelha dos tentáculos mostra o nome dela)
+    public bool TituloNaTransicao { get; private set; }
+    public int FaseDaTransicao { get; private set; }
+
     // 1 = acabou de renascer (clarão), cai até 0
     public float Renascendo => Mathf.Clamp01(timerRenascer / DuracaoRenascer);
     // Troca de fase: 0 = tela normal, 1 = tela toda coberta pelas sombras
@@ -154,6 +158,8 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     // Fala de um personagem no mapa (depois de passar de fase). null = nenhuma.
     public Textos.Fala? Fala { get; private set; }
+    // As falas que vêm depois da atual (o chefe e o Deus da Riqueza, depois dos chefes): ENTER ou o tempo passam.
+    readonly Queue<Textos.Fala> proximasFalas = new Queue<Textos.Fala>();
     // Créditos: quantos segundos já rolaram. A duração cresce com o número de linhas (Textos.Creditos),
     // assim a velocidade da rolagem fica parecida mesmo se vocês acrescentarem mais nomes.
     public float TempoDosCreditos { get; private set; }
@@ -164,7 +170,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     // ------------------------------------------------------------------ menus
 
     // Menu do título. "Continuar" só aparece se tiver jogo salvo; "Sair" some no navegador (WebGL).
-    public enum OpcaoDoMenu { Continuar, NovoJogo, Opcoes, ComoJogar, Conquistas, Creditos, Sair }
+    public enum OpcaoDoMenu { Continuar, CarregarJogo, NovoJogo, Opcoes, ComoJogar, Conquistas, Creditos, TrocarIdioma, Sair }
     public readonly List<OpcaoDoMenu> opcoesDoMenu = new List<OpcaoDoMenu>();
     public int OpcaoSelecionada { get; private set; }
 
@@ -174,11 +180,41 @@ public class GerenciadorDoJogo : MonoBehaviour
     public int OpcaoDaPausa { get; private set; }
 
     // Submenus que abrem por cima do título ou da pausa.
-    public enum Submenu { Nenhum, Opcoes, ComoJogar }
+    public enum Submenu { Nenhum, Opcoes, ComoJogar, Slots }
     public Submenu SubmenuAberto { get; private set; }
+
+    // A tela dos SLOTS (do título): "Carregar jogo" (só os slots com partida) ou "Novo jogo" (qualquer slot;
+    // num slot ocupado, pergunta antes de apagar). DEL apaga um slot (também pergunta).
+    // A ordem de CIMA/BAIXO: Slot 1, Slot 2, Slot 3 e Voltar (= Progresso.TotalDeSlots).
+    public bool SlotsParaNovoJogo { get; private set; }
+
+    // A cutscene que está passando (veja Historia.cs): os quadros, o quadro atual e há quanto tempo ele está na tela.
+    public Historia.Quadro[] HistoriaAtual { get; private set; }
+    public int QuadroDaHistoria { get; private set; }
+    public float TempoNoQuadro { get; private set; }
+    System.Action depoisDaHistoria;
+    public int SlotSelecionado { get; private set; }
+    public int SlotPerguntando { get; private set; } = -1;  // -1 = sem pergunta; senão, o slot da pergunta
+    public bool PerguntaDeApagar { get; private set; }      // a pergunta é "apagar?" (senão é "começar um jogo novo por cima?")
+    public int VersaoDosSlots { get; private set; }         // muda quando os resumos mudam (a Interface monta os textos de novo)
+    readonly Progresso.ResumoDoSlot[] resumos = new Progresso.ResumoDoSlot[Progresso.TotalDeSlots];
+    public Progresso.ResumoDoSlot ResumoDoSlot(int slot) => resumos[slot];
 
     // Loja: abre por cima do mapa (tecla L ou o botão no canto de baixo à direita). Vende o escudo, o elixir de
     // super salto e o duplo salto, e tem a ROLETA no meio. A ordem aqui é a ordem em que CIMA/BAIXO andam.
+    // A tela de conquistas rola (em "linhas": 0 = o topo). O máximo vem da Interface (que sabe quantas cabem na tela).
+    public float RolagemDasConquistas { get; private set; }
+    float maximoDaRolagem;
+
+    public void RolarConquistas(float linhas) =>
+        RolagemDasConquistas = Mathf.Clamp(RolagemDasConquistas + linhas, 0f, maximoDaRolagem);
+
+    public void LimitarRolagemDasConquistas(float maximo)
+    {
+        maximoDaRolagem = maximo;
+        RolagemDasConquistas = Mathf.Clamp(RolagemDasConquistas, 0f, Mathf.Max(0f, maximo));
+    }
+
     public enum ItemDaLoja { Escudo, Elixir, PuloDuplo, Aposta, Cor, Girar, Voltar }
     public static readonly int TotalDaLoja = System.Enum.GetValues(typeof(ItemDaLoja)).Length;
     public bool LojaAberta { get; private set; }
@@ -234,6 +270,10 @@ public class GerenciadorDoJogo : MonoBehaviour
     public const int BotaoVoltar = -2, BotaoAnterior = -3, BotaoProxima = -4, BotaoLoja = -5;
     // (na roleta da Loja: diminuir e aumentar a aposta, e escolher cada cor direto)
     public const int BotaoApostaMenos = -6, BotaoApostaMais = -7, BotaoVermelho = -8, BotaoPreto = -9, BotaoVerde = -10;
+    // (na tela dos slots: "sim" e "não" da pergunta, e o "apagar" de cada slot: BotaoApagarSlot - número do slot)
+    public const int BotaoSim = -11, BotaoNao = -12, BotaoApagarSlot = -20;
+    // (no título: as bandeiras do idioma)
+    public const int BotaoBandeiraBrasil = -13, BotaoBandeiraEUA = -14;
     const int SemClique = -1;
 
     public MapaDoMundo Mapa { get; private set; }
@@ -474,7 +514,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         pontoDeSave = null;
         savesPegos.Clear();
         mortesNoSave = 0;
-        Fala = null;
+        LimparFalas();
         System.Array.Clear(mortesPorFase, 0, mortesPorFase.Length);
         MostrarMapa(Progresso.TemJogoSalvo ? Progresso.FaseSalva : faseInicial);
         Estado = EstadoDoJogo.Titulo; // o mapa aparece escurecido atrás do título
@@ -486,6 +526,15 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         trocaPendente = depois;
         timerSaida = DuracaoTransicao;
+        TituloNaTransicao = false;
+    }
+
+    // Igual ao Trocar, mas a tela da transição mostra o nome da fase em que o Grumete vai entrar.
+    void TrocarParaAFase(int fase, System.Action depois)
+    {
+        Trocar(depois);
+        TituloNaTransicao = true;
+        FaseDaTransicao = fase;
     }
 
     void JogarFase(int fase)
@@ -500,7 +549,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         KrakenRoubou = false;
         ChefeDerrotado = false;
         EtapaDoChefe = 0;
-        Fala = null;
+        LimparFalas();
         CarregarFase(fase);
         Estado = EstadoDoJogo.Jogando;
         // tem elixir guardado? Entrar na fase gasta um, e ele vale a fase inteira (até depois de morrer)
@@ -519,13 +568,14 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         timerRenascer -= Time.deltaTime;
         timerEntrada -= Time.unscaledDeltaTime; // tempo real: a transição funciona até com o jogo pausado
+        if (timerEntrada <= 0f && trocaPendente == null) TituloNaTransicao = false; // a fase já apareceu: some o nome
         AjustarMusica();
         // O clique do mouse é pego (e apagado) ANTES da transição: um clique no meio dela é ignorado.
         int clique = PegarClique(out int lado);
         if (Fala.HasValue)
         {
             timerFala -= Time.unscaledDeltaTime;
-            if (timerFala <= 0f) Fala = null;
+            if (timerFala <= 0f) PassarFala();
         }
 
         if (trocaPendente != null)
@@ -552,6 +602,8 @@ public class GerenciadorDoJogo : MonoBehaviour
                     Estado = EstadoDoJogo.Titulo;
                     Som("bloco", 0.4f);
                 }
+                else if (Controles.CimaApertou()) RolarConquistas(-1f);
+                else if (Controles.BaixoApertou()) RolarConquistas(1f);
                 break;
 
             case EstadoDoJogo.Mapa:
@@ -599,6 +651,10 @@ public class GerenciadorDoJogo : MonoBehaviour
                 if (timerEstado <= 0f) ProximaFase();
                 break;
 
+            case EstadoDoJogo.Historia:
+                AtualizarHistoria(clique);
+                break;
+
             case EstadoDoJogo.Vitoria:
                 if (Controles.Confirmar())
                     Trocar(() => AbrirCreditos(false));
@@ -628,7 +684,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (concluida == Fases.IndiceSecreto)
         {
             MostrarMapa(concluida);
-            MostrarFala(Textos.Escolher(concluida, MortesNaFase));
+            MostrarFalas(Textos.FalasDepoisDaFase(concluida, MortesNaFase));
             SalvarProgresso();
             return;
         }
@@ -640,7 +696,7 @@ public class GerenciadorDoJogo : MonoBehaviour
             FaseMaisLonge = Mathf.Max(FaseMaisLonge, proxima);
             MostrarMapa(concluida, proxima, caminhoNovo, secretaNova);
             if (secretaNova || !DeveMostrarTutorialDaLoja) // (senão o Louro do tutorial chega logo que o Grumete parar)
-                MostrarFala(secretaNova ? Textos.SecretaLiberada : Textos.Escolher(concluida, MortesNaFase));
+                MostrarFalas(secretaNova ? new[] { Textos.SecretaLiberada } : Textos.FalasDepoisDaFase(concluida, MortesNaFase));
             secretaNova = false;
             Progresso.Salvar(proxima, FaseMaisLonge, Mortes, moedas, TempoTotal, partidaValida);
             SalvarItensDaLoja();
@@ -648,10 +704,61 @@ public class GerenciadorDoJogo : MonoBehaviour
             return;
         }
 
-        Estado = EstadoDoJogo.Vitoria;
+        // zerou! (salva tudo AGORA: fechar o jogo no meio da cutscene não perde nada) e passa a cutscene do final
         Progresso.Zerou(Fases.Todas.Length);
         Conquistas.Desbloquear("zerou");
         if (partidaValida) Progresso.TentarSalvarRecorde(Mortes);
+        TocarHistoria(Historia.Final, () => Estado = EstadoDoJogo.Vitoria);
+    }
+
+    // ------------------------------------------------------------------ a história (cutscenes)
+
+    // Começa a cutscene. "depois" acontece quando ela acabar (ou for pulada), já com a tela escura da transição.
+    void TocarHistoria(Historia.Quadro[] quadros, System.Action depois)
+    {
+        HistoriaAtual = quadros;
+        QuadroDaHistoria = 0;
+        TempoNoQuadro = 0f;
+        depoisDaHistoria = depois;
+        Estado = EstadoDoJogo.Historia;
+    }
+
+    // ENTER (ou clique): se o texto ainda está aparecendo, mostra ele todo; senão, o próximo quadro. ESC pula tudo.
+    void AtualizarHistoria(int clique)
+    {
+        TempoNoQuadro += Time.unscaledDeltaTime;
+        if (Controles.Voltar() || clique == BotaoVoltar)
+        {
+            AcabarHistoria();
+            return;
+        }
+        if (!Controles.Confirmar() && clique != BotaoProxima) return;
+        float paraTerminar = Historia.TempoParaTerminar(Idioma.Traduzir(HistoriaAtual[QuadroDaHistoria].texto));
+        if (TempoNoQuadro < paraTerminar)
+        {
+            TempoNoQuadro = paraTerminar; // o texto inteiro de uma vez
+            return;
+        }
+        if (QuadroDaHistoria >= HistoriaAtual.Length - 1)
+        {
+            AcabarHistoria();
+            return;
+        }
+        QuadroDaHistoria++;
+        TempoNoQuadro = 0f;
+        Som("bloco", 0.35f);
+    }
+
+    void AcabarHistoria()
+    {
+        System.Action depois = depoisDaHistoria;
+        depoisDaHistoria = null;
+        Som("moeda", 0.4f);
+        Trocar(() =>
+        {
+            HistoriaAtual = null;
+            depois?.Invoke();
+        });
     }
 
     void Pausar(bool pausar)
@@ -674,8 +781,34 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     void MostrarFala(Textos.Fala fala)
     {
+        proximasFalas.Clear();
         Fala = fala;
         timerFala = 7f;
+    }
+
+    // Várias falas, uma atrás da outra (a primeira já aparece).
+    void MostrarFalas(Textos.Fala[] falas)
+    {
+        MostrarFala(falas[0]);
+        for (int i = 1; i < falas.Length; i++) proximasFalas.Enqueue(falas[i]);
+    }
+
+    // A fala atual acabou: vem a próxima da fila (ou nenhuma).
+    void PassarFala()
+    {
+        if (proximasFalas.Count > 0)
+        {
+            Fala = proximasFalas.Dequeue();
+            timerFala = 7f;
+            Som("bloco", 0.3f);
+        }
+        else Fala = null;
+    }
+
+    void LimparFalas()
+    {
+        proximasFalas.Clear();
+        Fala = null;
     }
 
     void AjustarMusica()
@@ -723,7 +856,7 @@ public class GerenciadorDoJogo : MonoBehaviour
             case ItemDaPausa.ReiniciarFase:
                 // recomeça a fase do ZERO (sem ponto de save e com o chefe inteiro), como se entrasse pelo mapa
                 Som("vitoria", 0.4f);
-                Trocar(() =>
+                TrocarParaAFase(fase, () =>
                 {
                     Pausar(false);
                     JogarFase(fase);
@@ -773,7 +906,125 @@ public class GerenciadorDoJogo : MonoBehaviour
     void AtualizarSubmenu(int clique, int lado)
     {
         if (SubmenuAberto == Submenu.Opcoes) AtualizarOpcoes(clique, lado);
+        else if (SubmenuAberto == Submenu.Slots) AtualizarSlots(clique);
         else AtualizarComoJogar(clique);
+    }
+
+    // ------------------------------------------------------------------ os slots (Carregar jogo / Novo jogo)
+
+    void AbrirSlots(bool paraNovoJogo)
+    {
+        AbrirSubmenu(Submenu.Slots);
+        SlotsParaNovoJogo = paraNovoJogo;
+        SlotPerguntando = -1;
+        LerResumos();
+        // começa no slot que faz mais sentido: carregando, o último usado (se tiver partida) ou o primeiro com
+        // partida; num jogo novo, o primeiro vazio (se todos estiverem ocupados, o último usado)
+        SlotSelecionado = Progresso.SlotAtual;
+        for (int i = 0; i < Progresso.TotalDeSlots; i++)
+        {
+            if (paraNovoJogo ? resumos[SlotSelecionado].temJogo && !resumos[i].temJogo : !resumos[SlotSelecionado].temJogo && resumos[i].temJogo)
+            {
+                SlotSelecionado = i;
+                break;
+            }
+        }
+    }
+
+    void LerResumos()
+    {
+        for (int i = 0; i < Progresso.TotalDeSlots; i++) resumos[i] = Progresso.Resumo(i);
+        VersaoDosSlots++;
+    }
+
+    void AtualizarSlots(int clique)
+    {
+        // a pergunta aberta ("apagar?" / "começar por cima?"): ENTER ou SIM confirma, ESC ou NÃO cancela
+        if (SlotPerguntando >= 0)
+        {
+            if (Controles.Voltar() || clique == BotaoVoltar || clique == BotaoNao)
+            {
+                SlotPerguntando = -1;
+                Som("bloco", 0.4f);
+            }
+            else if (Controles.Confirmar() || clique == BotaoSim) ResponderSim();
+            return;
+        }
+
+        int voltar = Progresso.TotalDeSlots;
+        if (Controles.Voltar() || clique == BotaoVoltar)
+        {
+            FecharSlots();
+            return;
+        }
+        if (Controles.CimaApertou()) SlotSelecionado = Girar(SlotSelecionado, -1, voltar + 1);
+        if (Controles.BaixoApertou()) SlotSelecionado = Girar(SlotSelecionado, 1, voltar + 1);
+
+        // apagar: DEL (ou o "apagar" do cartão, com o mouse)
+        int apagar = clique <= BotaoApagarSlot && clique > BotaoApagarSlot - Progresso.TotalDeSlots ? BotaoApagarSlot - clique
+                   : Controles.Apagar() && SlotSelecionado < voltar ? SlotSelecionado : -1;
+        if (apagar >= 0)
+        {
+            SlotSelecionado = apagar;
+            if (resumos[apagar].temJogo) Perguntar(apagar, true);
+            else Som("bloco", 0.6f); // vazio: nada para apagar
+            return;
+        }
+
+        bool confirmou = Controles.Confirmar();
+        if (clique >= 0 && clique <= voltar)
+        {
+            SlotSelecionado = clique;
+            confirmou = true;
+        }
+        if (!confirmou) return;
+
+        if (SlotSelecionado == voltar)
+        {
+            FecharSlots();
+            return;
+        }
+        Progresso.ResumoDoSlot resumo = resumos[SlotSelecionado];
+        if (!SlotsParaNovoJogo)
+        {
+            if (resumo.temJogo) ComecarNoSlot(SlotSelecionado, false);
+            else Som("bloco", 0.6f); // carregar um slot vazio? não dá
+        }
+        else if (resumo.temJogo) Perguntar(SlotSelecionado, false); // tem partida: pergunta antes de apagar
+        else ComecarNoSlot(SlotSelecionado, true);
+    }
+
+    void Perguntar(int slot, bool apagar)
+    {
+        SlotPerguntando = slot;
+        PerguntaDeApagar = apagar;
+        Som("pop", 0.6f);
+    }
+
+    void ResponderSim()
+    {
+        int slot = SlotPerguntando;
+        SlotPerguntando = -1;
+        if (!PerguntaDeApagar)
+        {
+            ComecarNoSlot(slot, true); // o jogo novo apaga o slot
+            return;
+        }
+        Progresso.ApagarSlot(slot);
+        LerResumos();
+        Som("pancada", 0.5f);
+        // carregando, sem mais nenhuma partida salva: não sobrou o que carregar
+        if (!SlotsParaNovoJogo && !Progresso.AlgumJogoSalvo) FecharSlots();
+    }
+
+    // Volta para o título (o menu é montado de novo: o "Continuar" e o "Carregar jogo" podem ter sumido).
+    void FecharSlots()
+    {
+        FecharSubmenu();
+        MontarMenu();
+        // fica em cima do botão de onde veio
+        int de = opcoesDoMenu.IndexOf(SlotsParaNovoJogo ? OpcaoDoMenu.NovoJogo : OpcaoDoMenu.CarregarJogo);
+        OpcaoSelecionada = de >= 0 ? de : opcoesDoMenu.IndexOf(OpcaoDoMenu.NovoJogo);
     }
 
     // Opções: cima/baixo escolhe; esquerda/direita muda; ENTER também muda (o volume dá a volta: 100% -> 0%).
@@ -898,6 +1149,13 @@ public class GerenciadorDoJogo : MonoBehaviour
             if (opcao < TotalDasOpcoes) OpcaoDasOpcoes = opcao;
             if (OpcaoDasOpcoes != antes) Som("bloco", 0.5f);
         }
+        else if (SubmenuAberto == Submenu.Slots)
+        {
+            if (SlotPerguntando >= 0 || opcao > Progresso.TotalDeSlots) return;
+            antes = SlotSelecionado;
+            SlotSelecionado = opcao;
+            if (SlotSelecionado != antes) Som("bloco", 0.5f);
+        }
         else if (SubmenuAberto != Submenu.Nenhum) return;
         else if (Estado == EstadoDoJogo.Mapa && LojaAberta)
         {
@@ -952,12 +1210,14 @@ public class GerenciadorDoJogo : MonoBehaviour
     void MontarMenu()
     {
         opcoesDoMenu.Clear();
-        if (Progresso.TemJogoSalvo) opcoesDoMenu.Add(OpcaoDoMenu.Continuar);
-        opcoesDoMenu.Add(OpcaoDoMenu.NovoJogo);
+        if (Progresso.TemJogoSalvo) opcoesDoMenu.Add(OpcaoDoMenu.Continuar);       // o último slot usado
+        if (Progresso.AlgumJogoSalvo) opcoesDoMenu.Add(OpcaoDoMenu.CarregarJogo);  // a tela dos slots
+        opcoesDoMenu.Add(OpcaoDoMenu.NovoJogo);                                     // a tela dos slots (escolhe onde)
         opcoesDoMenu.Add(OpcaoDoMenu.Opcoes);
         opcoesDoMenu.Add(OpcaoDoMenu.ComoJogar);
         opcoesDoMenu.Add(OpcaoDoMenu.Conquistas);
         opcoesDoMenu.Add(OpcaoDoMenu.Creditos);
+        opcoesDoMenu.Add(OpcaoDoMenu.TrocarIdioma); // Português <-> English (veja Idioma.cs)
         if (Opcoes.PodeSair) opcoesDoMenu.Add(OpcaoDoMenu.Sair); // no navegador não existe "sair do jogo"
         OpcaoSelecionada = 0;
         SubmenuAberto = Submenu.Nenhum;
@@ -976,8 +1236,22 @@ public class GerenciadorDoJogo : MonoBehaviour
             }
             return;
         }
+        // clicou numa das bandeiras: aquele idioma (a linha das bandeiras fica selecionada)
+        if (clique == BotaoBandeiraBrasil || clique == BotaoBandeiraEUA)
+        {
+            OpcaoSelecionada = Mathf.Max(0, opcoesDoMenu.IndexOf(OpcaoDoMenu.TrocarIdioma));
+            Idioma.Atual = clique == BotaoBandeiraEUA ? Idioma.Lingua.Ingles : Idioma.Lingua.Portugues;
+            Som("moeda", 0.5f);
+            return;
+        }
         if (Controles.CimaApertou()) OpcaoSelecionada = Girar(OpcaoSelecionada, -1, opcoesDoMenu.Count);
         if (Controles.BaixoApertou()) OpcaoSelecionada = Girar(OpcaoSelecionada, 1, opcoesDoMenu.Count);
+        // no botão do idioma, esquerda/direita também trocam (como nas Opções)
+        if (opcoesDoMenu[OpcaoSelecionada] == OpcaoDoMenu.TrocarIdioma && (Controles.EsquerdaApertou() || Controles.DireitaApertou()))
+        {
+            Comecar(OpcaoDoMenu.TrocarIdioma);
+            return;
+        }
 
         if (clique >= 0 && clique < opcoesDoMenu.Count)
         {
@@ -993,6 +1267,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         {
             case OpcaoDoMenu.Conquistas:
                 Estado = EstadoDoJogo.Conquistas;
+                RolagemDasConquistas = 0f; // sempre abre no topo da lista
                 Som("moeda", 0.5f);
                 return;
             case OpcaoDoMenu.Opcoes:
@@ -1005,13 +1280,34 @@ public class GerenciadorDoJogo : MonoBehaviour
                 AbrirCreditos(true);
                 Som("moeda", 0.5f);
                 return;
+            case OpcaoDoMenu.TrocarIdioma:
+                Idioma.Trocar();
+                Som("moeda", 0.5f);
+                return;
             case OpcaoDoMenu.Sair:
                 Opcoes.SairDoJogo();
                 return;
+            case OpcaoDoMenu.CarregarJogo:
+                AbrirSlots(false);
+                return;
+            case OpcaoDoMenu.NovoJogo:
+                AbrirSlots(true);
+                return;
         }
+        // Continuar: o último slot usado (sem partida nele, escolhe onde começar)
+        if (Progresso.TemJogoSalvo) ComecarNoSlot(Progresso.SlotAtual, false);
+        else AbrirSlots(true);
+    }
+
+    // Começa a partida no slot: carrega a que está lá ou (novo) apaga o slot e começa do zero.
+    void ComecarNoSlot(int slot, bool novo)
+    {
+        Progresso.SlotAtual = slot;
+        if (novo) Progresso.ApagarSlot(slot);
+        SubmenuAberto = Submenu.Nenhum;
         Som("vitoria", 0.4f);
         int fase;
-        if (opcao == OpcaoDoMenu.Continuar && Progresso.TemJogoSalvo) // (confere de novo: sem save, vira "Novo jogo")
+        if (!novo && Progresso.TemJogoSalvo) // (confere de novo: sem save, vira "Novo jogo")
         {
             Progresso.Carregar(out fase, out int maisLonge, out int mortesSalvas, out moedas, out float tempoSalvo, out partidaValida);
             Progresso.CarregarMortesPorFase(mortesPorFase);
@@ -1028,7 +1324,17 @@ public class GerenciadorDoJogo : MonoBehaviour
             partidaValida = fase == 0;
             Progresso.ApagarSecreta(); // partida nova: a fase secreta precisa ser achada de novo
         }
-        Trocar(() => MostrarMapa(fase));
+        if (!novo)
+        {
+            Trocar(() => MostrarMapa(fase));
+            return;
+        }
+        // jogo novo: primeiro a história (a abertura), depois o mapa
+        Trocar(() => TocarHistoria(Historia.Abertura, () =>
+        {
+            MostrarMapa(fase);
+            SalvarProgresso(); // o slot já aparece ocupado (mesmo se sair antes de jogar)
+        }));
     }
 
     // No mapa: setas andam pelo caminho, Enter entra na fase, Esc volta ao título.
@@ -1055,7 +1361,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         }
         if (Fala.HasValue && Controles.Confirmar())
         {
-            Fala = null; // Enter fecha a fala do personagem
+            PassarFala(); // Enter fecha a fala do personagem (e mostra a próxima, se tiver)
             return;
         }
         if (Controles.Pausar())
@@ -1107,7 +1413,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         {
             int fase = Mapa.Selecionado;
             Som("vitoria", 0.4f);
-            Trocar(() => JogarFase(fase));
+            TrocarParaAFase(fase, () => JogarFase(fase));
         }
     }
 
@@ -1117,7 +1423,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         LojaAberta = true;
         OpcaoDaLoja = (int)ItemDaLoja.Escudo;
-        Fala = null;
+        LimparFalas();
         timerMensagemDaLoja = 0f;
         Som("moeda", 0.5f);
     }
@@ -1183,7 +1489,7 @@ public class GerenciadorDoJogo : MonoBehaviour
             return true;
         }
         int faltam = preco - moedas;
-        AvisarNaLoja(faltam == 1 ? "Falta 1 moeda." : $"Faltam {faltam} moedas.", false);
+        AvisarNaLoja(faltam == 1 ? "Falta 1 moeda." : Idioma.T($"Faltam {faltam} moedas.", $"You need {faltam} more coins."), false);
         Som("bloco", 0.6f);
         return false;
     }
@@ -1192,7 +1498,8 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         if (Escudos >= maximoDeEscudos)
         {
-            AvisarNaLoja(maximoDeEscudos == 1 ? "Você já tem um escudo!" : $"Você já tem {maximoDeEscudos} escudos (o máximo)!", false);
+            AvisarNaLoja(maximoDeEscudos == 1 ? "Você já tem um escudo!"
+                : Idioma.T($"Você já tem {maximoDeEscudos} escudos (o máximo)!", $"You already have {maximoDeEscudos} shields (the max)!"), false);
             Som("bloco", 0.6f);
             return;
         }
@@ -1207,7 +1514,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         if (Elixires >= maximoDeElixires)
         {
-            AvisarNaLoja($"Você já tem {maximoDeElixires} elixires (o máximo)!", false);
+            AvisarNaLoja(Idioma.T($"Você já tem {maximoDeElixires} elixires (o máximo)!", $"You already have {maximoDeElixires} elixirs (the max)!"), false);
             Som("bloco", 0.6f);
             return;
         }
@@ -1301,16 +1608,16 @@ public class GerenciadorDoJogo : MonoBehaviour
         TempoDesdeOResultado = 0f;
         HistoricoDaRoleta.Insert(0, casaSorteada);
         if (HistoricoDaRoleta.Count > 10) HistoricoDaRoleta.RemoveAt(HistoricoDaRoleta.Count - 1);
-        string onde = CorDaCasa(UltimaCasa) == CorDaRoleta.Verde ? "no VERDE" : CorDaCasa(UltimaCasa) == CorDaRoleta.Vermelho ? "no vermelho" : "no preto";
+        string onde = Idioma.Traduzir(CorDaCasa(UltimaCasa) == CorDaRoleta.Verde ? "no VERDE" : CorDaCasa(UltimaCasa) == CorDaRoleta.Vermelho ? "no vermelho" : "no preto");
         if (UltimoPremio > 0)
         {
-            AvisarNaLoja($"Caiu {onde}! Você ganhou {UltimoPremio} moedas!", true);
+            AvisarNaLoja(Idioma.T($"Caiu {onde}! Você ganhou {UltimoPremio} moedas!", $"It landed {onde}! You won {UltimoPremio} coins!"), true);
             Som("conquista", 0.8f);
             Som("moeda", 0.8f);
         }
         else
         {
-            AvisarNaLoja($"Caiu {onde}... a casa venceu. Currupaco!", false);
+            AvisarNaLoja(Idioma.T($"Caiu {onde}... a casa venceu. Currupaco!", $"It landed {onde}... the house wins. Squawk!"), false);
             Som("pancada", 0.5f);
         }
     }
@@ -1330,7 +1637,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     // Durante o tutorial o resto do mapa fica parado (dá para sair com ESC: aí ele recomeça na próxima vez).
     void IniciarTutorialDaLoja()
     {
-        Fala = null;
+        LimparFalas();
         IrParaOPasso(PassoDoTutorial.Chegada);
         Som("mola", 0.4f); // "fuuuu": o Louro chegando
     }
@@ -1396,7 +1703,8 @@ public class GerenciadorDoJogo : MonoBehaviour
         int faltam = precoDoEscudo - moedas;
         if (faltam <= 0) return;
         moedas += faltam;
-        TextoDoTutorial = string.Format(Textos.LojaComprarComAjuda, faltam == 1 ? "1 moeda" : faltam + " moedas");
+        TextoDoTutorial = string.Format(Idioma.Traduzir(Textos.LojaComprarComAjuda), // (traduz antes de pôr o número)
+            faltam == 1 ? Idioma.T("1 moeda", "1 coin") : faltam + Idioma.T(" moedas", " coins"));
         Som("moeda", 0.7f);
         SalvarProgresso();
     }

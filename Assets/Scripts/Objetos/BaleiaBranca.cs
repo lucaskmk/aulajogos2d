@@ -450,7 +450,7 @@ public class BaleiaBranca : Chefe
     // Depois de morrer: 1 segundo de "PRONTO?" e a luta volta na etapa em que estava.
     IEnumerator Pronto()
     {
-        GerenciadorDoJogo.Instancia.Avisar($"ETAPA {etapa + 1}/{Etapas} - PRONTO?", 1.3f);
+        GerenciadorDoJogo.Instancia.Avisar(Idioma.T($"ETAPA {etapa + 1}/{Etapas} - PRONTO?", $"STAGE {etapa + 1}/{Etapas} - READY?"), 1.3f);
         baleia.position = new Vector3(meio, chao + 16f, 0f);
         MostrarBaleia(OrdemDaBaleia);
         livre = true;

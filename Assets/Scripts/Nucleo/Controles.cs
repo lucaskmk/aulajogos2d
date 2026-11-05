@@ -99,6 +99,15 @@ public static class Controles
         return teclado != null && teclado.f9Key.wasPressedThisFrame;
     }
 
+    // DEL: apaga um slot na tela dos saves (no controle, o botão Y / triângulo).
+    public static bool Apagar()
+    {
+        var teclado = Keyboard.current;
+        var controle = Gamepad.current;
+        return (teclado != null && teclado.deleteKey.wasPressedThisFrame)
+            || (controle != null && controle.buttonNorth.wasPressedThisFrame);
+    }
+
     // L: abre e fecha a Loja no mapa (no controle, o botão X / quadrado).
     public static bool AbrirLoja()
     {

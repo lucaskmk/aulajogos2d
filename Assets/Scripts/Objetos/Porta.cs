@@ -86,7 +86,7 @@ public class Porta : MonoBehaviour
         CameraSeguir.Centralizar();
         Efeitos.Poeira(destino.transform.parent, destino.transform.position + Vector3.up * 0.5f, 6, 2f);
         Conquistas.Contar("portas", 20);
-        GerenciadorDoJogo.Instancia.Avisar($"Porta {numero} -> porta {destino.numero}", 1.8f); // para ajudar a decorar
+        GerenciadorDoJogo.Instancia.Avisar(Idioma.T($"Porta {numero} -> porta {destino.numero}", $"Door {numero} -> door {destino.numero}"), 1.8f); // para ajudar a decorar
 
         yield return new WaitForSeconds(0.2f);
         desenho.sprite = fechada;

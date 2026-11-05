@@ -218,8 +218,8 @@ public class Jogador : MonoBehaviour
             GerenciadorDoJogo.Som("armadilha", 0.5f);
         }
         timerInversao -= Time.deltaTime;
-        string oQue = invertido ? "Invertendo os controles" : "Desinvertendo";
-        GerenciadorDoJogo.Instancia.Avisar($"{oQue} em {Mathf.CeilToInt(Mathf.Max(timerInversao, 0.01f))}...", 0.2f);
+        string oQue = Idioma.Traduzir(invertido ? "Invertendo os controles" : "Desinvertendo");
+        GerenciadorDoJogo.Instancia.Avisar($"{oQue} {Idioma.T("em", "in")} {Mathf.CeilToInt(Mathf.Max(timerInversao, 0.01f))}...", 0.2f);
         if (timerInversao > 0f) return;
 
         timerInversao = -1f;
