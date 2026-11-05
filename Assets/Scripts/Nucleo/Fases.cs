@@ -23,7 +23,7 @@ using UnityEngine;
 //   R  bandeira fujona            *  para onde a bandeira fujona foge
 //   Z  bandeira falsa (mata!)     o  nuvem assassina
 //   m  moeda assassina (igual à moeda normal)
-//   e  inimigo disfarçado (igual ao normal, mas tem espinhos: NÃO pise!)
+//   e  inimigo (igual ao 'E': todos os caranguejos morrem com um pisão)
 //   M  bloco que foge quando você pula perto dele
 //   W  bandeira que te manda de volta pro último checkpoint (sem checkpoint: pro começo)
 //   X  linha invisível que inverte os controles quase na hora (0,4 s) (cruzou de novo, desinverte).
@@ -36,8 +36,8 @@ using UnityEngine;
 //   u  CAPITÃ (CHEFE): começo da arena de 20 blocos, na linha em que o jogador anda (chão LISO, sem buracos).
 //      Entrou, a arena fecha e a luta começa (3 etapas; quando a âncora dela ficar PRESA no chão, pule na cabeça dela).
 //      Na etapa 3 ela fica FURIOSA. Veja ChefeCapita.cs
-//   g  KRAKEN VERMELHO (CHEFE FINAL): começo da arena de 21 blocos, na linha em que o jogador anda (chão LISO), e logo
-//      depois dela a POÇA da lula: 4 colunas SEM chão (é de lá que ela sai). Os tentáculos VERMELHOS matam; o AMARELO (o agarrão) não mata,
+//   g  KRAKEN VERMELHO (CHEFE FINAL): começo da arena de 21 blocos, na linha em que o jogador anda. Embaixo da arena NÃO
+//      tem chão no mapa: o convés é dela (tábuas que ela quebra), e logo depois vem o MAR (4 colunas vazias), de onde ela sai. Os tentáculos VERMELHOS matam; o AMARELO (o agarrão) não mata,
 //      mas ROUBA suas moedas. Quando ela CANSA e encosta a cabeça no chão, pule nela. Veja ChefeKraken.cs
 //   L  Sereia (esperando no fim da última fase)
 //   0-9  porta da Dóris (2 de altura), com o número em cima: aperte S/seta para baixo na frente dela.
@@ -95,6 +95,7 @@ public class Fase
     public bool escura;     // fase no ESCURO: quase não se vê nada, só em volta do Grumete e das luzinhas
     public bool petalas;    // pétalas caindo (no lugar do pólen)
     public Ambiente.Tipo? clima; // as partículas da fase (folhas, chuva, bolhas...); null = pelo jeito da fase (veja PrepararClima)
+    public Bioma bioma;          // o LUGAR: o chão, os enfeites, o bicho e o fundo pintado (veja Biomas.cs)
     public Color32? corDoFundo; // cor do céu da fase (tons pastel, de livro ilustrado)
     // Medalha do relógio: passar a fase em até tantos segundos (contando desde a entrada pelo mapa, com as mortes).
     // 0 = automático, pelo tamanho da fase (veja Medalhas.TempoAlvo).
@@ -109,6 +110,7 @@ public static class Fases
         new Fase
         {
             nome = "Bem-vindo :)",
+            bioma = Bioma.Porto,
             corDoFundo = new Color32(150, 215, 235, 255),
             placas = new[]
             {
@@ -140,6 +142,7 @@ public static class Fases
         new Fase
         {
             nome = "Confia em mim (e corre!)",
+            bioma = Bioma.Selva,
             corDoFundo = new Color32(245, 190, 120, 255),
             clima = Ambiente.Tipo.Folhas,
             placas = new[]
@@ -174,6 +177,7 @@ public static class Fases
         new Fase
         {
             nome = "O Final (mudei de ideia)",
+            bioma = Bioma.Lagoa,
             corDoFundo = new Color32(240, 150, 205, 255),
             petalas = true,
             placas = new[]
@@ -207,6 +211,7 @@ public static class Fases
         new Fase
         {
             nome = "A Capitã Âncora",
+            bioma = Bioma.Forte,
             tempoAlvo = 170f, // chefe: a luta conta (estimativa; ajuste depois de testar)
             corDoFundo = new Color32(165, 185, 240, 255),
             placas = new[]
@@ -241,6 +246,7 @@ public static class Fases
         new Fase
         {
             nome = "Cadê a direita? (Foge, bloco!)",
+            bioma = Bioma.Vila,
             corDoFundo = new Color32(195, 165, 230, 255),
             clima = Ambiente.Tipo.Poeira,
             placas = new[]
@@ -270,18 +276,18 @@ public static class Fases
             },
         },
 
-        // o DESFILADEIRO de noite, com vaga-lumes
+        // a ABORDAGEM: os navios piratas lado a lado, no pôr do sol, e as plataformas mágicas da Marina nos vãos
         new Fase
         {
-            nome = "Ponte para o Porto",
-            corDoFundo = new Color32(120, 110, 185, 255),
-            noite = true,
+            nome = "Abordagem!",
+            bioma = Bioma.Navios,
+            corDoFundo = new Color32(250, 165, 120, 255),
             placas = new[]
             {
-                "A ponte para o porto caiu...\nMas a Marina mandou plataformas mágicas! Sobe que ela te leva.",
+                "ABORDAGEM! Os navios estão lado a lado. Pula de convés em convés!\nNos vãos, a Marina mandou plataformas mágicas. Sobe que ela te leva.",
                 "Essa aqui é IGUALZINHA à outra.\nPode subir sem medo!",
                 "Relaxa e curte o passeio.\nNenhuma serra à vista!",
-                "EXPRESSA PARA O PORTO!\nSe ela tremer, NÃO PULE. (dessa vez é sério)",
+                "EXPRESSA PARA O ÚLTIMO NAVIO!\nSe ela tremer, NÃO PULE. (dessa vez é sério)",
                 "Chegou! Viu só? Era só confiar no Louro. :)",
             },
             mapa = new[]
@@ -308,6 +314,7 @@ public static class Fases
         new Fase
         {
             nome = "A Gruta da Cozinheira",
+            bioma = Bioma.Gruta,
             tempoAlvo = 190f, // chefe
             escura = true,
             corDoFundo = new Color32(55, 35, 80, 255),
@@ -342,6 +349,7 @@ public static class Fases
         new Fase
         {
             nome = "O Navio Fantasma",
+            bioma = Bioma.NavioFantasma,
             // As cabines: a 1 ou a 3 levam à sala das armadilhas, a 6 à sala das moedas, a 8 à Dóris (a 2 é o beco
             // dos caranguejos). Da sala da Dóris, a parede da direita está aberta: o convés do baile.
             portas = new[] { "1-4", "3-5", "2-9", "6-7", "8-0" },
@@ -384,8 +392,9 @@ public static class Fases
         new Fase
         {
             nome = "Vento em Popa!",
+            bioma = Bioma.Penhasco,
             corDoFundo = new Color32(245, 195, 215, 255),
-            clima = Ambiente.Tipo.Folhas,
+            clima = Ambiente.Tipo.Poeira, // o vento do deserto levanta areia
             placas = new[]
             {
                 "O vento do mar tá de mau humor hoje.\nQuando as FOLHAS vierem, segure pra frente ou se esconda atrás de um bloco!",
@@ -418,6 +427,7 @@ public static class Fases
         new Fase
         {
             nome = "A Baleia Branca",
+            bioma = Bioma.Recife,
             tempoAlvo = 250f, // chefe
             noite = true,
             corDoFundo = new Color32(70, 60, 120, 255),
@@ -447,16 +457,16 @@ public static class Fases
             },
         },
 
-        // as ILHAS DO KRAKEN debaixo de tempestade
+        // a PRAIA das ilhas do Kraken, debaixo de tempestade (o tsunami vem do mar)
         new Fase
         {
             nome = "O Tsunami (CORRE!)",
-            noite = true,
-            corDoFundo = new Color32(70, 85, 115, 255),
+            bioma = Bioma.Praia,
+            corDoFundo = new Color32(120, 140, 150, 255), // tempestade de dia: cinza-esverdeado
             clima = Ambiente.Tipo.Chuva,
             placas = new[]
             {
-                "Ouviu isso? O Kraken levantou um TSUNAMI.\nNão olha para trás. Só CORRE e PULA!",
+                "Que praia bonita... ouviu isso? O Kraken levantou um TSUNAMI!\nNão olha para trás. Só CORRE e PULA!",
                 "Buraquinho de nada!\nPula bem na beiradinha. :)",
                 "Mola para o alto! Lá em cima tem moedas...\ne nuvens fofinhas. MUITO fofinhas.",
                 "Reta final! A bandeira tá logo ali.\nDessa vez ela não foge. Juro pela Marina.",
@@ -485,6 +495,7 @@ public static class Fases
         new Fase
         {
             nome = "O Verdadeiro Final (juro)",
+            bioma = Bioma.Rochedo,
             corDoFundo = new Color32(240, 160, 130, 255),
             placas = new[]
             {
@@ -507,22 +518,23 @@ public static class Fases
                 "                                                                                         $$$               $$                                                                        $m$",
                 "                             $$$                                                              U                                U    i R    h       s   h        E        iB Z               *",
                 "  P i    e      $    ^^^                     E     h     B Z          >   E   $m$                r  e           <                 ##################################    #########CCC############",
-                "###############FFF###########    ##############MM##############CCCC##################   ############### MM     ########CC###########################################    #########CCC############",
-                "###############FFF###########    ##############  ##############CCCC##################   ###############        ########CC###########################################    #########CCC############",
+                "###############CCC###########    ##############MM##############CCCC##################   ############### MM     ########CC###########################################    #########CCC############",
+                "###############CCC###########    ##############  ##############CCCC##################   ###############        ########CC###########################################    #########CCC############",
             },
         },
 
-        // o COVIL DO KRAKEN, no fundo do mar escuro (bolhas subindo)
+        // o ALTO-MAR, debaixo de tempestade: de navio em navio até o convés do navio onde o Kraken ataca
         new Fase
         {
             nome = "O Kraken Vermelho",
+            bioma = Bioma.AltoMar,
             tempoAlvo = 260f, // chefe final
             noite = true,
             corDoFundo = new Color32(95, 30, 45, 255),
-            clima = Ambiente.Tipo.Bolhas,
+            clima = Ambiente.Tipo.Chuva,
             placas = new[]
             {
-                "O covil do Kraken. A lula gigante VERMELHA que mandou\na Baleia e o tsunami atrás de você. A Marina tá lá dentro!",
+                "Alto-mar! A lula gigante VERMELHA que mandou a Baleia e o tsunami\nprendeu a Marina naquele navio. Pula de convés em convés!",
                 "Ela ROUBA moedas: tentáculo AMARELO não mata, mas leva as suas!\nQuando ela CANSAR e encostar a cabeça no chão, PULA NELA!",
                 "Você venceu o Kraken! Ela devolveu suas moedas e fugiu\npro fundo do mar. A Marina tá logo ali. Agora é de verdade!",
             },
@@ -541,8 +553,8 @@ public static class Fases
                 "",
                 "                U",
                 "  P i       h      $m$      E           r       s i   g                         i         L",
-                "##########   ############CC######    ######################################    #####################",
-                "##########   ############CC######    ######################################    #####################",
+                "##########   ############CC######    #################                         #####################",
+                "##########   ############CC######    #################                         #####################",
             },
         },
 
@@ -582,10 +594,36 @@ public static class Fases
         },
     };
 
+    // A fase tem a coisa da etiqueta de uma mensagem de morte? (pelas letras do mapa)
+    public static bool TemNaFase(Fase fase, string etiqueta)
+    {
+        string letras;
+        switch (etiqueta)
+        {
+            case "kraken": letras = "g"; break;
+            case "baleia": letras = "w"; break;
+            case "capita": letras = "u"; break;
+            case "ancora": letras = "uQq"; break;
+            case "cozinheira": letras = "Hlk"; break;
+            case "tsunami": letras = "N"; break;
+            case "vento": letras = "yn"; break;
+            case "ritmo": letras = "abAt"; break;
+            case "plataforma": letras = "jJD"; break;
+            case "chefe": letras = "uHwg"; break;
+            case "porta": return fase.portas != null;
+            default: return true;
+        }
+        foreach (string linha in fase.mapa)
+            if (linha.IndexOfAny(letras.ToCharArray()) >= 0) return true;
+        return false;
+    }
+
     // Dados de uma fase pelo índice (inclui a secreta).
     public static Fase Dados(int indice) => indice == IndiceSecreto ? Secreta : Todas[indice];
 
     // Frases que aparecem quando você morre (escolhidas aleatoriamente).
+    // Uma frase que fala de uma coisa específica começa com a ETIQUETA dela ("cozinheira:..."): ela só aparece numa fase
+    // que tem aquilo (veja Fases.TemNaFase). Sem etiqueta, vale em qualquer fase.
     public static readonly string[] MensagensDeMorte =
     {
         "KKKKKKKKKKK",
@@ -614,49 +652,49 @@ public static class Fases
         "O Louro viu tudo. E vai contar pra todo mundo.",
         "Foi o caranguejo. Ou o chão. Ou os dois.",
         "Grumete que é grumete já passou por coisa pior.",
-        "Porta errada. Buuu.",
-        "A Cozinheira já ia te pôr na panela.",
-        "Olho vermelho era pra PULAR, grumete.",
-        "Três facas. Você pulou direto na de cima. Clássico.",
-        "Quem apagou a luz? Spoiler: foi a Cozinheira. Em você.",
-        "O Kraken só queria um abraço de oito braços.",
-        "Glub. Glub. Glub. Glub.",
-        "Parou para respirar? O tsunami agradece.",
+        "porta:Porta errada. Buuu.",
+        "cozinheira:A Cozinheira já ia te pôr na panela.",
+        "cozinheira:Olho vermelho era pra PULAR, grumete.",
+        "cozinheira:Três facas. Você pulou direto na de cima. Clássico.",
+        "cozinheira:Quem apagou a luz? Spoiler: foi a Cozinheira. Em você.",
+        "kraken:O Kraken só queria um abraço de oito braços.",
+        "tsunami:Glub. Glub. Glub. Glub.",
+        "tsunami:Parou para respirar? O tsunami agradece.",
         "Volta da Maré, patrocinada pelo Kraken.",
-        "Tsunami: 1. Grumete: 0.",
-        "O Kraken levantou uma onda só pra você. Que honra.",
-        "O tentáculo era VERMELHO. Vermelho mata, lembra?",
-        "O Kraken te deu um abraço. Oito, na verdade.",
-        "Ela cansou e você não pulou. Agora quem cansou foi você.",
-        "Pelo menos ela não levou suas moedas dessa vez. Ou levou?",
-        "A Baleia Branca te engoliu. E cuspiu. Eca.",
-        "Pula na CABEÇA dela, não na boca.",
-        "O capitão Ahab levou anos caçando ela. Calma.",
-        "Decorou o padrão? Ela também decorou você.",
-        "Quem é a Capitã Âncora? Agora você sabe.",
-        "A corrente rangeu. Você não ouviu.",
-        "Convés limpo. O lixo era você.",
-        "A âncora ficou presa no chão. Você também. Embaixo dela.",
-        "Linha baixa é pra PULAR. Linha alta é pra NÃO pular. Anota.",
-        "Dentro do anel, colado nela, era seguro. Era. Até você pular.",
-        "A Capitã ficou furiosa. Você virou isca de peixe.",
-        "A âncora cravou na parede... e voltou. Óbvio.",
+        "tsunami:Tsunami: 1. Grumete: 0.",
+        "tsunami:O Kraken levantou uma onda só pra você. Que honra.",
+        "kraken:O tentáculo era VERMELHO. Vermelho mata, lembra?",
+        "kraken:O Kraken te deu um abraço. Oito, na verdade.",
+        "kraken:Ela cansou e você não pulou. Agora quem cansou foi você.",
+        "kraken:Pelo menos ela não levou suas moedas dessa vez. Ou levou?",
+        "baleia:A Baleia Branca te engoliu. E cuspiu. Eca.",
+        "baleia:Pula na CABEÇA dela, não na boca.",
+        "baleia:O capitão Ahab levou anos caçando ela. Calma.",
+        "chefe:Decorou o padrão? Ela também decorou você.",
+        "capita:Quem é a Capitã Âncora? Agora você sabe.",
+        "ancora:A corrente rangeu. Você não ouviu.",
+        "capita:Convés limpo. O lixo era você.",
+        "capita:A âncora ficou presa no chão. Você também. Embaixo dela.",
+        "chefe:Linha baixa é pra PULAR. Linha alta é pra NÃO pular. Anota.",
+        "capita:Dentro do anel, colado nela, era seguro. Era. Até você pular.",
+        "capita:A Capitã ficou furiosa. Você virou isca de peixe.",
+        "capita:A âncora cravou na parede... e voltou. Óbvio.",
         "Era só pular. Era SÓ pular.",
-        "O vento soprou. Você voou. Ele nem olhou.",
-        "Grumete, até as folhas sabem para onde ir.",
-        "O redemoinho desligou. Que coincidência, né?",
-        "Segurar pra frente era opcional. Morrer, não.",
-        "Atravessou o compasso. E o bloco.",
-        "A maré não espera ninguém. Muito menos você.",
-        "Tic, tic, TAC... e tchau.",
-        "Fora do ritmo, fora da vida.",
-        "Cristal vermelho = pula. Anotou?",
-        "A Marina não dá garantia das plataformas.",
-        "Pulou da expressa? Clássico.",
-        "A plataforma tremeu. Você também.",
-        "Era só pegar o lampião. Brilhando. No escuro. Era SÓ isso.",
-        "A Cozinheira riu. Ela sempre ri. Você não.",
-        "Olho roxo: tudo bem. Olho vermelho: tchau.",
-        "A faca voltou. Bumerangue, sabe? Ela avisou.",
+        "vento:O vento soprou. Você voou. Ele nem olhou.",
+        "vento:Grumete, até as folhas sabem para onde ir.",
+        "vento:O redemoinho desligou. Que coincidência, né?",
+        "vento:Segurar pra frente era opcional. Morrer, não.",
+        "ritmo:Atravessou o compasso. E o bloco.",
+        "ritmo:A maré não espera ninguém. Muito menos você.",
+        "ritmo:Tic, tic, TAC... e tchau.",
+        "ritmo:Fora do ritmo, fora da vida.",
+        "plataforma:Cristal vermelho = pula. Anotou?",
+        "plataforma:A Marina não dá garantia das plataformas.",
+        "plataforma:Pulou da expressa? Clássico.",
+        "plataforma:A plataforma tremeu. Você também.",
+        "cozinheira:Era só pegar o lampião. Brilhando. No escuro. Era SÓ isso.",
+        "cozinheira:A Cozinheira riu. Ela sempre ri. Você não.",
+        "cozinheira:Olho roxo: tudo bem. Olho vermelho: tchau.",
+        "cozinheira:A faca voltou. Bumerangue, sabe? Ela avisou.",
     };
 }

@@ -1,16 +1,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 'E' - caranguejo que anda de um lado para o outro. Pule em cima para derrotá-lo;
-// encostar de lado é morte. Se passar do jogador, dá meia-volta e vem atrás dele.
-// 'e' - IGUALZINHO, mas "espinhoso": quando você pisa, brotam espinhos e quem morre é você.
+// 'E' (e 'e') - caranguejo que anda de um lado para o outro. Pule em cima para derrotá-lo (TODOS morrem com
+// um pisão, como um goomba); encostar de lado é morte. Se passar do jogador, dá meia-volta e vem atrás dele.
 public class Inimigo : MonoBehaviour
 {
     public float velocidade = 2.5f;
     public int direcao = -1;
-    public bool espinhoso;
     public float distanciaParaVoltar = 1.5f; // quanto ele passa do jogador antes de virar
     public float alcanceDaPerseguicao = 10f;
+
+    // O desenho do bicho (o ConstrutorDeFase escolhe pelo lugar da fase: caranguejo, sapo, escorpião... veja Biomas).
+    // O desenho esmagado é o mesmo nome com "_esmagado".
+    public static string Desenho = "inimigo";
 
     Rigidbody2D corpo;
     SpriteRenderer visual;
@@ -35,7 +37,7 @@ public class Inimigo : MonoBehaviour
         colisor.sharedMaterial = new PhysicsMaterial2D("SemAtrito") { friction = 0f };
 
         // desenho num filho, para poder dar pulinhos sem mexer no colisor
-        visual = ConstrutorDeFase.Visual("Visual", transform, transform.position, "inimigo", 6).GetComponent<SpriteRenderer>();
+        visual = ConstrutorDeFase.Visual("Visual", transform, transform.position, Desenho, 6).GetComponent<SpriteRenderer>();
 
         filtroSolido = new ContactFilter2D { useTriggers = false };
         SombraNoChao.Adicionar(gameObject, 0.9f);
@@ -85,21 +87,17 @@ public class Inimigo : MonoBehaviour
         var jogador = colisao.collider.GetComponent<Jogador>();
         if (jogador == null || jogador.Morto) return;
 
-        bool veioDeCima = jogador.transform.position.y > transform.position.y + 0.5f;
-        if (veioDeCima && espinhoso)
-        {
-            visual.sprite = FabricaDeSprites.Pegar("inimigo_espinhos");
-            GerenciadorDoJogo.Som("risada");
-            jogador.Morrer();
-        }
-        else if (veioDeCima) SerEsmagado(jogador);
+        // De cima = o meio do Grumete bem acima do meio do caranguejo (de lado, os dois ficam na mesma altura).
+        // Generoso de propósito: pular em cima de um caranguejo SEMPRE vale.
+        bool veioDeCima = jogador.transform.position.y > transform.position.y + 0.35f;
+        if (veioDeCima) SerEsmagado(jogador);
         else jogador.Morrer();
     }
 
     void SerEsmagado(Jogador jogador)
     {
         esmagado = true;
-        visual.sprite = FabricaDeSprites.Pegar("inimigo_esmagado");
+        visual.sprite = FabricaDeSprites.Pegar(Desenho + "_esmagado");
         visual.transform.localPosition = Vector3.zero;
         Efeitos.Poeira(transform.parent, transform.position + Vector3.down * 0.3f, 5, 2f);
         corpo.simulated = false;

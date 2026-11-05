@@ -41,7 +41,7 @@ public class MapaDoMundo : MonoBehaviour
     // A viagem é de ilha em ilha, da esquerda para a direita (as pontes de madeira atravessam os estreitos):
     //   a Ilha do Porto, com o castelo e o farol (1); a Ilha da Selva, cheia de palmeiras (2);
     //   a Ilha da Lagoa, com a ilhota secreta (3), o forte da Capitã (4) e a vila (5);
-    //   a Ilha do Desfiladeiro, com a mesa de pedra no meio do abismo (6) e a gruta da Cozinheira na beirada (7),
+    //   a Baía dos Navios (era o desfiladeiro), com a abordagem de navio em navio (6) e a gruta da Cozinheira na beirada (7),
     //   que continua nos rochedos do Navio Fantasma (8) e dos baús de tesouro, no penhasco dos ventos (9);
     //   as ilhas mortas do Kraken (a Baleia, 10; o tsunami, 11; o rochedo, 12) e, lá longe, no mar escuro,
     //   o covil do Kraken Vermelho (13), perto da Rocha da Caveira.
@@ -52,20 +52,20 @@ public class MapaDoMundo : MonoBehaviour
             "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
             "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
             "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-            "~~........~~~~~~~TT...TTTTT~~~~...~~~....T~~T.T~~n~...........~~~~..aaaaaaa..~~^.^~~~~^...~~.p.p.~~~~.pp^^.p..^~",
-            "h.........~~~~.....TTT.TT..TT^....~~...f.f.T.....Tf..........R.~~..aaaaaaaaa...^....^.^^^^~~.......R...^.p.p^p..",
-            "..........~~~.T....T.TTTT.TTT+++++~~...T..Tf.T.T..T............~~.aaaaaoaaaaa.^^^.L..^^^^.~~.....p.p^....p......",
-            ".....K....~~~+++2+++.TTTTT.TT+...+~~......f......f............+==++###+..aaa.o^^^......^^^~~.A+++p.......p......",
-            ".h.....h.h~~~+T....+..T..TT..+...+~~++++++++++++++f....M......+~~..aaa+.oaaa..^o++8++^....~~.+..+.....C+++......",
-            "..........~~~+TT...+.T....T..+.^^+~~+...f.....f..+.f.......h..+~~..aa.+..aaao.^.+...+.^^.^~~.+p.+.p...+..+......",
-            "h...1+++++===+.T.T.+TTTT.T++++..^+==3...~~~~~....++++++4++....+~~oRaaa+..aa...^o+.^^+....+==++.p+pRpp.+.p+..Y..~",
-            "..........~~~..TT.T+T....T+TT....^~~+.~~~~~~~~~~..fff....+.hfh+~~..oaa+6+aaa...o+...+....+~~.p.p++..+++pp+..~~~~",
-            ".h.h..h.h.~~~.TT..T+++....+.T....^~~+~~~~~..~~~~~f.ffff..+....+~~R.aaa..+aaao...+^^.+^...+~~.pRp.+..+ppR.+~~~~~~",
-            "....f.....~~~~TTTTTT.+....+TT^^.^.~~=====+S..~~~~...f.f..+f...+~~..aaa.o+aaa....+^^*+++9++~~.....+..+p..~=~~~~~~",
-            "..h.h..h.h~~~~T..TTTT++++++^T.....~~~~~~~~..~~~~~...T....+++5++~~.oaaaa.+###++7++....^....~~...p.B+++pp~~=~~~~~~",
-            ".ff...f...~~~~.TTT.TTT....TTT^^...~~.~~~~~~~~~~~~.T..TTT..T....~~T.aaaaaaaaaa....^.^..^.^^~~p.p.....p.~~~=~~..~~",
-            ".hl..h..h.~~~.TTTTTT..T.T.T.T....^~~..~~~~~~~~~~f...ff..TTTT..T~~Taaaaaaaaaa..^^^..^^..^^.~~R.p..p...~~~~===D..~",
-            "~~~~~~~.~.~~~.~~~.~~~~~~TT.T..T^^~~~~~~~~~~~~~~f~~~~.~~~~~T.h.T~~T.aaaaaaaaa....*^^~~~~~~~~~~p...~~~~~~~~~~~..~~",
+            "~~........~~~~~~~TT...TTTTT~~~~...~~~....T~~T.T~~n~...........~~~~..~~~~~~~..~~^.^~~~~^...~~~o~~~~~~~.pp^^.p..^~",
+            "h.........~~~~.....TTT.TT..TT^....~~...f.f.T.....Tf..........R.~~..~~n~~~~~~...^....^.^^^^~~~~~~o~~R...^.p.p^p..",
+            "..........~~~.T....T.TTTT.TTT..T..~~...T..Tf.T.T..T............~~.~~~~~o~~n~~.^^^.L..^^^^.~~~o~~~~~p^....p......",
+            ".....K....~~~..T..T..TTTTT.TT....T~~......f......f............+==++===+..~~~.o^^^......^^^~~~A+++p.......p......",
+            ".h.....h.h~~~.T.......T..TT..T....~~.f...f...f...ff....M......+~~..~~~+.o~~n..^o++8++^....~~~+..+.....C+++......",
+            "..........~~~TTT...T.T....T....^^.~~f...f.....f....f.......h..+~~..~~.+..~~~o.^.+...+.^^.^~~~+p.+.p...+..+......",
+            "h.......1+===++++++++2++++++++++++==3+++=====++++++4++++++....+~~oR~~~+..~~...^o+.^^+....+==++.p+pRpp.+.p+..Y..~",
+            "..........~~~..TT.T.T....TTTT....^~~+.~~~~~~~~~~..fff....+.hfh+~~..o~~+6+~~~...o+...+....+~~.p.p++..+++pp+..~~~~",
+            ".h.h..h.h.~~~.TT..TT........T....^~~+~~~~~..~~~~~f.ffff..+....+~~R.~n~..+~~~o...+^^.+^...+~~.pRp.+..+ppR.+~~~~~~",
+            "....f.....~~~~TTTTTT.T.....TT^^.^.~~=====+S..~~~~...f.f..+f...+~~..~~~.o+~~~....+^^*+++9++~~....T+..+p..~=~~~~~~",
+            "..h.h..h.h~~~~T..TTTT..T..T^T.....~~~~~~~~..~~~~~...T....+++5++~~.o~~~~.+===++7++....^....~~.T.T.B+++pp~~=~~~~~~",
+            ".ff...f...~~~~.TTT.TTT....TTT^^...~~.~~~~~~~~~~~~.T..TTT..T....~~T.~~~n~~~~~~....^.^..^.^^~~~~~~~~~~~~~~~=~~~~~~",
+            ".hl..h..h.~~~.TTTTTT..T.T.T.T....^~~..~~~~~~~~~~f...ff..TTTT..T~~T~~~~~~~~n~..^^^..^^..^^.~~R~~~~~~~~~~~~===D~~~",
+            "~~~~~~~.~.~~~.~~~.~~~~~~TT.T..T^^~~~~~~~~~~~~~~f~~~~.~~~~~T.h.T~~T.~~~~~~~~~....*^^~~~~~~~~~~~~~~~~~~~~n~~~~~~~~",
             "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~T~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
             "~~~~~~~n~~~~~~~~~~~~~.T~~~~n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~n~~~~~~~~~~~~~",
             "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.T~~~~~~~n~~~~~~~~~~~~~~~~~~~~~~~~~~~",
@@ -75,13 +75,14 @@ public class MapaDoMundo : MonoBehaviour
     // O "personagem" de cada fase, que fica do lado do ponto (o primeiro é o da fase 1).
     static readonly string[] Personagens =
     {
-        "louro", "serra", "rato", "ancora", "esmagador", "plataforma", "faca",
+        "louro", "serra", "rato", "ancora", "esmagador", "mapa_navio", "faca",
         "fantasma", "vento", "baleia", "tsunami", "bandeira_falsa", "kraken",
     };
 
     // Os personagens têm tamanhos bem diferentes (o Louro tem 1 bloco; a Baleia, uns 6!).
     // Cada um encolhe até caber numa "caixinha" do lado do ponto (veja ArrumarPersonagem).
     const float EscalaDosPersonagens = 0.8f, LarguraMaxima = 2f, AlturaMaxima = 1.4f;
+    const float LarguraDoNumero = 0.62f; // o miolo branco do círculo da fase (em blocos)
 
     public static int Largura => Desenho[0].Length;
     public static int Altura => Desenho.Length;
@@ -90,8 +91,8 @@ public class MapaDoMundo : MonoBehaviour
 
     // Regiões com o chão de outro jeito (números = colunas do Desenho): a ArteDoMapa pinta a terra seca
     // e a terra sombria a partir daqui, com a borda ondulada.
-    const int InicioDoDesfiladeiro = 64, FimDoDesfiladeiro = 79; // terra seca em volta do abismo
-    const int InicioDaSombra = 88;                                 // daqui para a direita: a terra morta da região sombria
+    const int InicioDoDesfiladeiro = 64, FimDoDesfiladeiro = 89; // terra seca: a baía, a gruta, o navio fantasma e o deserto do penhasco (9)
+    const int InicioDaSombra = 90;                                 // daqui para a direita: a terra morta da região sombria
     static readonly Color TomDaSombra = new Color(0.62f, 0.55f, 0.78f); // os enfeites da região sombria ficam mais escuros
 
     static readonly Color CorConcluida = new Color(0.45f, 0.95f, 0.45f);
@@ -108,7 +109,7 @@ public class MapaDoMundo : MonoBehaviour
     // As sombras dos enfeites (árvores, casas...) ficam embaixo de TODOS os enfeites: uma sombra nunca cobre a árvore da frente.
     const int OrdemDoChao = -16, OrdemDaAgua = -14, OrdemDoCaminho = -13, OrdemDasSombras = -11;
 
-    public float velocidade = 7f; // blocos por segundo andando no mapa
+    public float velocidade = 14f; // blocos por segundo andando no mapa
 
     public Transform Grumete { get; private set; }
     public int Selecionado { get; private set; }
@@ -122,6 +123,7 @@ public class MapaDoMundo : MonoBehaviour
     NevoaDoMapa nevoa;  // null = sem névoa (o mapa todo descoberto)
     VidaDoMapa vida;    // quem anima a água, a fumaça, as bandeiras, os bichinhos...
     SpriteRenderer[] desenhosDosPontos;
+    float[] tamanhoDosPontos; // 1, ou maior nos pontos de dois dígitos (o círculo cresce para caber o número)
     Transform[] personagens;
     Vector3[] ladoDoPersonagem; // onde cada personagem fica, em relação ao ponto dele
     SpriteRenderer desenhoDoGrumete;
@@ -258,16 +260,28 @@ public class MapaDoMundo : MonoBehaviour
         // Pontos, números e personagens.
         int n = pontos.Count;
         desenhosDosPontos = new SpriteRenderer[n];
+        tamanhoDosPontos = new float[n];
         personagens = new Transform[n];
         ladoDoPersonagem = new Vector3[n];
         for (int i = 0; i < n; i++)
         {
             desenhosDosPontos[i] = ConstrutorDeFase.Visual("Ponto " + (i + 1), transform, Mundo(pontos[i]), "no_mapa", 2).GetComponent<SpriteRenderer>();
+            tamanhoDosPontos[i] = 1f;
             var numero = new GameObject("Numero");
             numero.transform.SetParent(desenhosDosPontos[i].transform, false);
             var desenhoNumero = numero.AddComponent<SpriteRenderer>();
             desenhoNumero.sprite = FabricaDeSprites.SpriteDeTexto((i + 1).ToString(), new Color32(20, 20, 28, 255), new Color32(255, 255, 255, 0));
             desenhoNumero.sortingOrder = 3;
+            // "10" a "13" são mais largos que o círculo: o CÍRCULO cresce para caber o número (o número fica no tamanho
+            // de sempre: encolher a fonte pixel deixava os dígitos tortos)
+            float larguraDoNumero = desenhoNumero.sprite.bounds.size.x;
+            if (larguraDoNumero > LarguraDoNumero)
+            {
+                float cresce = larguraDoNumero / LarguraDoNumero;
+                tamanhoDosPontos[i] = cresce;
+                desenhosDosPontos[i].transform.localScale = Vector3.one * cresce;
+                numero.transform.localScale = Vector3.one / cresce;
+            }
 
             var personagem = ConstrutorDeFase.Visual("Personagem", transform, Mundo(pontos[i]), DesenhoDoPersonagem(i), 9);
             personagens[i] = personagem.transform;
@@ -827,7 +841,7 @@ public class MapaDoMundo : MonoBehaviour
             }
             else Revelar(pontos[destino], RaioDoPonto);
             GerenciadorDoJogo.Som("mola", 0.6f);
-            yield return Nascer(desenhosDosPontos[destino].transform);
+            yield return Nascer(desenhosDosPontos[destino].transform, tamanhoDosPontos[destino]);
             nascendo = -1;
             yield return new WaitForSeconds(0.3f);
         }
@@ -836,14 +850,14 @@ public class MapaDoMundo : MonoBehaviour
     }
 
     // O ponto "nasce" com um pulinho e um pouco de poeira.
-    IEnumerator Nascer(Transform ponto)
+    IEnumerator Nascer(Transform ponto, float tamanho = 1f)
     {
         for (float t = 0f; t < 0.35f; t += Time.deltaTime)
         {
-            ponto.localScale = Vector3.one * Mathf.Sin(t / 0.35f * Mathf.PI * 0.75f) / 0.7071f;
+            ponto.localScale = Vector3.one * tamanho * Mathf.Sin(t / 0.35f * Mathf.PI * 0.75f) / 0.7071f;
             yield return null;
         }
-        ponto.localScale = Vector3.one;
+        ponto.localScale = Vector3.one * tamanho;
         Efeitos.Poeira(transform, ponto.position, 8, 2.5f);
     }
 
@@ -862,7 +876,7 @@ public class MapaDoMundo : MonoBehaviour
 
             // o ponto em que o Grumete está "pulsa" de leve
             if (i != nascendo)
-                desenhosDosPontos[i].transform.localScale = Vector3.one * (i == Selecionado && !Andando ? 1f + 0.08f * Mathf.Sin(Time.time * 6f) : 1f);
+                desenhosDosPontos[i].transform.localScale = Vector3.one * tamanhoDosPontos[i] * (i == Selecionado && !Andando ? 1f + 0.08f * Mathf.Sin(Time.time * 6f) : 1f);
         }
 
         // a fase secreta: a moeda gira em cima do ponto, e o ponto pulsa quando o Grumete está nele

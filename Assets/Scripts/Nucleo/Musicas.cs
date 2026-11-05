@@ -9,14 +9,16 @@ using System.Collections.Generic;
 //  - Fases:             "Jiga do Grumete": ré menor, 6/8, dança de taverna (forma AABB), acordeão e apito.
 //                       Cada fase toca num tom um pouco diferente (veja FabricaDeMusica.DaFase).
 //  - Mapa:              "Balada do Arquipélago": lá menor, 3/4, violão dedilhado, ondas e o sino.
-//  - Capitã:           mi menor, 160 bpm, 4/4. Gancho no ritmo 3-3-2 no acordeão, violino e violão "girando".
+//  - Capitã:           "Reel da Âncora": um reel irlandês em mi dórico, 168 bpm. Rabeca e apito em colcheias corridas,
+//                       tambor de mão, pisadas, palmas e violão batido (a luta com cara de taverna).
 //  - Cozinheira:        dó menor, 6/8 (uma valsa sombria e rápida), acordeão + violino + caixinha de música.
 //  - Capitã (fase 4), Cozinheira (fase 7) e Baleia (fase 10): veja cada uma abaixo.
-//  - Baleia:            ré menor, 172 bpm. Estalos de orquestra, coro, baixo "galopando", o canto da baleia
-//                       (notas que deslizam) e, na segunda vez do gancho, a música sobe um tom.
-//  - Kraken (fase 13, o chefe final): fá FRÍGIO (a escala menor com o segundo grau abaixado: o som "do fundo do mar"),
-//                       150 bpm. Tímpanos, coro, o "lamento" da lula (notas deslizando para baixo) e um riff que
-//                       se enrola como um tentáculo (fá, sol bemol, fá). Na volta do gancho, tudo sobe meio tom.
+//  - Baleia:            "Leviatã": uma marcha orquestral lenta em ré menor, 120 bpm. Tímpanos e caixa marcial, estalos
+//                       de orquestra, violino e coro no gancho, pizzicato, o baixo "galopando" e o canto da baleia.
+//                       Na segunda vez do gancho, a música sobe um tom.
+//  - Kraken (fase 13, o chefe final): "Oito Braços", em 7/8 (o compasso que "manca") e si bemol FRÍGIO, 156 bpm:
+//                       um cravo martelando um ostinato, a quadrada fina na melodia, coro, pizzicato, tímpanos e o
+//                       "lamento" da lula (notas deslizando) na ponte. Sem acordeão: não lembra os outros chefes.
 //
 // Este arquivo NÃO usa a Unity (só C# puro): assim dá para gerar as músicas num programa de teste fora da
 // Unity e ouvir os WAVs. Quem transforma o resultado num AudioClip é a FabricaDeMusica.
@@ -65,6 +67,7 @@ public static class Musicas
 
     static readonly int[] Menor = { 0, 2, 3, 5, 7, 8, 10 }; // escala menor natural
     static readonly int[] Frigio = { 0, 1, 3, 5, 7, 8, 10 }; // menor com o 2º grau meio tom abaixo (sombrio, "de outro mundo")
+    static readonly int[] Dorico = { 0, 2, 3, 5, 7, 9, 10 };  // menor com o 6º grau maior (o som das danças de marinheiro)
 
     // Repete um padrão de um compasso "vezes" vezes (para pôr uma virada de bateria só no último).
     static string Vezes(string padrao, int vezes)
@@ -74,74 +77,75 @@ public static class Musicas
         return string.Join(" | ", partes);
     }
 
-    // ---------------------------------------------------------------- CAPITÃ (fase 4): "Âncora Giratória"
+    // ---------------------------------------------------------------- CAPITÃ (fase 4): "Reel da Âncora"
+    // Um REEL (a dança rápida dos marinheiros irlandeses) em mi DÓRICO: a rabeca e o apito em colcheias corridas,
+    // sem parar, o tambor de mão, as pisadas no convés e as palmas da tripulação, o violão batendo os acordes.
+    // Sem acordeão e sem a quadrada: é a única luta com cara de taverna (a Capitã é a pirata mais "pirata" de todas).
     static Partitura Capita()
     {
-        var m = new Partitura(bpm: 160f, passosPorCompasso: 16, tonica: 4, escala: Menor) // mi menor
+        var m = new Partitura(bpm: 168f, passosPorCompasso: 16, tonica: 4, escala: Dorico) // mi dórico
         {
-            eco = 0.22f, sala = 0.1f, bombear = 0.18f,
+            eco = 0.16f, sala = 0.12f, bombear = 0.12f,
         };
-        const string rock = "kfh . h . shx . h . kh . kfh . shx . h h"; // com pisadas no convés e palmas
-        const string corrida = "kfh h h h kshx h h h kfh h h h kshx h h h"; // bumbo em todo tempo (parte B)
-        const string virada = "kh . h . sh . h . t t t t m m S S";
+        const string roda = "bf . b . xb . b . bf . b . xb . b b";            // o tambor de mão e as palmas
+        const string rodaForte = "bfk . b . xbs . b . bfk . b . xbs . b b";   // com bumbo e caixa
+        const string virada = "b b b b xb xb xb xb t t m m S S S S";
+        const string batida = "x . . x . . x . x . . x . . x .";               // o violão "batendo"
+        const string baixo = "1 . . . 5 . . . 8 . . . 5 . . .";
 
-        // O gancho: nota repetida no ritmo 3-3-2 e um salto para cima.
-        const string gancho =
-            "e5 - . e5 - . g5 - b5 - . a5 - . g5 - | e5 - . e5 - . g5 - c6 - - - b5 - g5 - | " +
-            "d5 - . d5 - . f#5 - a5 - . g5 - . f#5 - | d#5 - . d#5 - . f#5 - b5 - - - a5 - f#5 - | " +
-            "e5 - . e5 - . g5 - b5 - . a5 - . g5 - | e5 - . e5 - . g5 - c6 - - - d6 - e6 - | " +
-            "e6 - . d6 - . c6 - b5 - . a5 - . f#5 - | g5 - f#5 - e5 - - - - - . . b4 - d5 -";
-        const string acordesDoGancho = "Em C D B7 Em C Am,D Em";
+        // A: a volta do reel (cada nota uma colcheia), em mi e ré.
+        const string volta =
+            "e5 - b4 - e5 - f#5 - g5 - f#5 - e5 - d5 - | d5 - a4 - d5 - e5 - f#5 - e5 - d5 - a4 - | " +
+            "e5 - b4 - e5 - f#5 - g5 - a5 - b5 - g5 - | a5 - f#5 - d5 - e5 - f#5 - d5 - a4 - d5 - | " +
+            "e5 - b4 - e5 - f#5 - g5 - f#5 - e5 - d5 - | d5 - a4 - d5 - e5 - f#5 - a5 - d6 - a5 - | " +
+            "b5 - g5 - d5 - g5 - a5 - f#5 - d5 - f#5 - | e5 - - - b4 - e5 - e5 - - - . . . .";
+        const string acordesDaVolta = "Em D Em D Em D G,D Em";
+        // B: a "virada" lá no alto (o lá maior do dórico dá o brilho).
+        const string alto =
+            "b5 - d6 - b5 - a5 - g5 - a5 - b5 - g5 - | a5 - c#6 - e6 - c#6 - a5 - e5 - c#5 - e5 - | " +
+            "g5 - b5 - e6 - b5 - g5 - e5 - b4 - e5 - | f#5 - a5 - d6 - a5 - f#5 - d5 - a4 - d5 - | " +
+            "b5 - d6 - b5 - a5 - g5 - a5 - b5 - d6 - | e6 - c#6 - a5 - c#6 - e6 - f#6 - e6 - c#6 - | " +
+            "e6 - d6 - c6 - b5 - a5 - b5 - c6 - a5 - | b5 - - - g5 - e5 - e5 - - - . . . .";
+        const string acordesDoAlto = "G A Em D G A C,D Em";
 
-        // INTRO: o riff do baixo sozinho, com a bateria.
+        // INTRO: o tambor de mão sozinho, o sino do navio e o violão chamando a roda.
         m.Parte(2, "Em Em")
-            .Notas(Timbre.Baixo, Bus.Seco, 1.1f,
-                "e2 - e3 . e2 - d3 . e2 - c3 . e2 - b2 . | e2 - e3 . e2 - d3 . e2 - c3 . b2 - d#3 -")
-            .Notas(Timbre.Baixo, Bus.Seco, 0.45f,
-                "e3 - e4 . e3 - d4 . e3 - c4 . e3 - b3 . | e3 - e4 . e3 - d4 . e3 - c4 . b3 - d#4 -")
-            .Bateria("kcg . . . s . . . k . k . s . . . | k . . . s . . . k . k . s s s S"); // o sino do navio abre a luta
+            .DosAcordes(Timbre.Violao, Bus.Seco, 0.9f, 3, batida)
+            .Bateria("bfg . . b . . b . bf . . b . . b b | bf . . b . . b . t t m m S S S S");
 
-        // A: o gancho.
-        m.Parte(8, acordesDoGancho)
-            .Notas(Timbre.Acordeao, Bus.Eco, 1f, gancho)
-            .Notas(Timbre.Quadrada, Bus.Eco, 0.4f, gancho)
-            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, "1 . 8 . 1 . 8 . 1 . 8 . 1 . 8 .")
-            .DosAcordes(Timbre.Violao, Bus.Seco, 0.85f, 4, "1 5 8 5 10 5 8 5")
-            .Bateria(Vezes(rock, 7) + " | " + virada, prato: true);
+        // A: a rabeca puxa a volta, o apito vai junto.
+        m.Parte(8, acordesDaVolta)
+            .Notas(Timbre.Violino, Bus.Eco, 1f, volta)
+            .Notas(Timbre.Apito, Bus.Eco, 0.5f, volta)
+            .DosAcordes(Timbre.Violao, Bus.Seco, 0.9f, 3, batida)
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 0.9f, 2, baixo)
+            .Bateria(Vezes(roda, 7) + " | " + virada);
 
-        // B: a Capitã fica brava. Riff "girando" em semicolcheias embaixo e uma melodia longa por cima.
-        m.Parte(8, "C D Em Em C D B B")
-            .Notas(Timbre.Violino, Bus.Eco, 1.7f,
-                "e5 - - - - - - - g5 - - - - - c6 - | b5 - - - - - - - a5 - - - f#5 - d5 - | " +
-                "e5 - - - - - - - g5 - - - b5 - - - | e6 - - - - - - - d6 - - - b5 - - - | " +
-                "c6 - - - - - - - b5 - - - g5 - e5 - | f#5 - - - - - - - a5 - - - d6 - - - | " +
-                "d#6 - - - - - - - b5 - - - f#5 - - - | a5 - - - - - - - f#5 - - - d#5 - - -")
-            .Notas(Timbre.Violao, Bus.Seco, 0.9f,
-                "g4 e4 c4 e4 g4 e4 c4 e4 a4 e4 c4 e4 g4 e4 c4 e4 | f#4 d4 a3 d4 f#4 d4 a3 d4 a4 f#4 d4 f#4 b4 a4 f#4 d4 | " +
-                "g4 e4 b3 e4 g4 e4 b3 e4 b4 g4 e4 g4 b4 g4 e4 g4 | e5 - - - d5 - - - b4 - - - g4 - a4 - | " +
-                "g4 e4 c4 e4 g4 e4 c4 e4 a4 e4 c4 e4 g4 e4 c4 e4 | f#4 d4 a3 d4 f#4 d4 a3 d4 a4 f#4 d4 f#4 b4 a4 f#4 d4 | " +
-                "f#4 d#4 b3 d#4 f#4 d#4 b3 d#4 a4 f#4 d#4 f#4 b4 a4 f#4 d#4 | b4 - - - - - - - a4 - - - f#4 - d#4 -")
-            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, "1 - 1 - 8 - 1 - 1 - 8 - 1 - 8 -")
-            .Acordes(Timbre.Pad, Bus.Sala, 0.8f, 3)
-            .Bateria(Vezes(corrida, 7) + " | ksh . ksh . ksh . ksh . t t m m S S S S", prato: true);
+        // A': de novo, com o apito uma oitava acima e a segunda voz na rabeca.
+        m.Parte(8, acordesDaVolta)
+            .Notas(Timbre.Violino, Bus.Eco, 1f, volta)
+            .Harmonia(Timbre.Violino, Bus.Sala, 0.55f, volta)
+            .Notas(Timbre.Apito, Bus.Eco, 0.45f, volta, transpor: 12)
+            .DosAcordes(Timbre.Violao, Bus.Seco, 0.9f, 3, batida)
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, baixo)
+            .Bateria(Vezes(rodaForte, 7) + " | " + virada, prato: true);
 
-        // A': o gancho de novo, com uma segunda voz uma terça abaixo e um brilho uma oitava acima.
-        m.Parte(8, acordesDoGancho)
-            .Notas(Timbre.Acordeao, Bus.Eco, 1f, gancho)
-            .Notas(Timbre.Quadrada, Bus.Eco, 0.4f, gancho)
-            .Harmonia(Timbre.Violino, Bus.Sala, 0.8f, gancho)
-            .Notas(Timbre.Apito, Bus.Eco, 0.35f, gancho, transpor: 12)
-            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, "1 . 8 . 1 . 8 . 1 . 8 . 1 . 8 .")
-            .DosAcordes(Timbre.Violao, Bus.Seco, 0.75f, 4, "1 5 8 5 10 5 8 5")
-            .Bateria(Vezes(rock, 7) + " | " + virada, prato: true);
+        // B: a virada lá no alto, na rabeca, com o apito fazendo a segunda voz.
+        m.Parte(8, acordesDoAlto)
+            .Notas(Timbre.Violino, Bus.Eco, 1f, alto)
+            .Harmonia(Timbre.Apito, Bus.Sala, 0.45f, alto)
+            .DosAcordes(Timbre.Violao, Bus.Seco, 0.9f, 3, batida)
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, baixo)
+            .Bateria(Vezes(rodaForte, 7) + " | " + virada, prato: true);
 
-        // C: respiro. Só os acordes, o arpejo e a bateria em meio-tempo... crescendo para voltar ao riff.
-        m.Parte(4, "C D Em Em")
-            .Acordes(Timbre.Pad, Bus.Sala, 1f, 3)
-            .DosAcordes(Timbre.Violao, Bus.Seco, 0.85f, 4, "1 5 8 12 10 8 5 3")
-            .DosAcordes(Timbre.Baixo, Bus.Seco, 0.9f, 2, "1 - - - - - - - 1 - - - 8 - - -")
-            .Bateria("kc . . . . . . . s . . . . . . . | k . . . . . . . s . . . . . . . | " +
-                     "k . s . k . s . k s k s k s s s | s s s s s s s s S S S S S S S S");
+        // B': a virada de novo, com o sino do navio marcando e a tripulação batendo palmas.
+        m.Parte(8, acordesDoAlto)
+            .Notas(Timbre.Violino, Bus.Eco, 1f, alto)
+            .Notas(Timbre.Apito, Bus.Eco, 0.45f, alto, transpor: 12)
+            .DosAcordes(Timbre.Sino, Bus.Sala, 0.4f, 5, "1 . . . . . . . 5 . . . . . . .")
+            .DosAcordes(Timbre.Violao, Bus.Seco, 0.9f, 3, batida)
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, baixo)
+            .Bateria(Vezes(rodaForte, 7) + " | " + virada, prato: true);
         return m;
     }
 
@@ -209,14 +213,17 @@ public static class Musicas
     }
 
     // ---------------------------------------------------------------- BALEIA (fase 10): "Leviatã"
+    // Uma MARCHA orquestral lenta e enorme (o tamanho da baleia): tímpanos e caixa marcial, estalos de orquestra,
+    // o coro cantando junto com o violino, o pizzicato e o canto da baleia (notas que deslizam). É a única com o baixo
+    // "galopando". Nada de acordeão, apito ou quadrada (essas ficam com as outras lutas).
     static Partitura Baleia()
     {
-        var m = new Partitura(bpm: 172f, passosPorCompasso: 16, tonica: 2, escala: Menor) // ré menor
+        var m = new Partitura(bpm: 120f, passosPorCompasso: 16, tonica: 2, escala: Menor) // ré menor
         {
             eco = 0.2f, sala = 0.14f, bombear = 0.42f,
         };
-        const string pista = "kh h h h ksh h h h kh h h h ksh h h h"; // bumbo em todo tempo
-        const string rock = "kh . h . sh . h . kh . kh . sh . h h";
+        const string pista = "kp . s . s s s . kp . s . s s S ."; // a marcha: tímpano e caixa marcial
+        const string rock = "kp . . . S . . . kp . kp . S . s s";  // meio-tempo, pesado
         const string galope = "1 . 1 1 8 . 8 8 1 . 1 1 8 . 8 8";
 
         // O gancho: salto de oitava no ritmo 3-3-3-3-2-2 (e a sequência um semitom acima, no Mi bemol).
@@ -226,7 +233,7 @@ public static class Musicas
             "f5 - . bb5 - . d6 - . c6 - . bb5 - a5 - | g5 - . bb5 - . d6 - . c6 - . bb5 - g5 - | " +
             "a5 - - - e6 - - - c#6 - - - a5 - - - | c#5 - d5 - e5 - f5 - g5 - a5 - bb5 - c#6 -";
         const string acordesDoGancho = "Dm Eb Dm Eb Bb Gm A A";
-        const string viradaDoGancho = "kh h h h ksh h h h t t t t m m S S";
+        const string viradaDoGancho = "kp . s s s s s s p p p p S S S S";
 
         // INTRO: BRAM! Estalos de orquestra, tímpanos, o coro... e o canto da baleia deslizando.
         m.Parte(4, "Dm Eb Dm A")
@@ -241,11 +248,11 @@ public static class Musicas
 
         // A: o gancho, com o baixo galopando e o "bombeado" do bumbo nos acordes.
         m.Parte(8, acordesDoGancho)
-            .Notas(Timbre.Acordeao, Bus.Eco, 1f, gancho)
-            .Notas(Timbre.Quadrada, Bus.Eco, 0.4f, gancho)
-            .Notas(Timbre.Apito, Bus.Eco, 0.45f, gancho, transpor: 12)
+            .Notas(Timbre.Violino, Bus.Eco, 1f, gancho)
+            .Notas(Timbre.Coro, Bus.Sala, 0.7f, gancho, transpor: -12)
+            .DosAcordes(Timbre.Estalo, Bus.Sala, 0.5f, 4, "x - - - . . . . . . . . . . . .")
             .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, galope)
-            .DosAcordes(Timbre.Violao, Bus.Seco, 0.8f, 4, "1 5 8 10 12 10 8 5")
+            .DosAcordes(Timbre.Pizzicato, Bus.Seco, 0.8f, 3, "1 . 5 . 8 . 5 . 1 . 5 . 8 . 10 .")
             .Acordes(Timbre.Pad, Bus.Sala, 0.8f, 3)
             .Bateria(Vezes(pista, 7) + " | " + viradaDoGancho, prato: true);
 
@@ -256,20 +263,20 @@ public static class Musicas
             "c#6 - - - - - - - e6 - - - - - - - | a5 - - - - - - - . . . . . . . .";
         m.Parte(8, "Bb C Dm Dm Bb C A A")
             .Notas(Timbre.Violino, Bus.Eco, 1f, voo)
-            .Notas(Timbre.Acordeao, Bus.Sala, 0.6f, voo, transpor: -12)
+            .Notas(Timbre.Canto, Bus.Sala, 0.5f, voo, transpor: -12)
             .Acordes(Timbre.Coro, Bus.Sala, 1f, 3)
             .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, "1 - 8 - 1 - 8 - 1 - 8 - 1 - 8 -")
-            .DosAcordes(Timbre.Violao, Bus.Seco, 0.75f, 4, "1 5 8 10 12 10 8 5")
+            .DosAcordes(Timbre.Pizzicato, Bus.Seco, 0.75f, 3, "1 . 5 . 8 . 5 . 1 . 5 . 8 . 10 .")
             .Bateria(Vezes(rock, 7) + " | ksh . ksh . ksh . ksh . t t t t S S S S", prato: true);
 
         // A2: o gancho UM TOM ACIMA (mi menor), com uma segunda voz uma terça abaixo. É o clímax.
         m.Parte(8, acordesDoGancho, transpor: 2)
-            .Notas(Timbre.Acordeao, Bus.Eco, 1f, gancho)
-            .Notas(Timbre.Quadrada, Bus.Eco, 0.4f, gancho)
-            .Harmonia(Timbre.Violino, Bus.Sala, 0.8f, gancho)
-            .Notas(Timbre.Apito, Bus.Eco, 0.4f, gancho, transpor: 12)
+            .Notas(Timbre.Violino, Bus.Eco, 1f, gancho)
+            .Notas(Timbre.Coro, Bus.Sala, 0.8f, gancho, transpor: -12)
+            .Harmonia(Timbre.Violino, Bus.Sala, 0.7f, gancho)
+            .Notas(Timbre.Sino, Bus.Sala, 0.35f, gancho, transpor: 12)
+            .DosAcordes(Timbre.Estalo, Bus.Sala, 0.6f, 4, "x - - - . . . . x - - - . . . .")
             .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, galope)
-            .DosAcordes(Timbre.Violao, Bus.Seco, 0.75f, 4, "1 5 8 10 12 10 8 5")
             .Acordes(Timbre.Pad, Bus.Sala, 0.8f, 3)
             .Bateria(Vezes(pista, 7) + " | " + viradaDoGancho, prato: true);
 
@@ -285,82 +292,76 @@ public static class Musicas
         return m;
     }
 
-    // ---------------------------------------------------------------- KRAKEN (fase 13, chefe final): "Abraço do Abismo"
+    // ---------------------------------------------------------------- KRAKEN (fase 13, chefe final): "Oito Braços"
+    // Diferente de propósito das outras três: em 7/8 (o compasso "manca": 2 + 2 + 3, como tentáculos se arrastando),
+    // si bemol FRÍGIO (o segundo grau abaixado: o som de "outro mundo"), um CRAVO martelando um ostinato, uma quadrada
+    // fina cantando a melodia, coro, pizzicato e tímpanos. Sem acordeão, sem o baixo galopando, sem bumbo em todo tempo.
     static Partitura Kraken()
     {
-        var m = new Partitura(bpm: 150f, passosPorCompasso: 16, tonica: 5, escala: Frigio) // fá frígio
+        var m = new Partitura(bpm: 156f, passosPorCompasso: 14, tonica: 10, escala: Frigio) // si bemol frígio, 7/8
         {
-            eco = 0.24f, sala = 0.18f, bombear = 0.36f,
+            eco = 0.26f, sala = 0.2f, bombear = 0.22f,
         };
-        const string pista = "kh h h h ksh h h h kh h h h ksh h h h"; // bumbo em todo tempo
-        const string rock = "kh . h . sh . h . kh . kh . sh . h h";
-        const string virada = "kh h h h ksh h h h t t t t m m S S";
-        const string galope = "1 . 1 1 8 . 8 8 1 . 1 1 8 . 8 8";
-        // o riff "tentáculo": fá, sol bemol, fá (o meio tom do frígio), enrolando para baixo
-        const string tentaculo = "1 - 1 . 8 . 1 - 1 . 8 . 7 . 5 .";
+        // 14 semicolcheias por compasso, agrupadas 4 + 4 + 6 (o "2 + 2 + 3" do 7/8)
+        const string arrasto = "kp . t . kh . t . ksh . t t . m";
+        const string arrastoForte = "kp . h . ks . h . kp . ks . S S";
+        const string virada = "m m t t m m t t S S S S S S";
+        const string meioTempo = "k . . . s . . . k . k . s .";
+        const string ostinato = "1 5 8 5 1 5 8 5 1 5 8 10 8 5";   // o cravo, sem parar
+        const string ancora = "1 - 1 - 1 - 1 - 1 - - 8 - -";      // o baixo batendo no 2 + 2 + 3
 
-        // O gancho: a nota repetida que "agarra" (3-3), cai meio tom e escorrega para baixo.
         const string gancho =
-            "f5 - . f5 - . ab5 - gb5 - f5 - c5 - . . | gb5 - . gb5 - . bb5 - ab5 - gb5 - db5 - . . | " +
-            "f5 - . f5 - . ab5 - c6 - - - bb5 - ab5 - | g5 - - - e5 - - - c5 - - - bb4 - - - | " +
-            "f5 - . f5 - . ab5 - gb5 - f5 - c6 - . . | db6 - . db6 - . c6 - bb5 - ab5 - gb5 - . . | " +
-            "eb6 - - - db6 - - - bb5 - - - ab5 - - - | g5 - - - - - - - e5 - f5 - g5 - c6 -";
-        const string acordesDoGancho = "Fm Gb Fm C7 Fm Gb Ebm,Db C";
+            "f5 - bb5 - f5 - db5 - - - c5 - db5 - | b4 - d#5 - f#5 - - - d#5 - b4 - . . | " +
+            "gb5 - f5 - db5 - - - bb4 - db5 - gb5 - | f5 - - - e5 - f5 - a5 - - - c6 - | " +
+            "f5 - bb5 - f5 - db5 - - - c5 - db5 - | b4 - d#5 - f#5 - b5 - - - a#5 - f#5 - | " +
+            "gb5 - - - f5 - eb5 - - - db5 - eb5 - | f5 - - - - - - - . . c5 - e5 -";
+        const string acordesDoGancho = "Bbm B Gb F Bbm B Ebm F";
 
-        // INTRO: tímpanos, o coro e o LAMENTO da lula (a nota desliza, como um gemido debaixo d'água).
-        m.Parte(4, "Fm Gb Fm C7")
-            .DosAcordes(Timbre.Estalo, Bus.Sala, 1f, 4, "x - - - - - - - . . . . . . . .")
-            .Acordes(Timbre.Coro, Bus.Sala, 0.9f, 3)
-            .Notas(Timbre.Canto, Bus.Sala, 1f,
-                "c5>f4 - - - - - - - - - - - - - - - | db5>gb4 - - - - - - - - - - - - - - - | " +
-                "ab4>f5 - - - - - - - - - - - - - - - | . . . . . . . . . . . . . . . .")
-            .DosAcordes(Timbre.Baixo, Bus.Seco, 0.9f, 2, "1 - - - - - - - - - - - - - - -")
-            .Bateria("pcg . . . . . . . . . . . . . . . | p . . . . . . . p . . . . . . . | " +
-                     "pc . . . . . . . . . . . . . . . | m . m . t . t . m m t t S S S S");
+        // INTRO: os sinos e o coro lá no fundo, e os tímpanos chegando.
+        m.Parte(2, "Bbm Bbm")
+            .DosAcordes(Timbre.Sino, Bus.Sala, 0.8f, 5, "1 . 5 . 8 . 5 . 1 . 5 . 10 .")
+            .Acordes(Timbre.Coro, Bus.Sala, 0.8f, 3)
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 0.8f, 2, "1 - - - - - - - - - - - - -")
+            .Bateria("p . . . p . . . p . . . m m | p . . . p . . . m m t t S S");
 
-        // A: o gancho no acordeão e na quadrada, com o riff "tentáculo" no baixo.
+        // A: o gancho na quadrada fina, com o cravo martelando e o baixo no 2 + 2 + 3.
         m.Parte(8, acordesDoGancho)
-            .Notas(Timbre.Acordeao, Bus.Eco, 1f, gancho)
-            .Notas(Timbre.Quadrada, Bus.Eco, 0.45f, gancho)
-            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, tentaculo)
-            .DosAcordes(Timbre.Violao, Bus.Seco, 0.75f, 4, "1 5 8 5 10 5 8 5")
-            .Acordes(Timbre.Pad, Bus.Sala, 0.7f, 3)
-            .Bateria(Vezes(pista, 7) + " | " + virada, prato: true);
+            .Notas(Timbre.QuadradaFina, Bus.Eco, 1f, gancho)
+            .Notas(Timbre.Violino, Bus.Sala, 0.35f, gancho, transpor: -12)
+            .DosAcordes(Timbre.Cravo, Bus.Seco, 0.8f, 4, ostinato)
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, ancora)
+            .Bateria(Vezes(arrasto, 7) + " | " + virada, prato: true);
 
-        // B: o violino sobe lá no alto, com o coro atrás e o baixo galopando.
-        const string mar =
-            "ab5 - - - - - - - db6 - - - - - c6 - | bb5 - - - - - - - g5 - - - - - eb5 - | f5 - - - - - - - - - - - - - - - | " +
-            ". . . . c6 - bb5 - ab5 - - - f5 - g5 - | ab5 - - - - - - - db6 - - - f6 - - - | eb6 - - - - - - - bb5 - - - g5 - - - | " +
-            "e6 - - - - - - - g6 - - - - - - - | c6 - - - - - - - . . . . . . . .";
-        m.Parte(8, "Db Eb Fm Fm Db Eb C C")
-            .Notas(Timbre.Violino, Bus.Eco, 1f, mar)
-            .Notas(Timbre.Acordeao, Bus.Sala, 0.55f, mar, transpor: -12)
+        // B: o violino lá no alto, em notas longas, com o coro e o pizzicato (o "fundo do mar").
+        const string abismo =
+            "db6 - - - - - - - bb5 - - - - - | c6 - - - - - - - eb6 - - - - - | d#6 - - - - - - - f#6 - - - - - | f6 - - - - - - - - - - - - - | " +
+            "db6 - - - bb5 - - - gb5 - - - - - | c6 - - - ab5 - - - eb5 - - - - - | a5 - - - - - - - c6 - - - - - | e6 - - - - - - - . . . . . .";
+        m.Parte(8, "Gb Ab B Bbm Gb Ab F F")
+            .Notas(Timbre.Violino, Bus.Eco, 1f, abismo)
             .Acordes(Timbre.Coro, Bus.Sala, 1f, 3)
-            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, galope)
-            .DosAcordes(Timbre.Sino, Bus.Sala, 0.35f, 5, "1 . . . 5 . . . 8 . . . 5 . . .")
-            .Bateria(Vezes(rock, 7) + " | ksh . ksh . ksh . ksh . t t t t S S S S", prato: true);
+            .DosAcordes(Timbre.Pizzicato, Bus.Seco, 0.9f, 3, "1 . 5 . 8 . 1 . 5 . 8 . 5 .")
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 0.9f, 2, "1 - - - - - - - 8 - - - - -")
+            .Bateria(Vezes(meioTempo, 7) + " | " + virada, prato: true);
 
-        // A2: o gancho MEIO TOM ACIMA (é o clímax), com a segunda voz no violino e o apito brilhando.
-        m.Parte(8, acordesDoGancho, transpor: 1)
-            .Notas(Timbre.Acordeao, Bus.Eco, 1f, gancho)
-            .Notas(Timbre.Quadrada, Bus.Eco, 0.4f, gancho)
-            .Harmonia(Timbre.Violino, Bus.Sala, 0.75f, gancho)
-            .Notas(Timbre.Apito, Bus.Eco, 0.35f, gancho, transpor: 12)
-            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, tentaculo)
-            .DosAcordes(Timbre.Violao, Bus.Seco, 0.7f, 4, "1 5 8 5 10 5 8 5")
-            .Acordes(Timbre.Pad, Bus.Sala, 0.7f, 3)
-            .Bateria(Vezes(pista, 7) + " | " + virada, prato: true);
+        // A2: o gancho de novo, agora com a segunda voz no violino e o sino uma oitava acima. É o clímax.
+        m.Parte(8, acordesDoGancho)
+            .Notas(Timbre.QuadradaFina, Bus.Eco, 1f, gancho)
+            .Harmonia(Timbre.Violino, Bus.Sala, 0.7f, gancho)
+            .Notas(Timbre.Sino, Bus.Sala, 0.35f, gancho, transpor: 12)
+            .DosAcordes(Timbre.Cravo, Bus.Seco, 0.8f, 4, ostinato)
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, ancora)
+            .Acordes(Timbre.Pad, Bus.Sala, 0.6f, 3)
+            .Bateria(Vezes(arrastoForte, 7) + " | " + virada, prato: true);
 
-        // PONTE: meio-tempo no fundo do mar: o sino, o coro e o lamento de novo... e os tímpanos chamando a volta.
-        m.Parte(4, "Db C Db C")
+        // PONTE: só o lamento da lula (notas que escorregam), o coro e os tímpanos... e a volta.
+        m.Parte(4, "Bbm Gb B F")
             .Acordes(Timbre.Coro, Bus.Sala, 1f, 3)
             .Notas(Timbre.Canto, Bus.Sala, 0.9f,
-                "f4>db5 - - - - - - - - - - - - - - - | e4>c5 - - - - - - - - - - - - - - - | " +
-                "f4>ab4 - - - - - - - - - - - - - - - | g4>e5 - - - - - - - . . . . . . . .")
-            .DosAcordes(Timbre.Sino, Bus.Sala, 0.7f, 5, "1 . 5 . 3 . 8 . 5 . 3 . 1 . 5 .")
-            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, "1 - - - - - - - - - - - 8 - - -")
-            .Bateria("pc . . . . . . . s . . . . . . . | p . . . . . . . s . . . . . . . | " +
-                     "p . . . . . . . s . . . . . . . | k . k . s . k . k k s s S S S S");
+                "bb4>f4 - - - - - - - - - - - - - | gb4>db5 - - - - - - - - - - - - - | " +
+                "b4>f#4 - - - - - - - - - - - - - | f4>c5 - - - - - - - . . . . . .")
+            .DosAcordes(Timbre.Baixo, Bus.Seco, 1f, 2, "1 - - - - - - - - - - - - -")
+            .Bateria("p . . . . . . p . . . . . . | p . . . . . . p . . . . . . | " +
+                     "p . . . . . . p . . . . . . | m . m . t . t . m m t t S S");
         return m;
     }
 

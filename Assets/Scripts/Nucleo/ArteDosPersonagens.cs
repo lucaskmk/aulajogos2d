@@ -52,6 +52,9 @@ public static class ArteDosPersonagens
         { 'O', new Color32(156, 238, 216, 255) }, // verde-água (luz)
         { 'l', new Color32(232, 236, 252, 255) }, // fantasma (luz)
         { 'i', new Color32(172, 180, 218, 255) }, // fantasma (sombra)
+        { 'o', new Color32(255, 150, 70, 255) },  // laranja
+        { 'c', new Color32(200, 96, 48, 255) },   // laranja (sombra)
+        { 'C', new Color32(255, 206, 140, 255) }, // laranja (luz)
     };
 
     static Sprite Desenhar(string[] linhas, Vector2 pivo)
@@ -192,6 +195,493 @@ public static class ArteDosPersonagens
         "..kkkkkkkkkkkk..",
     };
 
+    // ---------------------------------------------------------------- os bichos de cada lugar (16 x 16, como o caranguejo)
+    // O inimigo é sempre o mesmo (anda, vira e morre com um pisão); só o desenho muda com o lugar da fase (Biomas).
+    // Todos ficam de frente (o inimigo espelha o desenho enquanto anda) e ocupam a mesma caixa do caranguejo
+    // (16 de largura, do pixel 1 ou 2 até o 14 de altura): ninguém fica maior ou menor que o outro.
+    // A gaivota do porto, o sapo da selva, a tartaruga da lagoa, a caveira-pirata do forte, a galinha da vila,
+    // o macaco pirata dos navios, a aranha da gruta, o fantasminha do navio fantasma, o escorpião do deserto,
+    // a estrela-do-mar do recife, o caranguejo da praia, o lagarto do rochedo e o polvinho do alto-mar.
+    static readonly string[] Sapo =
+    {
+        "................",
+        "................",
+        "...kkk....kkk...",
+        "..kWWEk..kEWWk..",
+        "..kWEEkkkkEEWk..",
+        "..kGLLGGGGLLGk..",
+        ".kGLLGGGGGGGGgk.",
+        ".kGLGGGGGGGGGgk.",
+        ".kGGkkkkkkkkGgk.",
+        ".kGGYYYYYYYYggk.",
+        "..kgYYYYYYYYgk..",
+        "..kggggggggggk..",
+        ".kGGk......kGGk.",
+        "kGgk........kgGk",
+        "kkk..........kkk",
+        "................",
+    };
+
+    static readonly string[] SapoEsmagado =
+    {
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "..kk........kk..",
+        ".kGLkkkkkkkkGgk.",
+        ".kGGYYYYYYYYggk.",
+        ".kggggggggggggk.",
+        "..kkkkkkkkkkkk..",
+    };
+
+    static readonly string[] Escorpiao =
+    {
+        "................",
+        "..........kkk...",
+        ".........kyYYk..",
+        "........kyk.kYk.",
+        "........kyk..kk.",
+        ".kk.....kyk.....",
+        "kYYk...kyYk.....",
+        "kYyk.kkyYYk.....",
+        ".kYkkyYYYYyk....",
+        "..kYYYYYYYYYyk..",
+        "..kyYEYYYYYYyyk.",
+        "...kyyyyyyyyyk..",
+        "..ky.ky.ky.ky...",
+        ".ky..ky..ky.ky..",
+        ".k...k....k..k..",
+        "................",
+    };
+
+    static readonly string[] EscorpiaoEsmagado =
+    {
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "..kk..........k.",
+        ".kYYkkkkkkkkkyk.",
+        ".kyYYYYYYYYYyyk.",
+        "..kyyyyyyyyyyk..",
+        "...kkkkkkkkkk...",
+    };
+
+    static readonly string[] Gaivota =
+    {
+        "................",
+        ".....kkkkkk.....",
+        "....kWWWWWWk....",
+        "...kWWWWWWWwk...",
+        "...kWWEWWEWwk...",
+        "...kWWWkkWWwk...",
+        "..kkkWkYYkwkkk..",
+        ".kZMkWWkykWwkMmk",
+        "kZMMkWWWWWWwkMmk",
+        "kZMMkWWWWWWwkmmk",
+        ".kMmkWWWWWwwkmk.",
+        "..kkkwwwwwwwkkk.",
+        ".....kkkkkkk....",
+        "......ky.ky.....",
+        ".....kyy.kyy....",
+        "................",
+    };
+
+    static readonly string[] GaivotaEsmagado =
+    {
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "..kk........kk..",
+        ".kZMkkkkkkkkMmk.",
+        ".kWWWWWYYWWWWwk.",
+        ".kwwwwwwwwwwwwk.",
+        "..kkkkkkkkkkkk..",
+    };
+
+    static readonly string[] Tartaruga =
+    {
+        "................",
+        "................",
+        ".....kkkkkk.....",
+        "...kkLLGGGGgkk..",
+        "..kLLGKGGKGGggk.",
+        ".kLGGKGGGGKGGggk",
+        "kLGGKGGGGGGKGggk",
+        "kGGGKKKKKKKKGggk",
+        "kggggkAAAAkggggk",
+        ".kkkkAEAAEAkkkk.",
+        "..kAkAAAAAAkAk..",
+        ".kAAkkaaaakkAAk.",
+        ".kAak..kk..kAak.",
+        "kAAak......kAAak",
+        "kkkkk......kkkkk",
+        "................",
+    };
+
+    static readonly string[] TartarugaEsmagado =
+    {
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "...kkkkkkkkkk...",
+        "..kLGGKGGKGGgk..",
+        ".kGGKKKKKKKKKggk",
+        ".kAakkkkkkkkkaAk",
+        "..kkkkkkkkkkkk..",
+    };
+
+    static readonly string[] Galinha =
+    {
+        "................",
+        "......kRRk......",
+        ".....kRQRRk.....",
+        "....kkWWWWkk....",
+        "...kWWWWWWWwk...",
+        "...kWEWWWWEwk...",
+        "...kWWWYYWWwk...",
+        "..kkWWWyyWWwkk..",
+        ".kWkWWWRRWWwkwk.",
+        "kWWkWWWWWWWwkwwk",
+        "kWwkWWWWWWwwkwwk",
+        ".kkwwWWWWWwwwkk.",
+        "...kkwwwwwwwkk..",
+        "......ky.ky.....",
+        ".....kyy.kyy....",
+        "................",
+    };
+
+    static readonly string[] GalinhaEsmagado =
+    {
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "......kRRk......",
+        ".kkkkkWWWWkkkkk.",
+        ".kWWWEWYYWEWWwk.",
+        ".kwwwwwwwwwwwwk.",
+        "..kkkkkkkkkkkk..",
+    };
+
+    static readonly string[] Macaco =
+    {
+        "................",
+        ".....kkkkkk.....",
+        "....kQRRRRRk....",
+        "...kRRRRRRRrk...",
+        ".kkk75555556kkk.",
+        "kk2k1E1111E1k2kk",
+        "k23k11111111k32k",
+        ".kkk11kkkk11kkk.",
+        "...k22111122k...",
+        "..kk5kkkkkkk6kk.",
+        ".k75k7555556k56k",
+        ".k55k5522255k66k",
+        "..kkk556556kkkk.",
+        "....k66k.k66k...",
+        "...kkkk..kkkk...",
+        "................",
+    };
+
+    static readonly string[] MacacoEsmagado =
+    {
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "....kQRRRRRk....",
+        ".kkkk5555556kkk.",
+        ".k2k1E1111E1k2k.",
+        ".k5555555555566k",
+        "..kkkkkkkkkkkk..",
+    };
+
+    static readonly string[] Aranha =
+    {
+        "................",
+        "................",
+        "......kkkk......",
+        "....kkVVVVkk....",
+        "...kVPPVVVVvk...",
+        "..kVPVVVVVVVvk..",
+        "V.kVVEVVVVEVvk.V",
+        "VV.kVVVVVVVvk.VV",
+        ".VVVkvvvvvvkVVV.",
+        "..VV.kkkkkk.VV..",
+        ".V.VV......VV.V.",
+        "V.V..V....V..V.V",
+        "V.V..V....V..V.V",
+        "V..V.V....V.V..V",
+        "V..V.V....V.V..V",
+        "................",
+    };
+
+    static readonly string[] AranhaEsmagado =
+    {
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "....kkVVVVkk....",
+        "V.kVVVVVVVVVvk.V",
+        "VVkVEVVVVVVEvkVV",
+        ".V.kvvvvvvvvk.V.",
+        "V..kkkkkkkkkk..V",
+    };
+
+    static readonly string[] Fantasminha =
+    {
+        "................",
+        ".....kkkkkk.....",
+        "...kkWWlllllkk..",
+        "..kWWllllllllk..",
+        ".kWllllllllllik.",
+        ".kWllEEllEEllik.",
+        ".kWllEEllEEllik.",
+        ".kllllpllllplik.",
+        "kWklllllllllkik.",
+        "kWklllllllllkik.",
+        ".kklllllllllkk..",
+        "..kllllllllllk..",
+        "..klllllllllik..",
+        "..kllikllikllik.",
+        "..kkk.kkk.kkkk..",
+        "................",
+    };
+
+    static readonly string[] FantasminhaEsmagado =
+    {
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "....kkkkkkkk....",
+        "..kkWllllllllkk.",
+        ".kWllEllllEllik.",
+        ".kllikllikllllk.",
+        "..kk.kkk.kkkkk..",
+    };
+
+    static readonly string[] Estrela =
+    {
+        "................",
+        "......kkkk......",
+        ".....kCoock.....",
+        ".....kCooock....",
+        ".....kCooock....",
+        "kkkkkkCoooockkkk",
+        "kCCooooooooooock",
+        ".kcoooEooEooocck",
+        "..kcooEooEooock.",
+        "...kcoooooooock.",
+        "...kCooccccooock",
+        "..kCooockkCoooc.",
+        "..kCock...kCock.",
+        ".kCok......kCok.",
+        ".kkk........kkk.",
+        "................",
+    };
+
+    static readonly string[] EstrelaEsmagado =
+    {
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "......kkkk......",
+        "kkkkkkCoockkkkkk",
+        "kCoooEooEooooock",
+        ".kcccccccccccck.",
+        "..kkkkkkkkkkkk..",
+    };
+
+    static readonly string[] Lagarto =
+    {
+        "................",
+        "................",
+        "..kkk......kkk..",
+        ".kOAAk....kOAak.",
+        ".kAEAkkkkkkAEak.",
+        "..kAAAAAAAAAAk..",
+        "..kAAAkkkkAAak..",
+        ".kkAAOOOOOOAakk.",
+        "kAAkAOOOOOOAkaak",
+        "kAkkAAOOOOAakkak",
+        "kk..kAAAAAak..kk",
+        "....kaAAAAak....",
+        "...kAak..kAak...",
+        "..kAAak..kAaak..",
+        "..kkkk....kkkk..",
+        "................",
+    };
+
+    static readonly string[] LagartoEsmagado =
+    {
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        ".kkk........kkk.",
+        "kOAEkkkkkkkkEaak",
+        "kAAAOOOOOOOOAaak",
+        ".kaaaaaaaaaaaak.",
+        "..kkkkkkkkkkkk..",
+    };
+
+    static readonly string[] Polvo =
+    {
+        "................",
+        ".....kkkkkk.....",
+        "...kkppQQQQkk...",
+        "..kppQQQQQQQRk..",
+        "..kpQQQQQQQQRk..",
+        ".kpQQWWQQWWQQRk.",
+        ".kQQQWEQQWEQQRk.",
+        ".kQQQQQQQQQQQRk.",
+        "..kRQQQQQQQQRk..",
+        ".kQRkQQQQQQkQRk.",
+        "kQRkQRkQQkRQkRQk",
+        "kQk.kQkQQkQk.kQk",
+        "kpk.kQk.kQk..kpk",
+        ".kpk.kpk.kpk.kk.",
+        "..kk..kk..kk....",
+        "................",
+    };
+
+    static readonly string[] PolvoEsmagado =
+    {
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "....kkkkkkkk....",
+        "..kpQQWEQQWEQk..",
+        ".kQQQQQQQQQQQRk.",
+        "kQkQkQkQkQkQkQRk",
+        ".kk.kk.kk.kk.kk.",
+    };
+
+    static readonly string[] Caveira =
+    {
+        "................",
+        "....kkkkkkkk....",
+        "...kQRRRRRRRk...",
+        "..kRRRRRRRRRrk..",
+        ".kZZZZZZZZZZZZk.",
+        "kZZZZZZZZZZZZZmk",
+        "kZZEEEZZZZEEEZmk",
+        "kZZEEEZZZZEEEZmk",
+        "kZZZZZZkkZZZZZmk",
+        ".kZZZZZZZZZZZmk.",
+        "..kZkZkZkZkZmk..",
+        "...kkkkkkkkkk...",
+        ".....kZk.kZk....",
+        "....kZk...kZk...",
+        "....kk.....kk...",
+        "................",
+    };
+
+    static readonly string[] CaveiraEsmagado =
+    {
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "...kQRRRRRRRk...",
+        ".kZZZZZZZZZZZZk.",
+        "kZZEEZZkkZZEEZmk",
+        ".kZkZkZkZkZkZmk.",
+        "..kkkkkkkkkkkk..",
+    };
+
     // ---------------------------------------------------------------- o rato do porão (16 x 16, olhando para a esquerda)
     static readonly string[] Rato =
     {
@@ -302,6 +792,30 @@ public static class ArteDosPersonagens
         FabricaDeSprites.Registrar("inimigo", () => Desenhar(Caranguejo, centro));
         FabricaDeSprites.Registrar("inimigo_esmagado", () => Desenhar(CaranguejoEsmagado, centro));
         FabricaDeSprites.Registrar("inimigo_espinhos", () => Desenhar(CaranguejoEspinhoso, centro));
+        FabricaDeSprites.Registrar("bicho_sapo", () => Desenhar(Sapo, centro));
+        FabricaDeSprites.Registrar("bicho_sapo_esmagado", () => Desenhar(SapoEsmagado, centro));
+        FabricaDeSprites.Registrar("bicho_escorpiao", () => Desenhar(Escorpiao, centro));
+        FabricaDeSprites.Registrar("bicho_escorpiao_esmagado", () => Desenhar(EscorpiaoEsmagado, centro));
+        FabricaDeSprites.Registrar("bicho_gaivota", () => Desenhar(Gaivota, centro));
+        FabricaDeSprites.Registrar("bicho_gaivota_esmagado", () => Desenhar(GaivotaEsmagado, centro));
+        FabricaDeSprites.Registrar("bicho_tartaruga", () => Desenhar(Tartaruga, centro));
+        FabricaDeSprites.Registrar("bicho_tartaruga_esmagado", () => Desenhar(TartarugaEsmagado, centro));
+        FabricaDeSprites.Registrar("bicho_galinha", () => Desenhar(Galinha, centro));
+        FabricaDeSprites.Registrar("bicho_galinha_esmagado", () => Desenhar(GalinhaEsmagado, centro));
+        FabricaDeSprites.Registrar("bicho_macaco", () => Desenhar(Macaco, centro));
+        FabricaDeSprites.Registrar("bicho_macaco_esmagado", () => Desenhar(MacacoEsmagado, centro));
+        FabricaDeSprites.Registrar("bicho_aranha", () => Desenhar(Aranha, centro));
+        FabricaDeSprites.Registrar("bicho_aranha_esmagado", () => Desenhar(AranhaEsmagado, centro));
+        FabricaDeSprites.Registrar("bicho_fantasma", () => Desenhar(Fantasminha, centro));
+        FabricaDeSprites.Registrar("bicho_fantasma_esmagado", () => Desenhar(FantasminhaEsmagado, centro));
+        FabricaDeSprites.Registrar("bicho_estrela", () => Desenhar(Estrela, centro));
+        FabricaDeSprites.Registrar("bicho_estrela_esmagado", () => Desenhar(EstrelaEsmagado, centro));
+        FabricaDeSprites.Registrar("bicho_lagarto", () => Desenhar(Lagarto, centro));
+        FabricaDeSprites.Registrar("bicho_lagarto_esmagado", () => Desenhar(LagartoEsmagado, centro));
+        FabricaDeSprites.Registrar("bicho_polvo", () => Desenhar(Polvo, centro));
+        FabricaDeSprites.Registrar("bicho_polvo_esmagado", () => Desenhar(PolvoEsmagado, centro));
+        FabricaDeSprites.Registrar("bicho_caveira", () => Desenhar(Caveira, centro));
+        FabricaDeSprites.Registrar("bicho_caveira_esmagado", () => Desenhar(CaveiraEsmagado, centro));
         FabricaDeSprites.Registrar("rato", () => Desenhar(Rato, centro));
         FabricaDeSprites.Registrar("sereia", () => Desenhar(Marina, base_));
         FabricaDeSprites.Registrar("fantasma", () => Desenhar(Doris, base_));

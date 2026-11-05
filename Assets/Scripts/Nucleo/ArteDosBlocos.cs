@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // ARTE DOS BLOCOS (visual "v3"): chão, terra, pedra, caixote, bloco "?", bloco usado, espinho e cano,
@@ -73,6 +74,41 @@ public static class ArteDosBlocos
     {
         C(12, 32, 30), C(22, 62, 44), C(36, 96, 54), C(58, 132, 62), C(98, 170, 78), C(162, 208, 112), C(222, 240, 176),
     };
+    // ---- as rampas dos outros lugares (veja Estilo): cada uma entra no lugar de uma rampa do chão de grama
+    static readonly Color32[] AreiaTopo = { C(40, 30, 30), C(84, 62, 48), C(140, 108, 70), C(186, 152, 98), C(222, 192, 128), C(242, 220, 160), C(252, 240, 198) };
+    static readonly Color32[] AreiaFunda = { C(34, 24, 26), C(66, 48, 42), C(104, 78, 58), C(142, 110, 76), C(176, 140, 96), C(206, 172, 120), C(230, 202, 150) };
+    static readonly Color32[] Arenito = { C(40, 30, 36), C(70, 54, 54), C(104, 84, 74), C(138, 114, 94), C(168, 142, 114), C(196, 170, 138), C(222, 200, 166) };
+    static readonly Color32[] PedraClara = { C(30, 30, 44), C(54, 54, 72), C(82, 82, 100), C(112, 112, 128), C(146, 144, 156), C(180, 176, 182), C(214, 210, 204) };
+    static readonly Color32[] MusgoEscuro = { C(10, 18, 24), C(16, 32, 36), C(24, 50, 48), C(36, 70, 60), C(54, 94, 72), C(80, 120, 86), C(118, 150, 104) };
+    static readonly Color32[] PedraDaGruta = { C(12, 12, 24), C(22, 22, 38), C(34, 34, 54), C(48, 48, 70), C(64, 62, 86), C(84, 80, 104), C(108, 102, 124) };
+    static readonly Color32[] CapimSeco = { C(40, 28, 20), C(76, 54, 30), C(118, 86, 40), C(160, 120, 52), C(196, 156, 66), C(222, 190, 96), C(240, 220, 140) };
+    static readonly Color32[] TerraVermelha = { C(36, 16, 18), C(64, 28, 26), C(98, 44, 34), C(130, 62, 42), C(160, 84, 54), C(190, 112, 72), C(216, 146, 100) };
+    static readonly Color32[] Alga = { C(12, 30, 34), C(18, 52, 52), C(26, 78, 66), C(40, 106, 80), C(64, 134, 92), C(100, 162, 110), C(150, 192, 140) };
+    static readonly Color32[] PedraMolhada = { C(16, 20, 34), C(28, 34, 52), C(42, 50, 70), C(58, 68, 90), C(78, 90, 110), C(102, 116, 134), C(132, 146, 160) };
+    static readonly Color32[] Conves = { C(30, 16, 18), C(58, 32, 28), C(90, 54, 38), C(124, 80, 50), C(158, 108, 64), C(192, 142, 88), C(224, 182, 124) };
+    static readonly Color32[] ConvesFantasma = { C(14, 22, 26), C(26, 42, 42), C(40, 64, 58), C(58, 88, 76), C(80, 112, 94), C(110, 140, 118), C(150, 176, 150) };
+
+    // O jeito do chão de cada lugar (o ConstrutorDeFase escolhe pelo bioma da fase: veja Biomas).
+    //  Grama: o de sempre. Areia, Pedra (o forte), Gruta, Seca (terra rachada) e Recife: o mesmo desenho com outras cores
+    //  (sem flores). Madeira e Fantasma: TÁBUAS de navio (outro desenho).
+    public enum Estilo { Grama, Areia, Pedra, Gruta, Madeira, Fantasma, Seca, Recife }
+    public static Estilo EstiloAtual = Estilo.Grama;
+    const string CodigosDosEstilos = "_APGMFSR"; // a letra de cada estilo no nome do bloco ("chaoA_topo_2" = areia)
+
+    // As trocas de rampa de cada estilo: (grama, terra, pedra) -> as rampas novas.
+    static Color32[] TrocarRampa(Estilo estilo, Color32[] rampa)
+    {
+        switch (estilo)
+        {
+            case Estilo.Areia: return rampa == Capim ? AreiaTopo : rampa == Terra ? AreiaFunda : rampa == Pedra ? Arenito : rampa;
+            case Estilo.Pedra: return rampa == Capim ? PedraClara : rampa == Terra ? Pedra : rampa;
+            case Estilo.Gruta: return rampa == Capim ? MusgoEscuro : rampa == Terra || rampa == Pedra ? PedraDaGruta : rampa;
+            case Estilo.Seca: return rampa == Capim ? CapimSeco : rampa == Terra ? TerraVermelha : rampa;
+            case Estilo.Recife: return rampa == Capim ? Alga : rampa == Terra || rampa == Pedra ? PedraMolhada : rampa;
+            default: return rampa;
+        }
+    }
+
     internal static readonly Color32 PetalaRosa = C(232, 96, 122), PetalaAmarela = C(250, 206, 84), PetalaBranca = C(240, 236, 226), Miolo = C(255, 230, 140);
 
     // Direção de onde vem a luz (para cima e para a esquerda).
@@ -199,26 +235,32 @@ public static class ArteDosBlocos
     // Cada recorte tem 1 pixel de folga em volta, repetindo a beirada (para nunca "vazar" o vizinho).
     static readonly string[] Tipos = { "topo", "terra", "pedra" };
     const int ColunasDoAtlas = 12, CelulaLargura = 18, CelulaAltura = 21; // 16 x 19 + a folga
-    static Texture2D atlas;
+    static readonly Dictionary<Estilo, Texture2D> atlases = new Dictionary<Estilo, Texture2D>(); // um atlas para cada estilo
 
     // Necessário porque o projeto está com "Enter Play Mode Options" (sem recarregar o domínio).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    static void Limpar() => atlas = null;
+    static void Limpar()
+    {
+        atlases.Clear();
+        EstiloAtual = Estilo.Grama;
+    }
 
     // Qual célula do atlas guarda essa combinação.
     static int Celula(int tipo, int versao, int bordas) => (tipo * Versoes + versao) * 8 + bordas;
 
-    static Tela Desenhar(int tipo, int versao, int bordas)
+    static Tela Desenhar(int tipo, int versao, int bordas, Estilo estilo)
     {
         bool e = (bordas & 1) != 0, d = (bordas & 2) != 0, b = (bordas & 4) != 0;
-        if (tipo == 0) return ChaoComGrama(versao, e, d, b, versao == 3);
+        if (estilo == Estilo.Madeira) return ChaoDeNavio(tipo, versao, e, d, b, Conves);
+        if (estilo == Estilo.Fantasma) return ChaoDeNavio(tipo, versao, e, d, b, ConvesFantasma);
+        if (tipo == 0) return ChaoComGrama(versao, e, d, b, versao == 3 && estilo == Estilo.Grama); // (só a grama tem flores)
         if (tipo == 1) return ChaoDeTerra(versao, e, d, b);
         return ChaoDePedra(versao, e, d, b);
     }
 
-    static Texture2D Atlas()
+    static Texture2D Atlas(Estilo estilo)
     {
-        if (atlas != null) return atlas;
+        if (atlases.TryGetValue(estilo, out Texture2D pronto) && pronto != null) return pronto;
         int total = Tipos.Length * Versoes * 8;
         int linhas = (total + ColunasDoAtlas - 1) / ColunasDoAtlas;
         int largura = ColunasDoAtlas * CelulaLargura, altura = linhas * CelulaAltura;
@@ -227,7 +269,7 @@ public static class ArteDosBlocos
             for (int versao = 0; versao < Versoes; versao++)
                 for (int bordas = 0; bordas < 8; bordas++)
                 {
-                    Tela t = Desenhar(tipo, versao, bordas);
+                    Tela t = Desenhar(tipo, versao, bordas, estilo);
                     int c = Celula(tipo, versao, bordas);
                     int x0 = (c % ColunasDoAtlas) * CelulaLargura, y0 = (c / ColunasDoAtlas) * CelulaAltura;
                     // o desenho vai de (1, 1) até (16, altura) dentro da célula; a folga copia a beirada mais perto
@@ -235,17 +277,19 @@ public static class ArteDosBlocos
                         for (int x = 0; x < CelulaLargura; x++)
                         {
                             int sx = Mathf.Clamp(x - 1, 0, t.largura - 1), sy = Mathf.Clamp(y - 1, 0, t.altura - 1);
-                            pixels[(y0 + y) * largura + x0 + x] = t.CorFinal(sx, sy);
+                            Color32[] rampa = t.RampaEm(sx, sy);
+                            pixels[(y0 + y) * largura + x0 + x] = rampa != null ? TrocarRampa(estilo, rampa)[t.TomEm(sx, sy)] : t.CorFinal(sx, sy);
                         }
                 }
-        atlas = new Texture2D(largura, altura, TextureFormat.RGBA32, false)
+        var atlas = new Texture2D(largura, altura, TextureFormat.RGBA32, false)
         {
-            name = "Atlas do chao",
+            name = "Atlas do chao " + estilo,
             filterMode = FilterMode.Point,
             wrapMode = TextureWrapMode.Clamp,
         };
         atlas.SetPixels32(pixels);
         atlas.Apply();
+        atlases[estilo] = atlas;
         return atlas;
     }
 
@@ -254,8 +298,12 @@ public static class ArteDosBlocos
     public static bool TentarCriar(string nome, out Sprite sprite)
     {
         sprite = null;
-        if (!nome.StartsWith("chao_")) return false;
-        string[] partes = nome.Split('_'); // "chao", tipo, versão, bordas (opcional)
+        if (!nome.StartsWith("chao")) return false;
+        string[] partes = nome.Split('_'); // "chao" (+ a letra do estilo), tipo, versão, bordas (opcional)
+        if (partes[0].Length > 5) return false;
+        int codigo = partes[0].Length == 5 ? CodigosDosEstilos.IndexOf(partes[0][4]) : 0;
+        if (codigo < 0) return false;
+        var estilo = (Estilo)codigo;
         int tipo = partes.Length >= 3 ? System.Array.IndexOf(Tipos, partes[1]) : -1;
         if (tipo < 0 || !int.TryParse(partes[2], out int versao)) return false;
         string letras = partes.Length > 3 ? partes[3] : "";
@@ -263,7 +311,7 @@ public static class ArteDosBlocos
         int c = Celula(tipo, Volta(versao, Versoes), bordas);
         int altura = tipo == 0 ? 19 : 16;
         var recorte = new Rect((c % ColunasDoAtlas) * CelulaLargura + 1, (c / ColunasDoAtlas) * CelulaAltura + 1, 16, altura);
-        sprite = Sprite.Create(Atlas(), recorte, tipo == 0 ? PivoDaGrama : FabricaDeSprites.Centro,
+        sprite = Sprite.Create(Atlas(estilo), recorte, tipo == 0 ? PivoDaGrama : FabricaDeSprites.Centro,
             FabricaDeSprites.PixelsPorUnidade, 0, SpriteMeshType.FullRect);
         sprite.name = nome;
         return true;
@@ -274,7 +322,8 @@ public static class ArteDosBlocos
     {
         string tipo = profundidade <= 0 ? "topo" : profundidade == 1 ? "terra" : "pedra";
         string bordas = (esquerda ? "e" : "") + (direita ? "d" : "") + (baixo ? "b" : "");
-        return "chao_" + tipo + "_" + Volta(versao, Versoes) + (bordas.Length > 0 ? "_" + bordas : "");
+        string estilo = EstiloAtual == Estilo.Grama ? "" : CodigosDosEstilos[(int)EstiloAtual].ToString();
+        return "chao" + estilo + "_" + tipo + "_" + Volta(versao, Versoes) + (bordas.Length > 0 ? "_" + bordas : "");
     }
 
     // Pivô do bloco com grama: o meio da parte de 16 x 16 (as 3 linhas de cima são as pontas do capim).
@@ -609,6 +658,37 @@ public static class ArteDosBlocos
                     t.Pintar(x, y, Capim, Sorteio(x, y, 81) < 0.5f ? 3 : 2);
                     if (Sorteio(x, y, 82) < 0.6f && celula[(y - 1) * 16 + x] == c) t.Pintar(x, y - 1, Capim, 1);
                 }
+    }
+
+    // ---------------------------------------------------------------- tábuas de navio (Madeira e Fantasma)
+
+    // Tábuas deitadas de 4 pixels de altura, com a junta escura embaixo de cada uma, as emendas em lugares diferentes
+    // em cada fileira (como num convés de verdade), os veios da madeira e um prego de vez em quando.
+    // O de cima (o convés) é mais claro, com a beirada pegando sol; os de baixo (o casco) vão escurecendo.
+    static Tela ChaoDeNavio(int tipo, int versao, bool esquerda, bool direita, bool baixo, Color32[] madeira)
+    {
+        var t = new Tela(16, tipo == 0 ? 19 : 16); // (o de cima tem 3 linhas a mais em cima, vazias: o mesmo tamanho da grama)
+        float claridade = tipo == 0 ? 0.62f : tipo == 1 ? 0.5f : 0.4f;
+        for (int y = 0; y < 16; y++)
+        {
+            int fileira = y / 4, dentro = y % 4;
+            int emenda = (fileira * 5 + versao * 3 + tipo * 7 + 2) % 16;
+            for (int x = 0; x < 16; x++)
+            {
+                float v = claridade + (fileira % 2 == 0 ? 0.04f : -0.03f) + (RuidoPeriodico(x, y, 4, 61 + fileira) - 0.5f) * 0.12f;
+                if (Sorteio(x / 3, y, 70 + versao) > 0.86f) v -= 0.1f; // veio da madeira
+                int tom = Tom(v, madeira.Length, x, y);
+                if (dentro == 0) tom = 1;                       // a junta entre as tábuas
+                else if (dentro == 3) tom += 1;                 // a beirada de cima da tábua pega luz
+                if (x == emenda) tom = 1;                       // a emenda de uma tábua na outra
+                else if (x == (emenda + 1) % 16 && dentro > 0) tom += 1;
+                if (dentro == 2 && (x == (emenda + 15) % 16 || x == (emenda + 2) % 16) && (fileira + versao) % 2 == 0) tom = madeira.Length - 2; // prego
+                if (tipo == 0 && y == 15) tom = madeira.Length - 1; // a beirada do convés
+                t.Pintar(x, y, madeira, tom);
+            }
+        }
+        Bordas(t, esquerda, direita, baixo, 15);
+        return t;
     }
 
     // ---------------------------------------------------------------- caixote ('B')

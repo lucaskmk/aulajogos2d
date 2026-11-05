@@ -26,7 +26,7 @@ public static class Textos
         { "O Final (mudei de ideia)", Louro("\"O Final\". Hahaha. Você acreditou mesmo? E pegou TODAS as moedas? Dizem que isso abre um caminho...") },
         { "A Capitã Âncora", Louro("Venceu a Capitã! Ela mandou pedir desculpas pelas {0} vez(es). Mentira, ela não mandou.") },
         { "Cadê a direita? (Foge, bloco!)", Doris("Bombordo é estibordo... e os blocos fogem. Buuu. Você está chegando perto do meu navio.") },
-        { "Ponte para o Porto", Louro("Vermelho cai, amarelo dispara. E você caiu {0} vez(es). Anotou?") },
+        { "Abordagem!", Louro("Abordagem completa! Vermelho cai, amarelo dispara. E você caiu {0} vez(es) no mar. Anotou?") },
         { "A Gruta da Cozinheira", Louro("Venceu a Cozinheira! Ela quase te cozinhou {0} vez(es). E fugiu pro navio fantasma. Adivinha pra onde a gente vai?") },
         { "O Navio Fantasma", Doris("Você achou a porta certa E dançou no meu convés. Não que eu estivesse esperando. Buuu.") },
         { "Vento em Popa!", Louro("O vento mandou dizer: \"o grumete voou {0} vez(es). Previsível.\"") },

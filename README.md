@@ -81,7 +81,7 @@ Os controles abaixo são os de `Assets/Scripts/Nucleo/Controles.cs`. Teclado e c
 - **Não confie no Louro.** As dicas do papagaio às vezes ajudam e às vezes mentem. ("Chão 100% seguro à frente.")
 - **Não confie em nada que pareça normal:** moedas, nuvens, bandeiras, blocos `?` e até o chão podem ser armadilha.
 - Olhe o **X vermelho** ("X marca o lugar!"): ele fica onde aconteceram as suas últimas 5 mortes na fase.
-- O **cristal de save** guarda o ponto onde você renasce... mas em 25% das mortes ele "muda de lugar" e você volta para o começo. (Isso não acontece nas fases de chefe.)
+- O **cristal de save** guarda o ponto onde você renasce... mas na **3ª morte** depois de pegá-lo ele "muda de lugar" e você volta para o checkpoint anterior (sempre na 3ª, dá para contar). Isso não acontece nas fases de chefe.
 - Nos chefes, **todo ataque avisa antes** (linha vermelha, "!", marca no chão, olhos vermelhos) e os **padrões são fixos**: dá para decorar.
   Se morrer, você volta **na mesma etapa** da luta.
 - A partir da 3ª morte na mesma fase, a animação da morte fica mais curta. Ela também pode ser pulada.
@@ -127,19 +127,23 @@ No meio da Loja fica a **roleta**: escolha quanto apostar (de 1 a 100) e a cor. 
 | 2 | Confia em mim (e corre!) | A **selva**, com folhas caindo | Esmagadores, **nuvem assassina**, chão falso e a primeira **bandeira falsa**; depois, as **serras** (uma persegue você por trás). |
 | 3 | O Final (mudei de ideia) | A **lagoa** cor-de-rosa, com pétalas | O "final" que continua: estreia dos **Ratos do Porão** e a **moeda assassina**. É a fase que libera a secreta. |
 | 4 | A Capitã Âncora | O **forte** da Capitã | **Âncora giratória** (só a âncora mata), um trecho novo de manguais sobre buracos e o **CHEFE: Capitã Âncora**. |
-| 5 | Cadê a direita? (Foge, bloco!) | A **vila** de ponta-cabeça, com poeira dourada | **Controles invertidos** num trecho, caranguejo espinhoso, **blocos tímidos** e a bandeira que te manda **de volta ao checkpoint**. |
-| 6 | Ponte para o Porto | O **desfiladeiro**, de noite | **Plataformas mágicas** sobre o abismo (umas despencam, a "expressa" dispara) e um trecho novo com serra. |
+| 5 | Cadê a direita? (Foge, bloco!) | A **vila** de ponta-cabeça, com poeira dourada | **Controles invertidos** num trecho, **blocos tímidos** e a bandeira que te manda **de volta ao checkpoint**. |
+| 6 | Abordagem! | A **baía dos navios**, de noite | De **navio em navio**: os conveses lado a lado e, nos vãos, as **plataformas mágicas** (umas despencam, a "expressa" dispara). |
 | 7 | A Gruta da Cozinheira | A **gruta** escura | Fase **no escuro**, com atiradoras de facas na frente e atrás, e o **CHEFE: Cozinheira**. |
 | 8 | O Navio Fantasma | O **navio fantasma**, com almas flutuando | As **portas** das cabines da Dóris (um quebra-cabeça de salas) e, saindo pela última, o baile no convés: **blocos do ritmo** ("tic, tic, TAC"). |
 | 9 | Vento em Popa! | O **penhasco dos ventos** | **Vento do mar** (agora já no começo, sobre um buraco) e **redemoinhos** (um é traiçoeiro). |
 | 10 | A Baleia Branca | O **mar aberto**, de noite | Aquecimento mais longo (espinhos que caem, chão que despenca) e o **CHEFE: Baleia Branca**. |
-| 11 | O Tsunami (CORRE!) | As **ilhas do Kraken**, debaixo de chuva | O **tsunami** que o Kraken levantou persegue você pela fase inteira. Só correr e pular. |
+| 11 | O Tsunami (CORRE!) | A **praia** das ilhas do Kraken, debaixo de tempestade | O **tsunami** que o Kraken levantou vem do mar e persegue você pela fase inteira. Só correr e pular. |
 | 12 | O Verdadeiro Final (juro) | O **rochedo** do pôr do sol | Revisão de tudo, agora bem mais longa: chão falso com isca, esmagadores, blocos que fogem, bandeira falsa, serras e ratos. |
-| 13 | O Kraken Vermelho | O **covil do Kraken**, no fundo do mar (bolhas subindo) | Canos com tentáculos e o **CHEFE FINAL: Kraken Vermelho**, que rouba moedas. A Marina espera no fim. |
+| 13 | O Kraken Vermelho | O **alto-mar**, debaixo de tempestade | De convés em convés até o navio do **CHEFE FINAL: Kraken Vermelho**, que rouba moedas. A Marina espera no fim. |
 | ★ | Ilha do Louro (secreta) | A ilhota dourada | Só moedas e molas, "sem pegadinha"... ("tá, só uma"). |
 
 A viagem tem **4 chefes**: 3 fases e a Capitã, 2 fases e a Cozinheira, 2 fases e a Baleia, 2 fases e o Kraken.
 Fora a primeira, todas as fases são longas (de 112 a 218 blocos) e têm checkpoints no meio.
+
+Cada fase tem um **lugar** (`Fase.bioma`): ele escolhe o chão (grama, areia, tábuas de navio, pedra, gruta, madeira fantasma, terra seca ou recife),
+os enfeites do chão, o bicho que anda pela fase (gaivota, sapo, tartaruga, caveira-pirata, galinha, macaco, aranha, fantasminha, escorpião, estrela-do-mar, caranguejo, lagarto ou polvinho; todos do mesmo tamanho e todos morrem com um pisão)
+e o fundo pintado com paralaxe (`Assets/Resources/Arte/<lugar>/`; os prompts para gerar cada um estão em `Ferramentas/prompts_dos_fundos.md`).
 
 As fases são desenhadas em texto em `Assets/Scripts/Nucleo/Fases.cs`. Cada caractere é um bloco, e a legenda completa fica no topo do arquivo.
 
@@ -189,17 +193,25 @@ Cada chefe tem **a sua própria música** de luta, e morrer não recomeça a mú
   Depois de vencê-la, a Marina conta quem mandou a Baleia: o Kraken.
 
 ### Kraken Vermelho (fase 13, chefe final)
-- A **lula gigante vermelha** que prendeu a Marina, mandou a Baleia e levantou o tsunami. Ela mora numa **poça** no fim da arena e ataca com os tentáculos.
-  **Só a ponta dos tentáculos mata.** Vermelho mata, **amarelo rouba**:
-  - **chicotada:** a linha vermelha mostra a altura e o tentáculo varre a arena e volta. Baixa = pule, alta = não pule (a partir da etapa 2 a volta pode vir na outra altura);
-  - **pancada:** a marca no chão segue você, trava e um tentáculo despenca do céu;
-  - **agarrão (amarelo):** bolhas amarelas na poça e o tentáculo vem rente ao chão atrás de você. **Não mata, rouba moedas** (5, 7 ou 10, conforme a etapa) e te joga para trás. Pule por cima;
-  - **tinta** (etapa 2 em diante): as marcas mostram onde as bolas de tinta vão cair.
-- Na etapa 3 ela fica **furiosa** e os ataques vêm juntos (o agarrão enquanto caem pancadas, a tinta junto com as chicotadas).
-- **Como vencer:** no fim de cada rodada ela **cansa** e deita a cabeça no convés, tonta (olho em espiral). **Pule na cabeça dela** (3 s, 2,6 s e 2,2 s). Cuidado com a poça!
+- A **lula gigante vermelha** que prendeu a Marina, mandou a Baleia e levantou o tsunami. A luta é no **convés de um navio em alto-mar**, e ela sai do mar no fim da arena.
+  É o chefe final e a luta mais difícil, com ataques que pedem **coordenação** e **vários tentáculos ao mesmo tempo**.
+  **Só a ponta dos tentáculos mata** (e as colunas, a tinta, o mar e o bico). Vermelho mata, **amarelo rouba**:
+  - **rajada de chicotadas:** várias seguidas, do mesmo lado e no mesmo ritmo. Linha baixa = pule, linha alta = fique no chão;
+  - **pêndulo:** um tentáculo balança de parede a parede. No meio ele passa rente ao chão (pule), perto das paredes passa alto (fique no chão);
+  - **convés podre:** as tábuas racham e caem no mar **só onde você pisa** (meio segundo depois) e voltam depois. Não dá para ficar parado!
+    Da etapa 2 em diante vem junto com uma rajada de chicotadas;
+  - **chuva de tentáculos:** ondas de até 13 tentáculos despencando do céu nas marcas. Fique no buraco; a onda seguinte cai nos buracos da anterior;
+  - **erupção:** igual, mas os tentáculos brotam do convés em colunas altas. Na etapa 3 vem junto com o pêndulo;
+  - **agarrão (amarelo):** vem rente ao chão atrás de você. **Não mata, rouba moedas** (6, 9 ou 12) e te joga longe. Da etapa 2 em diante vem um de cada lado;
+  - **tinta:** as marcas mostram onde as bolas caem;
+  - **sucção** (etapa 2 em diante): ela puxa tudo para o mar; segure para a esquerda, porque o bico mata;
+  - **tinta na cara** (etapa 2 em diante, como a lula do Mario Kart): borrões de tinta grudam na tela, por cima de tudo, e escorrem por uns segundos.
+- Só vêm juntos os ataques que se desviam do mesmo jeito. Na etapa 3 ela fica **furiosa**.
+- **Como vencer:** como todo chefe, 3 etapas de 2 golpes (cada etapa é um checkpoint). No fim de cada rodada ela **cansa** e deita a cabeça
+  no convés, tonta: **pule na cabeça dela** (3 s, 2,6 s e 2,2 s). Cuidado com o mar!
 - **As moedas roubadas:** primeiro saem as que você pegou nesta tentativa, depois as guardadas (nunca fica negativo, e sem moedas ela só empurra).
   O roubo é salvo na hora. A cada pisão ela devolve **metade** do que roubou, e ao ser derrotada devolve **o resto**. Morrer não devolve nada, e o escudo não protege do roubo.
-- Música própria: "Abraço do Abismo", em fá frígio, com o "lamento" da lula (notas deslizando) e um riff que se enrola como um tentáculo.
+- Música própria: "Oito Braços", em 7/8 (o compasso que "manca") e si bemol frígio, com um cravo martelando, coro, tímpanos e o "lamento" da lula.
 
 ---
 
