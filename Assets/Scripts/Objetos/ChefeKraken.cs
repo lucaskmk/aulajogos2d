@@ -26,8 +26,8 @@ using UnityEngine;
 //     do mesmo lado e com o mesmo intervalo: em qualquer lugar da arena, o ritmo é o mesmo ("baixa, alta, baixa...").
 //  PÊNDULO: um tentáculo pendurado lá em cima balança de parede a parede. No MEIO ele passa rente ao chão (pule quando
 //     ele passar); perto das PAREDES ele passa alto (fique no chão). A trilha pontilhada mostra o caminho antes.
-//  CONVÉS PODRE: as tábuas do convés racham e caem no mar SÓ onde você pisa (meio segundo depois) e voltam uns
-//     segundos depois. Fique se mexendo! Da etapa 2 em diante vem junto com uma rajada de chicotadas.
+//  CONVÉS PODRE: as tábuas do convés racham e caem no mar SÓ onde você pisa (quase um segundo depois) e voltam
+//     um segundo e meio depois. Fique se mexendo! Da etapa 2 em diante vem junto com uma rajada de chicotadas.
 //  CHUVA DE TENTÁCULOS: ondas de até 13 tentáculos despencando do céu nas marcas vermelhas. Fique no buraco entre elas;
 //     a onda seguinte cai nos buracos da anterior (ande meio passo).
 //  ERUPÇÃO: igual à chuva, mas os tentáculos BROTAM do convés, em colunas altas (não dá para pular por cima).
@@ -72,7 +72,7 @@ public class ChefeKraken : Chefe
     static readonly float[] VelocidadeDoChicote = { 19f, 21f, 24f };     // blocos por segundo
     static readonly float[] IntervaloDaRajada = { 0.95f, 0.9f, 0.88f };   // entre uma chicotada e outra (o pulo dura ~0,82 s)
     static readonly float[] PeriodoDoPendulo = { 2.6f, 2.3f, 2.1f };      // uma ida e volta inteira (no meio, ele passa a cada meio período)
-    static readonly float[] RachaEm = { 0.5f, 0.45f, 0.4f };              // o convés podre: pisou, a tábua cai isso depois
+    static readonly float[] RachaEm = { 0.8f, 0.72f, 0.65f };            // o convés podre: pisou, a tábua cai isso depois
     static readonly float[] VelocidadeDoAgarrao = { 8.5f, 9.5f, 10.5f }; // (o Grumete anda 7: correndo, ele te alcança. Pule!)
     static readonly float[] Respiro = { 0.3f, 0.2f, 0.12f };              // pausa entre os ataques
     static readonly float[] ForcaDaSuccao = { 3.5f, 4f, 4.5f };          // o Grumete anda 7: segurando para a esquerda, ainda anda
@@ -85,7 +85,7 @@ public class ChefeKraken : Chefe
     const float AlturaDaColuna = 3.6f;                  // a erupção (mais alta que o pulo)
     const float PlantadoNaChuva = 0.3f;                 // quanto tempo os tentáculos da chuva ficam cravados
     const float PivoDoPendulo = 13.5f, ComprimentoDoPendulo = 13f, AberturaDoPendulo = 55f; // (o pivô fica logo acima da tela)
-    const float TabuaVolta = 2.6f;                      // a tábua que caiu volta depois disso
+    const float TabuaVolta = 1.5f;                   // a tábua que caiu volta depois disso
     const int CasasDaChuva = 14;                        // as "casas" da chuva e da erupção: uma a cada 1,5 bloco, de parede a parede
     const float EspacoDasCasas = 1.5f;
 
@@ -560,7 +560,7 @@ public class ChefeKraken : Chefe
     // Depois de morrer: "PRONTO?" e a luta volta na etapa em que estava.
     IEnumerator Pronto()
     {
-        GerenciadorDoJogo.Instancia.Avisar($"ETAPA {etapa + 1}/{EtapasDaLuta} - PRONTO?", 1.3f);
+        GerenciadorDoJogo.Instancia.Avisar(Idioma.T($"ETAPA {etapa + 1}/{EtapasDaLuta} - PRONTO?", $"STAGE {etapa + 1}/{EtapasDaLuta} - READY?"), 1.3f);
         GerenciadorDoJogo.Som("rugido", 0.35f);
         yield return new WaitForSeconds(1.5f); // um respiro: o 1º ataque não pode pegar quem acabou de nascer
     }
@@ -603,7 +603,8 @@ public class ChefeKraken : Chefe
         int devolveu = jogo.DevolverMoedas(jogo.MoedasComOKraken);
         // a partir daqui, se morrer (caiu no mar...), renasce DEPOIS do mar
         jogo.ChefeVencido(new Vector3(direita + 5.5f, chao + 0.5f, 0f));
-        jogo.Avisar(devolveu > 0 ? $"O KRAKEN FUGIU! E devolveu {devolveu} moeda(s)!" : "O KRAKEN FUGIU PRO FUNDO DO MAR!", 3f);
+        jogo.Avisar(devolveu > 0 ? Idioma.T($"O KRAKEN FUGIU! E devolveu {devolveu} moeda(s)!", $"THE KRAKEN FLED! And gave back {devolveu} coin(s)!")
+            : "O KRAKEN FUGIU PRO FUNDO DO MAR!", 3f);
         GerenciadorDoJogo.Som("pisao");
         GerenciadorDoJogo.Som("rugido", 0.7f);
         CameraSeguir.Tremer(0.25f, 1f);
@@ -1258,7 +1259,7 @@ public class ChefeKraken : Chefe
         int devolveu = vida > 0 ? jogo.DevolverMoedas((jogo.MoedasComOKraken + 1) / 2) : 0;
 
         string[] falas = { "ACERTOU! Ela ficou VERMELHA. Mais vermelha.", "Ela tá tonta! Mais um!", "SÓ MAIS UM! VAI, GRUMETE!" };
-        if (devolveu > 0) jogo.Avisar($"Ela soltou {devolveu} moeda(s)!", 1.6f);
+        if (devolveu > 0) jogo.Avisar(Idioma.T($"Ela soltou {devolveu} moeda(s)!", $"She dropped {devolveu} coin(s)!"), 1.6f);
         else if (vida > 0 && vida % GolpesDaEtapa != 0) jogo.Avisar(falas[etapa], 1.6f);
         Golpeado(); // para a rodada (Chefe.cs): depois vêm o Arrumar, o Reagir e o Combate de novo
         if (devolveu > 0) StartCoroutine(ChuvaDeMoedas(Mathf.Min(devolveu, 12))); // (depois do Golpeado: ele para as corrotinas)
@@ -1276,7 +1277,7 @@ public class ChefeKraken : Chefe
         if (levou > 0)
         {
             Conquistas.Desbloquear("kraken_roubou");
-            jogo.Avisar($"O KRAKEN ROUBOU {levou} MOEDA(S)!", 1.8f);
+            jogo.Avisar(Idioma.T($"O KRAKEN ROUBOU {levou} MOEDA(S)!", $"THE KRAKEN STOLE {levou} COIN(S)!"), 1.8f);
             GerenciadorDoJogo.Som("risada", 0.8f);
             for (int i = 0; i < Mathf.Min(levou, 10); i++)
                 Particula.Criar(efeitos, jogador.transform.position, new Vector2(Random.Range(0.5f, 4f), Random.Range(2f, 5f)), 0.6f, 0.4f, new Color(1f, 0.85f, 0.25f));

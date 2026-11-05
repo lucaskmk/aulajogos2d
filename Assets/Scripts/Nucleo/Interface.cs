@@ -27,7 +27,7 @@ public class Interface : MonoBehaviour
 
     // Textos do HUD guardados: só são montados de novo quando o número muda.
     // (montar "Mortes: " + número a cada quadro cria lixo na memória; veja FabricaDeSprites.TextoEmPixel)
-    struct TextoComNumero { public int valor; public string texto; }
+    struct TextoComNumero { public int valor; public string texto; public Idioma.Lingua idioma; }
     TextoComNumero textoMortes, textoMoedas, textoTempo, textoDaFase, textoDoMapa, textoDoChefe, textoDaPagina;
     TextoComNumero textoDosEscudos, textoDoSaldo, textoDoPreco, textoDaBolsa, textoDosElixires, textoDaAposta, textoDoPremio;
 
@@ -39,9 +39,10 @@ public class Interface : MonoBehaviour
 
     static string ComNumero(ref TextoComNumero guardado, int valor, System.Func<int, string> montar)
     {
-        if (guardado.texto == null || guardado.valor != valor)
+        if (guardado.texto == null || guardado.valor != valor || guardado.idioma != Idioma.Atual) // (trocou o idioma: monta de novo)
         {
             guardado.valor = valor;
+            guardado.idioma = Idioma.Atual;
             guardado.texto = montar(valor);
         }
         return guardado.texto;
@@ -75,7 +76,7 @@ public class Interface : MonoBehaviour
         if ((estado == EstadoDoJogo.Jogando || estado == EstadoDoJogo.Morreu || estado == EstadoDoJogo.FaseConcluida) && !lutando)
             DesenharBarraDeProgresso();
         if (lutando && estado != EstadoDoJogo.Titulo && !submenu) DesenharVidaDoChefe(jogo.Chefe);
-        if (estado != EstadoDoJogo.Titulo && estado != EstadoDoJogo.Vitoria
+        if (estado != EstadoDoJogo.Titulo && estado != EstadoDoJogo.Vitoria && estado != EstadoDoJogo.Historia
             && estado != EstadoDoJogo.Conquistas && estado != EstadoDoJogo.Creditos && !submenu)
             DesenharHud();
 
@@ -99,11 +100,12 @@ public class Interface : MonoBehaviour
             case EstadoDoJogo.Morreu: DesenharMorte(); break;
             case EstadoDoJogo.FaseConcluida: DesenharFaseConcluida(); break;
             case EstadoDoJogo.Vitoria: DesenharVitoria(); break;
+            case EstadoDoJogo.Historia: DesenharHistoria(); break;
         }
 
         // botão direito do mouse = ESC (volta uma tela), em qualquer menu
         bool emMenu = estado == EstadoDoJogo.Titulo || estado == EstadoDoJogo.Pausado
-                      || estado == EstadoDoJogo.Conquistas || estado == EstadoDoJogo.Creditos
+                      || estado == EstadoDoJogo.Conquistas || estado == EstadoDoJogo.Creditos || estado == EstadoDoJogo.Historia
                       || (estado == EstadoDoJogo.Mapa && jogo.LojaAberta);
         Event evento = Event.current;
         if (usarMouse && emMenu && evento.type == EventType.MouseDown && evento.button == 1)
@@ -135,7 +137,7 @@ public class Interface : MonoBehaviour
         Fase fase = jogo.DadosDaFase;
         const float pixel = 2.5f;
         float margem = 20f * escala, linha2 = 46f * escala;
-        string mortes = ComNumero(ref textoMortes, jogo.Mortes, n => "Mortes: " + n);
+        string mortes = ComNumero(ref textoMortes, jogo.Mortes, n => Idioma.T("Mortes: ", "Deaths: ") + n);
         Rect areaDasMortes;
         if (jogo.Estado == EstadoDoJogo.Mapa)
         {
@@ -144,12 +146,12 @@ public class Interface : MonoBehaviour
         else
         {
             string nome = jogo.NaSecreta ? fase.nome
-                : ComNumero(ref textoDaFase, jogo.FaseAtual, f => $"Fase {f + 1}/{Fases.Todas.Length}: {Fases.Dados(f).nome}");
+                : ComNumero(ref textoDaFase, jogo.FaseAtual, f => $"{Idioma.T("Fase", "Level")} {f + 1}/{Fases.Todas.Length}: {Idioma.Traduzir(Fases.Dados(f).nome)}");
             Texto(nome, margem, 10f * escala, pixel, 0f, Branco, w * 0.3f);
             areaDasMortes = Texto(mortes, margem, linha2, pixel, 0f, Branco);
         }
         DesenharItensNoHud(areaDasMortes);
-        Texto(ComNumero(ref textoMoedas, jogo.Moedas, n => "Moedas: " + n), w - margem, 10f * escala, pixel, 1f, Amarelo);
+        Texto(ComNumero(ref textoMoedas, jogo.Moedas, n => Idioma.T("Moedas: ", "Coins: ") + n), w - margem, 10f * escala, pixel, 1f, Amarelo);
         if (Opcoes.MostrarTempo) // o cronômetro pode ser escondido em Opções
             Texto(ComNumero(ref textoTempo, Mathf.FloorToInt(jogo.TempoTotal), t => FormatarTempo(t)), w - margem, linha2, pixel, 1f, Branco);
     }
@@ -198,37 +200,97 @@ public class Interface : MonoBehaviour
         }
         else GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         // o logo: letras douradas com a borda de madeira escura (o nome fica em Textos.NomeDoJogo)
-        DesenharTextoEmPixel(FabricaDeSprites.TextoEmPixel(Textos.NomeDoJogo, CorDoLogo, CorDaBordaDoLogo, CorDaBordaDoLogo, comAcentos: true), w / 2f, h * 0.07f, 130f * escala);
+        DesenharTextoEmPixel(FabricaDeSprites.TextoEmPixel(Idioma.Traduzir(Textos.NomeDoJogo), CorDoLogo, CorDaBordaDoLogo, CorDaBordaDoLogo, comAcentos: true), w / 2f, h * 0.07f, 130f * escala);
         Texto("toda morte é só o começo da viagem (de novo, e de novo...)", w / 2f, h * 0.07f + 140f * escala, 2.5f, 0.5f, Branco, w * 0.9f);
 
-        // até 7 opções: Continuar, Novo jogo, Opções, Como jogar, Conquistas, Créditos, Sair
-        float passo = 40f * escala, y = h * 0.36f;
-        for (int i = 0; i < jogo.opcoesDoMenu.Count; i++)
+        // até 9 opções: Continuar, Carregar jogo, Novo jogo, Opções, Como jogar, Conquistas, Créditos, Idioma, Sair
+        // (com muitas, elas ficam mais juntinhas e um pouco menores, para não encostar no recorde lá embaixo)
+        int total = jogo.opcoesDoMenu.Count;
+        float y = h * 0.36f, passo = Mathf.Min(40f * escala, (h * 0.78f - y) / Mathf.Max(1, total));
+        float tamanho = passo < 38f * escala ? 2.6f : 3f;
+        for (int i = 0; i < total; i++)
         {
-            OpcaoDeMenu(TextoDaOpcao(jogo.opcoesDoMenu[i]), y, 3f, passo, i, i == jogo.OpcaoSelecionada);
+            if (jogo.opcoesDoMenu[i] == GerenciadorDoJogo.OpcaoDoMenu.TrocarIdioma)
+                OpcaoDasBandeiras(y, tamanho, passo, i, i == jogo.OpcaoSelecionada); // o idioma: as bandeiras
+            else OpcaoDeMenu(TextoDaOpcao(jogo.opcoesDoMenu[i]), y, tamanho, passo, i, i == jogo.OpcaoSelecionada);
             y += passo;
         }
 
         int recorde = Progresso.Recorde;
         if (recorde >= 0)
-            Texto($"Recorde: zerou com {recorde} mortes", w / 2f, h * 0.8f, 2f, 0.5f, Verde, w * 0.9f);
+            Texto(Idioma.T($"Recorde: zerou com {recorde} mortes", $"Record: beat the game with {recorde} deaths"), w / 2f, h * 0.8f, 2f, 0.5f, Verde, w * 0.9f);
 
         // rodapé discreto com os controles básicos (a lista completa fica em "Como jogar")
         Texto("A/D ou SETAS: andar    ESPAÇO/W: pular    R: reiniciar    ESC: pausa", w / 2f, h * 0.88f, 1.8f, 0.5f, CorDoRodape, w * 0.95f);
         Rodape("SETAS ou MOUSE: escolher    ENTER: confirmar    ESC: voltar");
     }
 
+    // A escolha do idioma no menu do título: as bandeiras do Brasil (Português) e dos EUA (English), lado a lado.
+    // A do idioma atual fica acesa, com a moldura dourada; a outra, apagadinha. Clicar numa bandeira escolhe aquele
+    // idioma; no teclado, ESQUERDA/DIREITA ou ENTER trocam (como as outras opções, a linha fica selecionada).
+    void OpcaoDasBandeiras(float y, float pixel, float alturaDaLinha, int indice, bool selecionada)
+    {
+        float w = Screen.width;
+        // as duas com o mesmo tamanho de "pixel" (pixel art certinha): a do Brasil dá a altura, do tamanho das letras do menu
+        float px = 32f * escala * pixel / 3f / ArteDasBandeiras.AlturaDoBrasil;
+        float altura = ArteDasBandeiras.AlturaDoBrasil * px, larguraBR = ArteDasBandeiras.LarguraDoBrasil * px;
+        float larguraEUA = ArteDasBandeiras.LarguraDosEUA * px, alturaEUA = ArteDasBandeiras.AlturaDosEUA * px;
+        float espaco = 28f * escala, total = larguraBR + espaco + larguraEUA;
+        float meio = y + 7.5f * pixel * escala; // o meio das letras das outras opções
+        var brasil = new Rect(w / 2f - total / 2f, meio - altura / 2f, larguraBR, altura);
+        var eua = new Rect(brasil.xMax + espaco, meio - alturaEUA / 2f, larguraEUA, alturaEUA);
+
+        // a linha toda (para o mouse e a faixa), como em OpcaoDeMenu
+        var area = new Rect(w / 2f - total / 2f - 60f * escala, meio - alturaDaLinha / 2f, total + 120f * escala, alturaDaLinha);
+        if (selecionada)
+        {
+            DesenharFaixa(area);
+            if (Time.unscaledTime % 0.8f < 0.55f)
+            {
+                Texto(">", brasil.x - 14f * escala, meio - 7.5f * pixel * escala, pixel, 1f, Amarelo);
+                Texto("<", eua.xMax + 14f * escala, meio - 7.5f * pixel * escala, pixel, 0f, Amarelo);
+            }
+        }
+        Bandeira(brasil, "bandeira_brasil", !Idioma.Ingles, GerenciadorDoJogo.BotaoBandeiraBrasil);
+        Bandeira(eua, "bandeira_eua", Idioma.Ingles, GerenciadorDoJogo.BotaoBandeiraEUA);
+        Mouse(area, indice, true); // (depois das bandeiras: o clique numa bandeira já foi "gasto" por ela)
+    }
+
+    void Bandeira(Rect lugar, string desenho, bool escolhida, int botao)
+    {
+        bool emCima = Mouse(lugar, botao, false);
+        float pulo = escolhida ? Mathf.Round(Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 2f) * escala : 0f;
+        lugar.y -= pulo;
+        Color antes = GUI.color;
+        GUI.color = escolhida ? Color.white : new Color(1f, 1f, 1f, emCima ? 0.75f : 0.4f);
+        GUI.DrawTexture(lugar, FabricaDeSprites.Pegar(desenho).texture);
+        GUI.color = antes;
+        if (escolhida)
+        {
+            float e = 3f * escala;
+            DesenharBorda(new Rect(lugar.x - e, lugar.y - e, lugar.width + 2f * e, lugar.height + 2f * e),
+                Color.Lerp(CorDoFilete, Color.white, 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6f)));
+        }
+    }
+
     static string TextoDaOpcao(GerenciadorDoJogo.OpcaoDoMenu opcao)
     {
         switch (opcao)
         {
-            case GerenciadorDoJogo.OpcaoDoMenu.Continuar:
-                return Progresso.FaseSalva == Fases.IndiceSecreto ? "Continuar (fase secreta)" : $"Continuar (fase {Progresso.FaseSalva + 1})";
+            case GerenciadorDoJogo.OpcaoDoMenu.Continuar: // (o último slot usado)
+            {
+                int slot = Progresso.SlotAtual + 1, fase = Progresso.FaseSalva;
+                if (fase == Fases.IndiceSecreto) return Idioma.T($"Continuar (slot {slot}, fase secreta)", $"Continue (slot {slot}, secret level)");
+                return Idioma.T($"Continuar (slot {slot}, fase {fase + 1})", $"Continue (slot {slot}, level {fase + 1})");
+            }
+            case GerenciadorDoJogo.OpcaoDoMenu.CarregarJogo: return "Carregar jogo";
             case GerenciadorDoJogo.OpcaoDoMenu.Conquistas:
-                return $"Conquistas ({Conquistas.Quantidade}/{Conquistas.Todas.Length})";
+                return Idioma.T("Conquistas", "Achievements") + $" ({Conquistas.Quantidade}/{Conquistas.Todas.Length})";
             case GerenciadorDoJogo.OpcaoDoMenu.Opcoes: return "Opções";
             case GerenciadorDoJogo.OpcaoDoMenu.ComoJogar: return "Como jogar";
             case GerenciadorDoJogo.OpcaoDoMenu.Creditos: return "Créditos";
+            case GerenciadorDoJogo.OpcaoDoMenu.TrocarIdioma: // escrito nas duas línguas: quem não lê português acha fácil
+                return Idioma.Ingles ? "Language / Idioma: < English >" : "Idioma / Language: < Português >";
             case GerenciadorDoJogo.OpcaoDoMenu.Sair: return "Sair";
             default:
                 return "Novo jogo";
@@ -241,17 +303,55 @@ public class Interface : MonoBehaviour
         float w = Screen.width, h = Screen.height;
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
-        Texto($"CONQUISTAS {Conquistas.Quantidade}/{Conquistas.Todas.Length}", w / 2f, 20f * escala, 5f, 0.5f, Amarelo);
-        float y = 90f * escala, passo = (h - 160f * escala) / Conquistas.Todas.Length;
-        foreach (Conquistas.Conquista c in Conquistas.Todas)
+        Texto(Idioma.T("CONQUISTAS", "ACHIEVEMENTS") + $" {Conquistas.Quantidade}/{Conquistas.Todas.Length}", w / 2f, 20f * escala, 5f, 0.5f, Amarelo);
+        // A lista ROLA: cada conquista numa linha de tamanho fixo (o nome em cima, a descrição embaixo),
+        // com as letras sempre do mesmo tamanho. CIMA/BAIXO ou a rodinha do mouse rolam; a barrinha mostra onde está.
+        Conquistas.Conquista[] todas = Conquistas.Todas;
+        float largura = Mathf.Min(980f * escala, w - 120f * escala);
+        var lista = new Rect((w - largura) / 2f, 84f * escala, largura, h - 84f * escala - 100f * escala);
+        float alturaDaLinha = 64f * escala;
+        float visiveis = lista.height / alturaDaLinha, maximo = Mathf.Max(0f, todas.Length - visiveis);
+        jogo.LimitarRolagemDasConquistas(maximo);
+        Event e = Event.current;
+        if (e.type == EventType.ScrollWheel)
         {
-            bool tem = Conquistas.Tem(c.id);
-            Texto((tem ? "* " : "- ") + c.nome, w * 0.08f, y, 2.2f, 0f, tem ? Amarelo : new Color32(150, 150, 165, 255), w * 0.4f);
-            Texto(c.descricao, w * 0.5f, y, 2.2f, 0f, tem ? Branco : new Color32(130, 130, 145, 255), w * 0.47f);
-            y += passo;
+            jogo.RolarConquistas(Mathf.Sign(e.delta.y) * 1.5f);
+            e.Use();
         }
-        BotaoDeTexto("Voltar (ENTER ou ESC)", w / 2f, h - 50f * escala, 2.2f, 0.5f, GerenciadorDoJogo.BotaoVoltar);
+        if (e.type == EventType.Repaint) // a rolagem desliza até o lugar (em vez de pular)
+            rolagemDasConquistas = Mathf.Lerp(rolagemDasConquistas, jogo.RolagemDasConquistas, 1f - Mathf.Exp(-14f * Time.unscaledDeltaTime));
+
+        float larguraDoTexto = lista.width - 60f * escala;
+        GUI.BeginGroup(lista); // (o que passar das bordas da lista não aparece)
+        for (int i = 0; i < todas.Length; i++)
+        {
+            float y = (i - rolagemDasConquistas) * alturaDaLinha;
+            if (y < -alturaDaLinha || y > lista.height) continue;
+            Conquistas.Conquista c = todas[i];
+            bool tem = Conquistas.Tem(c.id);
+            Retangulo(new Rect(0f, y + 3f * escala, lista.width - 24f * escala, alturaDaLinha - 6f * escala),
+                new Color(1f, 1f, 1f, tem ? 0.08f : 0.035f));
+            Texto((tem ? "* " : "- ") + Idioma.Traduzir(c.nome), 16f * escala, y + 9f * escala, 2.5f, 0f,
+                tem ? Amarelo : new Color32(150, 150, 165, 255), larguraDoTexto);
+            Texto(c.descricao, 34f * escala, y + 36f * escala, 2f, 0f, tem ? Branco : new Color32(130, 130, 145, 255), larguraDoTexto - 18f * escala);
+        }
+        GUI.EndGroup();
+
+        // a barrinha de rolagem (só se nem tudo couber)
+        if (maximo > 0f)
+        {
+            var trilho = new Rect(lista.xMax - 10f * escala, lista.y + 3f * escala, 6f * escala, lista.height - 6f * escala);
+            Retangulo(trilho, new Color(1f, 1f, 1f, 0.12f));
+            float tamanho = trilho.height * Mathf.Clamp01(visiveis / todas.Length);
+            float onde = (trilho.height - tamanho) * Mathf.Clamp01(rolagemDasConquistas / maximo);
+            Retangulo(new Rect(trilho.x, trilho.y + onde, trilho.width, tamanho), (Color)CorDoNome);
+        }
+
+        Texto("CIMA/BAIXO ou RODINHA: rolar", w / 2f, h - 88f * escala, 1.8f, 0.5f, CorDoRodape, w * 0.9f);
+        BotaoDeTexto("Voltar (ENTER ou ESC)", w / 2f, h - 54f * escala, 2.2f, 0.5f, GerenciadorDoJogo.BotaoVoltar);
     }
+
+    float rolagemDasConquistas; // a rolagem mostrada (desliza até jogo.RolagemDasConquistas)
 
     // Aviso de conquista nova: aparece em cima, no meio, por uns segundos.
     void DesenharAvisoDeConquista()
@@ -286,7 +386,7 @@ public class Interface : MonoBehaviour
             bool titulo = i == 0, secao = texto == texto.ToUpperInvariant() && texto.Length > 0 && !titulo;
             float yLinha = y + i * linha;
             if (yLinha < -60f * escala || yLinha > h) continue;
-            if (titulo) DesenharTextoEmPixel(FabricaDeSprites.TextoEmPixel(Textos.NomeDoJogo, CorDoLogo, CorDaBordaDoLogo, CorDaBordaDoLogo, comAcentos: true), w / 2f, yLinha, 70f * escala);
+            if (titulo) DesenharTextoEmPixel(FabricaDeSprites.TextoEmPixel(Idioma.Traduzir(Textos.NomeDoJogo), CorDoLogo, CorDaBordaDoLogo, CorDaBordaDoLogo, comAcentos: true), w / 2f, yLinha, 70f * escala);
             else Texto(texto, w / 2f, yLinha, secao ? 3f : 2.5f, 0.5f, secao ? Amarelo : Branco, w * 0.9f);
         }
 
@@ -330,7 +430,7 @@ public class Interface : MonoBehaviour
 
         int fase = mapa.Selecionado;
         bool secreta = fase == Fases.IndiceSecreto;
-        string nome = secreta ? Fases.Secreta.nome : ComNumero(ref textoDoMapa, fase, f => $"Fase {f + 1}: {Fases.Todas[f].nome}");
+        string nome = secreta ? Fases.Secreta.nome : ComNumero(ref textoDoMapa, fase, f => $"{Idioma.T("Fase", "Level")} {f + 1}: {Idioma.Traduzir(Fases.Todas[f].nome)}");
         Texto(nome, w / 2f, h - 125f * escala, 3.5f, 0.5f, Amarelo, larguraDoMeio);
         // já passou dessa fase alguma vez? Mostra o recorde e as medalhas dela; senão, a situação nesta partida
         PrepararRecordeDoMapa(fase);
@@ -387,10 +487,10 @@ public class Interface : MonoBehaviour
         // os itens
         float y = 150f * escala, alto = 112f * escala, passo = alto + 14f * escala;
         CartaoDoItem(new Rect(margem, y, largura, alto), GerenciadorDoJogo.ItemDaLoja.Escudo, "escudo", "ESCUDO", jogo.precoDoEscudo,
-            ComNumero(ref textoDaBolsa, jogo.Escudos, n => $"tem {n}/{jogo.maximoDeEscudos}"), jogo.TemEscudo,
+            ComNumero(ref textoDaBolsa, jogo.Escudos, n => Idioma.T("tem ", "own ") + $"{n}/{jogo.maximoDeEscudos}"), jogo.TemEscudo,
             "Te salva de UMA morte.", "Guarde até 3.", false);
         CartaoDoItem(new Rect(margem, y + passo, largura, alto), GerenciadorDoJogo.ItemDaLoja.Elixir, "elixir", "ELIXIR", jogo.precoDoElixir,
-            ComNumero(ref textoDosElixires, jogo.Elixires, n => $"tem {n}/{jogo.maximoDeElixires}"), jogo.Elixires > 0,
+            ComNumero(ref textoDosElixires, jogo.Elixires, n => Idioma.T("tem ", "own ") + $"{n}/{jogo.maximoDeElixires}"), jogo.Elixires > 0,
             "Pulo bem mais alto. Entrar", "numa fase gasta um.", tutorial);
         CartaoDoItem(new Rect(margem, y + 2f * passo, largura, alto), GerenciadorDoJogo.ItemDaLoja.PuloDuplo, "bota_alada", "DUPLO SALTO",
             jogo.precoDoPuloDuplo, jogo.TemPuloDuplo ? "já tem!" : "", jogo.TemPuloDuplo,
@@ -425,7 +525,7 @@ public class Interface : MonoBehaviour
     // O saldo: [moeda] 23 moedas. Quando a roleta paga, um "+N" dourado sobe do lado.
     void DesenharSaldo(float centroX, float y)
     {
-        string saldo = ComNumero(ref textoDoSaldo, jogo.Moedas, n => n == 1 ? "1 moeda" : n + " moedas");
+        string saldo = ComNumero(ref textoDoSaldo, jogo.Moedas, n => n == 1 ? Idioma.T("1 moeda", "1 coin") : n + Idioma.T(" moedas", " coins"));
         float icone = 30f * escala;
         Rect medida = MedirTexto(saldo, 0f, y, 3f, 0f);
         float x = centroX - (icone + 10f * escala + medida.width) / 2f;
@@ -603,7 +703,7 @@ public class Interface : MonoBehaviour
         var mais = new Rect(linha.xMax - alto, yAposta, alto, alto);
         BotaoQuadrado(menos, "-", livre ? GerenciadorDoJogo.BotaoApostaMenos : 0, livre);
         BotaoQuadrado(mais, "+", livre ? GerenciadorDoJogo.BotaoApostaMais : 0, livre);
-        Texto(ComNumero(ref textoDaAposta, jogo.Aposta, n => "aposta " + n), linha.center.x, yAposta + 10f * escala, 2.5f, 0.5f,
+        Texto(ComNumero(ref textoDaAposta, jogo.Aposta, n => Idioma.T("aposta ", "bet ") + n), linha.center.x, yAposta + 10f * escala, 2.5f, 0.5f,
             jogo.Moedas >= jogo.Aposta ? Amarelo : Rosa, larguraDentro - 2f * alto - 8f * escala);
 
         // as cores
@@ -749,7 +849,156 @@ public class Interface : MonoBehaviour
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         if (jogo.SubmenuAberto == GerenciadorDoJogo.Submenu.Opcoes) DesenharOpcoes();
+        else if (jogo.SubmenuAberto == GerenciadorDoJogo.Submenu.Slots) DesenharSlots();
         else DesenharComoJogar();
+    }
+
+    // ------------------------------------------------------------------ os slots (Carregar jogo / Novo jogo)
+
+    // Os textos de cada cartão, montados só quando os slots mudam (ou o idioma): [slot, 0] = a fase, [slot, 1] = os números.
+    readonly string[,] textosDosSlots = new string[Progresso.TotalDeSlots, 4]; // fase, mortes, moedas, tempo e data
+    int versaoDosTextosDosSlots = -1;
+    Idioma.Lingua idiomaDosSlots;
+
+    void PrepararTextosDosSlots()
+    {
+        if (versaoDosTextosDosSlots == jogo.VersaoDosSlots && idiomaDosSlots == Idioma.Atual) return;
+        versaoDosTextosDosSlots = jogo.VersaoDosSlots;
+        idiomaDosSlots = Idioma.Atual;
+        for (int i = 0; i < Progresso.TotalDeSlots; i++)
+        {
+            Progresso.ResumoDoSlot r = jogo.ResumoDoSlot(i);
+            if (!r.temJogo)
+            {
+                textosDosSlots[i, 0] = textosDosSlots[i, 1] = textosDosSlots[i, 2] = textosDosSlots[i, 3] = "";
+                continue;
+            }
+            textosDosSlots[i, 0] = r.fase == Fases.IndiceSecreto ? Idioma.Traduzir(Fases.Secreta.nome)
+                : r.fase >= 0 && r.fase < Fases.Todas.Length ? $"{Idioma.T("Fase", "Level")} {r.fase + 1}: {Idioma.Traduzir(Fases.Todas[r.fase].nome)}" : "?";
+            // (as mortes e as moedas aparecem com os desenhos: a caveirinha do mapa e a moeda)
+            textosDosSlots[i, 1] = r.mortes.ToString();
+            textosDosSlots[i, 2] = r.moedas.ToString();
+            textosDosSlots[i, 3] = $"{FormatarTempo(r.tempo)}    {FormatarData(r.data)}";
+        }
+    }
+
+    // "2026-11-05" -> "05/11/26" (em inglês, "11/05/26"). Sem data (save de antes dos slots): nada.
+    static string FormatarData(string data)
+    {
+        string[] partes = string.IsNullOrEmpty(data) ? null : data.Split('-');
+        if (partes == null || partes.Length != 3 || partes[0].Length < 2) return "";
+        string ano = partes[0].Substring(partes[0].Length - 2);
+        return Idioma.Ingles ? $"{partes[1]}/{partes[2]}/{ano}" : $"{partes[2]}/{partes[1]}/{ano}";
+    }
+
+    void DesenharSlots()
+    {
+        float w = Screen.width, h = Screen.height;
+        bool novo = jogo.SlotsParaNovoJogo, perguntando = jogo.SlotPerguntando >= 0;
+        PrepararTextosDosSlots();
+        Texto(novo ? "NOVO JOGO" : "CARREGAR JOGO", w / 2f, h * 0.05f, 5f, 0.5f, Lilas, w * 0.9f);
+        Texto(novo ? "Escolha um slot para a partida nova." : "Escolha a partida que quer continuar.",
+            w / 2f, h * 0.05f + 54f * escala, 2f, 0.5f, CorDoRodape, w * 0.9f);
+
+        // (cartões altos o bastante para as três linhas caberem DENTRO da moldura, com folga embaixo)
+        float largura = Mathf.Min(760f * escala, w - 80f * escala), alto = 128f * escala, passo = alto + 12f * escala;
+        float x = (w - largura) / 2f, y = 128f * escala;
+        for (int i = 0; i < Progresso.TotalDeSlots; i++)
+            CartaoDoSlot(new Rect(x, y + i * passo, largura, alto), i, novo, perguntando);
+
+        int voltar = Progresso.TotalDeSlots;
+        OpcaoDeMenu("Voltar", y + voltar * passo + 6f * escala, 2.8f, 40f * escala, voltar, !perguntando && jogo.SlotSelecionado == voltar);
+
+        if (perguntando) DesenharPerguntaDoSlot();
+        else Rodape("SETAS ou MOUSE: escolher    ENTER: confirmar    DEL: apagar    ESC: voltar");
+    }
+
+    // Um cartão: "SLOT 1", a fase em que o Grumete está e os números (mortes, moedas, tempo, data), ou "vazio".
+    // Carregando, os vazios ficam apagadinhos (não dá para escolher).
+    void CartaoDoSlot(Rect cartao, int slot, bool novo, bool perguntando)
+    {
+        Progresso.ResumoDoSlot r = jogo.ResumoDoSlot(slot);
+        bool escolhido = jogo.SlotSelecionado == slot || jogo.SlotPerguntando == slot;
+        Color antes = GUI.color;
+        if (!r.temJogo && !novo) GUI.color = new Color(1f, 1f, 1f, 0.4f);
+        Moldura(cartao, CorDoFundoDaFala);
+        if (escolhido) DesenharBorda(cartao, Color.Lerp(CorDoFilete, Color.white, 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6f)));
+
+        float m = 16f * escala, lado = cartao.height - 2f * m;
+        // o Grumete (só se tiver partida), pulando de leve no cartão escolhido
+        if (r.temJogo)
+        {
+            Texture grumete = FabricaDeSprites.Pegar("jogador").texture;
+            float escalaDoDesenho = lado * 0.8f / Mathf.Max(grumete.width, grumete.height);
+            float pulo = escolhido ? Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 5f * escala : 0f;
+            GUI.DrawTexture(new Rect(cartao.x + m + (lado - grumete.width * escalaDoDesenho) / 2f,
+                cartao.center.y - grumete.height * escalaDoDesenho / 2f - pulo, grumete.width * escalaDoDesenho, grumete.height * escalaDoDesenho), grumete);
+        }
+        // as três linhas, de cima para baixo, todas dentro da moldura (a de baixo termina antes da borda)
+        // e no máximo da largura que sobra (texto comprido encolhe, não sai do cartão)
+        float xTexto = cartao.x + 2f * m + lado, larguraDoTexto = cartao.xMax - m - xTexto;
+        float yNome = cartao.y + m - 4f * escala, yFase = cartao.y + 0.40f * cartao.height, yNumeros = cartao.y + 0.66f * cartao.height;
+        Texto("SLOT " + (slot + 1), xTexto, yNome, 2.6f, 0f, escolhido ? Amarelo : Branco, larguraDoTexto * 0.6f);
+        if (r.temJogo)
+        {
+            Texto(textosDosSlots[slot, 0], xTexto, yFase, 2f, 0f, Branco, larguraDoTexto);
+            // [caveira] 23   [moeda] 41   12:34   05/11/26
+            const float pixelDosNumeros = 1.8f;
+            float icone = 20f * escala, meio = yNumeros + 7.5f * pixelDosNumeros * escala, x = xTexto;
+            x = IconeComNumero("caveira", textosDosSlots[slot, 1], x, meio, icone, pixelDosNumeros) + 22f * escala;
+            x = IconeComNumero("moeda", textosDosSlots[slot, 2], x, meio, icone, pixelDosNumeros) + 22f * escala;
+            Texto(textosDosSlots[slot, 3], x, yNumeros, pixelDosNumeros, 0f, CorDoRodape, Mathf.Max(10f, cartao.xMax - m - x));
+        }
+        else Texto(novo ? "- vazio: começa aqui -" : "- vazio -", xTexto, yFase + 8f * escala, 2f, 0f, CorDoRodape, larguraDoTexto);
+        GUI.color = antes;
+
+        if (perguntando) return; // com a pergunta aberta, o mouse é só dela
+        // o "apagar" (antes do cartão: o clique nele não vale como clique no cartão)
+        if (r.temJogo) BotaoDaLixeira(new Rect(cartao.xMax - m - 30f * escala, cartao.y + m - 4f * escala, 30f * escala, 34f * escala),
+            GerenciadorDoJogo.BotaoApagarSlot - slot);
+        if (r.temJogo || novo) Mouse(cartao, slot, true);
+    }
+
+    // Um desenho do jogo (do tamanho "lado" de altura) e um número ao lado, centrados na altura "meio".
+    // Devolve onde terminou (para o próximo vir depois).
+    float IconeComNumero(string desenho, string numero, float x, float meio, float lado, float pixel)
+    {
+        Texture textura = FabricaDeSprites.Pegar(desenho).texture;
+        float largura = lado * textura.width / textura.height;
+        GUI.DrawTexture(new Rect(x, meio - lado / 2f, largura, lado), textura);
+        x += largura + 6f * escala;
+        return Texto(numero, x, meio - 7.5f * pixel * escala, pixel, 0f, Branco).xMax;
+    }
+
+    // A lixeira (apaga o slot): fica vermelhinha e um pouco maior com o mouse em cima.
+    void BotaoDaLixeira(Rect area, int botao)
+    {
+        bool emCima = Mouse(area, botao, false);
+        if (emCima) DesenharFaixa(area);
+        Texture lixeira = FabricaDeSprites.Pegar("lixeira").texture;
+        float altura = area.height * (emCima ? 0.95f : 0.82f), largura = altura * lixeira.width / lixeira.height;
+        Color antes = GUI.color;
+        if (emCima) GUI.color = new Color(1f, 0.55f, 0.55f, antes.a);
+        GUI.DrawTexture(new Rect(area.center.x - largura / 2f, area.center.y - altura / 2f, largura, altura), lixeira);
+        GUI.color = antes;
+    }
+
+    // "Apagar o Slot 2?" ou "Começar um jogo novo no Slot 2?", com SIM e NÃO.
+    void DesenharPerguntaDoSlot()
+    {
+        float w = Screen.width, h = Screen.height;
+        GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
+        float largura = Mathf.Min(720f * escala, w - 60f * escala), altura = 190f * escala;
+        var caixa = new Rect((w - largura) / 2f, (h - altura) / 2f, largura, altura);
+        Moldura(caixa, CorDoFundoDaFala);
+        int n = jogo.SlotPerguntando + 1;
+        string pergunta = jogo.PerguntaDeApagar ? Idioma.T($"Apagar a partida do Slot {n}?", $"Delete the game in Slot {n}?")
+            : Idioma.T($"Começar um jogo novo no Slot {n}?", $"Start a new game in Slot {n}?");
+        Texto(pergunta, caixa.center.x, caixa.y + 24f * escala, 2.8f, 0.5f, Amarelo, largura - 40f * escala);
+        Texto(jogo.PerguntaDeApagar ? "Os recordes e as medalhas desse slot também somem. As conquistas ficam." : "A partida, os recordes e as medalhas dele vão ser apagados.",
+            caixa.center.x, caixa.y + 72f * escala, 1.9f, 0.5f, Branco, largura - 40f * escala);
+        BotaoDeTexto("SIM (ENTER)", caixa.center.x - largura * 0.22f, caixa.yMax - 56f * escala, 2.6f, 0.5f, GerenciadorDoJogo.BotaoSim);
+        BotaoDeTexto("NÃO (ESC)", caixa.center.x + largura * 0.22f, caixa.yMax - 56f * escala, 2.6f, 0.5f, GerenciadorDoJogo.BotaoNao);
     }
 
     // Na mesma ordem de GerenciadorDoJogo.ItemDasOpcoes.
@@ -785,8 +1034,8 @@ public class Interface : MonoBehaviour
     {
         switch (item)
         {
-            case GerenciadorDoJogo.ItemDasOpcoes.Musica: return "Música: < " + Barra(Opcoes.Musica) + " >";
-            case GerenciadorDoJogo.ItemDasOpcoes.Efeitos: return "Efeitos: < " + Barra(Opcoes.Efeitos) + " >";
+            case GerenciadorDoJogo.ItemDasOpcoes.Musica: return Idioma.T("Música: < ", "Music: < ") + Barra(Opcoes.Musica) + " >";
+            case GerenciadorDoJogo.ItemDasOpcoes.Efeitos: return Idioma.T("Efeitos: < ", "Sound FX: < ") + Barra(Opcoes.Efeitos) + " >";
             case GerenciadorDoJogo.ItemDasOpcoes.Graficos: return Opcoes.GraficosHD2D ? "Gráficos: < HD-2D >" : "Gráficos: < Simples >";
             case GerenciadorDoJogo.ItemDasOpcoes.TelaCheia: return Opcoes.TelaCheia ? "Tela cheia: < Sim >" : "Tela cheia: < Não >";
             case GerenciadorDoJogo.ItemDasOpcoes.Cronometro: return Opcoes.MostrarTempo ? "Cronômetro: < Sim >" : "Cronômetro: < Não >";
@@ -812,7 +1061,7 @@ public class Interface : MonoBehaviour
         Textos.PaginaDeAjuda pagina = Textos.ComoJogar[p];
 
         Texto("COMO JOGAR", w / 2f, h * 0.04f, 5f, 0.5f, Lilas);
-        Texto(ComNumero(ref textoDaPagina, p, n => $"{Textos.ComoJogar[n].titulo}  ({n + 1}/{Textos.ComoJogar.Length})"),
+        Texto(ComNumero(ref textoDaPagina, p, n => $"{Idioma.Traduzir(Textos.ComoJogar[n].titulo)}  ({n + 1}/{Textos.ComoJogar.Length})"),
             w / 2f, h * 0.04f + 80f * escala, 3f, 0.5f, Amarelo, w * 0.9f);
 
         float y = h * 0.24f, passo = Mathf.Min(54f * escala, h * 0.6f / Mathf.Max(1, pagina.linhas.Length));
@@ -860,7 +1109,7 @@ public class Interface : MonoBehaviour
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro); // véu escuro: o painel fica fácil de ler
         float y = 48f * escala;
         Texto("FASE CONCLUÍDA!", w / 2f, y, 5f, 0.5f, Verde, w * 0.9f);
-        string comentario = jogo.MortesNaFase == 0 ? "Sem morrer?! Impossível." : $"Só {jogo.MortesNaFase} morte(s) nessa fase.";
+        string comentario = jogo.MortesNaFase == 0 ? "Sem morrer?! Impossível." : Idioma.T($"Só {jogo.MortesNaFase} morte(s) nessa fase.", $"Only {jogo.MortesNaFase} death(s) in this level.");
         Texto(comentario, w / 2f, y + 82f * escala, 2.5f, 0.5f, Branco, w * 0.9f);
         DesenharResultado(y + 128f * escala, avisoDePrimeiraVez: false); // o painel já diz que é a primeira vez
         DesenharPainelDeTempos(y + 286f * escala);
@@ -890,10 +1139,10 @@ public class Interface : MonoBehaviour
         for (int i = 0; i < Progresso.TamanhoDoRanking; i++)
         {
             linhaOcupada[i] = i < ranking.Count;
-            celulasDoPainel[i, 0] = (i + 1) + "º";
+            celulasDoPainel[i, 0] = Posicao(i + 1);
             if (!linhaOcupada[i])
             {
-                celulasDoPainel[i, 1] = "--:--,-";
+                celulasDoPainel[i, 1] = Idioma.T("--:--,-", "--:--.-");
                 celulasDoPainel[i, 2] = celulasDoPainel[i, 3] = "-";
                 continue;
             }
@@ -904,7 +1153,7 @@ public class Interface : MonoBehaviour
         }
 
         bool primeira = (r.novidades & Progresso.Novidade.Primeira) != 0;
-        vezesDoPainel = r.vezesConcluida <= 1 ? "primeira vez aqui!" : $"concluída {r.vezesConcluida} vezes";
+        vezesDoPainel = r.vezesConcluida <= 1 ? "primeira vez aqui!" : Idioma.T($"concluída {r.vezesConcluida} vezes", $"cleared {r.vezesConcluida} times");
         int ultimo = ranking.Count - 1;
         if (primeira)
         {
@@ -914,19 +1163,21 @@ public class Interface : MonoBehaviour
         else if (r.posicaoNoRanking == 0)
         {
             // bateu o recorde: quanto mais rápido que o antigo 1º lugar (que agora é o 2º)
-            resumoDoPainel = ranking.Count > 1 ? $"NOVO MELHOR TEMPO! {FormatarDiferenca(ranking[1].tempo - r.tempo)} mais rápido" : "NOVO MELHOR TEMPO!";
+            resumoDoPainel = ranking.Count > 1 ? Idioma.T($"NOVO MELHOR TEMPO! {FormatarDiferenca(ranking[1].tempo - r.tempo)} mais rápido", $"NEW BEST TIME! {FormatarDiferenca(ranking[1].tempo - r.tempo)} faster") : "NOVO MELHOR TEMPO!";
             corDoResumo = Verde;
         }
         else if (r.posicaoNoRanking > 0)
         {
-            resumoDoPainel = $"{r.posicaoNoRanking + 1}º melhor tempo (+{FormatarDiferenca(r.tempo - ranking[0].tempo)} do recorde)";
+            resumoDoPainel = Idioma.T($"{r.posicaoNoRanking + 1}º melhor tempo (+{FormatarDiferenca(r.tempo - ranking[0].tempo)} do recorde)",
+                $"{Posicao(r.posicaoNoRanking + 1)} best time (+{FormatarDiferenca(r.tempo - ranking[0].tempo)} behind the record)");
             corDoResumo = Amarelo;
         }
         else
         {
             resumoDoPainel = ultimo >= 0
-                ? $"Fora do top {Progresso.TamanhoDoRanking}: faltou {FormatarDiferenca(r.tempo - ranking[ultimo].tempo)}"
-                : $"Fora do top {Progresso.TamanhoDoRanking}";
+                ? Idioma.T($"Fora do top {Progresso.TamanhoDoRanking}: faltou {FormatarDiferenca(r.tempo - ranking[ultimo].tempo)}",
+                           $"Not in the top {Progresso.TamanhoDoRanking}: missed by {FormatarDiferenca(r.tempo - ranking[ultimo].tempo)}")
+                : Idioma.T($"Fora do top {Progresso.TamanhoDoRanking}", $"Not in the top {Progresso.TamanhoDoRanking}");
             corDoResumo = Rosa;
         }
     }
@@ -986,7 +1237,7 @@ public class Interface : MonoBehaviour
     {
         if (segundos >= 60f) return FormatarTempoFino(segundos);
         int decimos = Mathf.Max(0, Mathf.RoundToInt(segundos * 10f));
-        return $"{decimos / 10},{decimos % 10}s";
+        return $"{decimos / 10}{Virgula}{decimos % 10}s";
     }
 
     // ------------------------------------------------------------------ recordes e medalhas
@@ -1007,9 +1258,9 @@ public class Interface : MonoBehaviour
         {
             numeroDoResultado = r.numero;
             textosDoResultado[0] = FormatarTempoFino(r.tempo);
-            textosDoResultado[1] = r.mortes == 1 ? "1 morte" : r.mortes + " mortes";
-            textosDoResultado[2] = $"{r.moedas}/{r.totalDeMoedas} moedas";
-            metasDoResultado[0] = "meta " + FormatarTempo(Medalhas.TempoAlvo(jogo.FaseAtual));
+            textosDoResultado[1] = r.mortes == 1 ? Idioma.T("1 morte", "1 death") : r.mortes + Idioma.T(" mortes", " deaths");
+            textosDoResultado[2] = $"{r.moedas}/{r.totalDeMoedas}" + Idioma.T(" moedas", " coins");
+            metasDoResultado[0] = Idioma.T("meta ", "goal ") + FormatarTempo(Medalhas.TempoAlvo(jogo.FaseAtual));
             metasDoResultado[1] = "meta: 0";
             metasDoResultado[2] = "meta: todas";
         }
@@ -1054,9 +1305,9 @@ public class Interface : MonoBehaviour
         temRecordeGuardado = r.existe;
         if (!r.existe) return;
         medalhasGuardadas = Medalhas.DaFase(fase);
-        textosDoRecorde[0] = $"{FormatarTempoFino(r.tempo)} (meta {FormatarTempo(Medalhas.TempoAlvo(fase))})";
-        textosDoRecorde[1] = r.mortes == 1 ? "1 morte" : r.mortes + " mortes";
-        textosDoRecorde[2] = $"{r.moedas}/{Medalhas.TotalDeMoedas(fase)} moedas";
+        textosDoRecorde[0] = $"{FormatarTempoFino(r.tempo)} ({Idioma.T("meta", "goal")} {FormatarTempo(Medalhas.TempoAlvo(fase))})";
+        textosDoRecorde[1] = r.mortes == 1 ? Idioma.T("1 morte", "1 death") : r.mortes + Idioma.T(" mortes", " deaths");
+        textosDoRecorde[2] = $"{r.moedas}/{Medalhas.TotalDeMoedas(fase)}" + Idioma.T(" moedas", " coins");
     }
 
     // A linha de recorde no mapa: "RECORDE  [relógio] 00:41.2 (meta 00:55)  [coração] 2 mortes  [moeda] 5/7 moedas".
@@ -1094,12 +1345,71 @@ public class Interface : MonoBehaviour
         float centro = w * 0.6f, largura = w * 0.7f;
         Texto("VOCÊ ZEROU!", centro, h * 0.1f, 8f, 0.5f, Amarelo, largura);
         Texto("Marina: \"Obrigada por voltar, Grumete!\"", centro, h * 0.27f, 2.5f, 0.5f, Lilas, largura);
-        Texto($"Mortes: {jogo.Mortes}", centro, h * 0.38f, 3.5f, 0.5f, Branco);
-        Texto($"Moedas: {jogo.Moedas}", centro, h * 0.38f + 50f * escala, 3.5f, 0.5f, Amarelo);
-        Texto($"Tempo: {FormatarTempo(jogo.TempoTotal)}", centro, h * 0.38f + 100f * escala, 3.5f, 0.5f, Branco);
-        Texto($"Título: {GerenciadorDoJogo.Titulo(jogo.Mortes)}", centro, h * 0.38f + 165f * escala, 3.5f, 0.5f, Verde, largura);
+        Texto(Idioma.T("Mortes: ", "Deaths: ") + jogo.Mortes, centro, h * 0.38f, 3.5f, 0.5f, Branco);
+        Texto(Idioma.T("Moedas: ", "Coins: ") + jogo.Moedas, centro, h * 0.38f + 50f * escala, 3.5f, 0.5f, Amarelo);
+        Texto(Idioma.T("Tempo: ", "Time: ") + FormatarTempo(jogo.TempoTotal), centro, h * 0.38f + 100f * escala, 3.5f, 0.5f, Branco);
+        Texto(Idioma.T("Título: ", "Title: ") + Idioma.Traduzir(GerenciadorDoJogo.Titulo(jogo.Mortes)), centro, h * 0.38f + 165f * escala, 3.5f, 0.5f, Verde, largura);
         if (Time.unscaledTime % 1f < 0.65f)
             Texto("Aperte ENTER para ver os créditos", centro, h * 0.85f, 3f, 0.5f, Branco, largura);
+    }
+
+    // ------------------------------------------------------------------ a história (cutscenes)
+
+    // Um quadro da história: a imagem cobrindo a tela (chegando bem devagar mais perto), aparecendo do escuro,
+    // e o texto numa caixa de madeira embaixo, letra por letra. Os pontinhos mostram em que quadro está.
+    void DesenharHistoria()
+    {
+        Historia.Quadro[] quadros = jogo.HistoriaAtual;
+        if (quadros == null) return;
+        float w = Screen.width, h = Screen.height, t = jogo.TempoNoQuadro;
+        int atual = Mathf.Clamp(jogo.QuadroDaHistoria, 0, quadros.Length - 1);
+        Historia.Quadro quadro = quadros[atual];
+        Retangulo(new Rect(0, 0, w, h), Color.black);
+
+        // a imagem: cobre a tela inteira (16:9) e "chega mais perto" 4% em 10 segundos
+        Texture2D imagem = Historia.Imagem(quadro.imagem);
+        if (imagem != null)
+        {
+            float zoom = 1f + 0.04f * Mathf.Clamp01(t / 10f);
+            float largura = Mathf.Max(w, h * 16f / 9f) * zoom, altura = largura * 9f / 16f;
+            GUI.DrawTexture(new Rect((w - largura) / 2f, (h - altura) / 2f, largura, altura), imagem);
+        }
+        float escuro = 1f - Mathf.Clamp01(t / 0.45f); // aparece do escuro
+        if (escuro > 0f) Retangulo(new Rect(0, 0, w, h), new Color(0f, 0f, 0f, escuro));
+
+        // o texto, letra por letra
+        string texto = Idioma.Traduzir(quadro.texto);
+        int visiveis = Historia.LetrasVisiveis(t);
+        float margem = 40f * escala, alturaDaCaixa = 118f * escala;
+        var caixa = new Rect(margem, quadro.textoEmCima ? 22f * escala : h - alturaDaCaixa - 22f * escala, w - 2f * margem, alturaDaCaixa);
+        Moldura(caixa, CorDoFundoDaFala);
+        const float pixel = 2.4f;
+        float m = 20f * escala;
+        string[] linhas = QuebrarEmLinhas(texto, Mathf.FloorToInt((caixa.width - 2f * m) / (pixel * escala)));
+        float y = caixa.y + m - 4f * escala;
+        int resta = visiveis;
+        foreach (string linha in linhas)
+        {
+            if (resta <= 0) break;
+            Texto(resta >= linha.Length ? linha : linha.Substring(0, resta), caixa.x + m, y, pixel, 0f, Branco);
+            resta -= linha.Length + 1; // (+1: o espaço entre as linhas)
+            y += AlturaDaLinha * pixel * escala;
+        }
+        bool terminou = visiveis >= texto.Length;
+        if (terminou && Time.unscaledTime % 1f < 0.65f)
+            Texto(atual < quadros.Length - 1 ? "ENTER >" : "ENTER: continuar", caixa.xMax - m, caixa.yMax - m - 10f * escala, 1.8f, 1f, CorDoNome);
+
+        // em que quadro está: um pontinho por quadro
+        float lado = 8f * escala, espaco = 6f * escala;
+        float x0 = w / 2f - (quadros.Length * (lado + espaco) - espaco) / 2f;
+        for (int i = 0; i < quadros.Length; i++)
+            Retangulo(new Rect(x0 + i * (lado + espaco), caixa.yMax + 8f * escala, lado, lado),
+                i == atual ? (Color)CorDoNome : i < atual ? new Color(1f, 1f, 1f, 0.6f) : new Color(1f, 1f, 1f, 0.2f));
+
+        // pular (ESC) no canto de cima, e o clique em qualquer lugar passa o quadro
+        // (com o texto em cima, o "pular" desce para o canto de baixo)
+        BotaoDeTexto("ESC: pular", w - 20f * escala, quadro.textoEmCima ? h - 40f * escala : 16f * escala, 2f, 1f, GerenciadorDoJogo.BotaoVoltar);
+        Mouse(new Rect(0, 0, w, h), GerenciadorDoJogo.BotaoProxima, false);
     }
 
     // ------------------------------------------------------------------ caixas de fala
@@ -1174,6 +1484,7 @@ public class Interface : MonoBehaviour
         float lado = 64f * escala;                               // o quadradinho do retrato
         float pixel = PixelDaFala;
         float areaDoTexto = largura - lado - 3f * m;
+        texto = Idioma.Traduzir(texto); // (antes de quebrar em linhas)
         string[] linhas = QuebrarEmLinhas(texto, Mathf.FloorToInt(areaDoTexto / (pixel * escala)));
         while (linhas.Length > MaximoDeLinhas && pixel > 1.7f) // não coube: letra um pouco menor
         {
@@ -1229,7 +1540,7 @@ public class Interface : MonoBehaviour
     {
         float w = Screen.width, h = Screen.height;
         float largura = Mathf.Min(900f * escala, w - 40f * escala);
-        string texto = string.Format(fala.texto, jogo.MortesNaFase);
+        string texto = string.Format(Idioma.Traduzir(fala.texto), jogo.MortesNaFase); // (traduz antes de pôr o número)
         CaixaDeFala((w - largura) / 2f, h - 112f * escala, largura, fala.quem, fala.sprite, texto, 1f, "ENTER >", 100f * escala);
     }
 
@@ -1317,6 +1628,23 @@ public class Interface : MonoBehaviour
     {
         float p = jogo.Transicao;
         if (p > 0f) DesenharSombras(p, 1f);
+        if (p > 0f && jogo.TituloNaTransicao) DesenharTituloDaFase(jogo.FaseDaTransicao, p);
+    }
+
+    // O nome da fase no meio da tela vermelha (aparece quando os tentáculos já cobriram quase tudo).
+    void DesenharTituloDaFase(int fase, float p)
+    {
+        float alfa = Mathf.SmoothStep(0f, 1f, (p - 0.45f) / 0.45f);
+        if (alfa <= 0f) return;
+        float w = Screen.width, h = Screen.height;
+        bool secreta = fase == Fases.IndiceSecreto;
+        string numero = secreta ? Idioma.T("FASE SECRETA", "SECRET LEVEL") : $"{Idioma.T("FASE", "LEVEL")} {fase + 1}/{Fases.Todas.Length}";
+        string nome = Idioma.Traduzir(Fases.Dados(fase).nome);
+        Color antes = GUI.color;
+        GUI.color = new Color(1f, 1f, 1f, alfa);
+        Texto(numero, w / 2f, h * 0.4f, 2.8f, 0.5f, CorDoRodape, w * 0.8f);
+        Texto(nome, w / 2f, h * 0.4f + 46f * escala, 5f, 0.5f, CorDoLogo, w * 0.85f);
+        GUI.color = antes;
     }
 
     // p: 0 = nada, 1 = sombras no máximo. escuridaoMaxima: o quanto a tela fica escura no fim.
@@ -1357,10 +1685,13 @@ public class Interface : MonoBehaviour
         float largura = Mathf.Min(Screen.width * 0.4f, 560f * escala), altura = 16f * escala;
         var barra = new Rect((Screen.width - largura) / 2f, 52f * escala, largura, altura);
         int etapa = chefe.EtapaAtual * 100 + chefe.Etapas; // muda quando a etapa muda (ou quando o chefe é outro)
-        if (textoDoChefe.texto == null || textoDoChefe.valor != etapa || !textoDoChefe.texto.StartsWith(chefe.Nome, System.StringComparison.Ordinal))
+        string nomeDoChefe = Idioma.Traduzir(chefe.Nome);
+        if (textoDoChefe.texto == null || textoDoChefe.valor != etapa || textoDoChefe.idioma != Idioma.Atual
+            || !textoDoChefe.texto.StartsWith(nomeDoChefe, System.StringComparison.Ordinal))
         {
             textoDoChefe.valor = etapa;
-            textoDoChefe.texto = $"{chefe.Nome} - ETAPA {chefe.EtapaAtual + 1}/{chefe.Etapas}";
+            textoDoChefe.idioma = Idioma.Atual;
+            textoDoChefe.texto = $"{nomeDoChefe} - {Idioma.T("ETAPA", "STAGE")} {chefe.EtapaAtual + 1}/{chefe.Etapas}";
         }
         string titulo = textoDoChefe.texto;
         Texto(titulo, Screen.width / 2f, 12f * escala, 2.5f, 0.5f, Branco);
@@ -1447,9 +1778,11 @@ public class Interface : MonoBehaviour
     // alinhamento: 0 = x é a esquerda do texto, 0.5 = o centro, 1 = a direita.
     // Se passar de larguraMaxima, o texto encolhe para caber.
     // Devolve o retângulo onde o texto foi desenhado (útil para saber se o mouse está em cima).
+    // O texto é traduzido aqui (veja Idioma.Traduzir e Traducoes.cs): todo texto fixo da tela passa por aqui.
     Rect Texto(string texto, float x, float y, float pixel, float alinhamento, Color32 cor, float larguraMaxima = 0f)
     {
         if (string.IsNullOrEmpty(texto)) return new Rect(x, y, 0f, 0f);
+        texto = Idioma.Traduzir(texto);
         // (a conversão para MAIÚSCULAS acontece lá dentro, só na primeira vez: aqui não cria nenhuma string nova)
         Texture2D textura = FabricaDeSprites.TextoEmPixel(texto, cor, Preto, Preto, comAcentos: true, maiusculas: true);
         Rect area = AreaDoTexto(textura, x, y, pixel, alinhamento, larguraMaxima);
@@ -1461,6 +1794,7 @@ public class Interface : MonoBehaviour
     Rect MedirTexto(string texto, float x, float y, float pixel, float alinhamento, float larguraMaxima = 0f)
     {
         if (string.IsNullOrEmpty(texto)) return new Rect(x, y, 0f, 0f);
+        texto = Idioma.Traduzir(texto);
         Texture2D textura = FabricaDeSprites.TextoEmPixel(texto, Branco, Preto, Preto, comAcentos: true, maiusculas: true);
         return AreaDoTexto(textura, x, y, pixel, alinhamento, larguraMaxima);
     }
@@ -1484,6 +1818,7 @@ public class Interface : MonoBehaviour
     void OpcaoDeMenu(string texto, float y, float pixel, float alturaDaLinha, int indice, bool selecionada)
     {
         float w = Screen.width;
+        texto = Idioma.Traduzir(texto); // (antes de pôr o "> <" em volta)
         Rect medida = MedirTexto(texto, w / 2f, y, pixel, 0.5f, w * 0.9f);
         // área do mouse: a linha toda, mais larga que o texto (fácil de acertar) e sem buraco entre as linhas
         var area = new Rect(w / 2f - medida.width / 2f - 50f * escala, y + (medida.height - alturaDaLinha) / 2f,
@@ -1551,6 +1886,18 @@ public class Interface : MonoBehaviour
         GUI.DrawTexture(new Rect(centroX - largura / 2f, topo, largura, altura), texto);
     }
 
+    // Os décimos de segundo: "3,2s" em português, "3.2s" em inglês.
+    static string Virgula => Idioma.T(",", ".");
+
+    // A posição no ranking: "1º", "2º"... (em inglês: "1st", "2nd", "3rd", "4th"...).
+    static string Posicao(int n)
+    {
+        if (!Idioma.Ingles) return n + "º";
+        int dezena = n % 100;
+        string fim = dezena >= 11 && dezena <= 13 ? "th" : (n % 10) switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" };
+        return n + fim;
+    }
+
     static string FormatarTempo(float segundos) => FormatarTempo(Mathf.FloorToInt(segundos));
     static string FormatarTempo(int total) => $"{total / 60:00}:{total % 60:00}";
 
@@ -1558,6 +1905,6 @@ public class Interface : MonoBehaviour
     static string FormatarTempoFino(float segundos)
     {
         int decimos = Mathf.FloorToInt(segundos * 10f);
-        return $"{decimos / 600:00}:{decimos / 10 % 60:00},{decimos % 10}";
+        return $"{decimos / 600:00}:{decimos / 10 % 60:00}{Virgula}{decimos % 10}";
     }
 }

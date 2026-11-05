@@ -451,7 +451,7 @@ public class ChefeCozinheira : Chefe
     // Depois de morrer: "PRONTO?" e a luta volta na etapa em que estava.
     IEnumerator Pronto()
     {
-        GerenciadorDoJogo.Instancia.Avisar($"ETAPA {etapa + 1}/{Etapas} - PRONTO?", 1.3f);
+        GerenciadorDoJogo.Instancia.Avisar(Idioma.T($"ETAPA {etapa + 1}/{Etapas} - PRONTO?", $"STAGE {etapa + 1}/{Etapas} - READY?"), 1.3f);
         olhos.position = Ponto(PoleiroDoTopo);
         olhosAbertos = true;
         GerenciadorDoJogo.Som("risada", 0.5f);

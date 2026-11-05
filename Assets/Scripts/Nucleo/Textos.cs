@@ -35,6 +35,51 @@ public static class Textos
         { "O Verdadeiro Final (juro)", Louro("Ops. Esqueci de falar do Kraken Vermelho. Ela rouba moedas. Boa sorte! :)") },
     };
 
+    // ------------------------------------------------------------------ a história nas falas do mapa
+
+    // Quem mais fala depois dos chefes (veja a história em Historia.cs): o chefe, livre da maldição, e o
+    // Deus da Riqueza, de olho no tesouro dele. O retrato é o desenho do jogo ("capita_parada"...).
+    static Fala Capita(string texto) => new Fala { quem = "Capitã", sprite = "capita_parada", texto = texto };
+    static Fala Cozinheira(string texto) => new Fala { quem = "Cozinheira", sprite = "cozinheira_chefe", texto = texto };
+    static Fala Deus(string texto) => new Fala { quem = "Deus da Riqueza", sprite = "deus_da_riqueza", texto = texto };
+
+    // Falas que vêm DEPOIS da fala normal da fase (uma atrás da outra: ENTER passa), pelo nome da fase.
+    static readonly Dictionary<string, Fala[]> DepoisDaFala = new Dictionary<string, Fala[]>
+    {
+        {
+            "A Capitã Âncora", new[]
+            {
+                Capita("Ai, minha cabeça... Desculpa, Grumete! Era a maldição que me deixava furiosa. E eu MANDEI pedir desculpas, papagaio!"),
+                Deus("Muito bem, pirata. Cada alma que você liberta devolve um pouco do equilíbrio. Meu tesouro está mais perto..."),
+            }
+        },
+        {
+            "A Gruta da Cozinheira", new[]
+            {
+                Cozinheira("Hihi... ops! Eu queria mesmo te cozinhar? Que vergonha! Era a maldição. Vou me esconder no navio fantasma até passar."),
+                Deus("Mais uma alma livre. Continue, pirata. O Kraken já sente você chegando."),
+            }
+        },
+        {
+            "A Baleia Branca", new[]
+            {
+                Deus("A Baleia voltou a ser só uma baleia. Agora só falta o Kraken Vermelho. E o MEU tesouro."),
+            }
+        },
+    };
+
+    // A fala de depois da fase e as que vêm atrás dela (a primeira é a de Escolher).
+    public static Fala[] FalasDepoisDaFase(int faseConcluida, int mortes)
+    {
+        Fala primeira = Escolher(faseConcluida, mortes);
+        if (faseConcluida == Fases.IndiceSecreto || !DepoisDaFala.TryGetValue(Fases.Dados(faseConcluida).nome, out Fala[] depois))
+            return new[] { primeira };
+        var todas = new Fala[depois.Length + 1];
+        todas[0] = primeira;
+        depois.CopyTo(todas, 1);
+        return todas;
+    }
+
     // Fala genérica para uma fase sem fala própria.
     static readonly Fala FalaPadrao = Louro("Passou! Com só {0} morte(s). Eu tô impressionado. Um pouco.");
 
@@ -198,7 +243,7 @@ public static class Textos
                 new LinhaDeAjuda("MEDALHA DO CORAÇÃO", "passar a fase sem morrer nenhuma vez."),
                 new LinhaDeAjuda("MEDALHA DA MOEDA", "pegar TODAS as moedas numa tentativa só."),
                 new LinhaDeAjuda("NO MAPA", "as medalhas ficam do lado de cada fase (apagada = falta)."),
-                new LinhaDeAjuda("VALEM PARA SEMPRE", "um Novo jogo não apaga recordes nem medalhas."),
+                new LinhaDeAjuda("UM POR SLOT", "cada slot tem os seus recordes e medalhas (apagar o slot apaga eles)."),
             },
         },
     };

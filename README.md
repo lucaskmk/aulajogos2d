@@ -295,9 +295,19 @@ Ferramentas/     scripts de apoio (checador de fases, gerador das músicas em WA
   e a névoa e a animação em `NevoaDoMapa.cs` e `VidaDoMapa.cs`.
 - `Interface.cs`: tudo o que é desenhado por cima do jogo (HUD, menus, pausa, morte, falas, barra do chefe, transições). Usa IMGUI e a fonte pixel própria.
 - `Controles.cs`: a leitura de teclado e controle (Input System).
-- `Progresso.cs`: o save em PlayerPrefs (continuar, mortes por fase, secreta, recorde e os recordes de cada fase, guardados pelo nome da fase), com validação de versão.
+- `Progresso.cs`: o save em PlayerPrefs, com validação de versão. A partida (fase, mortes, moedas, tempo, itens da Loja, mortes por fase e secreta)
+  fica em um de **3 slots** (`cilada_slot1_...`); o título tem "Continuar" (último slot usado), "Carregar jogo" e "Novo jogo" (a tela dos slots,
+  com DEL ou a lixeira para apagar). Os recordes, as medalhas e os melhores tempos de cada fase (guardados pelo nome da fase) também são de cada slot;
+  o recorde do título (zerar com menos mortes) e as conquistas valem para o jogo todo.
+  O save de antes dos slots vira o Slot 1 sozinho na primeira vez.
 - `Medalhas.cs`: as 3 medalhas de cada fase (tempo, sem morrer, todas as moedas), o tempo-alvo e o desenho delas.
 - `Conquistas.cs`, `Opcoes.cs` e `Textos.cs`: as 27 conquistas, o volume e os gráficos, e as falas do mapa e os créditos.
+- `Historia.cs`: a história contada em quadros (cutscenes): a abertura (num Novo jogo, antes do mapa) e o final (depois do Kraken).
+  As imagens (256 x 144) ficam em `Assets/Resources/Arte/historia/` e são desenhadas por `Ferramentas/historia/desenhar_historia.py`,
+  que lê os desenhos dos personagens direto dos .cs (mudou um personagem? rode o script de novo).
+- `Idioma.cs` e `Traducoes.cs`: o jogo em Português ou Inglês (botão "Idioma / Language" no título, salvo no PlayerPrefs).
+  A Interface traduz sozinha todo texto que desenha, procurando em `Traducoes.cs` (pares "português" -> "inglês");
+  textos montados com números usam `Idioma.T("pt", "en")` direto no código. Mudou um texto em português? Mude a chave em `Traducoes.cs` também.
 - `ArteDosPersonagens.cs`: o Grumete, o Louro, os caranguejos, o rato, a Marina, a Dóris e a moeda, com uma paleta de três tons por material.
 - `FabricaDeSprites.cs` e `ArteDosBlocos.cs`: a arte procedural dos blocos, dos enfeites e dos fundos, o sombreamento automático dos desenhos grandes
   e a fonte pixel com acentos.

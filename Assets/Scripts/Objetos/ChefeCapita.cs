@@ -452,7 +452,7 @@ public class ChefeCapita : Chefe
     // Depois de morrer: "PRONTO?" e a luta volta na etapa em que estava.
     IEnumerator Pronto()
     {
-        GerenciadorDoJogo.Instancia.Avisar($"ETAPA {etapa + 1}/{EtapasDaLuta} - PRONTO?", 1.3f);
+        GerenciadorDoJogo.Instancia.Avisar(Idioma.T($"ETAPA {etapa + 1}/{EtapasDaLuta} - PRONTO?", $"STAGE {etapa + 1}/{EtapasDaLuta} - READY?"), 1.3f);
         GerenciadorDoJogo.Som("serra", 0.4f);
         yield return new WaitForSeconds(1.5f); // um respiro: o 1º ataque não pode pegar quem acabou de nascer
     }

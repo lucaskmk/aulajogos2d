@@ -12,6 +12,8 @@ using UnityEngine.Rendering.Universal;
 //  - A faca tem LUZ PRÓPRIA: no escuro dá para ver ela vindo de longe (e ela ilumina o caminho por onde passa).
 //  - A faca crava (e some) quando bate em algo sólido: chão, parede, caixote... Esconder atrás de um bloco funciona!
 //  - A Cozinheira em si não mata (é só uma sombra; dá para passar por ela). Quem mata é a faca.
+//  - PULE NA CABEÇA dela (no chapéu) para derrotá-la, como um caranguejo: ela é esmagada e some no escuro.
+//    As facas que já estavam voando continuam até cravar; as que estavam na mão somem junto com ela.
 //  - A faca mira no MEIO do Grumete: um pulo passa por cima dela.
 //
 // 'k' - IGUALZINHA... até arremessar. Essa joga TRÊS facas de uma vez, em LEQUE: uma em você,
@@ -54,6 +56,8 @@ public class FacasDaCozinheira : MonoBehaviour
     const float DistanciaDaMao = 0.55f;       // onde a faca aparece, a partir do meio do bloco
     const float PontaDaFaca = 0.5f;           // do meio da faca até a ponta (é a ponta que crava)
     const float PassoMaximo = 0.25f;          // a faca anda em passinhos (não atravessa parede fina nem com o jogo travando)
+    const float TopoDaCabeca = AlturaDaSilhueta + 10f / 16f; // o alto do chapéu (o desenho tem 20 pixels de altura)
+    const float DuracaoDaDerrota = 0.5f;      // o tempo dela sendo esmagada e sumindo
     static readonly Vector2 TamanhoDaAreaQueMata = new Vector2(0.7f, 0.24f); // um pouco menor que o desenho (é mais justo)
     static readonly Vector2 CentroDaAreaQueMata = new Vector2(0.2f, 0f);     // a lâmina fica na frente do cabo
 
@@ -85,6 +89,8 @@ public class FacasDaCozinheira : MonoBehaviour
     Vector2 alvo;                    // onde ela viu o Grumete pela última vez
     bool jaRiu;                      // a 'k' ri na primeira vez que joga o leque
     float abertura;                  // 0 = olhos fechados (sumiu no escuro), 1 = olhos abertos
+    bool derrotada;                  // levou um pisão na cabeça
+    float timerDaDerrota;
 
     Transform silhueta;
     SpriteRenderer desenhoDaSilhueta, desenhoDosOlhos, desenhoDoSorriso;
@@ -133,6 +139,18 @@ public class FacasDaCozinheira : MonoBehaviour
     void Update()
     {
         float dt = Time.deltaTime; // na pausa é 0: ela e as facas congelam sozinhas
+        if (derrotada)
+        {
+            AnimarDerrota(dt);
+            MoverFacas(dt); // as facas que já estavam no ar continuam até cravar
+            if (timerDaDerrota >= DuracaoDaDerrota && facas.Count == 0) Destroy(gameObject);
+            return;
+        }
+        if (dt > 0f && PisaramNaCabeca(out Jogador quemPisou))
+        {
+            Derrotar(quemPisou);
+            return;
+        }
         bool viu = JogadorNoAlcance(out Vector2 jogador);
         if (viu) alvo = jogador;
 
@@ -172,6 +190,49 @@ public class FacasDaCozinheira : MonoBehaviour
         if (!GerenciadorDoJogo.JogadorVivo(out jogador)) return false;
         Vector2 d = jogador - (Vector2)transform.position;
         return Mathf.Abs(d.x) < alcanceHorizontal && Mathf.Abs(d.y) < alcanceVertical;
+    }
+
+    // ------------------------------------------------------------------ o pisão
+
+    // O Grumete está caindo bem em cima do chapéu dela? (os pés perto do topo da cabeça, e no meio dela)
+    // Andando pelo chão, ele passa por ela sem pisar: os pés ficam bem abaixo do chapéu.
+    bool PisaramNaCabeca(out Jogador jogador)
+    {
+        jogador = GerenciadorDoJogo.JogadorAtual;
+        if (jogador == null || jogador.Morto || jogador.Corpo.linearVelocity.y > 0.5f) return false;
+        Vector2 pes = (Vector2)jogador.transform.position + Vector2.down * 0.43f; // (o colisor do Grumete tem 0,86 de altura)
+        float topo = transform.position.y + TopoDaCabeca;
+        return Mathf.Abs(pes.x - transform.position.x) < 0.7f && pes.y > topo - 0.5f && pes.y < topo + 0.25f;
+    }
+
+    // Esmagada! O Grumete quica (como no caranguejo), as facas da mão somem e ela se desfaz no escuro.
+    void Derrotar(Jogador jogador)
+    {
+        derrotada = true;
+        for (int i = facas.Count - 1; i >= 0; i--)
+        {
+            if (facas[i].estado != EstadoDaFaca.NaMao) continue;
+            if (facas[i].objeto != null) Destroy(facas[i].objeto.gameObject);
+            facas.RemoveAt(i);
+        }
+        desenhoDosOlhos.enabled = false;
+        desenhoDoSorriso.enabled = false;
+        if (luzDosOlhos != null) luzDosOlhos.enabled = false;
+        Efeitos.Poeira(transform.parent, transform.position + Vector3.up * TopoDaCabeca, 6, 2f);
+        jogador.Quicar(11f, true);
+        GerenciadorDoJogo.Som("pisao");
+    }
+
+    // Achatando (fica baixinha e larga) e sumindo.
+    void AnimarDerrota(float dt)
+    {
+        timerDaDerrota += dt;
+        float p = Mathf.Clamp01(timerDaDerrota / DuracaoDaDerrota);
+        silhueta.localScale = new Vector3(1f + 0.4f * p, 1f - 0.7f * p, 1f);
+        // achatando "para baixo": os pés ficam no lugar
+        float alturaDoDesenho = 20f / 16f;
+        silhueta.position = transform.position + Vector3.up * (AlturaDaSilhueta - alturaDoDesenho * 0.7f * p / 2f);
+        desenhoDaSilhueta.color = new Color(1f, 1f, 1f, 1f - p);
     }
 
     // ------------------------------------------------------------------ o arremesso
