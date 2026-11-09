@@ -20,6 +20,14 @@ public static class ArteDaLoja
         { 'B', new Color32(150, 92, 56, 255) },   // couro / rolha
         { 'b', new Color32(92, 54, 36, 255) },    // couro (sombra)
         { '7', new Color32(196, 132, 84, 255) },  // couro (luz)
+        { 'R', new Color32(232, 62, 70, 255) },   // poção dos espinhos
+        { 'r', new Color32(164, 34, 52, 255) },   // poção dos espinhos (sombra)
+        { 'd', new Color32(102, 20, 38, 255) },   // poção dos espinhos (bem escuro)
+        { 'Q', new Color32(255, 186, 176, 255) }, // poção dos espinhos (brilho)
+        { 'G', new Color32(84, 204, 104, 255) },  // poção do chão
+        { 'g', new Color32(40, 140, 76, 255) },   // poção do chão (sombra)
+        { 'h', new Color32(24, 88, 58, 255) },    // poção do chão (bem escuro)
+        { 'H', new Color32(202, 246, 182, 255) }, // poção do chão (brilho)
     };
 
     static Sprite Desenhar(string[] linhas, Vector2 pivo)
@@ -49,6 +57,18 @@ public static class ArteDaLoja
         "..kyyyyyDk..",
         "...kkkkkk...",
     };
+
+    // As poções de visão são o mesmo frasco do elixir, com outro líquido.
+    static string[] Frasco(string dourado, string liquido)
+    {
+        var linhas = new string[Elixir.Length];
+        for (int i = 0; i < linhas.Length; i++)
+        {
+            linhas[i] = Elixir[i];
+            for (int c = 0; c < dourado.Length; c++) linhas[i] = linhas[i].Replace(dourado[c], liquido[c]);
+        }
+        return linhas;
+    }
 
     // O duplo salto: a bota de couro com uma asinha branca do lado.
     static readonly string[] BotaAlada =
@@ -143,6 +163,8 @@ public static class ArteDaLoja
     static void Registrar()
     {
         FabricaDeSprites.Registrar("elixir", () => Desenhar(Elixir, FabricaDeSprites.Centro));
+        FabricaDeSprites.Registrar("pocao_espinhos", () => Desenhar(Frasco("YyDX", "RrdQ"), FabricaDeSprites.Centro));
+        FabricaDeSprites.Registrar("pocao_chao", () => Desenhar(Frasco("YyDX", "GghH"), FabricaDeSprites.Centro));
         FabricaDeSprites.Registrar("bota_alada", () => Desenhar(BotaAlada, FabricaDeSprites.Centro));
         FabricaDeSprites.Registrar("ponteiro_da_roleta", () => Desenhar(Ponteiro, new Vector2(0.5f, 1f)));
         FabricaDeSprites.Registrar("roleta", () =>

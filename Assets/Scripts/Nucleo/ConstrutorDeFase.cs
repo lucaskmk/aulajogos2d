@@ -105,7 +105,7 @@ public static class ConstrutorDeFase
                 {
                     case '#': BlocoSolido(chaoSolido.transform, pos, SpriteDoChao(x, linha), !SombraEscondida(x, linha)); break;
                     case 'B': BlocoSolido(chaoSolido.transform, pos, "tijolo", !SombraEscondida(x, linha)); break;
-                    case 'F': Visual("ChaoFalso", raiz, pos, SpriteDoChao(x, linha), 0, parado: true); break;
+                    case 'F': Visual("ChaoFalso", raiz, pos, SpriteDoChao(x, linha), 0, parado: true).AddComponent<ChaoRevelado>(); break;
                     case 'C': celulasQueCaem.Add(new Vector2Int(x, linha)); break;
                     case 'P': info.inicio = pos; break;
                     case '?': Criar<BlocoSurpresa>("BlocoMoeda", raiz, pos); info.totalDeMoedas++; break;
@@ -168,6 +168,7 @@ public static class ConstrutorDeFase
             var objeto = new GameObject("ChaoQueCai");
             objeto.transform.SetParent(raiz, false);
             var chaoQueCai = objeto.AddComponent<ChaoQueCai>();
+            objeto.AddComponent<ChaoRevelado>();
             foreach (Vector2Int celula in grupo)
                 chaoQueCai.AdicionarBloco(Posicao(celula.x, celula.y), FabricaDeSprites.Pegar(SpriteDoChao(celula.x, celula.y)));
         }

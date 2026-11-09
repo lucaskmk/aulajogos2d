@@ -35,6 +35,8 @@ public static class Progresso
     const string ChaveEscudos = "salvo_escudos";
     const string ChaveElixires = "salvo_elixires";
     const string ChavePuloDuplo = "salvo_pulo_duplo";
+    const string ChavePocoesDeEspinhos = "salvo_pocoes_espinhos";
+    const string ChavePocoesDoChao = "salvo_pocoes_chao";
     const string ChaveData = "salvo_data";                 // quando foi jogado por último ("2026-11-05")
     const string ChaveDificil = "salvo_dificil";           // 1 = o Grumete roubou o tesouro: o modo difícil (a tempestade)
     const string ChaveEscolha = "salvo_escolha";           // 1 = chegou no baú e ainda não escolheu (o "Continuar" volta na escolha)
@@ -45,6 +47,7 @@ public static class Progresso
         (ChaveTemJogo, 'i'), (ChaveFase, 'i'), (ChaveMaisLonge, 'i'), (ChaveMortes, 'i'), (ChaveMoedas, 'i'),
         (ChaveTempo, 'f'), (ChaveValida, 'i'), (ChaveMortesPorFase, 's'), (ChaveSecreta, 'i'), (ChaveQuantasFases, 'i'),
         (ChaveEscudos, 'i'), (ChaveElixires, 'i'), (ChavePuloDuplo, 'i'), (ChaveData, 's'), (ChaveDificil, 'i'), (ChaveEscolha, 'i'),
+        (ChavePocoesDeEspinhos, 'i'), (ChavePocoesDoChao, 'i'),
     };
 
     public const int TotalDeSlots = 3;
@@ -241,12 +244,16 @@ public static class Progresso
     public static int EscudosSalvos => PlayerPrefs.GetInt(NoSlot(ChaveEscudos), 0);
     public static int ElixiresSalvos => PlayerPrefs.GetInt(NoSlot(ChaveElixires), 0);
     public static bool PuloDuploSalvo => PlayerPrefs.GetInt(NoSlot(ChavePuloDuplo), 0) == 1;
+    public static int PocoesDeEspinhosSalvas => PlayerPrefs.GetInt(NoSlot(ChavePocoesDeEspinhos), 0);
+    public static int PocoesDoChaoSalvas => PlayerPrefs.GetInt(NoSlot(ChavePocoesDoChao), 0);
 
-    public static void SalvarItensDaLoja(int escudos, int elixires, bool puloDuplo)
+    public static void SalvarItensDaLoja(int escudos, int elixires, bool puloDuplo, int pocoesDeEspinhos, int pocoesDoChao)
     {
         PlayerPrefs.SetInt(NoSlot(ChaveEscudos), escudos);
         PlayerPrefs.SetInt(NoSlot(ChaveElixires), elixires);
         PlayerPrefs.SetInt(NoSlot(ChavePuloDuplo), puloDuplo ? 1 : 0);
+        PlayerPrefs.SetInt(NoSlot(ChavePocoesDeEspinhos), pocoesDeEspinhos);
+        PlayerPrefs.SetInt(NoSlot(ChavePocoesDoChao), pocoesDoChao);
         PlayerPrefs.Save();
     }
 

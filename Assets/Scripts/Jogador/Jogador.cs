@@ -75,6 +75,17 @@ public class Jogador : MonoBehaviour
 
     readonly List<Collider2D> encostados = new List<Collider2D>();
     ContactFilter2D filtroSolido;
+    readonly ContactPoint2D[] contatos = new ContactPoint2D[8];
+    readonly List<RaycastHit2D> acertos = new List<RaycastHit2D>();
+
+    // Até esta altura, uma "parede" nos pés é só emenda entre dois colisores (chão x bloco do ritmo, chão que cai...).
+    const float DegrauDaEmenda = 0.2f;
+
+    // Para a bandeira de morto: em que lugar ele afundou abaixo do último chão (é ali o buraco ou o chão falso).
+    bool afundou;
+    float xDaQueda;
+    // Morreu apertando R? (aí não marca o lugar: reiniciar não ensina nada sobre a fase)
+    public bool Reiniciou { get; private set; }
 
     void Awake()
     {
@@ -134,6 +145,12 @@ public class Jogador : MonoBehaviour
         }
         if (!NoChao) quedaMaisRapida = Mathf.Min(quedaMaisRapida, Corpo.linearVelocity.y);
         else if (!estavaNoChao) Aterrissou();
+        if (NoChao) afundou = false;
+        else if (!afundou && Corpo.position.y < ultimoChao.y - 0.6f)
+        {
+            afundou = true;
+            xDaQueda = Corpo.position.x;
+        }
         timerCoyote = NoChao ? tempoCoyote : timerCoyote - dt;
         timerBufferPulo -= dt;
 
@@ -141,6 +158,7 @@ public class Jogador : MonoBehaviour
         float vento = empurrao;
         empurrao = 0f;
         v.x = Mathf.MoveTowards(v.x, entradaX * velocidade + vento, aceleracao * dt);
+        if (NoChao && entradaX != 0f) PassarPelaEmenda(ref v, vento);
 
         GerenciadorDoJogo jogo = GerenciadorDoJogo.Instancia;
         bool comElixir = jogo != null && jogo.ElixirAtivo;
@@ -293,6 +311,7 @@ public class Jogador : MonoBehaviour
             }
         }
         Morto = true;
+        Reiniciou = ignorarEscudo;
 
         colisor.enabled = false;
         AplicarEscala(Vector2.one);
@@ -425,6 +444,61 @@ public class Jogador : MonoBehaviour
         if (timerBrilho > 0f) return;
         timerBrilho = NoChao ? 0.3f : 0.08f; // no ar, um rastro mais forte
         Faiscas(1);
+    }
+
+    // Os blocos do ritmo, o chão que cai e as plataformas têm colisores separados do chão: andando reto, o pé do Grumete
+    // às vezes bate na quina da emenda (ou num bloco que acendeu um tiquinho acima dele) e ele trava no meio do caminho.
+    // Se o que segura ele for só uma beiradinha nos pés, sem parede de verdade na altura do corpo, ele sobe por cima.
+    void PassarPelaEmenda(ref Vector2 v, float vento)
+    {
+        float direcao = Mathf.Sign(entradaX);
+        float pes = Corpo.position.y - 0.5f;
+        bool travado = false;
+        int quantos = colisor.GetContacts(contatos);
+        for (int i = 0; i < quantos && !travado; i++)
+        {
+            ContactPoint2D c = contatos[i];
+            Collider2D outro = c.collider == colisor ? c.otherCollider : c.collider;
+            travado = Mathf.Abs(c.normal.x) > 0.7f && (c.point.x - Corpo.position.x) * direcao > 0.2f
+                      && c.point.y < pes + DegrauDaEmenda && !Inimigo.EhBicho(outro);
+        }
+        if (!travado) return;
+
+        // Parede de verdade na altura do corpo? Então é parede mesmo.
+        float frente = Corpo.position.x + direcao * 0.42f;
+        var meioDoCorpo = new Vector2(frente, pes + DegrauDaEmenda + 0.38f);
+        int noCorpo = Physics2D.OverlapBox(meioDoCorpo, new Vector2(0.08f, 0.72f), 0f, filtroSolido, encostados);
+        for (int i = 0; i < noCorpo; i++)
+            if (encostados[i] != colisor && !Inimigo.EhBicho(encostados[i])) return;
+
+        // Acha o topo do que está na frente e sobe só o necessário.
+        var deCima = new Vector2(frente, pes + DegrauDaEmenda + 0.02f);
+        int abaixo = Physics2D.Raycast(deCima, Vector2.down, filtroSolido, acertos, DegrauDaEmenda + 0.08f);
+        float topo = float.NegativeInfinity;
+        for (int i = 0; i < abaixo; i++)
+            if (acertos[i].collider != colisor && !Inimigo.EhBicho(acertos[i].collider)) topo = Mathf.Max(topo, acertos[i].point.y);
+        if (float.IsNegativeInfinity(topo) || topo > pes + DegrauDaEmenda) return;
+
+        Corpo.position += Vector2.up * (Mathf.Max(topo - pes, 0f) + 0.015f);
+        v.x = entradaX * velocidade + vento;
+    }
+
+    // Onde fincar a bandeira de morto: caiu num buraco (ou num chão falso) = na altura do último chão, em cima de onde afundou;
+    // senão, no chão logo embaixo de onde ele morreu.
+    public Vector3 LugarDaBandeira(bool caiuNoBuraco)
+    {
+        Vector2 aqui = transform.position;
+        float x = caiuNoBuraco && afundou ? xDaQueda : aqui.x;
+        float chao = ultimoChao.y - 0.5f;
+        if (!caiuNoBuraco)
+        {
+            float menor = float.MaxValue;
+            int quantos = Physics2D.Raycast(aqui, Vector2.down, filtroSolido, acertos, 14f);
+            for (int i = 0; i < quantos; i++)
+                if (!Inimigo.EhBicho(acertos[i].collider)) menor = Mathf.Min(menor, acertos[i].distance);
+            if (menor < float.MaxValue) chao = aqui.y - menor;
+        }
+        return new Vector3(x, chao, 0f);
     }
 
     // Impulso para cima (pisar no inimigo, mola...). Se podeCortar, segurar o pulo deixa o salto mais alto.

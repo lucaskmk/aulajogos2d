@@ -66,6 +66,12 @@ public class GerenciadorDoJogo : MonoBehaviour
     public int precoDoElixir = 20;
     [Tooltip("Quantos elixires o jogador pode carregar de uma vez.")]
     public int maximoDeElixires = 3;
+    [Tooltip("Quanto custa a poção que mostra os espinhos escondidos.")]
+    public int precoDaPocaoDeEspinhos = 15;
+    [Tooltip("Quanto custa a poção que mostra o chão que cai e o chão falso.")]
+    public int precoDaPocaoDoChao = 15;
+    [Tooltip("Quantas poções de cada tipo o jogador pode carregar de uma vez.")]
+    public int maximoDePocoes = 3;
     [Tooltip("Quanto custa o duplo salto (compra uma vez e vale para a partida inteira).")]
     public int precoDoPuloDuplo = 45;
 
@@ -87,6 +93,11 @@ public class GerenciadorDoJogo : MonoBehaviour
     // Elixires de super salto guardados. Entrar numa fase pelo mapa gasta um, e ele vale a fase inteira (ElixirAtivo).
     public int Elixires { get; private set; }
     public bool ElixirAtivo { get; private set; }
+    // Poções guardadas. Entrar numa fase que tenha o que mostrar gasta uma de cada, e ela vale a fase inteira.
+    public int PocoesDeEspinhos { get; private set; }
+    public int PocoesDoChao { get; private set; }
+    public bool VendoEspinhos { get; private set; }
+    public bool VendoChaoFalso { get; private set; }
     // O duplo salto (comprado uma vez na Loja, vale para a partida inteira).
     public bool TemPuloDuplo { get; private set; }
     public float TempoTotal { get; private set; }
@@ -221,7 +232,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     public Progresso.ResumoDoSlot ResumoDoSlot(int slot) => resumos[slot];
 
     // Loja: abre por cima do mapa (tecla L ou o botão no canto de baixo à direita). Vende o escudo, o elixir de
-    // super salto e o duplo salto, e tem a ROLETA no meio. A ordem aqui é a ordem em que CIMA/BAIXO andam.
+    // super salto, o duplo salto e as duas poções de visão, e tem a ROLETA no meio. A ordem aqui é a ordem em que CIMA/BAIXO andam.
     // A tela de conquistas rola (em "linhas": 0 = o topo). O máximo vem da Interface (que sabe quantas cabem na tela).
     public float RolagemDasConquistas { get; private set; }
     float maximoDaRolagem;
@@ -235,7 +246,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         RolagemDasConquistas = Mathf.Clamp(RolagemDasConquistas, 0f, Mathf.Max(0f, maximo));
     }
 
-    public enum ItemDaLoja { Escudo, Elixir, PuloDuplo, Aposta, Cor, Girar, Voltar }
+    public enum ItemDaLoja { Escudo, Elixir, PuloDuplo, PocaoDeEspinhos, PocaoDoChao, Aposta, Cor, Girar, Voltar }
     public static readonly int TotalDaLoja = System.Enum.GetValues(typeof(ItemDaLoja)).Length;
     public bool LojaAberta { get; private set; }
     public int OpcaoDaLoja { get; private set; }
@@ -345,6 +356,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     // Volta da Maré: onde você morreu nas últimas tentativas desta fase.
     readonly List<Vector3> lugaresDasMortes = new List<Vector3>();
     int faseDasMarcas = -1;
+    Vector3? lugarDaBandeira; // o pé da bandeira de morto (a última morte nesta fase)
 
     Transform raizDaFase;
     Jogador jogador;
@@ -437,6 +449,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (indice != faseDasMarcas)
         {
             lugaresDasMortes.Clear();
+            lugarDaBandeira = null;
             faseDasMarcas = indice;
         }
 
@@ -469,7 +482,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         InfoFase info = ConstrutorDeFase.Construir(dados, raizDaFase, MortesNaFase);
         bool noite = dados.noite || dados.escura;
         Paralaxe.Criar(raizDaFase, info.largura, corDoFundo, noite); // céu, montanhas, castelo, floresta...
-        MarcaDaMorte.Criar(raizDaFase, lugaresDasMortes);
+        MarcaDaMorte.Criar(raizDaFase, lugaresDasMortes, lugarDaBandeira);
 
         PosicaoInicial = info.inicio;
         Bandeiras = info.bandeiras;
@@ -541,6 +554,8 @@ public class GerenciadorDoJogo : MonoBehaviour
         LojaAberta = false;
         Tutorial = PassoDoTutorial.Nenhum;
         ElixirAtivo = false; // saiu da fase: o elixir acabou
+        VendoEspinhos = false; // (e as poções também)
+        VendoChaoFalso = false;
         Estado = EstadoDoJogo.Mapa;
     }
 
@@ -552,6 +567,10 @@ public class GerenciadorDoJogo : MonoBehaviour
         Escudos = 0;
         Elixires = 0;
         ElixirAtivo = false;
+        PocoesDeEspinhos = 0;
+        PocoesDoChao = 0;
+        VendoEspinhos = false;
+        VendoChaoFalso = false;
         TemPuloDuplo = false;
         LojaAberta = false;
         Tutorial = PassoDoTutorial.Nenhum;
@@ -610,7 +629,23 @@ public class GerenciadorDoJogo : MonoBehaviour
             Avisar("ELIXIR DE SUPER SALTO! Você pula mais alto nesta fase.", 2.5f);
             Som("mola", 0.6f);
         }
+        UsarPocoes(fase);
         SalvarProgresso();
+    }
+
+    // Só gasta a poção se a fase tiver o que ela mostra.
+    void UsarPocoes(int fase)
+    {
+        Fase dados = Fases.Dados(fase);
+        VendoEspinhos = PocoesDeEspinhos > 0 && Fases.TemLetras(dados, "h");
+        VendoChaoFalso = PocoesDoChao > 0 && Fases.TemLetras(dados, "CF");
+        if (VendoEspinhos) PocoesDeEspinhos--;
+        if (VendoChaoFalso) PocoesDoChao--;
+        if (!VendoEspinhos && !VendoChaoFalso) return;
+        Avisar(VendoEspinhos && VendoChaoFalso ? "POÇÕES ATIVAS! Espinhos escondidos e chão traiçoeiro aparecem."
+            : VendoEspinhos ? "POÇÃO DOS ESPINHOS! Os escondidos aparecem nesta fase."
+            : "POÇÃO DO CHÃO! O chão que cai aparece nesta fase.", 2.5f);
+        Som("conquista", 0.5f);
     }
 
     void Update()
@@ -938,7 +973,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         SalvarItensDaLoja();
     }
 
-    void SalvarItensDaLoja() => Progresso.SalvarItensDaLoja(Escudos, Elixires, TemPuloDuplo);
+    void SalvarItensDaLoja() => Progresso.SalvarItensDaLoja(Escudos, Elixires, TemPuloDuplo, PocoesDeEspinhos, PocoesDoChao);
 
     void MostrarFala(Textos.Fala fala)
     {
@@ -1484,6 +1519,8 @@ public class GerenciadorDoJogo : MonoBehaviour
             TempoTotal = tempoSalvo;
             Escudos = Mathf.Max(0, Progresso.EscudosSalvos);
             Elixires = Mathf.Max(0, Progresso.ElixiresSalvos);
+            PocoesDeEspinhos = Mathf.Max(0, Progresso.PocoesDeEspinhosSalvas);
+            PocoesDoChao = Mathf.Max(0, Progresso.PocoesDoChaoSalvas);
             TemPuloDuplo = Progresso.PuloDuploSalvo;
         }
         else
@@ -1666,6 +1703,8 @@ public class GerenciadorDoJogo : MonoBehaviour
             case ItemDaLoja.Escudo: ComprarEscudo(); break;
             case ItemDaLoja.Elixir: ComprarElixir(); break;
             case ItemDaLoja.PuloDuplo: ComprarPuloDuplo(); break;
+            case ItemDaLoja.PocaoDeEspinhos: ComprarPocaoDeEspinhos(); break;
+            case ItemDaLoja.PocaoDoChao: ComprarPocaoDoChao(); break;
             case ItemDaLoja.Aposta: MudarAposta(clique >= 0 && lado < 0 ? -1 : 1); break; // (clique: metade esquerda diminui)
             case ItemDaLoja.Cor: EscolherCor((CorDaRoleta)(((int)CorEscolhida + 1) % 3)); break;
             case ItemDaLoja.Girar: GirarRoleta(); break;
@@ -1714,6 +1753,36 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (!Pagar(precoDoElixir)) return;
         Elixires++;
         AvisarNaLoja("Elixir comprado! Ele vale a PRÓXIMA fase em que você entrar.", true);
+        Som("conquista", 0.6f);
+        SalvarProgresso();
+    }
+
+    // Confere o máximo e cobra: devolve false (e explica) se não deu.
+    bool PagarPocao(int jaTem, int preco)
+    {
+        if (jaTem >= maximoDePocoes)
+        {
+            AvisarNaLoja(Idioma.T($"Você já tem {maximoDePocoes} dessas (o máximo)!", $"You already have {maximoDePocoes} of those (the max)!"), false);
+            Som("bloco", 0.6f);
+            return false;
+        }
+        return Pagar(preco);
+    }
+
+    void ComprarPocaoDeEspinhos()
+    {
+        if (!PagarPocao(PocoesDeEspinhos, precoDaPocaoDeEspinhos)) return;
+        PocoesDeEspinhos++;
+        AvisarNaLoja("Poção comprada! Vale a próxima fase com espinhos escondidos.", true);
+        Som("conquista", 0.6f);
+        SalvarProgresso();
+    }
+
+    void ComprarPocaoDoChao()
+    {
+        if (!PagarPocao(PocoesDoChao, precoDaPocaoDoChao)) return;
+        PocoesDoChao++;
+        AvisarNaLoja("Poção comprada! Vale a próxima fase com chão que cai.", true);
         Som("conquista", 0.6f);
         SalvarProgresso();
     }
@@ -1961,7 +2030,11 @@ public class GerenciadorDoJogo : MonoBehaviour
         Mortes++;
         MortesNaFase++;
         mortesPorFase[Posicao(FaseAtual)]++;
-        GuardarLugarDaMorte(jogador.transform.position, caiuNoBuraco);
+        if (!jogador.Reiniciou) // (apertar R não marca o lugar: a bandeira continua onde você morreu de verdade)
+        {
+            GuardarLugarDaMorte(jogador.transform.position, caiuNoBuraco);
+            lugarDaBandeira = jogador.LugarDaBandeira(caiuNoBuraco);
+        }
         Conquistas.Desbloquear("primeira_morte");
         if (Mortes >= 100) Conquistas.Desbloquear("cem_mortes");
 
@@ -1969,7 +2042,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         // (ou para o começo, se era o primeiro). :) Sempre na 3ª: nunca antes, nunca depois.
         // (menos nas fases de chefe: lá o save da arena e a etapa da luta nunca se perdem; e no modo difícil, onde com a onda a 3ª morte vem rápido)
         if (pontoDeSave.HasValue && Chefe == null) mortesNoSave++;
-        bool saveMudou = pontoDeSave.HasValue && Chefe == null && !ModoDificil && mortesNoSave >= mortesParaOSaveMudar;
+        bool saveMudou = pontoDeSave.HasValue && Chefe == null && !ModoDificil && !Fases.Dados(FaseAtual).saveFiel && mortesNoSave >= mortesParaOSaveMudar;
         if (saveMudou) // (e as moedas voltam a ser as que o checkpoint anterior guardou)
         {
             savesPegos.Remove(SaveAtual());

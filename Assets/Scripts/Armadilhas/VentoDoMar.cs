@@ -11,9 +11,9 @@ using UnityEngine;
 //        em volta estarem encostadas umas nas outras)
 //        O vento vem da DIREITA e empurra o Grumete para TRÁS, em rajadas. Todas as zonas sopram juntas
 //        (o mar "respira"), e o ritmo recomeça sempre que a fase é montada:
-//            calmo (1 s)  ->  AVISO (0,5 s: folhas e riscos de vento começam a passar e o vento sobe)
-//                         ->  RAJADA (2 s)  ->  calmo...
-//        Na rajada, quem segura para a frente QUASE fica parado (o vento é um tiquinho mais forte que o Grumete).
+//            calmo (1,2 s)  ->  AVISO (0,4 s: folhas e riscos de vento começam a passar e o vento sobe)
+//                         ->  RAJADA (1,4 s)  ->  calmo...
+//        Na rajada, quem segura para a frente ainda avança devagar (ninguém fica só esperando o vento passar).
 //        Quem solta o botão volta voando. Quem estava no meio de um pulo perde o embalo e cai no buraco. :)
 //        ABRIGO: o vento não atravessa paredes. Quem está até 2 blocos à ESQUERDA de algo sólido (na altura
 //        do corpo) fica protegido. Repare que os riscos de vento também não passam ali.
@@ -23,7 +23,7 @@ using UnityEngine;
 //        do topo da zona. Dá para atravessar abismos largos flutuando (e quem entra pulando sobe mais).
 //        TRAIÇOEIRO: se a coluna da ESQUERDA da zona for ÍMPAR (contando a partir de 0, como no mapa), o
 //        redemoinho é igualzinho aos outros... até você chegar perto (4 blocos). Aí ele ACORDA: fica ligado só
-//        mais 1,2 s, ENGASGA por 0,6 s (os riscos ficam cinza e tremem: esse é o aviso!) e DESLIGA por 1,5 s.
+//        mais 1,2 s, ENGASGA por 0,6 s (os riscos ficam cinza e tremem: esse é o aviso!) e DESLIGA por 1 s.
 //        Depois volta (2,6 s ligado) e fica nesse ritmo. Quem já sabe espera ele desligar e entra assim que ele volta.
 //
 //  Como funciona a física: o vento chama Jogador.Empurrar (o Jogador soma o empurrão na velocidade que ele
@@ -37,10 +37,10 @@ public class VentoDoMar : MonoBehaviour
     enum Estado { Calmo, Aviso, Soprando, Ligado, Engasgando, Desligado }
 
     [Header("Rajada ('y')")]
-    public float forcaDaRajada = 7.5f;    // em blocos por segundo, para a esquerda (o Grumete anda a 7)
-    public float tempoCalmo = 1f;
-    public float tempoDeAviso = 0.5f;
-    public float tempoDeRajada = 2f;
+    public float forcaDaRajada = 4.5f;    // em blocos por segundo, para a esquerda (o Grumete anda a 7)
+    public float tempoCalmo = 1.2f;
+    public float tempoDeAviso = 0.4f;
+    public float tempoDeRajada = 1.4f;
     public float tempoParaEncher = 0.25f;  // a rajada não começa de uma vez: vai enchendo...
     public float tempoParaAcalmar = 0.3f;  // ...e vai parando
     public float alcanceDoAbrigo = 2f;     // até quantos blocos à esquerda de uma parede o vento não pega
@@ -57,7 +57,7 @@ public class VentoDoMar : MonoBehaviour
     public float primeiroTempoLigado = 1.2f; // logo que acorda, ele engasga rapidinho (é a pegadinha)
     public float tempoLigado = 2.6f;
     public float tempoEngasgando = 0.6f;
-    public float tempoDesligado = 1.5f;
+    public float tempoDesligado = 1f;
 
     public Tipo tipo;
 
