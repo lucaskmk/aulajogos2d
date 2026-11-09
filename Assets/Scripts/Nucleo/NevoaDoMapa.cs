@@ -297,14 +297,18 @@ public class NevoaDoMapa : MonoBehaviour
             }
     }
 
+    // No modo difícil a névoa fica carregada, cor de tempestade.
+    static Color Tom => GerenciadorDoJogo.Tempestade ? new Color(0.5f, 0.56f, 0.64f) : Color.white;
+
     void Update()
     {
         // 1) as camadas extras "respiram": aparecem e somem devagar, cada uma no seu ritmo, e andam um tiquinho
+        camadas[0].color = Tom;
         float t = Time.time;
         for (int k = 1; k < 3; k++)
         {
             float onda = 0.5f + 0.5f * Mathf.Sin(t * (k == 1 ? 0.55f : 0.37f) + k * 2.1f);
-            camadas[k].color = new Color(1f, 1f, 1f, onda);
+            camadas[k].color = new Color(Tom.r, Tom.g, Tom.b, onda);
             camadas[k].transform.localPosition = new Vector3(-0.5f + Mathf.Sin(t * 0.21f + k) * 0.12f, -0.5f + Mathf.Sin(t * 0.17f + k * 1.7f) * 0.06f, 0f);
         }
 

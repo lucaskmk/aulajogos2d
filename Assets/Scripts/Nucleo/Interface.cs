@@ -875,6 +875,7 @@ public class Interface : MonoBehaviour
             }
             textosDosSlots[i, 0] = r.fase == Fases.IndiceSecreto ? Idioma.Traduzir(Fases.Secreta.nome)
                 : r.fase >= 0 && r.fase < Fases.Todas.Length ? $"{Idioma.T("Fase", "Level")} {r.fase + 1}: {Idioma.Traduzir(Fases.Todas[r.fase].nome)}" : "?";
+            if (r.dificil) textosDosSlots[i, 0] = Idioma.T("TEMPESTADE - ", "STORM - ") + textosDosSlots[i, 0];
             // (as mortes e as moedas aparecem com os desenhos: a caveirinha do mapa e a moeda)
             textosDosSlots[i, 1] = r.mortes.ToString();
             textosDosSlots[i, 2] = r.moedas.ToString();
@@ -1336,15 +1337,20 @@ public class Interface : MonoBehaviour
         float w = Screen.width, h = Screen.height;
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
 
-        // a Marina (a sereia), grandona, do lado esquerdo
-        Texture sereia = FabricaDeSprites.Pegar("sereia").texture;
-        float alturaDaSereia = h * 0.55f, larguraDaSereia = alturaDaSereia * sereia.width / sereia.height;
+        GerenciadorDoJogo.Desfecho desfecho = jogo.FinalDoJogo;
+        bool rei = desfecho == GerenciadorDoJogo.Desfecho.Rei;
+
+        // a Marina (a sereia), grandona, do lado esquerdo (no final do rei, ela não ficou: só o Louro, cobrando)
+        Texture sereia = FabricaDeSprites.Pegar(rei ? "louro" : "sereia").texture;
+        float alturaDaSereia = h * (rei ? 0.36f : 0.55f), larguraDaSereia = alturaDaSereia * sereia.width / sereia.height;
         float pulinho = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 10f * escala;
         GUI.DrawTexture(new Rect(w * 0.17f - larguraDaSereia / 2f, h * 0.3f - pulinho, larguraDaSereia, alturaDaSereia), sereia);
 
         float centro = w * 0.6f, largura = w * 0.7f;
-        Texto("VOCÊ ZEROU!", centro, h * 0.1f, 8f, 0.5f, Amarelo, largura);
-        Texto("Marina: \"Obrigada por voltar, Grumete!\"", centro, h * 0.27f, 2.5f, 0.5f, Lilas, largura);
+        Texto(rei ? "O OURO É SEU!" : desfecho == GerenciadorDoJogo.Desfecho.Arrependido ? "FINAL VERDADEIRO!" : "VOCÊ ZEROU!", centro, h * 0.1f, 8f, 0.5f, Amarelo, largura);
+        Texto(rei ? "Louro: \"Eu falei pra roubar. Agora me paga.\""
+            : desfecho == GerenciadorDoJogo.Desfecho.Arrependido ? "Marina: \"Demorou, mas você voltou.\""
+            : "Marina: \"Obrigada por voltar, Grumete!\"", centro, h * 0.27f, 2.5f, 0.5f, Lilas, largura);
         Texto(Idioma.T("Mortes: ", "Deaths: ") + jogo.Mortes, centro, h * 0.38f, 3.5f, 0.5f, Branco);
         Texto(Idioma.T("Moedas: ", "Coins: ") + jogo.Moedas, centro, h * 0.38f + 50f * escala, 3.5f, 0.5f, Amarelo);
         Texto(Idioma.T("Tempo: ", "Time: ") + FormatarTempo(jogo.TempoTotal), centro, h * 0.38f + 100f * escala, 3.5f, 0.5f, Branco);
@@ -1396,8 +1402,10 @@ public class Interface : MonoBehaviour
             y += AlturaDaLinha * pixel * escala;
         }
         bool terminou = visiveis >= texto.Length;
+        if (jogo.MostrandoOpcoes) DesenharOpcoesDaHistoria(caixa);
         if (terminou && Time.unscaledTime % 1f < 0.65f)
-            Texto(atual < quadros.Length - 1 ? "ENTER >" : "ENTER: continuar", caixa.xMax - m, caixa.yMax - m - 10f * escala, 1.8f, 1f, CorDoNome);
+            Texto(jogo.MostrandoOpcoes ? "SETAS ou MOUSE: escolher    ENTER: confirmar" : atual < quadros.Length - 1 ? "ENTER >" : "ENTER: continuar",
+                caixa.xMax - m, caixa.yMax - m - 10f * escala, 1.8f, 1f, CorDoNome);
 
         // em que quadro está: um pontinho por quadro
         float lado = 8f * escala, espaco = 6f * escala;
@@ -1408,8 +1416,27 @@ public class Interface : MonoBehaviour
 
         // pular (ESC) no canto de cima, e o clique em qualquer lugar passa o quadro
         // (com o texto em cima, o "pular" desce para o canto de baixo)
-        BotaoDeTexto("ESC: pular", w - 20f * escala, quadro.textoEmCima ? h - 40f * escala : 16f * escala, 2f, 1f, GerenciadorDoJogo.BotaoVoltar);
+        if (!jogo.MostrandoOpcoes) BotaoDeTexto("ESC: pular", w - 20f * escala, quadro.textoEmCima ? h - 40f * escala : 16f * escala, 2f, 1f, GerenciadorDoJogo.BotaoVoltar);
         Mouse(new Rect(0, 0, w, h), GerenciadorDoJogo.BotaoProxima, false);
+    }
+
+    // A escolha do final: as opções lado a lado, logo acima da caixa do texto.
+    void DesenharOpcoesDaHistoria(Rect caixa)
+    {
+        string[] opcoes = jogo.OpcoesDaHistoria;
+        float alto = 62f * escala, espaco = 24f * escala;
+        float largura = Mathf.Min(380f * escala, (caixa.width - espaco) / opcoes.Length);
+        float x = caixa.center.x - (opcoes.Length * largura + (opcoes.Length - 1) * espaco) / 2f;
+        float y = caixa.y - alto - 12f * escala;
+        for (int i = 0; i < opcoes.Length; i++)
+        {
+            var botao = new Rect(x + i * (largura + espaco), y, largura, alto);
+            Mouse(botao, i, true);
+            Moldura(botao, CorDoFundoDaFala);
+            bool escolhida = i == jogo.OpcaoDaHistoria;
+            if (escolhida) DesenharBorda(botao, Color.Lerp(CorDoFilete, Color.white, 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6f)));
+            Texto(opcoes[i], botao.center.x, botao.y + 12f * escala, 2.8f, 0.5f, escolhida ? Amarelo : Branco, largura - 20f * escala);
+        }
     }
 
     // ------------------------------------------------------------------ caixas de fala
@@ -1593,7 +1620,7 @@ public class Interface : MonoBehaviour
         if (cam == null || jogo.Sereia == null) return;
         Vector3 tela = TelaPixelada.MundoParaTela(cam, jogo.Sereia.transform.position + Vector3.up * 2.2f);
         float y = Screen.height - tela.y;
-        Texto("Grumete! Você voltou!", tela.x, y - 50f * escala, 3f, 0.5f, Lilas, Screen.width * 0.6f);
+        Texto(jogo.ModoDificil ? "Você veio me buscar... com o baú?" : "Grumete! Você voltou!", tela.x, y - 50f * escala, 3f, 0.5f, Lilas, Screen.width * 0.6f);
     }
 
     // ------------------------------------------------------------------ efeitos de tela

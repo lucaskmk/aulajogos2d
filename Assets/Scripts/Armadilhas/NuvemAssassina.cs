@@ -14,6 +14,7 @@ public class NuvemAssassina : MonoBehaviour
         malvada = FabricaDeSprites.Pegar("nuvem_malvada");
         visual = gameObject.AddComponent<SpriteRenderer>();
         visual.sprite = normal;
+        visual.color = Biomas.CorDaNuvem;
         visual.sortingOrder = -10; // igual às nuvens do cenário
         Perigo.Adicionar(gameObject, new Vector2(1.6f, 0.7f), Vector2.zero).conquista = "nuvem";
         Perigo.TornarMovel(gameObject); // ela se mexe (flutua e tem paralaxe)

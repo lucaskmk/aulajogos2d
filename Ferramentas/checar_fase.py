@@ -3,7 +3,7 @@
 
 Simula a física do Jogador.cs (velocidade 7, aceleração 80, pulo 14, gravidade 9.81*3.5,
 queda máxima 20, caixa 0.72 x 0.96) com passos de 0.02 s, explorando pulos e caminhadas a partir
-de cada posição em que o Grumete pode ficar parado. Diz se algum alvo (G, L, ou o '*' da bandeira
+de cada posição em que o Grumete pode ficar parado. Diz se algum alvo (G, c, ou o '*' da bandeira
 fujona) é alcançável a partir do P sem encostar em células mortais.
 
 Uso:
@@ -27,7 +27,7 @@ MW, MH = 0.36, 0.48  # meia largura / meia altura da caixa do jogador
 
 SOLIDO = set('#BC?KM')
 MORTAL = set('^hZom')
-ALVOS = set('GL*')
+ALVOS = set('Gc*')  # o que termina a fase: a bandeira, o baú e o destino da bandeira fujona (a Marina, 'L', não termina)
 
 
 def carregar(caminho):
@@ -216,6 +216,8 @@ def checar(mapa, solido_extra='', mortal_extra='', alvo_extra='', de_extra=''):
                 inicios.append((c, x, r))
     if not any(c == 'P' for c, _, _ in inicios):
         return {'ok': False, 'texto': 'ERRO: não tem P no mapa.'}
+    if not any(c in alvos for linha in grade for c in linha):
+        return {'ok': False, 'texto': 'ERRO: a fase não tem como terminar (nem G, nem c, nem *).'}
 
     def busca(x, r):
         px, py = float(x), float(wy(r))
@@ -253,7 +255,7 @@ def checar(mapa, solido_extra='', mortal_extra='', alvo_extra='', de_extra=''):
             msgs.append(f'OK: de {nome} dá para chegar ao alvo.')
         else:
             ok_total = False
-            msgs.append(f'FALHOU: de {nome} não achei caminho até G/L/*. Mais longe que cheguei: x = {longe:.1f} (largura {W}).')
+            msgs.append(f'FALHOU: de {nome} não achei caminho até G/c/*. Mais longe que cheguei: x = {longe:.1f} (largura {W}).')
     return {'ok': ok_total, 'texto': '\n'.join(msgs)}
 
 

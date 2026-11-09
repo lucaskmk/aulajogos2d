@@ -20,6 +20,17 @@ public class Bandeira : MonoBehaviour
         area.offset = new Vector2(0f, 1.5f);
     }
 
+    // 'c' - o BAÚ do tesouro, o fim da última fase: funciona igual à bandeira, só muda o desenho.
+    public Bandeira VirarBau()
+    {
+        Destroy(GetComponent<AnimacaoDeQuadros>());
+        GetComponent<SpriteRenderer>().sprite = FabricaDeSprites.Pegar("mapa_bau");
+        transform.localScale = Vector3.one * 2f;
+        var luz = GetComponentInChildren<UnityEngine.Rendering.Universal.Light2D>(); // (só existe nas fases escuras)
+        if (luz != null) luz.color = Luzes.Dourada;
+        return this;
+    }
+
     void OnTriggerEnter2D(Collider2D outro) => Testar(outro);
     void OnTriggerStay2D(Collider2D outro) => Testar(outro);
 

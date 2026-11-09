@@ -59,6 +59,9 @@ public static class Biomas
     // Nuvens de enfeite no céu (na gruta não tem céu; no alto-mar do Kraken o céu pintado da tempestade já basta).
     public static bool TemNuvens(Bioma bioma) => bioma != Bioma.Gruta && bioma != Bioma.AltoMar;
 
+    // Na tempestade as nuvens ficam cinza: as de enfeite e a assassina, juntas (senão a pegadinha acaba).
+    public static UnityEngine.Color CorDaNuvem => GerenciadorDoJogo.Tempestade ? new UnityEngine.Color(0.5f, 0.55f, 0.62f) : UnityEngine.Color.white;
+
     // O capim desfocado na frente da fase (HD-2D): só onde tem chão de terra. Nos navios, no mar e na gruta, não.
     public static bool TemCapimNaFrente(Bioma bioma) =>
         bioma == Bioma.Porto || bioma == Bioma.Selva || bioma == Bioma.Lagoa || bioma == Bioma.Forte || bioma == Bioma.Vila ||
@@ -69,7 +72,12 @@ public static class Biomas
         bioma == Bioma.Porto || bioma == Bioma.Selva || bioma == Bioma.Lagoa || bioma == Bioma.Vila || bioma == Bioma.Praia;
 
     // Sol (ou lua) no céu: na gruta não tem céu, e nas tempestades as nuvens escondem.
-    public static bool TemSolOuLua(Bioma bioma) => bioma != Bioma.Gruta && bioma != Bioma.Praia && bioma != Bioma.AltoMar;
+    public static bool TemSolOuLua(Bioma bioma) => bioma != Bioma.Gruta && bioma != Bioma.Praia && bioma != Bioma.AltoMar && !GerenciadorDoJogo.Tempestade;
+
+    // Modo difícil: quais lugares trocam o céu pelo da tempestade e esfriam as cores?
+    // (a gruta não tem céu; a praia do tsunami e o alto-mar do Kraken já são de tempestade)
+    public static bool MudaNaTempestade(Bioma bioma) =>
+        GerenciadorDoJogo.Tempestade && bioma != Bioma.Gruta && bioma != Bioma.Praia && bioma != Bioma.AltoMar;
 
     // Pôr do sol: o sol fica baixo, quase encostando no mar.
     public static bool SolBaixo(Bioma bioma) => bioma == Bioma.Navios || bioma == Bioma.Rochedo;

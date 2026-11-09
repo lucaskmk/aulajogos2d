@@ -40,7 +40,7 @@ a fase é uma captura do jogo rodando no editor da Unity.*
 
 ### Objetivo
 Leve o Grumete do começo de cada fase até a **bandeira de verdade**. São 13 fases ligadas por um **mapa do mundo** (estilo *Super Mario World*): um arquipélago, atravessado de ilha em ilha pelas pontes de madeira.
-Cada fase tem um lugar e um clima próprios. No caminho há 4 chefes (o último é o **Kraken Vermelho**), e depois dele a Marina, a sereia, espera o Grumete.
+Cada fase tem um lugar e um clima próprios. No caminho há 4 chefes (o último é o **Kraken Vermelho**), e depois dele a Marina, a sereia, espera o Grumete, ao lado do **baú do tesouro**.
 Você vai morrer muito, e é assim que o jogo funciona: cada armadilha só pega uma vez, se você prestar atenção.
 
 ### Controles
@@ -96,6 +96,13 @@ Depois da fase 2, o mapa ganha o botão **LOJA** no canto de baixo à direita (o
 
 No meio da Loja fica a **roleta**: escolha quanto apostar (de 1 a 100) e a cor. Vermelho e preto pagam 2x, verde (uma casa só) paga 14x.
 
+### O final: devolver ou roubar
+Depois do Kraken, ao encostar no baú, você escolhe o que fazer com o tesouro:
+- **Devolver:** o Deus da Riqueza tira a maldição e o jogo termina, com os créditos. O slot continua, com o mapa todo aberto para buscar as medalhas (e vencer o Kraken de novo oferece a escolha de novo).
+- **Roubar:** não tem créditos. O jogo recomeça no **modo difícil**: tempestade em tudo (fases e mapa) e um **tsunami perseguindo você em toda fase**, cada uma na sua velocidade.
+  Você leva as moedas e os itens e ganha mais 100 moedas do tesouro; mortes e tempo zeram, e os recordes e medalhas do modo difícil são separados.
+  Nas fases de chefe a onda para na entrada da arena. Vencer o Kraken de novo dá a última escolha: **devolver** (o final verdadeiro, que acaba com a tempestade) ou **ficar com o ouro** (o final do rei).
+
 ---
 
 ## Segredos
@@ -106,7 +113,7 @@ No meio da Loja fica a **roleta**: escolha quanto apostar (de 1 a 100) e a cor. 
   Cuidado: uma das moedas é uma **moeda assassina**, e essa não conta. Se você conseguir, o Louro avisa e uma ilhota aparece na lagoa do mapa.
   No **ponto 3** do mapa, aperte **↓ (ou S)** para atravessar a ponte até a ilhota.
   (No código: `Fases.FaseDoSegredo = 2` e `GerenciadorDoJogo.FaseConcluida`. Um Novo jogo esconde a secreta de novo.)
-- **Conquistas:** são 27 (lista no título, salvas para sempre). Algumas são segredos, como "Olhou para o céu" (ser mordido por uma nuvem),
+- **Conquistas:** são 31 (lista no título, salvas para sempre). Algumas são segredos, como "Olhou para o céu" (ser mordido por uma nuvem),
   "Mudaram meu save!", "Passageiro da Expressa" (ir até o fim na plataforma expressa sem pular), "Buuu!", "Fora do Ritmo" e "Bolso fechado"
   (vencer o Kraken sem ela roubar nenhuma moeda).
 - **Recorde:** zere o jogo **em ordem, desde a fase 1**, com o menor número de mortes. O recorde aparece no título.
@@ -222,6 +229,8 @@ Cada chefe tem **a sua própria música** de luta, e morrer não recomeça a mú
 | Tecla | Onde | O que faz |
 |---|---|---|
 | **F9** | no mapa do mundo | Libera **todas** as fases, os chefes e a secreta, **só na partida atual**. A partida deixa de valer para o recorde, e um Novo jogo volta tudo para a névoa. |
+| **F8** | no mapa do mundo | Liga e desliga o **modo difícil** (tempestade e um tsunami em cada fase), sem precisar zerar o jogo. A partida deixa de valer para o recorde. |
+| **F7** | no mapa do mundo | Vai direto para a **escolha do final** (devolver ou roubar), como se tivesse vencido o Kraken. Com o F8 ligado, abre a segunda escolha. |
 | **F10** (ou a tecla à esquerda do 1) | em qualquer tela | **Painel de gráficos**: liga e desliga cada efeito visual e mostra o FPS e o pior quadro. |
 
 Também dá para começar direto numa fase. Durante o Play, selecione o objeto `GerenciadorDoJogo`, mude **Fase Inicial** no Inspector,
@@ -301,8 +310,9 @@ Ferramentas/     scripts de apoio (checador de fases, gerador das músicas em WA
   o recorde do título (zerar com menos mortes) e as conquistas valem para o jogo todo.
   O save de antes dos slots vira o Slot 1 sozinho na primeira vez.
 - `Medalhas.cs`: as 3 medalhas de cada fase (tempo, sem morrer, todas as moedas), o tempo-alvo e o desenho delas.
-- `Conquistas.cs`, `Opcoes.cs` e `Textos.cs`: as 27 conquistas, o volume e os gráficos, e as falas do mapa e os créditos.
-- `Historia.cs`: a história contada em quadros (cutscenes): a abertura (num Novo jogo, antes do mapa) e o final (depois do Kraken).
+- `Conquistas.cs`, `Opcoes.cs` e `Textos.cs`: as 31 conquistas, o volume e os gráficos, e as falas do mapa e os créditos.
+- `Historia.cs`: a história contada em quadros (cutscenes): a abertura (num Novo jogo, antes do mapa), a escolha do baú (depois do Kraken) e os finais.
+  O modo difícil é o `GerenciadorDoJogo.ModoDificil` (salvo no slot); `Fase.velocidadeDaOnda` ajusta o tsunami de cada fase e `Relampago.cs` faz os relâmpagos.
   As imagens (256 x 144) ficam em `Assets/Resources/Arte/historia/` e são desenhadas por `Ferramentas/historia/desenhar_historia.py`,
   que lê os desenhos dos personagens direto dos .cs (mudou um personagem? rode o script de novo).
 - `Idioma.cs` e `Traducoes.cs`: o jogo em Português ou Inglês (botão "Idioma / Language" no título, salvo no PlayerPrefs).

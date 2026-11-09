@@ -14,6 +14,9 @@ using UnityEngine;
 //    recuar para dentro da onda e piscar (0,35 s). Corra ou pule por cima!
 //  - Renasceu num checkpoint? A onda nasce 9 blocos ATRÁS de você (senão o checkpoint não serviria de nada).
 //  - Ela para antes da bandeira de verdade. Passou de fase? Ela quebra e vai embora... por enquanto.
+//  - No modo difícil (o Grumete roubou o tesouro) TODA fase tem a onda, sem precisar do 'N' (veja ConstrutorDeFase), cada
+//    fase com a sua velocidade (Fase.velocidadeDaOnda). Nas fases de chefe ela para na entrada da arena e, quando a luta
+//    começa, quebra na parede e vai embora. Nas rajadas de vento ela perde força, como o Grumete.
 //
 // O desenho é todo feito de pedaços (todos filhos do objeto "Parede", que anda junto com a frente):
 //  fundo azul-escuro liso + faixa de água com riscos de luz subindo + ESPUMA na borda (troca de forma o tempo todo)
@@ -199,9 +202,11 @@ public class Tsunami : MonoBehaviour
         parede.position = new Vector3(frente, 0f, 0f);
     }
 
-    // A bandeira de verdade mais à direita (para a fujona, o lugar para onde ela foge). Sem bandeira: sem limite.
+    // Fase de chefe (modo difícil): a entrada da arena. Nas outras, a bandeira de verdade mais à direita
+    // (para a fujona, o lugar para onde ela foge). Sem bandeira: sem limite.
     float AcharLimite()
     {
+        if (GerenciadorDoJogo.Instancia.Chefe != null) return GerenciadorDoJogo.Instancia.Chefe.PontoDeRenascer.x - 1.5f;
         float maisLonge = float.MinValue;
         foreach (Transform bandeira in GerenciadorDoJogo.Instancia.Bandeiras)
         {
@@ -220,6 +225,10 @@ public class Tsunami : MonoBehaviour
         float dt = Time.deltaTime; // na pausa é 0: tudo congela sozinho
         relogio += dt;
         bool vivo = GerenciadorDoJogo.JogadorVivo(out Vector2 jogador);
+
+        // A luta com o chefe começou? A onda quebra na parede da arena: dentro dela não entra.
+        Chefe chefe = GerenciadorDoJogo.Instancia.Chefe;
+        if (estado != Estado.IndoEmbora && chefe != null && chefe.EmCombate) IrEmbora();
 
         // O jogador sumiu de um lugar e apareceu em outro (porta, bandeira que manda de volta...)?
         // A onda reaparece atrás dele, como num checkpoint.
@@ -287,6 +296,7 @@ public class Tsunami : MonoBehaviour
         float distancia = jogador.x - frente;
         float velocidadeAgora = velocidade;
         if (distancia > inicioDoElastico) velocidadeAgora += (distancia - inicioDoElastico) * forcaDoElastico;
+        velocidadeAgora *= 1f - VentoDoMar.RajadaAgora; // o vento do mar segura a onda também (senão a fase dele ficaria impossível)
         frente += velocidadeAgora * dt;
         frente = Mathf.Max(frente, jogador.x - distanciaMaxima); // nunca mais longe que a distância máxima
         frente = Mathf.Min(frente, limite);                       // e nunca passa da bandeira

@@ -285,9 +285,10 @@ public class Paralaxe : MonoBehaviour
         float altura = usarPintura ? AlturaPintada(sprite) : 0f;
         string nome = sprite.Replace("_hd", "").Replace("fundo_", "");
         bool doLugar = false;
+        bool tempestade = usarPintura && Biomas.MudaNaTempestade(ultimoBioma); // (no modo difícil: o céu da praia do tsunami em todo lugar)
         if (altura > 0f)
         {
-            if (fonte == Fonte.DaIA) desenho = ImagemDoLugar(nome);
+            if (fonte == Fonte.DaIA) desenho = tempestade && nome == "ceu" ? FabricaDeSprites.Imagem("praia/camada_ceu") : ImagemDoLugar(nome);
             doLugar = desenho != null;
             if (desenho == null) desenho = FabricaDeSprites.Imagem("camada_" + nome);
         }
@@ -302,6 +303,8 @@ public class Paralaxe : MonoBehaviour
             }
             escala *= altura / desenho.bounds.size.y;
             cor = doLugar ? TomDoLugar(nome, cor.a) : CorDaPintura(cor);
+            // as camadas foram pintadas com sol: na tempestade ficam frias e escuras (de noite já são; lá só o céu novo escurece)
+            if (tempestade && ultimaNoite == (nome == "ceu")) cor *= nome == "ceu" ? new Color(0.55f, 0.58f, 0.72f) : new Color(0.6f, 0.68f, 0.76f);
         }
         else desenho = FabricaDeSprites.Pegar(sprite);
 

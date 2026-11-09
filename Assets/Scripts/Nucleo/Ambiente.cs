@@ -22,7 +22,7 @@ public class Ambiente : MonoBehaviour
     Vector2[] velocidades;
     float[] fases;
 
-    public static void Criar(Transform raiz, Tipo tipo, int quantidade)
+    public static void Criar(Transform raiz, Tipo tipo, int quantidade, int ordem = 15)
     {
         var ambiente = new GameObject("Ambiente " + tipo).AddComponent<Ambiente>();
         ambiente.transform.SetParent(raiz, false);
@@ -40,7 +40,7 @@ public class Ambiente : MonoBehaviour
             // resolução (TelaPixelada), um pontinho menor que 1 pixel pisca e some.
             string sprite = tipo == Tipo.Brilhos ? "brilho" : tipo == Tipo.Petalas ? "poeira" : tipo == Tipo.Folhas ? "folhinha"
                 : tipo == Tipo.Chuva ? "pingo_de_chuva" : tipo == Tipo.Bolhas ? "bolhinha" : "hd2d_pixel";
-            var p = ConstrutorDeFase.Visual("Particula", ambiente.transform, new Vector3(cx + Random.Range(-15f, 15f), Random.Range(0f, 15f), 0f), sprite, 15, false);
+            var p = ConstrutorDeFase.Visual("Particula", ambiente.transform, new Vector3(cx + Random.Range(-15f, 15f), Random.Range(0f, 15f), 0f), sprite, ordem, false);
             ambiente.particulas[i] = p.transform;
             ambiente.desenhos[i] = p.GetComponent<SpriteRenderer>();
             ambiente.fases[i] = Random.Range(0f, 10f);
@@ -130,8 +130,8 @@ public class Ambiente : MonoBehaviour
     {
         Camera cam = Camera.main;
         if (cam == null) return;
-        float meia = cam.orthographicSize * cam.aspect + 1f;
-        float cx = cam.transform.position.x, dt = Time.deltaTime, t = Time.time;
+        float meia = cam.orthographicSize * cam.aspect + 1f, meiaAltura = cam.orthographicSize + 1f;
+        float cx = cam.transform.position.x, cy = cam.transform.position.y, dt = Time.deltaTime, t = Time.time;
 
         for (int i = 0; i < particulas.Length; i++)
         {
@@ -144,8 +144,8 @@ public class Ambiente : MonoBehaviour
             // saiu da tela? volta pelo outro lado
             if (p.x < cx - meia) p.x += meia * 2f;
             if (p.x > cx + meia) p.x -= meia * 2f;
-            if (p.y < -0.5f) p.y += 15.5f;
-            if (p.y > 15f) p.y -= 15.5f;
+            if (p.y < cy - meiaAltura) p.y += meiaAltura * 2f; // (em volta da câmera: o mapa do mundo é mais alto que as fases)
+            if (p.y > cy + meiaAltura) p.y -= meiaAltura * 2f;
             particulas[i].position = p;
 
             if (tipo == Tipo.Petalas) particulas[i].rotation = Quaternion.Euler(0f, 0f, balanco * 60f);
