@@ -369,7 +369,7 @@ public class Interface : MonoBehaviour
         Texto(c.nome, caixa.center.x, caixa.y + 38f * escala, 2.2f, 0.5f, Branco, largura - 20f * escala);
     }
 
-    static readonly string[] Turma = { "jogador", "sereia", "louro", "fantasma" };
+    static readonly string[] Turma = { "jogador", "sereia", "louro_grande", "fantasma" };
 
     // Créditos subindo devagar, com o pessoal pulando embaixo.
     void DesenharCreditos()
@@ -394,7 +394,8 @@ public class Interface : MonoBehaviour
         for (int i = 0; i < Turma.Length; i++)
         {
             Texture desenho = FabricaDeSprites.Pegar(Turma[i]).texture;
-            float altura = desenho.height * 4f * escala, largura = desenho.width * 4f * escala;
+            float ampliar = Turma[i] == "louro_grande" ? 2.4f : 4f; // (o Louro grande tem o dobro de pixels: fica do tamanho da turma)
+            float altura = desenho.height * ampliar * escala, largura = desenho.width * ampliar * escala;
             float pulo = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f + i)) * 20f * escala;
             GUI.DrawTexture(new Rect(w / 2f + (i - 1.5f) * 120f * escala - largura / 2f, h - altura - 20f * escala - pulo, largura, altura), desenho);
         }
@@ -809,7 +810,7 @@ public class Interface : MonoBehaviour
             posicaoDoLouro = Vector2.MoveTowards(posicaoDoLouro, pes, velocidade * Time.unscaledDeltaTime);
         }
         bool voando = Vector2.Distance(posicaoDoLouro, pes) > 1f;
-        Texture desenho = FabricaDeSprites.Pegar("louro").texture;
+        Texture desenho = FabricaDeSprites.Pegar("louro_grande").texture;
         float alto = 76f * escala, largo = alto * desenho.width / desenho.height;
         float asas = voando ? Mathf.Sin(Time.unscaledTime * 32f) : 0f;
         float pulinho = voando ? 0f : Mathf.Round(Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 2f) * 3f * escala;
@@ -1341,10 +1342,13 @@ public class Interface : MonoBehaviour
         bool rei = desfecho == GerenciadorDoJogo.Desfecho.Rei;
 
         // a Marina (a sereia), grandona, do lado esquerdo (no final do rei, ela não ficou: só o Louro, cobrando)
-        Texture sereia = FabricaDeSprites.Pegar(rei ? "louro" : "sereia").texture;
+        // (o Louro é o grande, o das telas grandes, virado para a direita: olhando para o texto)
+        Texture sereia = FabricaDeSprites.Pegar(rei ? "louro_grande" : "sereia").texture;
         float alturaDaSereia = h * (rei ? 0.36f : 0.55f), larguraDaSereia = alturaDaSereia * sereia.width / sereia.height;
         float pulinho = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 10f * escala;
-        GUI.DrawTexture(new Rect(w * 0.17f - larguraDaSereia / 2f, h * 0.3f - pulinho, larguraDaSereia, alturaDaSereia), sereia);
+        var lugarDaSereia = new Rect(w * 0.17f - larguraDaSereia / 2f, h * 0.3f - pulinho, larguraDaSereia, alturaDaSereia);
+        if (rei) GUI.DrawTextureWithTexCoords(lugarDaSereia, sereia, new Rect(1f, 0f, -1f, 1f));
+        else GUI.DrawTexture(lugarDaSereia, sereia);
 
         float centro = w * 0.6f, largura = w * 0.7f;
         Texto(rei ? "O OURO É SEU!" : desfecho == GerenciadorDoJogo.Desfecho.Arrependido ? "FINAL VERDADEIRO!" : "VOCÊ ZEROU!", centro, h * 0.1f, 8f, 0.5f, Amarelo, largura);

@@ -132,6 +132,44 @@ public static class ArteDosPersonagens
         "..........kk....",
     };
 
+    // ---------------------------------------------------------------- o Louro GRANDE (32 x 30, olhando para a esquerda)
+    // O mesmo Louro, com mais detalhe, no visual das cutscenes: o olho grande com brilho, o rosto verde-claro,
+    // o bico amarelo curvo, o peito vermelho, as pontas das asas e a cauda azuis. Aparece nas telas grandes
+    // (a vitória, os créditos e o Louro voando do tutorial da Loja); dentro das fases continua o pequeno.
+    static readonly string[] LouroGrande =
+    {
+        "...........kkkkkk...............",
+        ".........kkGGGGGLkk.............",
+        "........kGGGGGGLLLLk............",
+        ".......kGGGGGGLLLLLLk...........",
+        "......kGGGGGGGLLLLLLLk..........",
+        "...kkkkGGGWWGGLLLLLLLGk.........",
+        "..kYYXXkGWWWWLGLLLLLGGk.........",
+        ".kYYYYYXkWEWWWLGLLLGGGk.........",
+        "kYYYYYYYkEEEWWLGGGGGGGk.........",
+        "kyyYYYYYkEEEWWLGGGGGGGk.........",
+        "kDyyYYykLLEEWLLGGGGGGGk.........",
+        ".kDyyykkGLLLLLGGGGGGGGk.........",
+        "..kDykkggGGGppGGGGGGGgk.........",
+        "...kk..kgGGGGGGGGGGGGLgk........",
+        "........kGGGGGGGGGGGLLgk........",
+        ".........kggggggggGGGGGgk.......",
+        ".........krRRRQQgGGGGGGgk.......",
+        ".........krRRRQgGGGGGGGgk.......",
+        "........kgrRRRRgGGGGGGGgk.......",
+        "........krrRRRRgGGGGGGGgk.......",
+        "........krrRRRRRgGGGGGGgk.......",
+        ".........krRRRRRuUUUUUUuk.......",
+        ".........krRRRRRuuuuuuuUk.......",
+        ".........krRRRRRRuUUUUuGUk......",
+        "..........krrrrrguuuuuUGUk......",
+        "...........kkkgggggkkkuUGUk.....",
+        "..........kookkookk..kuUGUk.....",
+        "..........kokokokok...kuUUUk....",
+        "...........k.k.k.k.....kuuuuk...",
+        ".......................kuuuuk...",
+    };
+
     // ---------------------------------------------------------------- o caranguejo (16 x 16)
     // Casco vermelho com brilho em cima, olhos nas antenas, as duas pinças levantadas e as perninhas.
     static readonly string[] Caranguejo =
@@ -789,6 +827,7 @@ public static class ArteDosPersonagens
         FabricaDeSprites.Registrar("jogador", () => Desenhar(Grumete, centro));
         FabricaDeSprites.Registrar("jogador_andando", () => Desenhar(GrumeteAndando, centro));
         FabricaDeSprites.Registrar("louro", () => Desenhar(Louro, centro));
+        FabricaDeSprites.Registrar("louro_grande", () => Desenhar(LouroGrande, centro));
         FabricaDeSprites.Registrar("inimigo", () => Desenhar(Caranguejo, centro));
         FabricaDeSprites.Registrar("inimigo_esmagado", () => Desenhar(CaranguejoEsmagado, centro));
         FabricaDeSprites.Registrar("inimigo_espinhos", () => Desenhar(CaranguejoEspinhoso, centro));

@@ -1,15 +1,26 @@
 # A história: os textos e os prompts das imagens das cutscenes
 
-São **9 imagens**: 7 da abertura (passam num Novo jogo, antes do mapa) e 2 do final (depois de vencer o Kraken).
-As imagens de hoje foram desenhadas por código (`desenhar_historia.py`, 256 x 144). Com os prompts abaixo dá para
-gerar versões pintadas, no mesmo estilo do fundo do título (`Assets/Resources/Arte/titulo_fundo.png`).
+São **20 imagens** (19 diferentes: a `final_2` aparece em dois finais):
+
+| Cena | Quando aparece | Imagens | Situação |
+| --- | --- | --- | --- |
+| Abertura | Novo jogo, antes do mapa | `abertura_1` a `abertura_7` | **prontas** (pintadas) |
+| Escolha | depois de vencer o Kraken | `escolha_1` a `escolha_3` | **prontas** (pintadas) |
+| Final: devolveu | escolheu DEVOLVER | `final_1`, `final_2` | **prontas** (pintadas) |
+| Roubou | escolheu ROUBAR (o jogo recomeça no modo difícil) | `roubou_1` a `roubou_3` | **prontas** (pintadas) |
+| Escolha na tempestade | zerou o modo difícil | `tempestade_1`, `tempestade_2` | **prontas** (pintadas) |
+| Final verdadeiro | devolveu no modo difícil | `verdadeiro_1`, `final_2` | **prontas** (pintadas) |
+| Final do rei | ficou com o ouro no modo difícil | `rei_1`, `rei_2` | **prontas** (pintadas) |
+
+Todas já estão pintadas. Os prompts ficam aqui para refazer alguma (ou criar uma cena nova) no mesmo estilo; as
+versões de código (`desenhar_historia.py`, 256 x 144) só voltam se rodar o script com `--forcar`.
 
 ## Como usar
 
-1. Mande para a IA de imagem **primeiro o bloco "Folha dos personagens"** e depois os quadros, **um por vez, na mesma
-   conversa** (assim os personagens ficam com a mesma cara em todas as imagens). Se a IA aceitar imagens de referência,
-   mande junto `titulo_fundo.png` e os retratos `retrato_grumete.png`, `retrato_louro.png`, `retrato_sereia.png`
-   e `retrato_fantasma.png` (todos em `Assets/Resources/Arte/`).
+1. **Para as que faltam, o melhor jeito de manter o estilo da abertura:** abra uma conversa nova com a IA de imagem e
+   anexe as **7 imagens da abertura** (`Assets/Resources/Arte/historia/abertura_1.png` a `abertura_7.png`) dizendo
+   *"use exatamente este estilo de arte e estes personagens"*. Depois mande os quadros que faltam, **um por vez, na
+   mesma conversa**. (Se a IA não aceitar imagens, mande primeiro o bloco "Folha dos personagens".)
 2. Cada bloco é um prompt **completo**: copie o bloco inteiro.
 3. **Como salvar:** com o nome que está em cima do bloco (ex.: `abertura_1.png`), por cima do arquivo que já existe em
    `Assets/Resources/Arte/historia/`. Qualquer tamanho 16:9 serve (o jogo estica para a tela inteira); o ideal é
@@ -33,6 +44,18 @@ gerar versões pintadas, no mesmo estilo do fundo do título (`Assets/Resources/
 | `abertura_7` | E assim começa uma nova jornada: atravessar o mar, derrotar o Kraken e recuperar o tesouro. | And so a new journey begins: cross the sea, defeat the Kraken and recover the treasure. |
 | `final_1` | O Kraken foi derrotado. O Grumete devolveu o tesouro ao Deus da Riqueza... e a maldição se desfez. | The Kraken was defeated. The Deckhand gave the treasure back to the God of Wealth... and the curse was broken. |
 | `final_2` | O mundo voltou ao equilíbrio e todo mundo voltou a ser como era. E o Grumete, enfim, pôde descansar. Por enquanto. | The world found its balance again and everyone went back to how they were. And the Deckhand could finally rest. For now. |
+| `escolha_1` | O Kraken fugiu para o fundo do mar. E ali, no convés, estava o baú: o maior tesouro de todos os tempos. | The Kraken fled to the bottom of the sea. And there, on the deck, was the chest: the greatest treasure of all time. |
+| `escolha_2` | O Deus da Riqueza desceu das nuvens: "Muito bem, pirata. Agora devolva o que é MEU, e eu tiro a sua maldição." | The God of Wealth came down from the clouds: "Well done, pirate. Now give back what is MINE, and I will lift your curse." |
+| `escolha_3` | Marina: "Devolve, Grumete. Por favor." Louro: "Rouba. Confia." (+ os botões DEVOLVER / ROUBAR) | Marina: "Give it back, Deckhand. Please." Polly: "Steal it. Trust me." (+ GIVE BACK / STEAL buttons) |
+| `roubou_1` | O Grumete fechou o baú, olhou bem nos olhos do Deus da Riqueza... e saiu correndo. | The Deckhand closed the chest, looked the God of Wealth right in the eye... and ran. |
+| `roubou_2` | "LADRÃO!" O céu fechou. A maldição voltou pior: todo mundo virou maligno de novo, e o Kraken levou a Marina outra vez. | "THIEF!" The sky went dark. The curse came back worse: everyone turned evil again, and the Kraken took Marina once more. |
+| `roubou_3` | Agora o mar inteiro quer o baú de volta. Em cada ilha, um tsunami. Corre, Grumete. E não olha para trás. | Now the whole sea wants the chest back. On every island, a tsunami. Run, Deckhand. And don't look back. |
+| `tempestade_1` | O Kraken caiu de novo e a onda quebrou. No meio da tempestade, o Grumete abriu o baú. O ouro nem brilhava mais. | The Kraken fell again and the wave broke. In the middle of the storm, the Deckhand opened the chest. The gold didn't even shine anymore. |
+| `tempestade_2` | O Deus da Riqueza apareceu uma última vez: "Última chance, pirata. Devolva... ou fique com ele PARA SEMPRE." (+ os botões DEVOLVER / FICAR COM O OURO) | The God of Wealth appeared one last time: "Last chance, pirate. Give it back... or keep it FOREVER." (+ the two buttons) |
+| `verdadeiro_1` | O Grumete devolveu o ouro. Moeda por moeda. A tempestade parou, a maldição se desfez e o mar, enfim, acalmou. | The Deckhand gave the gold back. Coin by coin. The storm stopped, the curse was broken and the sea, at last, grew calm. |
+| `final_2` (no final verdadeiro) | Deus da Riqueza: "Foi a volta mais longa que um pirata já deu. Mas você voltou." E o Louro contou essa história para todo mundo. Com mentiras, claro. | God of Wealth: "That was the longest way back a pirate ever took. But you came back." And Polly told the story to everyone. With lies, of course. |
+| `rei_1` | O Grumete ficou com o ouro. Todo ele. Era, enfim, o pirata mais rico de todos os tempos. | The Deckhand kept the gold. All of it. At last, the richest pirate of all time. |
+| `rei_2` | E reina até hoje, num mar que nunca mais acalmou, sem ninguém para gastar com ele. Nem o Louro ficou. Fim. (juro) | And reigns to this day over a sea that never calmed, with no one to spend it on. Not even Polly stayed. The End. (I swear) |
 
 (Os textos ficam em `Assets/Scripts/Nucleo/Historia.cs`; as traduções, em `Traducoes.cs`.)
 
@@ -51,9 +74,9 @@ gerar versões pintadas, no mesmo estilo do fundo do título (`Assets/Resources/
 9) THE TREASURE: a big open wooden pirate chest with gold bands, overflowing with gold coins and colorful gems, glowing.
 ```
 
-## Os quadros
+## A abertura (já pronta)
 
-Todos começam com o mesmo estilo. Mantenha os personagens iguais aos da folha.
+Guardados aqui como referência: estas são as imagens que já estão no jogo.
 
 **`abertura_1.png`** — o maior tesouro de todos os tempos
 
@@ -104,16 +127,113 @@ Scene: a warm golden sunset sky with radiant beams of light coming down from abo
 Scene: dawn at sea, a sky going from blue at the top to pink and orange at the horizon, the sun rising with a golden reflection on the water. On the left, the pirate ship with the red skull sail sails to the right; the Deckhand stands proudly on the deck with Polly on his shoulder. Far away on the right, on the horizon, a dark island under a dark cloud with two small glowing red eyes: the lair of the Red Kraken. Adventurous, determined mood.
 ```
 
+
+
+## Os quadros que faltam (no estilo da abertura)
+
+Todos começam com o mesmo estilo, já pedindo para seguir as imagens da abertura. Mande na ordem abaixo.
+Nos quadros com **botões de escolha** (`escolha_3` e `tempestade_2`) a parte de baixo que fica coberta é maior
+(a legenda + os dois botões em cima dela): por isso esses dois pedem a **terça parte de baixo** simples.
+
+### Escolha (depois de vencer o Kraken)
+
+**`escolha_1.png`** — o baú no convés
+
+```
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images. No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just deck/sea, no faces or important details): a caption box will cover it.
+Scene: right after the final battle, at sunset on the wooden deck of a big ship on the high seas. The sea is calming down; on the right, the last red tip of a Kraken tentacle sinks into the water with bubbles and foam. In the center of the deck sits the big treasure chest, open, overflowing with gold coins and gems, glowing with warm golden light and god rays. On the left, the Deckhand walks toward it, amazed, with Polly the parrot on his shoulder. A few gold coins are scattered on the deck. Mood: victory, wonder, temptation.
+```
+
+**`escolha_2.png`** — o Deus da Riqueza pede o tesouro
+
+```
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images. No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just deck/sea, no faces or important details): a caption box will cover it.
+Scene: the same ship deck at sunset. The God of Wealth descends from parting golden clouds in the upper right, surrounded by a halo of floating gold coins and beams of light, calm and solemn, one open hand reaching down toward the treasure chest. On the left, the Deckhand stands next to the glowing open chest, looking up at the god, unsure, one hand resting on the chest; Polly on his shoulder looks at the gold. Mood: solemn, a big decision is coming.
+```
+
+**`escolha_3.png`** — devolver ou roubar?
+
+```
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images. No text, no letters, no logos, no UI, no border, no frame. Keep the bottom THIRD of the image simple and calm (just deck/sea, no faces or important details): a caption box and two choice buttons will cover it.
+Scene: the dilemma, a symmetric composition on the ship deck at dusk. In the center, the Deckhand stands behind the glowing chest, torn, looking from one side to the other. On the LEFT half, in cool blue moonlight, Marina the mermaid leans out of the sea at the side of the ship, hands together, pleading with big sad eyes. On the RIGHT half, in warm golden light, Polly the parrot perches on the edge of the chest with a mischievous grin and a coin in his beak, whispering. High in the sky, the faint golden silhouette of the God of Wealth watches. Mood: a funny but serious moral choice, good on one side, greed on the other.
+```
+
+### Final: devolveu o tesouro
+
 **`final_1.png`** — o tesouro devolvido
 
 ```
-16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just sea/ground, no faces or important details): a caption box will cover it. Keep the characters exactly like in the character reference sheet.
-Scene: a golden sky full of light beams. The God of Wealth, smiling, floats on a cloud on the right and receives the glowing treasure chest that floats up between him and the hero. On the left, the Deckhand stands on the sand, and the purple curse aura around him shatters into small purple shards flying away. Relief, victory and warmth mood.
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images. No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just sea/ground, no faces or important details): a caption box will cover it.
+Scene: a golden sky full of light beams. The God of Wealth, smiling kindly, floats on a cloud on the right and receives the glowing treasure chest, which floats up toward him trailing sparkles. On the left, the Deckhand stands on the ship deck, arms open, and the purple curse aura around him shatters into small purple shards flying away into the light; Polly flaps happily. Mood: relief, victory, warmth.
 ```
 
-**`final_2.png`** — o mundo em equilíbrio de novo
+**`final_2.png`** — o mundo em equilíbrio de novo (aparece no final normal e no verdadeiro)
 
 ```
-16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just sea/ground, no faces or important details): a caption box will cover it. Keep the characters exactly like in the character reference sheet.
-Scene: a bright sunny day on a beautiful beach, clear blue sky, white clouds, a green island with a palm tree, turquoise sea. Everyone is friends again and happy, lined up on the sand: Marina waving from the water, Captain Anchor (normal green eyes, smiling), the Cook (normal lilac eyes, smiling sheepishly), the Deckhand in the center waving at the viewer, Polly flying above him, and Doris floating happily on the right. A few gold coins shine on the sand. Peaceful, happy ending mood.
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images. No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just sea/sand, no faces or important details): a caption box will cover it.
+Scene: a bright sunny day on a beautiful tropical beach, clear blue sky, white fluffy clouds, a green island with palm trees, turquoise sea, the pirate ship anchored in the background. Everyone is friends again and happy, together in the middle of the image: Marina waving from the shallow water, Captain Anchor smiling with normal green eyes, the Cook smiling sheepishly with normal lilac eyes, the Deckhand in the center waving at the viewer, Polly flying above him, Doris the little ghost floating happily, and a few friendly crabs. Far away in the sky, the God of Wealth smiles faintly in the clouds. Mood: peaceful, happy ending.
+```
+
+### Roubou o tesouro (vai para o modo difícil)
+
+**`roubou_1.png`** — e saiu correndo
+
+```
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images. No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just deck/sea, no faces or important details): a caption box will cover it.
+Scene: comic action at sunset turning red. The Deckhand runs fast to the right across the ship deck carrying the heavy closed treasure chest over his head, with a sly cheeky grin, gold coins spilling behind him, speed lines and dust. Polly flies next to him cackling. On the left, the God of Wealth floats in the clouds frozen in shock, eyes wide, mouth open, crown tilted, reaching out a hand too late. Mood: funny heist, "uh-oh".
+```
+
+**`roubou_2.png`** — "LADRÃO!"
+
+```
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images. No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just sea/ground, no faces or important details): a caption box will cover it.
+Scene: the sky turns black and blood red with lightning. In the center top, the God of Wealth has become furious and enormous, his eyes glowing red, his robe darkened, coins swirling like a storm around him. Below, the curse returns: Captain Anchor and the Cook stand with glowing red eyes and a red evil aura again; on the right, a huge red Kraken tentacle bursts from the sea, wraps around Marina and pulls her down into the dark water while she reaches out. On the left, the small Deckhand hugs the stolen chest, scared, with Polly hiding behind him. Mood: dramatic punishment, still cartoony (not gory).
+```
+
+**`roubou_3.png`** — em cada ilha, um tsunami
+
+```
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images. No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just sand/sea, no faces or important details): a caption box will cover it.
+Scene: a stormy gray-blue sky with rain and lightning over a tropical island beach. A gigantic dark blue tsunami wave with white foam curls over the whole left side of the image, about to crash. The Deckhand runs desperately to the right along the beach with the treasure chest strapped on his back, Polly flying ahead of him screaming. Bent palm trees, flying leaves and spray. Mood: chase, panic, "RUN!".
+```
+
+### Escolha na tempestade (zerou o modo difícil)
+
+**`tempestade_1.png`** — o ouro nem brilhava mais
+
+```
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images, but with a cold desaturated storm palette (grays, dark teal, navy). No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just deck/sea, no faces or important details): a caption box will cover it.
+Scene: heavy rain on a soaked wooden ship deck at night in an endless storm. In the background, a giant wave breaks and collapses, and the last Kraken tentacle sinks. In the center, the Deckhand kneels in front of the open treasure chest; the gold inside is dull and gray, with no shine at all. He looks tired and sad, rain dripping from his bandana; Polly sits hunched and wet on the chest. Mood: melancholic, "was it worth it?".
+```
+
+**`tempestade_2.png`** — última chance
+
+```
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images, but with a cold desaturated storm palette with one warm golden light. No text, no letters, no logos, no UI, no border, no frame. Keep the bottom THIRD of the image simple and calm (just deck/sea, no faces or important details): a caption box and two choice buttons will cover it.
+Scene: the same stormy deck. The God of Wealth appears one last time in the upper right, half transparent, made of dim golden light breaking through the dark storm clouds, stern but sad, one hand held out, waiting. The Deckhand stands next to the dull chest, looking up at him, rain falling between them. Mood: final, quiet, heavy decision.
+```
+
+### Final verdadeiro (devolveu no modo difícil)
+
+**`verdadeiro_1.png`** — moeda por moeda
+
+```
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images. No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just deck/sea, no faces or important details): a caption box will cover it.
+Scene: the storm is ending. Dark clouds part and warm sunbeams break through, with a rainbow appearing over a calming sea. On the left, the Deckhand pours the gold out of the chest, and a long glowing stream of coins rises one by one into the sky toward the God of Wealth on the right, who gently gathers them with a proud smile. Polly watches, surprised. Mood: redemption, the sea finally at peace.
+```
+
+### Final do rei (ficou com o ouro no modo difícil)
+
+**`rei_1.png`** — o pirata mais rico de todos os tempos
+
+```
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images, with a dark stormy palette and bright gold. No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just gold pile/sea, no faces or important details): a caption box will cover it.
+Scene: an enormous mountain of gold coins and gems rising out of a dark stormy sea, rain and lightning all around. On the very top, the Deckhand sits on the treasure chest like a throne, wearing a small golden crown, holding up a coin, grinning proudly. He is all alone. Mood: triumphant but a little lonely.
+```
+
+**`rei_2.png`** — reina até hoje, sozinho
+
+```
+16-bit pixel art cutscene illustration for a cute pirate adventure 2D platformer game, crisp clean pixels, rich limited palette, soft painted lighting, cinematic wide shot, 16:9 (1672x941). Match exactly the art style, colors and character designs of the attached opening cutscene images, with a dark, cold, desaturated storm palette. No text, no letters, no logos, no UI, no border, no frame. Keep the bottom quarter of the image simple and calm (just sea, no important details): a caption box will cover it.
+Scene: a very wide, lonely shot. A tiny golden island of treasure in the middle of an endless dark stormy sea that never calms, rain everywhere. On top of it, the tiny crowned Deckhand sits alone. Far away on the upper right, small Polly flies away toward a thin line of light on the horizon, leaving him. Mood: bittersweet, quiet, "The End".
 ```
