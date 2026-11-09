@@ -23,6 +23,16 @@ public class BlocoSurpresa : MonoBehaviour
         luz = Luzes.Ponto(transform, Luzes.Lilas, 1.6f, 0.45f); // o 'K' brilha igualzinho
     }
 
+    // A moeda deste bloco já foi pega e ficou guardada no checkpoint? Ele já começa usado (sem moeda de novo).
+    void Start()
+    {
+        if (soltaInimigo || GerenciadorDoJogo.Instancia == null || !GerenciadorDoJogo.Instancia.MoedaGuardada(transform.position)) return;
+        usado = true;
+        brilho.enabled = false;
+        if (luz != null) luz.enabled = false;
+        desenho.sprite = FabricaDeSprites.Pegar("bloco_usado");
+    }
+
     void OnCollisionEnter2D(Collision2D colisao)
     {
         if (usado) return;
@@ -52,7 +62,7 @@ public class BlocoSurpresa : MonoBehaviour
         else
         {
             GerenciadorDoJogo.Som("moeda");
-            GerenciadorDoJogo.Instancia.GanharMoeda();
+            GerenciadorDoJogo.Instancia.GanharMoeda(transform.position);
             StartCoroutine(Efeitos.MoedaSaltando(transform.parent, transform.position + Vector3.up));
         }
     }

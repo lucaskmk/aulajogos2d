@@ -287,7 +287,7 @@ public static class Textos
                 new LinhaDeAjuda("TEMPO", "conta desde que você entra pelo mapa (as mortes contam!)."),
                 new LinhaDeAjuda("MEDALHA DO RELÓGIO", "passar a fase dentro do tempo da meta."),
                 new LinhaDeAjuda("MEDALHA DO CORAÇÃO", "passar a fase sem morrer nenhuma vez."),
-                new LinhaDeAjuda("MEDALHA DA MOEDA", "pegar TODAS as moedas numa tentativa só."),
+                new LinhaDeAjuda("MEDALHA DA MOEDA", "pegar TODAS as moedas (as guardadas no checkpoint contam)."),
                 new LinhaDeAjuda("NO MAPA", "as medalhas ficam do lado de cada fase (apagada = falta)."),
                 new LinhaDeAjuda("UM POR SLOT", "cada slot tem os seus recordes e medalhas (apagar o slot apaga eles)."),
             },

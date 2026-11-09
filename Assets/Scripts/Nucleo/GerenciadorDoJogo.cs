@@ -326,7 +326,16 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     // Ponto de save: onde você renasce nesta fase (null = no começo).
     Vector3? pontoDeSave;
-    readonly List<Vector3> savesPegos = new List<Vector3>(); // os checkpoints desta fase, na ordem em que você pegou
+    // Os checkpoints desta fase, na ordem em que você pegou. Cada um GUARDA as moedas que você tinha quando passou
+    // por ele (quantas e quais): morreu? Você renasce com elas, e as que já foram pegas não aparecem de novo.
+    class SavePego
+    {
+        public Vector3 lugar;
+        public int moedas;                                         // as moedas da fase guardadas neste checkpoint
+        public HashSet<Vector2Int> pegas = new HashSet<Vector2Int>(); // quais (pelo lugar): não voltam a aparecer
+    }
+    readonly List<SavePego> savesPegos = new List<SavePego>();
+    readonly HashSet<Vector2Int> moedasPegas = new HashSet<Vector2Int>(); // as moedas pegas nesta tentativa (com as guardadas)
     int mortesNoSave; // mortes desde que você pegou o ponto de save atual (na 3ª ele "muda de lugar")
 
     // Troca de tela com as sombras: primeiro cobre a tela, depois executa a troca.
@@ -432,7 +441,11 @@ public class GerenciadorDoJogo : MonoBehaviour
         }
 
         FaseAtual = indice;
-        moedasNaFase = 0;
+        // renasceu num checkpoint: volta com as moedas que ele guardou (e elas não aparecem de novo na fase)
+        SavePego save = SaveAtual();
+        moedasNaFase = save != null ? save.moedas : 0;
+        moedasPegas.Clear();
+        if (save != null) moedasPegas.UnionWith(save.pegas);
         Sereia = null;
         Chefe = null;
         Mapa = null;
@@ -1957,10 +1970,10 @@ public class GerenciadorDoJogo : MonoBehaviour
         // (menos nas fases de chefe: lá o save da arena e a etapa da luta nunca se perdem; e no modo difícil, onde com a onda a 3ª morte vem rápido)
         if (pontoDeSave.HasValue && Chefe == null) mortesNoSave++;
         bool saveMudou = pontoDeSave.HasValue && Chefe == null && !ModoDificil && mortesNoSave >= mortesParaOSaveMudar;
-        if (saveMudou)
+        if (saveMudou) // (e as moedas voltam a ser as que o checkpoint anterior guardou)
         {
-            savesPegos.Remove(pontoDeSave.Value);
-            pontoDeSave = savesPegos.Count > 0 ? savesPegos[savesPegos.Count - 1] : (Vector3?)null;
+            savesPegos.Remove(SaveAtual());
+            pontoDeSave = savesPegos.Count > 0 ? savesPegos[savesPegos.Count - 1].lugar : (Vector3?)null;
             mortesNoSave = 0;
             Conquistas.Desbloquear("save_mudou");
         }
@@ -1991,7 +2004,8 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (nasCabines) Conquistas.Desbloquear("cabines");
         if (NaSecreta) Conquistas.Desbloquear("secreta");
 
-        // Pegou TODAS as moedas da fase do segredo (sem morrer no meio)? Aparece a fase secreta no mapa.
+        // Pegou TODAS as moedas da fase do segredo? Aparece a fase secreta no mapa.
+        // (as guardadas num checkpoint contam: morrer depois dele não perde nenhuma)
         secretaNova = FaseAtual == Fases.FaseDoSegredo && !Progresso.SecretaLiberada
                       && moedasParaOSegredo > 0 && moedasNaFase >= moedasParaOSegredo;
         if (secretaNova) Progresso.LiberarSecreta();
@@ -2034,7 +2048,35 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (novidade) timerEstado += 1f;
     }
 
-    public void GanharMoeda() => moedasNaFase++;
+    // "lugar": onde a moeda estava (a moeda '$' ou o bloco '?'): o checkpoint lembra quais já foram pegas.
+    public void GanharMoeda(Vector3 lugar)
+    {
+        moedasNaFase++;
+        moedasPegas.Add(ChaveDaMoeda(lugar));
+    }
+
+    // Essa moeda já foi pega e está guardada no checkpoint em que você renasceu? (aí ela não aparece de novo)
+    public bool MoedaGuardada(Vector3 lugar) => moedasPegas.Contains(ChaveDaMoeda(lugar));
+
+    // As moedas ficam nas casas da fase (de meio em meio bloco): o lugar arredondado serve de "nome" da moeda.
+    static Vector2Int ChaveDaMoeda(Vector3 lugar) => new Vector2Int(Mathf.RoundToInt(lugar.x * 2f), Mathf.RoundToInt(lugar.y * 2f));
+
+    // O checkpoint em que você renasce agora (null = no começo da fase).
+    SavePego SaveAtual()
+    {
+        for (int i = savesPegos.Count - 1; i >= 0; i--)
+            if (EhPontoDeSave(savesPegos[i].lugar)) return savesPegos[i];
+        return null;
+    }
+
+    // Guarda no checkpoint atual as moedas de agora.
+    void GuardarMoedasNoSave()
+    {
+        SavePego save = SaveAtual();
+        if (save == null) return;
+        save.moedas = moedasNaFase;
+        save.pegas = new HashSet<Vector2Int>(moedasPegas);
+    }
 
     // ------------------------------------------------------------------ o Kraken rouba moedas (ChefeKraken.cs)
 
@@ -2048,6 +2090,14 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         int daFase = Mathf.Clamp(quantas, 0, moedasNaFase);
         int guardadas = Mathf.Clamp(quantas - daFase, 0, moedas);
+        // as da fase saem primeiro das que ainda não estavam no checkpoint; se precisar mais, o checkpoint perde também
+        // (senão, morrendo, elas voltariam E o Kraken ainda devolveria depois: moeda em dobro)
+        SavePego save = SaveAtual();
+        if (save != null)
+        {
+            int foraDoSave = Mathf.Max(0, moedasNaFase - save.moedas);
+            save.moedas -= Mathf.Clamp(daFase - foraDoSave, 0, save.moedas);
+        }
         moedasNaFase -= daFase;
         moedas -= guardadas;
         int levou = daFase + guardadas;
@@ -2080,6 +2130,8 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         ChefeDerrotado = true;
         pontoDeSave = renascerEm;
+        savesPegos.Add(new SavePego { lugar = renascerEm }); // venceu o chefe: as moedas de até agora ficam guardadas
+        GuardarMoedasNoSave();
         musica.TocarDaFase(FaseAtual);
     }
 
@@ -2088,11 +2140,15 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         if (!EhPontoDeSave(lugar))
         {
-            savesPegos.Add(lugar);
+            savesPegos.Add(new SavePego { lugar = lugar });
             mortesNoSave = 0; // save novo: a contagem das 3 mortes recomeça
         }
         pontoDeSave = lugar;
+        GuardarMoedasNoSave(); // as moedas de até agora ficam guardadas: morrer não perde mais elas
     }
+
+    // Quantas moedas da fase estão guardadas no checkpoint atual (para o aviso do PontoDeSave).
+    public int MoedasNoSave => SaveAtual()?.moedas ?? 0;
     public Vector3? PontoDeSave => pontoDeSave; // onde o Grumete renasce (null = no começo da fase)
     public bool EhPontoDeSave(Vector3 lugar) => pontoDeSave.HasValue && Vector3.Distance(pontoDeSave.Value, lugar) < 0.1f;
 

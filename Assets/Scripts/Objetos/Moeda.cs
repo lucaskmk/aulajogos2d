@@ -18,6 +18,13 @@ public class Moeda : MonoBehaviour
         Luzes.Ponto(transform, Luzes.Dourada, 1.3f, 0.5f);
     }
 
+    // Já foi pega antes e ficou guardada no checkpoint em que o Grumete renasceu? Então ela não aparece de novo.
+    void Start()
+    {
+        if (GerenciadorDoJogo.Instancia != null && GerenciadorDoJogo.Instancia.MoedaGuardada(transform.position))
+            Destroy(gameObject);
+    }
+
     void Update()
     {
         visual.localPosition = posicaoInicial + Vector3.up * Mathf.Sin(Time.time * 4f + transform.position.x) * 0.08f;
@@ -31,7 +38,7 @@ public class Moeda : MonoBehaviour
 
         pega = true;
         GerenciadorDoJogo.Som("moeda");
-        GerenciadorDoJogo.Instancia.GanharMoeda();
+        GerenciadorDoJogo.Instancia.GanharMoeda(transform.position);
         Destroy(gameObject);
     }
 }

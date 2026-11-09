@@ -52,7 +52,9 @@ public class PontoDeSave : MonoBehaviour
         Acender();
         GerenciadorDoJogo.Instancia.SalvarPonto(LugarDeRenascer);
         GerenciadorDoJogo.Som("moeda");
-        GerenciadorDoJogo.Instancia.Avisar("Ponto de save! (confia?)", 2f);
+        // (com moedas na fase, avisa que elas ficaram guardadas: morrer depois daqui não perde elas)
+        GerenciadorDoJogo.Instancia.Avisar(GerenciadorDoJogo.Instancia.MoedasNoSave > 0
+            ? "Ponto de save! Suas moedas estão guardadas." : "Ponto de save! (confia?)", 2f);
         Efeitos.Poeira(transform.parent, transform.position + Vector3.up, 8, 2.5f);
     }
 }
