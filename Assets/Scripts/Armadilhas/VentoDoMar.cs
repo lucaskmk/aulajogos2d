@@ -97,6 +97,9 @@ public class VentoDoMar : MonoBehaviour
     static AudioClip somDaRajada, somDoSopro;
     static float ultimoSomDeRajada = -100f; // as zonas sopram juntas: só uma toca o som
 
+    // A força da rajada agora (0 a 1; as zonas sopram juntas). O tsunami também perde força no vento.
+    public static float RajadaAgora { get; private set; }
+
     // Necessário porque o projeto está com "Enter Play Mode Options" (sem recarregar o domínio).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Limpar()
@@ -104,6 +107,13 @@ public class VentoDoMar : MonoBehaviour
         somDaRajada = null;
         somDoSopro = null;
         ultimoSomDeRajada = -100f;
+        RajadaAgora = 0f;
+    }
+
+    // (a fase é destruída a cada troca: sem zerar aqui, a próxima fase herdaria a última rajada)
+    void OnDestroy()
+    {
+        if (tipo == Tipo.Rajada) RajadaAgora = 0f;
     }
 
     // ------------------------------------------------------------------ montagem
@@ -199,6 +209,7 @@ public class VentoDoMar : MonoBehaviour
             forcaAgora = Mathf.Clamp01(Mathf.Min(soprando / tempoParaEncher, (tempoDeRajada - soprando) / tempoParaAcalmar));
             avisoAgora = 1f;
         }
+        RajadaAgora = forcaAgora;
 
         if (estado == antes) return;
         if (estado == Estado.Aviso) TocarSomDaRajada(); // o "fuuu" vai subindo junto com o aviso

@@ -83,6 +83,7 @@ public static class ConstrutorDeFase
 
         var fujonas = new List<BandeiraFujona>();
         Vector3? destinoDaFujona = null;
+        Tsunami onda = null;
 
         for (int linha = 0; linha < altura; linha++)
         {
@@ -119,6 +120,7 @@ public static class ConstrutorDeFase
                     case '<': Criar<Serra>("SerraTraseira", raiz, pos).direcao = 1; break;
                     case '>': Criar<Serra>("SerraDianteira", raiz, pos).direcao = -1; break;
                     case 'G': info.bandeiras.Add(Criar<Bandeira>("Bandeira", raiz, chaoDaCelula).transform); break;
+                    case 'c': info.bandeiras.Add(Criar<Bandeira>("Bau", raiz, chaoDaCelula).VirarBau().transform); break;
                     case 'R': fujonas.Add(Criar<BandeiraFujona>("BandeiraFujona", raiz, chaoDaCelula)); info.bandeiras.Add(fujonas[fujonas.Count - 1].transform); break;
                     case '*': destinoDaFujona = chaoDaCelula; break;
                     case 'Z': info.bandeiras.Add(Criar<BandeiraFalsa>("BandeiraFalsa", raiz, chaoDaCelula).transform); break;
@@ -134,7 +136,7 @@ public static class ConstrutorDeFase
                     case 't': Criar<EsmagadorDoRitmo>("EsmagadorDoRitmo", raiz, pos); break;
                     case 'l': Criar<FacasDaCozinheira>("Cozinheira", raiz, pos); break;
                     case 'k': Criar<FacasDaCozinheira>("CozinheiraDoLeque", raiz, pos).Montar(true); break;
-                    case 'N': Criar<Tsunami>("Tsunami", raiz, pos); break;
+                    case 'N': onda = Criar<Tsunami>("Tsunami", raiz, pos); break;
                     case 'y': celulasDeVento.Add(new Vector2Int(x, linha)); break;
                     case 'n': celulasDeRedemoinho.Add(new Vector2Int(x, linha)); break;
                     case 'Q': case 'q': // com chão em cima = ENTERRADO (disfarçado de chão)
@@ -205,6 +207,14 @@ public static class ConstrutorDeFase
 
         foreach (BandeiraFujona fujona in fujonas)
             if (destinoDaFujona.HasValue) fujona.destino = destinoDaFujona.Value;
+
+        // Modo difícil: TODA fase tem o tsunami, nascendo 3 colunas atrás do começo (como o 'N' da fase dele).
+        // (depois de vencer o chefe ela não volta: quem morrer no caminho para o fim renasce sem onda)
+        if (GerenciadorDoJogo.Tempestade && !GerenciadorDoJogo.Instancia.ChefeDerrotado)
+        {
+            if (onda == null) onda = Criar<Tsunami>("Tsunami", raiz, info.inicio + Vector3.left * 3f);
+            if (fase.velocidadeDaOnda > 0f) onda.velocidade = fase.velocidadeDaOnda;
+        }
 
         // Placas (Louro e Dóris): textos na ordem da esquerda para a direita.
         placas.Sort((a, b) => a.lugar.x.CompareTo(b.lugar.x));
@@ -359,6 +369,7 @@ public static class ConstrutorDeFase
         for (int x = sorteio.Next(2, 6); x < largura + 4 && Biomas.TemNuvens(bioma); x += sorteio.Next(7, 13))
         {
             var nuvem = Visual("Nuvem", decoracao, new Vector3(x, altura - 2 - sorteio.Next(0, 5), 0f), "nuvem", -10, false);
+            nuvem.GetComponent<SpriteRenderer>().color = Biomas.CorDaNuvem;
             Animacao.Adicionar(nuvem, Animacao.Tipo.Flutuar, 0.4f, 0.4f, ParalaxeDasNuvens);
         }
 

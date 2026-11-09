@@ -19,6 +19,7 @@ public static class FabricaDeSons
             { "mola", Varredura("mola", 180f, 950f, 0.3f, 0.22f, false) },
             { "bloco", Varredura("bloco", 170f, 90f, 0.08f, 0.3f, true) },
             { "pancada", Ruido("pancada", 0.35f, 0.45f) },
+            { "trovao", Ruido("trovao", 1.8f, 0.5f, 110) },                           // a tempestade do modo difícil
             { "serra", Varredura("serra", 900f, 1200f, 0.4f, 0.12f, true) },
             { "risada", Notas("risada", new[] { 620f, 0f, 560f, 0f, 500f, 0f, 440f }, new[] { 0.07f, 0.04f, 0.07f, 0.04f, 0.07f, 0.04f, 0.16f }, 0.18f) },
             { "pop", Varredura("pop", 500f, 1100f, 0.07f, 0.2f, false) },             // rato se multiplicando
@@ -63,8 +64,8 @@ public static class FabricaDeSons
         return Montar(nome, dados.ToArray());
     }
 
-    // Chiado (explosão, tremor, armadilha)
-    static AudioClip Ruido(string nome, float duracao, float volume)
+    // Chiado (explosão, tremor, armadilha). passo: de quantas em quantas amostras o ruído muda (maior = mais grave).
+    static AudioClip Ruido(string nome, float duracao, float volume, int passo = 6)
     {
         int total = Mathf.CeilToInt(duracao * Taxa);
         var dados = new float[total];
@@ -72,7 +73,7 @@ public static class FabricaDeSons
         float valor = 0f;
         for (int i = 0; i < total; i++)
         {
-            if (i % 6 == 0) valor = (float)(aleatorio.NextDouble() * 2.0 - 1.0); // ruído "grosso" estilo 8-bit
+            if (i % passo == 0) valor = (float)(aleatorio.NextDouble() * 2.0 - 1.0); // ruído "grosso" estilo 8-bit
             float t = i / (float)total;
             dados[i] = valor * volume * (1f - t) * (1f - t);
         }

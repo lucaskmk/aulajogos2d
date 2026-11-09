@@ -93,6 +93,15 @@ public class EfeitosDeTela : MonoBehaviour
         temperatura = 22f, matiz = 3f, saturacaoExtra = -6f, contrasteExtra = 18f, exposicao = -0.1f,
     };
 
+    // O modo difícil: céu fechado, tudo frio e com menos cor (nas fases de dia e no mapa; as de noite já são escuras).
+    static readonly Visual Tempestade = new Visual
+    {
+        limiteDoBloom = 0.92f, forcaDoBloom = 0.5f, corDoBloom = new Color(0.8f, 0.88f, 1f),
+        sombras = new Color(0.32f, 0.36f, 0.52f), luzes = new Color(0.56f, 0.58f, 0.58f), equilibrio = 0f,
+        sombrasSMH = new Vector4(0.9f, 0.94f, 1.08f, -0.04f), luzesSMH = new Vector4(1f, 1.02f, 1.04f, 0.02f),
+        temperatura = -10f, matiz = -2f, saturacaoExtra = -8f, contrasteExtra = 12f, exposicao = -0.05f,
+    };
+
     // Mistura dois visuais (t = 0: o primeiro; t = 1: o segundo). Usado para passar da manhã ao entardecer.
     static Visual Misturar(Visual a, Visual b, float t)
     {
@@ -163,7 +172,7 @@ public class EfeitosDeTela : MonoBehaviour
         LuzDoDia.Atualizar(jogo, clima); // a hora do dia (manhã -> entardecer) e o sol atrás das nuvens
         Luzes.AjustarAoVisual(hd && jogo.Mapa == null); // no HD-2D a luz do céu é mais fraca (quem brilha é o sol)
         Visual v = clima == Clima.Noite ? Noite : clima == Clima.Escuro ? NoEscuro : clima == Clima.Cabines ? Cabines
-            : Misturar(Dia, Entardecer, LuzDoDia.Entardecer);
+            : jogo.ModoDificil ? Tempestade : Misturar(Dia, Entardecer, LuzDoDia.Entardecer);
 
         // Bloom: pode ser desligado ou ajustado no painel F10 (AjustesVisuais).
         bloom.active = AjustesVisuais.bloom;
@@ -171,11 +180,12 @@ public class EfeitosDeTela : MonoBehaviour
         cor.saturation.value = Mathf.Lerp(saturacao + (hd ? v.saturacaoExtra : 0f), -75f, morte) - (pausa ? 55f : 0f);
         float noHD = hd ? 1f - morte : 0f; // os extras do HD-2D somem ao morrer (a tela fica cinza)
         cor.contrast.value = contraste + morte * 15f + v.contrasteExtra * noHD;
-        cor.postExposure.value = (jogo.FaseNoturna ? -0.2f : 0f) + v.exposicao * noHD;
+        cor.postExposure.value = (jogo.FaseNoturna ? -0.2f : 0f) + (jogo.ModoDificil && jogo.Mapa != null ? -0.35f : 0f) + v.exposicao * noHD + Relampago.Brilho * 1.4f;
         // (no HD-2D quem dá o tom da fase é o WhiteBalance; no Simples, um filtro de cor como antes)
         cor.colorFilter.value = hd ? Color.white
             : jogo.FaseNoturna ? new Color(0.85f, 0.9f, 1.15f)
             : jogo.NasCabines ? new Color(1.08f, 0.97f, 0.86f)
+            : jogo.ModoDificil ? new Color(0.72f, 0.78f, 0.92f)
             : Color.white;
 
         aberracao.intensity.value = Mathf.Max(morte * 0.85f, renascer * 0.5f);

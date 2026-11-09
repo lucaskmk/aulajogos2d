@@ -40,6 +40,7 @@ using UnityEngine;
 //      tem chão no mapa: o convés é dela (tábuas que ela quebra), e logo depois vem o MAR (4 colunas vazias), de onde ela sai. Os tentáculos VERMELHOS matam; o AMARELO (o agarrão) não mata,
 //      mas ROUBA suas moedas. Quando ela CANSA e encosta a cabeça no chão, pule nela. Veja ChefeKraken.cs
 //   L  Sereia (esperando no fim da última fase)
+//   c  baú do tesouro: o fim da última fase (funciona como a bandeira, e depois vem a escolha: devolver ou roubar)
 //   0-9  porta da Dóris (2 de altura), com o número em cima: aperte S/seta para baixo na frente dela.
 //      Para onde cada porta leva fica na lista "portas" da fase, em pares de ida e volta: "1-4" = a 1 leva
 //      para a 4 e a 4 volta para a 1. É SEMPRE igual (dá para decorar o caminho)
@@ -100,6 +101,9 @@ public class Fase
     // Medalha do relógio: passar a fase em até tantos segundos (contando desde a entrada pelo mapa, com as mortes).
     // 0 = automático, pelo tamanho da fase (veja Medalhas.TempoAlvo).
     public float tempoAlvo;
+    // Modo difícil: a velocidade do tsunami nesta fase (blocos por segundo). 0 = a normal (5,2). O elástico mantém a onda
+    // perto de quem corre bem; as fases que obrigam a esperar (plataformas, ritmo, vento) precisam de uma onda mais lenta.
+    public float velocidadeDaOnda;
 }
 
 public static class Fases
@@ -213,6 +217,7 @@ public static class Fases
             nome = "A Capitã Âncora",
             bioma = Bioma.Forte,
             tempoAlvo = 170f, // chefe: a luta conta (estimativa; ajuste depois de testar)
+            velocidadeDaOnda = 4f, // (os manguais pedem um tempinho)
             corDoFundo = new Color32(165, 185, 240, 255),
             placas = new[]
             {
@@ -247,6 +252,7 @@ public static class Fases
         {
             nome = "Cadê a direita? (Foge, bloco!)",
             bioma = Bioma.Vila,
+            velocidadeDaOnda = 4f, // (o trecho de controles invertidos)
             corDoFundo = new Color32(195, 165, 230, 255),
             clima = Ambiente.Tipo.Poeira,
             placas = new[]
@@ -281,6 +287,7 @@ public static class Fases
         {
             nome = "Abordagem!",
             bioma = Bioma.Navios,
+            velocidadeDaOnda = 3f, // (a plataforma leva 4,8 s para dar a volta)
             corDoFundo = new Color32(250, 165, 120, 255),
             placas = new[]
             {
@@ -316,6 +323,7 @@ public static class Fases
             nome = "A Gruta da Cozinheira",
             bioma = Bioma.Gruta,
             tempoAlvo = 190f, // chefe
+            velocidadeDaOnda = 4f, // (no escuro, e com facas)
             escura = true,
             corDoFundo = new Color32(55, 35, 80, 255),
             placas = new[]
@@ -354,6 +362,7 @@ public static class Fases
             // dos caranguejos). Da sala da Dóris, a parede da direita está aberta: o convés do baile.
             portas = new[] { "1-4", "3-5", "2-9", "6-7", "8-0" },
             tempoAlvo = 170f, // as portas tomam tempo
+            velocidadeDaOnda = 2.5f, // (a escalada dos blocos do ritmo pede uns 4 s para andar 12 colunas)
             noite = true,
             corDoFundo = new Color32(120, 150, 150, 255),
             clima = Ambiente.Tipo.Almas,
@@ -393,6 +402,7 @@ public static class Fases
         {
             nome = "Vento em Popa!",
             bioma = Bioma.Penhasco,
+            velocidadeDaOnda = 3.5f, // (e a rajada segura a onda também: veja Tsunami.Perseguir)
             corDoFundo = new Color32(245, 195, 215, 255),
             clima = Ambiente.Tipo.Poeira, // o vento do deserto levanta areia
             placas = new[]
@@ -552,7 +562,7 @@ public static class Fases
                 "        ?K?               T                $$$",
                 "",
                 "                U",
-                "  P i       h      $m$      E           r       s i   g                         i         L",
+                "  P i       h      $m$      E           r       s i   g                         i         L    c",
                 "##########   ############CC######    #################                         #####################",
                 "##########   ############CC######    #################                         #####################",
             },
@@ -605,7 +615,10 @@ public static class Fases
             case "capita": letras = "u"; break;
             case "ancora": letras = "uQq"; break;
             case "cozinheira": letras = "Hlk"; break;
-            case "tsunami": letras = "N"; break;
+            case "tsunami":
+                if (GerenciadorDoJogo.Tempestade) return true; // no modo difícil, toda fase tem
+                letras = "N";
+                break;
             case "vento": letras = "yn"; break;
             case "ritmo": letras = "abAt"; break;
             case "plataforma": letras = "jJD"; break;

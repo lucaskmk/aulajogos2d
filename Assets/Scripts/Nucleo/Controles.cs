@@ -99,6 +99,20 @@ public static class Controles
         return teclado != null && teclado.f9Key.wasPressedThisFrame;
     }
 
+    // F8 (no mapa): liga e desliga o modo difícil, sem precisar zerar o jogo (atalho de teste).
+    public static bool AlternarTempestade()
+    {
+        var teclado = Keyboard.current;
+        return teclado != null && teclado.f8Key.wasPressedThisFrame;
+    }
+
+    // F7 (no mapa): vai direto para a escolha do final (atalho de teste).
+    public static bool IrParaOFinal()
+    {
+        var teclado = Keyboard.current;
+        return teclado != null && teclado.f7Key.wasPressedThisFrame;
+    }
+
     // DEL: apaga um slot na tela dos saves (no controle, o botão Y / triângulo).
     public static bool Apagar()
     {

@@ -36,13 +36,15 @@ public static class Progresso
     const string ChaveElixires = "salvo_elixires";
     const string ChavePuloDuplo = "salvo_pulo_duplo";
     const string ChaveData = "salvo_data";                 // quando foi jogado por último ("2026-11-05")
+    const string ChaveDificil = "salvo_dificil";           // 1 = o Grumete roubou o tesouro: o modo difícil (a tempestade)
+    const string ChaveEscolha = "salvo_escolha";           // 1 = chegou no baú e ainda não escolheu (o "Continuar" volta na escolha)
 
     // Todas as chaves de um slot (para apagar o slot e para trazer o save antigo). 'i' = int, 'f' = float, 's' = texto.
     static readonly (string nome, char tipo)[] ChavesDoSlot =
     {
         (ChaveTemJogo, 'i'), (ChaveFase, 'i'), (ChaveMaisLonge, 'i'), (ChaveMortes, 'i'), (ChaveMoedas, 'i'),
         (ChaveTempo, 'f'), (ChaveValida, 'i'), (ChaveMortesPorFase, 's'), (ChaveSecreta, 'i'), (ChaveQuantasFases, 'i'),
-        (ChaveEscudos, 'i'), (ChaveElixires, 'i'), (ChavePuloDuplo, 'i'), (ChaveData, 's'),
+        (ChaveEscudos, 'i'), (ChaveElixires, 'i'), (ChavePuloDuplo, 'i'), (ChaveData, 's'), (ChaveDificil, 'i'), (ChaveEscolha, 'i'),
     };
 
     public const int TotalDeSlots = 3;
@@ -139,6 +141,7 @@ public static class Progresso
         public int mortes, moedas;
         public float tempo;   // segundos
         public string data;   // "2026-11-05" ("" = não sabemos: save de antes dos slots)
+        public bool dificil;  // no modo difícil?
     }
 
     public static ResumoDoSlot Resumo(int slot)
@@ -152,6 +155,7 @@ public static class Progresso
             moedas = PlayerPrefs.GetInt(NoSlot(ChaveMoedas, slot), 0),
             tempo = PlayerPrefs.GetFloat(NoSlot(ChaveTempo, slot), 0f),
             data = PlayerPrefs.GetString(NoSlot(ChaveData, slot), ""),
+            dificil = PlayerPrefs.GetInt(NoSlot(ChaveDificil, slot), 0) == 1,
         };
     }
 
@@ -161,7 +165,11 @@ public static class Progresso
     {
         foreach ((string nome, char _) in ChavesDoSlot) PlayerPrefs.DeleteKey(NoSlot(nome, slot));
         for (int coluna = 0; coluna <= Fases.Todas.Length; coluna++)
-            foreach ((string nome, char _) in ChavesDoRecorde) PlayerPrefs.DeleteKey(ChaveNaColuna(slot, coluna) + nome);
+            foreach ((string nome, char _) in ChavesDoRecorde)
+            {
+                PlayerPrefs.DeleteKey(ChaveNaColuna(slot, coluna) + nome);
+                PlayerPrefs.DeleteKey(ChaveNaColuna(slot, coluna) + SufixoDificil + nome);
+            }
         PlayerPrefs.Save();
     }
 
@@ -258,11 +266,28 @@ public static class Progresso
         PlayerPrefs.Save();
     }
 
-    // Zerou: não tem mais o que continuar, mas todas as fases ficam liberadas no mapa.
+    // Zerou: o slot continua vivo, com o mapa todo aberto (dá para buscar as medalhas e vencer o Kraken de novo).
     public static void Zerou(int totalDeFases)
     {
-        PlayerPrefs.SetInt(NoSlot(ChaveTemJogo), 0); // o slot fica livre de novo
         PlayerPrefs.SetInt(ChaveFaseMaxima, totalDeFases - 1);
+        PlayerPrefs.Save();
+    }
+
+    // O modo difícil (o Grumete roubou o tesouro): é do slot.
+    public static bool ModoDificil => PlayerPrefs.GetInt(NoSlot(ChaveDificil), 0) == 1;
+
+    public static void SalvarModoDificil(bool ligado)
+    {
+        PlayerPrefs.SetInt(NoSlot(ChaveDificil), ligado ? 1 : 0);
+        PlayerPrefs.Save();
+    }
+
+    // Chegou no baú e ainda não escolheu? (fechar o jogo no meio da escolha não pode custar a luta com o Kraken)
+    public static bool EscolhaPendente => PlayerPrefs.GetInt(NoSlot(ChaveEscolha), 0) == 1;
+
+    public static void SalvarEscolhaPendente(bool pendente)
+    {
+        PlayerPrefs.SetInt(NoSlot(ChaveEscolha), pendente ? 1 : 0);
         PlayerPrefs.Save();
     }
 
@@ -298,10 +323,13 @@ public static class Progresso
 
     // A chave dos recordes de uma fase no slot atual: "cilada_slot1_recorde_v2_acapitaancora_" (+ "tempo", "mortes"...).
     // (um número fora da lista, como o das fases de mentira do teste do painel, usa o jeito antigo, pelo número, sem slot)
+    // (no modo difícil, os recordes e as medalhas são outros: correr de um tsunami não vale nem atrapalha os da campanha)
+    const string SufixoDificil = "dificil_";
+
     static string ChaveDaFase(int fase)
     {
         if (fase != Fases.IndiceSecreto && (fase < 0 || fase >= Fases.Todas.Length)) return "cilada_recorde_fase" + fase + "_";
-        return ChaveNaColuna(SlotAtual, fase == Fases.IndiceSecreto ? Fases.Todas.Length : fase);
+        return ChaveNaColuna(SlotAtual, fase == Fases.IndiceSecreto ? Fases.Todas.Length : fase) + (ModoDificil ? SufixoDificil : "");
     }
 
     // coluna = o número da fase (a secreta é a última coluna, Fases.Todas.Length)

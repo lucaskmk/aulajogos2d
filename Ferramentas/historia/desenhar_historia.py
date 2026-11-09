@@ -43,6 +43,7 @@ PAL_CAPITA = paleta('Objetos/ArteDaCapita.cs', 'paleta')
 D_PERSONAGENS = desenhos('Nucleo/ArteDosPersonagens.cs')
 D_CAPITA = desenhos('Objetos/ArteDaCapita.cs')
 D_COZINHEIRA = desenhos('Objetos/ChefeCozinheira.cs')
+D_TSUNAMI_BARRIL = desenhos('Armadilhas/Tsunami.cs')['ArteBarril']
 
 def sprite(linhas, pal, escala=1, espelhar=False, troca=None):
     """Um desenho em texto vira uma imagem (cada letra = um pixel da paleta; o resto é transparente)."""
@@ -788,6 +789,309 @@ def quadro_9():
         q.colar(moeda(), x, areia + 6)
     q.salvar('final_2')
 
+# ------------------------------------------------------------------ a escolha (devolver ou roubar) e os outros finais
+# (nos quadros da escolha, o que importa fica acima de y = 100: dali para baixo vêm as opções e a caixa do texto)
+
+CEU_DA_TEMPESTADE = [(14, 20, 30), (28, 40, 52), (46, 64, 76), (72, 94, 100)]
+NUVEM_PESADA, NUVEM_PESADA_SOMBRA = (44, 60, 72), (28, 40, 52)
+MAR_DA_TEMPESTADE = [(40, 62, 72), (24, 40, 52), (12, 22, 32)]
+
+# O baú sem brilho (o ouro roubado, depois de tanto fugir)
+PAL_OURO_APAGADO = dict(PAL)
+PAL_OURO_APAGADO.update({'Y': (150, 140, 112, 255), 'X': (118, 110, 92, 255), 'q': (120, 90, 96, 255), 's': (116, 132, 150, 255)})
+
+COROA = [
+    "k..k..k",
+    "kYkYkYk",
+    "kYYqYYk",
+    "kYYYYYk",
+    "kkkkkkk",
+]
+
+def conves(q, y):
+    """O convés de um navio: tábuas de madeira até o fim da tela."""
+    q.retangulo(0, y, W, H, (110, 68, 40))
+    q.retangulo(0, y, W, y + 2, (168, 112, 64))
+    for yy in range(y + 6, H, 7):
+        q.retangulo(0, yy, W, yy + 1, (70, 42, 28))
+    rnd = random.Random(y)
+    for _ in range(26):
+        x, yy = rnd.randrange(W), rnd.randrange(y + 3, H)
+        q.retangulo(x, yy, x + 1, yy + 4, (84, 50, 32))
+
+def ceu_fechado(q, horizonte, semente):
+    q.ceu(0, horizonte, CEU_DA_TEMPESTADE)
+    for i in range(8):
+        q.nuvem((semente * 37 + i * 41) % W, 8 + i * 4, 38, NUVEM_PESADA, NUVEM_PESADA_SOMBRA, semente + i)
+
+def monte_de_ouro(q, cx, y_base, raio, altura):
+    """Um monte de moedas (mais largo embaixo)."""
+    for y in range(int(y_base - altura), int(y_base)):
+        meia = raio * math.sqrt(max(0, (y - (y_base - altura)) / altura))
+        for x in range(int(cx - meia), int(cx + meia) + 1):
+            q.ponto(x, y, (255, 212, 72) if (x + y) % 5 else (255, 248, 196))
+            if (x * 7 + y * 3) % 23 == 0:
+                q.ponto(x, y, (214, 146, 38))
+
+def quadro_10():
+    """O Kraken afundou: as bolhas dela no mar e, no convés, o baú brilhando."""
+    q = Quadro()
+    horizonte = 78
+    q.ceu(0, horizonte, [(26, 16, 44), (70, 34, 66), (150, 70, 72), (236, 150, 96)])
+    q.nuvem(48, 22, 34, (92, 44, 76), (66, 32, 64), 40)
+    q.nuvem(206, 30, 40, (92, 44, 76), (66, 32, 64), 41)
+    q.mar(horizonte, [(90, 40, 70), (54, 26, 56), (30, 16, 40)], (170, 90, 110), (250, 190, 170), 42)
+    rnd = random.Random(43)
+    for _ in range(40):  # as bolhas do Kraken afundando
+        q.circulo(206 + rnd.uniform(-20, 20), horizonte + rnd.uniform(-6, 18), rnd.uniform(0.8, 2.4), (255, 170, 160))
+    chao = 112
+    conves(q, chao)
+    cx = 132
+    for dx, larg in ((-30, 9), (-8, 12), (14, 10), (34, 8)):
+        q.raio_de_luz(cx + dx * 0.2, 4, cx + dx * 1.7, larg * 2, 12, chao - 14, (255, 226, 130), 0.5)
+    q.brilho(cx, chao - 18, 44, (255, 206, 96), 0.8)
+    q.colar_no_chao(bau(2), cx, chao + 3)
+    for x, y in ((cx - 40, chao - 40), (cx + 38, chao - 34), (cx + 6, chao - 58)):
+        q.colar(moeda(), x, y)
+    q.colar_no_chao(grumete(2), 56, chao + 2)
+    q.colar(louro(1, True), 62, chao - 44)
+    q.vinheta(0.5)
+    q.salvar('escolha_1')
+
+def quadro_11():
+    """O Deus da Riqueza desce em cima do baú e cobra o que é dele."""
+    q = Quadro()
+    q.ceu(0, H, [(70, 40, 96), (170, 100, 96), (250, 184, 110), (255, 226, 160)])
+    for dx in (-50, -18, 18, 50):
+        q.raio_de_luz(178 + dx * 0.2, 6, 178 + dx * 1.7, 24, 0, 108, (255, 248, 210), 0.5)
+    q.nuvem(178, 92, 52, (255, 240, 210), (246, 210, 170), 44)
+    q.brilho(178, 40, 38, (255, 250, 220), 0.8)
+    q.colar(deus(2), 154, 16)
+    q.nuvem(178, 84, 40, (255, 244, 220), (246, 214, 170), 45)
+    chao = 112
+    conves(q, chao)
+    q.colar_no_chao(bau(2), 104, chao + 3)
+    q.brilho(104, chao - 18, 20, (255, 222, 120), 0.5)
+    q.colar_no_chao(grumete(2), 44, chao + 2)
+    q.colar(louro(1, True), 50, chao - 44)
+    q.salvar('escolha_2')
+
+def quadro_12():
+    """A escolha: o Grumete e o baú no meio, a Marina de um lado pedindo, o Louro do outro cochichando."""
+    q = Quadro()
+    horizonte = 70
+    q.ceu(0, horizonte, [(34, 20, 56), (90, 44, 74), (190, 96, 84), (250, 170, 110)])
+    q.mar(horizonte, [(110, 56, 84), (60, 34, 66), (34, 20, 46)], (190, 110, 120), (255, 210, 170), 46)
+    chao = 96
+    conves(q, chao)
+    q.brilho(142, chao - 22, 46, (255, 206, 96), 0.7)
+    q.colar_no_chao(bau(2), 142, chao + 3)
+    q.colar_no_chao(grumete(2), 94, chao + 2)
+    marina = personagem('Marina', 2)
+    q.aura(marina, 42 - marina.size[0] // 2, chao + 2 - marina.size[1], (190, 230, 255), 2)
+    q.colar_no_chao(marina, 42, chao + 2)
+    bicho = louro(2, True)
+    q.aura(bicho, 192, chao - 56, (255, 70, 60), 2)
+    q.colar(bicho, 192, chao - 56)
+    q.vinheta(0.5)
+    q.salvar('escolha_3')
+
+def quadro_13():
+    """O Grumete foge com o baú na cabeça; o Deus da Riqueza, vermelho de raiva, fica lá atrás."""
+    q = Quadro()
+    q.ceu(0, H, [(40, 10, 30), (110, 24, 44), (190, 60, 50), (250, 130, 80)])
+    q.nuvem(150, 20, 44, (92, 24, 44), (66, 16, 36), 47)
+    q.nuvem(226, 34, 34, (92, 24, 44), (66, 16, 36), 48)
+    q.brilho(58, 46, 46, (255, 120, 80), 0.7)
+    d = deus(2)
+    q.aura(d, 34, 14, (255, 60, 50), 3)
+    q.colar(d, 34, 14)
+    chao = 112
+    conves(q, chao)
+    gx = 182
+    q.colar_no_chao(grumete(2), gx, chao + 2)
+    q.colar_no_chao(bau(1), gx, chao - 28)
+    for i in range(6):  # os riscos da corrida
+        y = chao - 34 + i * 7
+        q.retangulo(gx - 44 - (i % 3) * 9, y, gx - 24, y + 1, (255, 230, 200))
+    rnd = random.Random(49)
+    for _ in range(6):  # as moedas caindo pelo caminho
+        q.colar(moeda(), rnd.randrange(100, gx - 26), rnd.randrange(chao - 26, chao - 6))
+    q.vinheta(0.6)
+    q.salvar('roubou_1')
+
+def quadro_14():
+    """O céu fecha: a cara do Deus nas nuvens, raios, e todo mundo maligno de novo. O Kraken leva a Marina."""
+    q = Quadro()
+    q.ceu(0, H, [(8, 6, 18), (24, 12, 34), (44, 20, 48), (20, 10, 28)])
+    for i in range(9):
+        q.nuvem(i * 32, 8 + (i % 3) * 8, 34, (46, 30, 60), (30, 20, 44), 50 + i)
+    q.colar(deus(3), 92, 2, 0.75)
+    for ox in (119, 131):  # os olhos, em brasa
+        q.brilho(ox + 1, 21, 9, (255, 60, 40), 0.9)
+        q.retangulo(ox, 20, ox + 3, 23, (255, 230, 200))
+    q.raio(44, 18, 92, 51)
+    q.raio(214, 12, 84, 52)
+    chao = 112
+    q.retangulo(0, chao, W, H, (30, 16, 30))
+    q.ceu(chao, H, [(44, 22, 40), (20, 10, 22)])
+    q.aura(capita(True, 1), 22, chao - 30, (220, 40, 60), 1)
+    q.colar(capita(True, 1), 22, chao - 30)
+    coz = cozinheira(True, 1)
+    q.aura(coz, 58, chao - 26, (220, 40, 60), 1)
+    q.colar(coz, 58, chao - 26)
+    tentaculo(q, curva(232, H + 4, 196, 62, 16, onda=2), 6, 2)
+    q.colar(personagem('Marina', 1), 180, 44)
+    q.chuva(150, (120, 110, 160))
+    q.vinheta(0.7)
+    q.salvar('roubou_2')
+
+def quadro_15():
+    """Um tsunami gigante atrás do Grumete, que corre na praia com o baú."""
+    q = Quadro()
+    ceu_fechado(q, 112, 53)
+    q.raio(226, 0, 64, 54)
+    chao = 112
+    # a onda: um paredão que sobe para a esquerda e enrola para a direita
+    for x in range(0, 168):
+        t = x / 168
+        topo = 10 + 96 * t ** 3
+        for y in range(int(topo), chao + 1):
+            p = (y - topo) / max(1, chao - topo)
+            cor = (22, 56, 120) if p > 0.45 else (40, 92, 165) if p > 0.18 else (78, 146, 214)
+            q.ponto(x, y, cor)
+        for y in range(int(topo) - 3, int(topo) + 2):  # a espuma em cima
+            q.ponto(x, y, (244, 251, 255) if (x + y) % 3 else (196, 230, 248))
+    # o tubo escuro embaixo da crista (uma meia-lua: o corpo da onda cobre o resto)
+    q.circulo(116, 46, 19, (10, 28, 66))
+    q.circulo(102, 56, 19, (22, 56, 120))
+    # a crista: uma garra de espuma que sai do alto e cai para a frente, afinando
+    for k in range(70):
+        t = k / 70
+        a = math.radians(-170 + 215 * t)
+        x, y = 106 + math.cos(a) * (32 - 4 * t), 42 + math.sin(a) * (32 - 4 * t)
+        q.circulo(x, y, 6.5 - 5 * t, (78, 146, 214))
+        q.circulo(x, y - 2 * (1 - t), 4.5 - 3.6 * t, (244, 251, 255))
+    rnd = random.Random(53)
+    for _ in range(34):  # os respingos na ponta da crista
+        q.circulo(140 + rnd.uniform(-10, 24), 52 + rnd.uniform(-14, 40), rnd.uniform(0.4, 1.4), (244, 251, 255))
+    q.colar(sprite(D_TSUNAMI_BARRIL, PAL_JOGO), 40, 76)
+    q.retangulo(0, chao, W, H, (70, 66, 60))
+    q.ceu(chao, H, [(96, 88, 74), (46, 44, 44)])
+    gx = 208
+    q.colar_no_chao(grumete(2), gx, chao + 2)
+    q.colar_no_chao(bau(1), gx, chao - 28)
+    for i in range(5):
+        y = chao - 30 + i * 7
+        q.retangulo(gx - 40 - (i % 2) * 8, y, gx - 22, y + 1, (220, 236, 255))
+    q.chuva(170, (140, 170, 190))
+    q.vinheta(0.6)
+    q.salvar('roubou_3')
+
+def quadro_16():
+    """No meio da tempestade o Grumete abre o baú, e o ouro está apagado."""
+    q = Quadro()
+    horizonte = 78
+    ceu_fechado(q, horizonte, 55)
+    q.raio(190, 0, 70, 56)
+    q.mar(horizonte, MAR_DA_TEMPESTADE, (70, 104, 116), (170, 200, 210), 57, 1.4)
+    chao = 112
+    conves(q, chao)
+    q.colar_no_chao(grumete(2), 104, chao + 2)
+    q.colar_no_chao(sprite(BAU, PAL_OURO_APAGADO, 2), 156, chao + 3)
+    q.chuva(170, (140, 170, 190))
+    q.vinheta(0.6)
+    q.salvar('tempestade_1')
+
+def quadro_17():
+    """A última chance: o Deus nas nuvens de tempestade, o Grumete e o baú sem brilho."""
+    q = Quadro()
+    horizonte = 70
+    ceu_fechado(q, horizonte, 58)
+    q.mar(horizonte, MAR_DA_TEMPESTADE, (70, 104, 116), (170, 200, 210), 59, 1.4)
+    q.brilho(178, 34, 40, (255, 240, 190), 0.6)
+    q.colar(deus(2), 154, 6)
+    q.nuvem(178, 74, 44, (92, 110, 122), (64, 82, 96), 60)
+    chao = 96
+    conves(q, chao)
+    q.colar_no_chao(grumete(2), 62, chao + 2)
+    q.colar_no_chao(sprite(BAU, PAL_OURO_APAGADO, 2), 110, chao + 3)
+    q.raio(30, 0, 60, 61)
+    q.chuva(170, (140, 170, 190))
+    q.vinheta(0.6)
+    q.salvar('tempestade_2')
+
+def quadro_18():
+    """O final verdadeiro: as nuvens abrem, o ouro sobe de volta para o Deus e a maldição se quebra."""
+    q = Quadro()
+    q.ceu(0, H, [(44, 60, 86), (130, 120, 110), (250, 196, 120), (255, 236, 180)])
+    for i in range(6):
+        x = i * 54 - 6
+        if 96 < x < 170:
+            continue
+        q.nuvem(x, 12 + (i % 2) * 8, 34, (80, 96, 108), (56, 72, 86), 62 + i)
+    for dx in (-44, -14, 14, 44):
+        q.raio_de_luz(172 + dx * 0.2, 6, 172 + dx * 1.6, 26, 0, 112, (255, 248, 210), 0.55)
+    q.brilho(172, 38, 38, (255, 250, 220), 0.8)
+    q.colar(deus(2), 148, 14)
+    q.nuvem(172, 86, 40, (255, 240, 210), (246, 210, 170), 68)
+    chao = 112
+    q.retangulo(0, chao, W, H, (240, 206, 140))
+    q.ceu(chao, H, [(246, 214, 150), (214, 170, 110)])
+    q.colar_no_chao(bau(2), 104, chao + 2)
+    for k in range(8):  # as moedas voltando para o dono, em arco
+        t = (k + 1) / 9
+        q.colar(moeda(), 104 + (172 - 104) * t - 3, 86 - 62 * t - math.sin(t * math.pi) * 10)
+    q.colar_no_chao(grumete(2), 54, chao + 2)
+    rnd = random.Random(69)
+    for _ in range(26):  # os cacos roxos da maldição
+        x, y = 54 + rnd.uniform(-30, 30), chao - 16 + rnd.uniform(-34, 8)
+        for i in range(3):
+            q.ponto(x + i, y - i * 0.5, (176, 96, 230))
+        q.ponto(x + 1, y, (238, 214, 255))
+    q.salvar('verdadeiro_1')
+
+def quadro_19():
+    """O final do rei: o Grumete de coroa, no alto de uma montanha de ouro, debaixo da chuva."""
+    q = Quadro()
+    horizonte = 96
+    ceu_fechado(q, horizonte, 70)
+    q.raio(40, 0, 74, 71)
+    q.raio(222, 0, 60, 72)
+    q.mar(horizonte, MAR_DA_TEMPESTADE, (70, 104, 116), (170, 200, 210), 73, 1.4)
+    q.brilho(128, 100, 70, (255, 206, 96), 0.45)
+    monte_de_ouro(q, 128, H + 2, 110, 92)
+    rnd = random.Random(73)
+    for _ in range(24):  # moedas e joias soltas no monte
+        x, y = rnd.randrange(50, 206), rnd.randrange(70, 136)
+        if abs(x - 128) < (y - 54) * 1.15:
+            q.colar(moeda(), x, y)
+            q.circulo(x + 10, y + 6, 1.6, rnd.choice(((255, 120, 140), (176, 222, 255), (120, 230, 140))))
+    q.colar_no_chao(grumete(2), 128, 56)
+    q.colar(sprite(COROA, PAL, 2), 121, 18)
+    q.chuva(170, (140, 170, 190))
+    q.vinheta(0.6)
+    q.salvar('rei_1')
+
+def quadro_20():
+    """Sozinho: a ilhinha de ouro no meio do mar sem fim, e o Louro indo embora."""
+    q = Quadro()
+    horizonte = 70
+    ceu_fechado(q, horizonte, 74)
+    q.raio(208, 0, 62, 75)
+    q.mar(horizonte, MAR_DA_TEMPESTADE, (70, 104, 116), (170, 200, 210), 76, 1.8)
+    q.morro(112, 148, horizonte + 8, 8, (56, 52, 56), 77, 2)
+    monte_de_ouro(q, 130, horizonte + 6, 15, 20)
+    q.colar_no_chao(sprite(COROA, PAL), 130, horizonte - 22)
+    q.ponto(130, horizonte - 18, (255, 220, 190))
+    q.brilho(130, horizonte, 30, (255, 206, 96), 0.3)
+    q.colar(louro(1, False), 214, 34)  # voando para longe, para a direita
+    q.chuva(170, (140, 170, 190))
+    q.vinheta(0.75)
+    q.salvar('rei_2')
+
+NOVOS = (quadro_10, quadro_11, quadro_12, quadro_13, quadro_14, quadro_15, quadro_16, quadro_17, quadro_18, quadro_19, quadro_20)
+
 if __name__ == '__main__':
-    for f in (quadro_1, quadro_2, quadro_3, quadro_4, quadro_5, quadro_6, quadro_7, quadro_8, quadro_9):
+    for f in (quadro_1, quadro_2, quadro_3, quadro_4, quadro_5, quadro_6, quadro_7, quadro_8, quadro_9) + NOVOS:
         f()

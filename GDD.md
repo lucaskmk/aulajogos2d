@@ -73,7 +73,8 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
   - pelas placas do Louro dentro das fases;
   - pelas falas no mapa depois de cada fase (o Louro e a Marina, com uma fala diferente se você passou sem morrer);
   - pelas mensagens de morte;
-  - pelo final com a Marina e os créditos.
+  - pelas cutscenes em quadros (a abertura e os finais);
+  - pela escolha no baú do tesouro, depois do Kraken: devolver ou roubar (veja "O final e o modo difícil").
 - **Tom:** comédia de "trollagem" em cima de uma aventura de pirata. As mensagens de morte misturam meme ("Skill issue.", "KKKKKKKKKKK") com o mar ("O Kraken mandou lembranças.", "Volta da Maré, patrocinada pelo Kraken.").
 
 ## 1.2 Mecânicas
@@ -142,7 +143,7 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
   (ou para o começo, se era o primeiro). Antes era uma chance de 25% a cada morte: às vezes mudava na primeira, às vezes demorava muito, e
   parecia bug. Agora é sempre na 3ª (a contagem recomeça em cada save novo).
 - A **bandeira que volta (`W`)** também manda para o último checkpoint (sem checkpoint, para o começo).
-- Isso nunca acontece em fase com chefe.
+- Isso nunca acontece em fase com chefe, nem no modo difícil (com a onda atrás, a 3ª morte chegaria rápido demais).
 
 ### Chefes (molde Helltaker)
 - 3 etapas × 2 golpes (vida 6). Tudo mata com um toque.
@@ -178,12 +179,26 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - Para chegar lá: no ponto 3 do mapa, aperte ↓.
 - "Sem pegadinha"... só uma.
 
+### O final e o modo difícil
+- A fase 13 termina no **baú do tesouro** (`c`, funciona como a bandeira). Depois do painel vem a **escolha**, salva na hora: quem fecha o jogo volta nela pelo "Continuar", e o ESC pula a conversa, não a decisão.
+  O Louro, que sempre mente, diz "Rouba. Confia.". É a "ganância punida" da fase 3 na escala do jogo inteiro, e mais um final que mente.
+- **Devolver:** o final de sempre, com os créditos. O slot continua, com o mapa aberto, e vencer o Kraken de novo oferece a escolha de novo.
+- **Roubar:** sem créditos. O jogo recomeça no **modo difícil** (a maldição volta pior e os chefes voltam a ser malignos):
+  - tempestade em tudo: chuva, relâmpago e o céu da praia do tsunami nas fases e no mapa (a gruta não tem céu nem chuva);
+  - um **tsunami em toda fase**, sem precisar do `N`. A velocidade vem de `Fase.velocidadeDaOnda` porque a onda de 5,2 blocos/s pega quem fica uns 2 s parado, e algumas fases obrigam a esperar:
+    na 8 a escalada de ritmo pede uns 4 s (2,5 b/s), na 6 a plataforma leva 4,8 s para voltar (3 b/s), na 9 o vento deixa o Grumete em 3,3 b/s (a rajada segura a onda também; 3,5 b/s), e nas 4, 5 e 7 são 4 b/s. As outras ficam em 5,2;
+  - nas fases de chefe a onda para na entrada da arena e, quando a luta começa, quebra na parede e vai embora. A luta é a mesma;
+  - leva as moedas e os itens e ganha 100 moedas do tesouro (pagam os 3 escudos e o duplo salto). Mortes e tempo zeram. A Loja já vem aberta;
+  - recordes e medalhas separados; o save não "muda de lugar"; as falas do mapa são outras.
+- Vencer o Kraken no modo difícil dá a **última escolha**: devolver (o **final verdadeiro**, que acaba com a tempestade) ou ficar com o ouro (o **final do rei**: o mar nunca mais acalma).
+
 ### Conquistas
-- São 27, salvas para sempre. Alguns exemplos:
+- São 31, salvas para sempre. Alguns exemplos:
   - A maré te trouxe, Grumete imortal (100 mortes), Confiou na bandeira, Ganância, Olhou para o céu, Suspeito de hack (passar de fase sem morrer);
   - Pescador de caranguejos, Controle de pragas, Buuu!, Mudaram meu save!, Explorador, Passageiro da Expressa, Caldo do Tsunami;
   - do Kraken: Assaltado (ter moedas roubadas), Calamar à doré (vencer) e Bolso fechado (vencer sem ela roubar nenhuma moeda);
-  - as vitórias contra os chefes, Fora do Ritmo, Perfeccionista (as 3 medalhas de uma fase) e Terra à vista! (zerar o jogo).
+  - as vitórias contra os chefes, Fora do Ritmo, Perfeccionista (as 3 medalhas de uma fase) e Terra à vista! (zerar o jogo);
+  - uma para cada final: Consciência limpa, Ganância em pessoa, Antes tarde e Rei da tempestade.
 
 ### Recorde
 - O recorde é zerar com o menor número de mortes, jogando em ordem.
@@ -233,7 +248,7 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
   - a tela perde a cor e os tentáculos do Kraken avançam das bordas;
   - aparece uma mensagem engraçada;
   - dá para pular a animação depois de 0,5 s.
-- **Vitória e créditos:** a Marina comemora, aparecem o resumo (mortes, moedas, tempo e título) e os créditos rolando.
+- **Vitória e créditos:** a Marina comemora (no final do rei, sobra só o Louro, cobrando), aparecem o resumo (mortes, moedas, tempo e título) e os créditos rolando.
 
 ---
 
@@ -468,7 +483,7 @@ Dificuldade de 1 a 5 (estimativa da equipe). "Saves" = cristais `s` na fase. A l
 # 6. GERENCIAMENTO DE ESTADOS E ERROS
 
 ## Máquina de estados (GerenciadorDoJogo.cs)
-`Título ⇄ Conquistas` → `Mapa` → `Jogando ⇄ Pausado` → `Morreu → Jogando` → `FaseConcluida → Mapa` → ... → `Vitória → Créditos → Título`
+`Título ⇄ Conquistas` → `Mapa` → `Jogando ⇄ Pausado` → `Morreu → Jogando` → `FaseConcluida → Mapa` → ... → `História (a escolha)` → `Vitória → Créditos → Título` (ou, roubando, de volta ao `Mapa`, no modo difícil)
 
 - Um único `GerenciadorDoJogo` (singleton) que **se cria sozinho** ao dar Play. A `Interface` só lê o estado e não decide nada.
 - **Transições com sombras:** a troca de tela só acontece com a tela coberta. Durante a transição, nenhuma entrada é processada.
@@ -489,6 +504,8 @@ Dificuldade de 1 a 5 (estimativa da equipe). "Saves" = cristais `s` na fase. A l
 - **Recordes pelo nome da fase:** os recordes e medalhas são guardados pelo nome (`cilada_recorde_v2_<nome>`), não pelo número: reordenar as fases não manda
   um recorde para a fase errada. O "v2" fez as 13 fases novas começarem do zero (a secreta, que não mudou, manteve os recordes).
 - **O roubo do Kraken** salva as moedas na hora (fechar o jogo no meio da luta não devolve nada).
+- **A escolha do baú** fica marcada como pendente até ser respondida, e o modo difícil é salvo antes da cutscene do roubo: fechar o jogo em qualquer ponto não perde a luta nem desfaz a decisão.
+- **Zerar não apaga o slot:** a partida continua, com o mapa aberto.
 - Os índices são limitados (`Mathf.Clamp`) ao carregar o mapa.
 - A leitura das mortes por fase tolera texto inválido (vira 0).
 - O jogo salva ao entrar numa fase, ao passar de fase, ao voltar ao mapa e ao fechar.

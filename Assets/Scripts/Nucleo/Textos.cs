@@ -68,9 +68,51 @@ public static class Textos
         },
     };
 
+    // No modo difícil (o Grumete roubou o tesouro) as falas são outras: ninguém está agradecendo mais.
+    static readonly Dictionary<string, Fala[]> NaTempestade = new Dictionary<string, Fala[]>
+    {
+        { "Bem-vindo :)", new[] { Louro("Bem-vindo de volta! Agora com tsunami. Eu falei pra roubar, né? Currupaco!") } },
+        { "Confia em mim (e corre!)", new[] { Marina("Ouvi dizer que você roubou o tesouro. Grumete... por quê?") } },
+        { "O Final (mudei de ideia)", new[] { Louro("\"O Final\" de novo. Viu só? Nem roubando o jogo acaba. Hahaha.") } },
+        {
+            "A Capitã Âncora", new[]
+            {
+                Capita("A maldição voltou, Grumete, e a culpa é sua! Da próxima vez a âncora vai na testa."),
+                Deus("Ladrão. Cada ilha que você cruza afunda mais um pouco. Devolva o que é MEU."),
+            }
+        },
+        { "Cadê a direita? (Foge, bloco!)", new[] { Doris("Até os blocos fogem de você agora, ladrãozinho. Buuu.") } },
+        { "Abordagem!", new[] { Louro("Abordagem completa, {0} queda(s) no mar! O ouro pesa, né?") } },
+        {
+            "A Gruta da Cozinheira", new[]
+            {
+                Cozinheira("Hihi! Voltei a ser má, e adivinha de quem é a culpa? Vou guardar uma faca pra você."),
+                Deus("Meu ouro não é seu, pirata. O mar inteiro vai cobrar."),
+            }
+        },
+        { "O Navio Fantasma", new[] { Doris("Até eu devolvia. E olha que eu sou fantasma. Buuu.") } },
+        { "Vento em Popa!", new[] { Louro("O vento segura a onda, mas não segura a sua consciência. Currupaco!") } },
+        {
+            "A Baleia Branca", new[]
+            {
+                Marina("A Baleia era só uma baleia de novo, Grumete. Até você roubar."),
+                Deus("Falta pouco para o fim do mar. Ainda dá para me devolver."),
+            }
+        },
+        { "O Tsunami (CORRE!)", new[] { Louro("Essa onda já te pegou {0} vez(es). E agora ela está em TODAS as ilhas. Que honra!") } },
+        { "O Verdadeiro Final (juro)", new[] { Louro("Ops. O Kraken voltou. E ela QUER o baú de volta. Boa sorte! :)") } },
+    };
+
+    // A primeira fala no mapa, logo depois de roubar.
+    public static readonly Fala ComecoDaTempestade =
+        Louro("Currupaco! 100 moedas no bolso e um tsunami em cada ilha. Aperta L e gasta na Loja. Eu falei pra roubar!");
+
     // A fala de depois da fase e as que vêm atrás dela (a primeira é a de Escolher).
     public static Fala[] FalasDepoisDaFase(int faseConcluida, int mortes)
     {
+        if (GerenciadorDoJogo.Tempestade && faseConcluida != Fases.IndiceSecreto
+            && NaTempestade.TryGetValue(Fases.Dados(faseConcluida).nome, out Fala[] naTempestade))
+            return naTempestade;
         Fala primeira = Escolher(faseConcluida, mortes);
         if (faseConcluida == Fases.IndiceSecreto || !DepoisDaFala.TryGetValue(Fases.Dados(faseConcluida).nome, out Fala[] depois))
             return new[] { primeira };
@@ -107,6 +149,10 @@ public static class Textos
     // A fala do modo de teste (F9 no mapa).
     public static readonly Fala ModoDeTeste =
         Louro("Modo de teste! Liberei o mapa inteiro, até o Kraken. Não conta pra ninguém. :3");
+
+    // As falas do F8 no mapa (liga e desliga o modo difícil).
+    public static readonly Fala TesteTempestadeLigada = Louro("Modo de teste! Liguei a tempestade: um tsunami em cada fase. Currupaco!");
+    public static readonly Fala TesteTempestadeDesligada = Louro("Modo de teste! Desliguei a tempestade. O mar acalmou. Por enquanto.");
 
     static readonly Fala[] SemMorrer =
     {

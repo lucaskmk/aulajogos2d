@@ -46,6 +46,10 @@ public static class Conquistas
         new Conquista("kraken_vencida", "Calamar à doré", "Derrotar o Kraken Vermelho."),
         new Conquista("kraken_sem_roubo", "Bolso fechado", "Derrotar o Kraken sem ela roubar nenhuma moeda (na luta inteira)."),
         new Conquista("zerou", "Terra à vista!", "Zerar o jogo."),
+        new Conquista("devolveu", "Consciência limpa", "Devolver o tesouro ao Deus da Riqueza."),
+        new Conquista("roubou", "Ganância em pessoa", "Roubar o tesouro do Deus da Riqueza."),
+        new Conquista("arrependido", "Antes tarde", "Fugir com o tesouro pelo mar inteiro e devolver no fim."),
+        new Conquista("rei_do_mar", "Rei da tempestade", "Fugir com o tesouro pelo mar inteiro e ficar com ele."),
     };
 
     const string Prefixo = "cilada_conquista_";

@@ -69,6 +69,10 @@ public class GerenciadorDoJogo : MonoBehaviour
     [Tooltip("Quanto custa o duplo salto (compra uma vez e vale para a partida inteira).")]
     public int precoDoPuloDuplo = 45;
 
+    [Header("Modo difícil")]
+    [Tooltip("Quantas moedas o tesouro roubado dá para gastar na Loja (100 pagam os 3 escudos e o duplo salto).")]
+    public int moedasDoTesouro = 100;
+
     // ------------------------------------------------------------------ estado (lido pela Interface)
 
     public EstadoDoJogo Estado { get; private set; }
@@ -119,6 +123,9 @@ public class GerenciadorDoJogo : MonoBehaviour
     public List<Transform> Bandeiras { get; private set; } = new List<Transform>();
     public bool EhUltimaFase => FaseAtual == Fases.Todas.Length - 1;
     public bool NaSecreta => FaseAtual == Fases.IndiceSecreto;
+    // O modo difícil (o Grumete roubou o tesouro): tempestade em tudo e um tsunami em cada fase. É do slot (Progresso.ModoDificil).
+    public bool ModoDificil { get; private set; }
+    public static bool Tempestade => Instancia != null && Instancia.ModoDificil;
     // Para os efeitos de tela: a última fase é de noite, e as cabines têm luz quente.
     public bool FaseNoturna => Mapa == null && (DadosDaFase.noite || DadosDaFase.escura);
     public bool NasCabines => Mapa == null && nasCabines;
@@ -193,6 +200,19 @@ public class GerenciadorDoJogo : MonoBehaviour
     public int QuadroDaHistoria { get; private set; }
     public float TempoNoQuadro { get; private set; }
     System.Action depoisDaHistoria;
+    // A cutscene termina numa ESCOLHA? (null = não): as opções, a selecionada e o que fazer com a resposta.
+    public string[] OpcoesDaHistoria { get; private set; }
+    public int OpcaoDaHistoria { get; private set; }
+    System.Action<int> depoisDaEscolha;
+    // As opções só aparecem no último quadro, com o texto já todo na tela.
+    public bool MostrandoOpcoes => OpcoesDaHistoria != null && QuadroDaHistoria >= HistoriaAtual.Length - 1
+        && TempoNoQuadro >= Historia.TempoParaTerminar(Idioma.Traduzir(HistoriaAtual[QuadroDaHistoria].texto));
+    const float EsperaDaEscolha = 0.5f; // (quem vem apertando ENTER para passar os textos não escolhe sem querer)
+
+    // Qual final o jogador viu (a tela de "VOCÊ ZEROU!" muda com ele).
+    public enum Desfecho { Devolveu, Arrependido, Rei }
+    public Desfecho FinalDoJogo { get; private set; }
+
     public int SlotSelecionado { get; private set; }
     public int SlotPerguntando { get; private set; } = -1;  // -1 = sem pergunta; senão, o slot da pergunta
     public bool PerguntaDeApagar { get; private set; }      // a pergunta é "apagar?" (senão é "começar um jogo novo por cima?")
@@ -248,7 +268,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     // A Loja só abre depois da 2ª fase (chegou na 3ª = passou da 2ª). Na primeira vez, o Louro aparece voando
     // no mapa, explica como abrir a Loja e faz você comprar o primeiro escudo (veja "tutorial da loja").
     public const int FaseQueLiberaALoja = 2; // índice da 3ª fase
-    public bool LojaLiberada => FaseLiberada >= FaseQueLiberaALoja;
+    public bool LojaLiberada => ModoDificil || FaseLiberada >= FaseQueLiberaALoja; // (quem roubou já conhece a Loja, e tem ouro para gastar)
     public enum PassoDoTutorial { Nenhum, Chegada, Moedas, AbrirLoja, Comprar, Comprou, Fechar }
     public PassoDoTutorial Tutorial { get; private set; }
     public bool NoTutorial => Tutorial != PassoDoTutorial.Nenhum;
@@ -290,6 +310,8 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     const float DuracaoRenascer = 0.7f;
     const float DuracaoTransicao = 0.45f;
+    static readonly Color CorDaTempestade = new Color32(72, 86, 100, 255); // o céu fechado do modo difícil
+    static readonly Color LuzDaTempestade = new Color(0.86f, 0.92f, 1f);
 
     int moedas, moedasNaFase;
     float timerEstado, duracaoDaMorte = 1f;
@@ -421,6 +443,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         Color corDoFundo = corDaFase.HasValue ? (Color)corDaFase.Value
             : indice == Fases.IndiceSecreto ? corDaFaseSecreta
             : coresDoFundo.Length > 0 ? coresDoFundo[indice % coresDoFundo.Length] : Color.cyan;
+        if (ModoDificil) corDoFundo = Color.Lerp(corDoFundo, CorDaTempestade, 0.75f);
         if (Camera.main != null) Camera.main.backgroundColor = corDoFundo;
         // a luz da fase vem ANTES de montar: assim as luzinhas só são criadas se a fase for escura
         Fase dados = Fases.Dados(indice);
@@ -428,6 +451,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (dados.escura) Luzes.Ambiente(0.22f, new Color(0.7f, 0.72f, 1f));
         else if (dados.noite) Luzes.Ambiente(0.68f, new Color(0.75f, 0.8f, 1f)); // (de noite o fundo pintado ainda aparece bem)
         else if (cabines) Luzes.Ambiente(0.72f, new Color(1f, 0.92f, 0.8f));
+        else if (ModoDificil) Luzes.Ambiente(0.9f, LuzDaTempestade); // (clara o bastante para enxergar as armadilhas com a onda atrás)
         else Luzes.Ambiente(indice == Fases.IndiceSecreto ? 1f : 0.93f, Color.white);
         InfoFase info = ConstrutorDeFase.Construir(dados, raizDaFase, MortesNaFase);
         bool noite = dados.noite || dados.escura;
@@ -465,6 +489,11 @@ public class GerenciadorDoJogo : MonoBehaviour
         else if (nasCabines) tipo = Ambiente.Tipo.Poeira;
         else if (indice == Fases.IndiceSecreto) tipo = Ambiente.Tipo.Brilhos;
         else if (Fases.Dados(indice).petalas) tipo = Ambiente.Tipo.Petalas;
+        if (ModoDificil && Fases.Dados(indice).bioma != Bioma.Gruta) // (dentro da gruta não chove)
+        {
+            tipo = Ambiente.Tipo.Chuva;
+            Relampago.Criar(raizDaFase);
+        }
         Ambiente.Criar(raizDaFase, tipo, tipo == Ambiente.Tipo.VagaLumes || tipo == Ambiente.Tipo.Almas ? 16
             : tipo == Ambiente.Tipo.Poeira ? 40 : tipo == Ambiente.Tipo.Chuva ? 70 : 26);
     }
@@ -483,12 +512,18 @@ public class GerenciadorDoJogo : MonoBehaviour
         Sereia = null;
         Bandeiras = new List<Transform>();
         FaseAtual = no == Fases.IndiceSecreto && Progresso.SecretaLiberada ? no : Mathf.Clamp(no, 0, Fases.Todas.Length - 1);
-        if (Camera.main != null) Camera.main.backgroundColor = MapaDoMundo.CorDoChao;
-        Luzes.Ambiente(1f, Color.white);
+        if (Camera.main != null) Camera.main.backgroundColor = ModoDificil ? Color.Lerp(MapaDoMundo.CorDoChao, CorDaTempestade, 0.7f) : MapaDoMundo.CorDoChao;
+        if (ModoDificil) Luzes.Ambiente(0.85f, LuzDaTempestade);
+        else Luzes.Ambiente(1f, Color.white);
 
         Mapa = MapaDoMundo.Criar(raizDaFase, FaseAtual, FaseLiberada, FaseMaisLonge, mortesPorFase,
             Progresso.SecretaLiberada, andarPara, caminhoNovo, mostrarSecreta);
         cameraSeguir.Configurar(Mapa.Grumete, MapaDoMundo.Largura, MapaDoMundo.Altura);
+        if (ModoDificil)
+        {
+            Ambiente.Criar(raizDaFase, Ambiente.Tipo.Chuva, 110, 35); // (ordem 35: a chuva cai por cima da névoa do mapa)
+            Relampago.Criar(raizDaFase);
+        }
         musica.TocarDaFase(FabricaDeMusica.MusicaDoMapa);
         LojaAberta = false;
         Tutorial = PassoDoTutorial.Nenhum;
@@ -516,6 +551,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         mortesNoSave = 0;
         LimparFalas();
         System.Array.Clear(mortesPorFase, 0, mortesPorFase.Length);
+        ModoDificil = Progresso.TemJogoSalvo && Progresso.ModoDificil; // (o título mostra o mapa do "Continuar")
         MostrarMapa(Progresso.TemJogoSalvo ? Progresso.FaseSalva : faseInicial);
         Estado = EstadoDoJogo.Titulo; // o mapa aparece escurecido atrás do título
         MontarMenu();
@@ -704,11 +740,76 @@ public class GerenciadorDoJogo : MonoBehaviour
             return;
         }
 
-        // zerou! (salva tudo AGORA: fechar o jogo no meio da cutscene não perde nada) e passa a cutscene do final
+        // chegou no baú! Salva tudo AGORA: fechar o jogo no meio da cutscene não perde nada (o "Continuar" volta na escolha)
+        FaseMaisLonge = Mathf.Max(FaseMaisLonge, concluida);
         Progresso.Zerou(Fases.Todas.Length);
         Conquistas.Desbloquear("zerou");
-        if (partidaValida) Progresso.TentarSalvarRecorde(Mortes);
-        TocarHistoria(Historia.Final, () => Estado = EstadoDoJogo.Vitoria);
+        if (partidaValida && !ModoDificil) Progresso.TentarSalvarRecorde(Mortes);
+        SalvarProgresso();
+        Progresso.SalvarEscolhaPendente(true);
+        TocarEscolhaDoTesouro();
+    }
+
+    // ------------------------------------------------------------------ o final: devolver ou roubar
+
+    void TocarEscolhaDoTesouro()
+    {
+        if (ModoDificil) TocarEscolha(Historia.EscolhaNaTempestade, Historia.OpcoesNaTempestade, EscolheuNaTempestade);
+        else TocarEscolha(Historia.Escolha, Historia.OpcoesDaEscolha, EscolheuOTesouro);
+    }
+
+    void EscolheuOTesouro(int opcao)
+    {
+        Progresso.SalvarEscolhaPendente(false);
+        if (opcao == 0)
+        {
+            FinalDoJogo = Desfecho.Devolveu;
+            Conquistas.Desbloquear("devolveu");
+            TocarHistoria(Historia.Final, () => Estado = EstadoDoJogo.Vitoria);
+            return;
+        }
+        Conquistas.Desbloquear("roubou");
+        ComecarTempestade(); // (salva antes da cutscene: fechar o jogo no meio dela não desfaz o roubo)
+        TocarHistoria(Historia.Roubou, () =>
+        {
+            MostrarMapa(0);
+            MostrarFala(Textos.ComecoDaTempestade);
+        });
+    }
+
+    // Roubou: o jogo recomeça do começo, com o ouro no bolso e o mar inteiro atrás do Grumete.
+    void ComecarTempestade()
+    {
+        ModoDificil = true;
+        Progresso.SalvarModoDificil(true);
+        moedas += moedasDoTesouro;
+        Mortes = 0;
+        TempoTotal = 0f;
+        FaseMaisLonge = 0;
+        partidaValida = true;
+        faseDasMarcas = -1;
+        System.Array.Clear(mortesPorFase, 0, mortesPorFase.Length);
+        Progresso.Salvar(0, 0, 0, moedas, 0f, true);
+        Progresso.SalvarMortesPorFase(mortesPorFase);
+        SalvarItensDaLoja();
+    }
+
+    void EscolheuNaTempestade(int opcao)
+    {
+        Progresso.SalvarEscolhaPendente(false);
+        if (opcao == 0)
+        {
+            // devolveu, arrependido: a tempestade acaba (o slot fica com o mapa aberto, em dia de sol)
+            ModoDificil = false;
+            Progresso.SalvarModoDificil(false);
+            FinalDoJogo = Desfecho.Arrependido;
+            Conquistas.Desbloquear("arrependido");
+            TocarHistoria(Historia.FinalVerdadeiro, () => Estado = EstadoDoJogo.Vitoria);
+            return;
+        }
+        FinalDoJogo = Desfecho.Rei;
+        Conquistas.Desbloquear("rei_do_mar");
+        TocarHistoria(Historia.FinalDoRei, () => Estado = EstadoDoJogo.Vitoria);
     }
 
     // ------------------------------------------------------------------ a história (cutscenes)
@@ -720,7 +821,17 @@ public class GerenciadorDoJogo : MonoBehaviour
         QuadroDaHistoria = 0;
         TempoNoQuadro = 0f;
         depoisDaHistoria = depois;
+        OpcoesDaHistoria = null;
         Estado = EstadoDoJogo.Historia;
+    }
+
+    // Uma cutscene que termina numa escolha: "escolha" recebe a opção (já com a tela escura da transição).
+    void TocarEscolha(Historia.Quadro[] quadros, string[] opcoes, System.Action<int> escolha)
+    {
+        TocarHistoria(quadros, null);
+        OpcoesDaHistoria = opcoes;
+        OpcaoDaHistoria = 0;
+        depoisDaEscolha = escolha;
     }
 
     // ENTER (ou clique): se o texto ainda está aparecendo, mostra ele todo; senão, o próximo quadro. ESC pula tudo.
@@ -729,7 +840,22 @@ public class GerenciadorDoJogo : MonoBehaviour
         TempoNoQuadro += Time.unscaledDeltaTime;
         if (Controles.Voltar() || clique == BotaoVoltar)
         {
-            AcabarHistoria();
+            if (OpcoesDaHistoria == null)
+            {
+                AcabarHistoria();
+                return;
+            }
+            // com escolha, o ESC só pula até ela: dá para pular a conversa, não a decisão
+            if (QuadroDaHistoria < HistoriaAtual.Length - 1)
+            {
+                QuadroDaHistoria = HistoriaAtual.Length - 1;
+                TempoNoQuadro = 0f;
+            }
+            return;
+        }
+        if (MostrandoOpcoes)
+        {
+            AtualizarEscolha(clique);
             return;
         }
         if (!Controles.Confirmar() && clique != BotaoProxima) return;
@@ -747,6 +873,28 @@ public class GerenciadorDoJogo : MonoBehaviour
         QuadroDaHistoria++;
         TempoNoQuadro = 0f;
         Som("bloco", 0.35f);
+    }
+
+    void AtualizarEscolha(int clique)
+    {
+        if (Controles.EsquerdaApertou() || Controles.DireitaApertou() || Controles.CimaApertou() || Controles.BaixoApertou())
+            OpcaoDaHistoria = Girar(OpcaoDaHistoria, 1, OpcoesDaHistoria.Length);
+        if (TempoNoQuadro < Historia.TempoParaTerminar(Idioma.Traduzir(HistoriaAtual[QuadroDaHistoria].texto)) + EsperaDaEscolha) return;
+
+        bool clicou = clique >= 0 && clique < OpcoesDaHistoria.Length;
+        if (clicou) OpcaoDaHistoria = clique;
+        if (!clicou && !Controles.Confirmar()) return;
+
+        System.Action<int> escolha = depoisDaEscolha;
+        int opcao = OpcaoDaHistoria;
+        depoisDaEscolha = null;
+        OpcoesDaHistoria = null;
+        Som("moeda", 0.4f);
+        Trocar(() =>
+        {
+            HistoriaAtual = null;
+            escolha(opcao);
+        });
     }
 
     void AcabarHistoria()
@@ -1175,6 +1323,12 @@ public class GerenciadorDoJogo : MonoBehaviour
             if (opcao < TotalDaPausa) OpcaoDaPausa = opcao;
             if (OpcaoDaPausa != antes) Som("bloco", 0.5f);
         }
+        else if (MostrandoOpcoes)
+        {
+            antes = OpcaoDaHistoria;
+            if (opcao < OpcoesDaHistoria.Length) OpcaoDaHistoria = opcao;
+            if (OpcaoDaHistoria != antes) Som("bloco", 0.5f);
+        }
     }
 
     // Chamado pela Interface no clique. O clique fica GUARDADO e é tratado no próximo Update, junto com o
@@ -1304,6 +1458,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     {
         Progresso.SlotAtual = slot;
         if (novo) Progresso.ApagarSlot(slot);
+        ModoDificil = !novo && Progresso.ModoDificil;
         SubmenuAberto = Submenu.Nenhum;
         Som("vitoria", 0.4f);
         int fase;
@@ -1326,7 +1481,8 @@ public class GerenciadorDoJogo : MonoBehaviour
         }
         if (!novo)
         {
-            Trocar(() => MostrarMapa(fase));
+            if (Progresso.EscolhaPendente) Trocar(TocarEscolhaDoTesouro); // fechou o jogo na frente do baú: volta para ele
+            else Trocar(() => MostrarMapa(fase));
             return;
         }
         // jogo novo: primeiro a história (a abertura), depois o mapa
@@ -1396,6 +1552,30 @@ public class GerenciadorDoJogo : MonoBehaviour
             Som("vitoria", 0.6f);
             MostrarMapa(Mapa.Selecionado);
             MostrarFala(Textos.ModoDeTeste);
+            return;
+        }
+
+        if (Controles.AlternarTempestade())
+        {
+            // Modo de teste: liga e desliga o modo difícil sem precisar zerar o jogo. Não vale para o recorde.
+            ModoDificil = !ModoDificil;
+            partidaValida = false;
+            Progresso.SalvarModoDificil(ModoDificil);
+            SalvarProgresso();
+            Som("vitoria", 0.6f);
+            MostrarMapa(Mapa.Selecionado);
+            MostrarFala(ModoDificil ? Textos.TesteTempestadeLigada : Textos.TesteTempestadeDesligada);
+            return;
+        }
+
+        if (Controles.IrParaOFinal())
+        {
+            // Modo de teste: vai direto para a escolha do baú, como se tivesse vencido o Kraken.
+            FaseMaisLonge = Fases.Todas.Length - 1;
+            partidaValida = false;
+            SalvarProgresso();
+            Progresso.SalvarEscolhaPendente(true);
+            Trocar(TocarEscolhaDoTesouro);
             return;
         }
 
@@ -1774,9 +1954,9 @@ public class GerenciadorDoJogo : MonoBehaviour
 
         // Na 3ª morte desde que você pegou o ponto de save, ele "muda de lugar" e você volta para o checkpoint ANTERIOR
         // (ou para o começo, se era o primeiro). :) Sempre na 3ª: nunca antes, nunca depois.
-        // (menos nas fases de chefe: lá o save da arena e a etapa da luta nunca se perdem)
+        // (menos nas fases de chefe: lá o save da arena e a etapa da luta nunca se perdem; e no modo difícil, onde com a onda a 3ª morte vem rápido)
         if (pontoDeSave.HasValue && Chefe == null) mortesNoSave++;
-        bool saveMudou = pontoDeSave.HasValue && Chefe == null && mortesNoSave >= mortesParaOSaveMudar;
+        bool saveMudou = pontoDeSave.HasValue && Chefe == null && !ModoDificil && mortesNoSave >= mortesParaOSaveMudar;
         if (saveMudou)
         {
             savesPegos.Remove(pontoDeSave.Value);
@@ -1822,7 +2002,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         moedasNaFase = 0;
         jogador.Congelar();
         Som("vitoria");
-        if (EhUltimaFase && Sereia != null) Sereia.Comemorar();
+        if (EhUltimaFase && Sereia != null && !ModoDificil) Sereia.Comemorar(); // (quem roubou não ganha coraçõezinhos)
     }
 
     // Recordes e medalhas da fase que acabou de ser concluída (valem para sempre: Progresso e Medalhas).

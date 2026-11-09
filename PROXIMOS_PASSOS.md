@@ -15,6 +15,8 @@ O README explica o jogo e o código; o GDD explica o design. Aqui fica só o est
 - **Atalhos de teste:** F9 no mapa (libera tudo só na partida atual) e F10 (painel de gráficos, FPS e pior quadro).
 - **Visual v3 (HD-2D):** blocos (`ArteDosBlocos.cs`), fundo nítido com a luz pintada, raios de sol, sombras de nuvens, vento nas plantas e a tela pixelada
   (o tilt-shift ficou desligado de fábrica; dá para ligar no F10).
+- **O final com escolha e o modo difícil:** o baú no fim da fase 13 (`c`), devolver ou roubar, a tempestade nas fases e no mapa, o tsunami em toda fase e 3 finais
+  (veja "O final e o modo difícil" no GDD). Testar: F8 liga o modo difícil e F7 vai direto para a escolha, os dois no mapa.
 
 ## Leva do tema pirata (pronta, falta testar na Unity)
 O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora é **CILADA À VISTA!**, uma aventura de pirata:
@@ -54,9 +56,11 @@ O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora �
 - **Página do itch.io:** como jogar e os segredos (fase secreta: todas as moedas da fase 3 e depois seta para baixo no ponto 3).
 - **Testar as fases novas jogando:** o checador confere o terreno, mas não as plataformas, o vento, as portas e o tsunami. Jogar os trechos novos
   (fases 4, 6, 7, 9, 10, 11 e 12) e as emendas (2, 3, 5 e 8), e a luta do Kraken inteira, e ajustar se algum ficar injusto.
+- **Velocidade da onda no modo difícil:** os números de `velocidadeDaOnda` em `Fases.cs` são contas, não teste. Jogar as 13 fases com o F8 ligado e ajustar,
+  principalmente as fases 6, 8 e 9, que obrigam a esperar.
 - **Tempos-alvo das medalhas:** são estimativas. Ajustar o campo `tempoAlvo` em `Fases.cs` depois de jogar,
   e conferir se TODAS as moedas de cada fase dá para pegar (senão a medalha de moeda fica impossível).
-- **Narrativa (opcional):** um prólogo curto (o Grumete cai do navio, e a maré sempre o traz de volta), um cartão de capítulo ao entrar em cada fase e um epílogo com a Marina.
+- **Quadros pintados dos finais:** os quadros novos (`escolha_*`, `roubou_*`, `tempestade_*`, `verdadeiro_1`, `rei_*`) estão desenhados por código, como `final_1` e `final_2`.
 - **Modo Justo (opcional, desligado por padrão):** o save nunca "muda de lugar" e a bandeira `W` não manda para o começo.
 - **Sons das mecânicas:** efeitos para a âncora, o vento, as facas, o tsunami, o tic do ritmo e as plataformas.
 - **Equipe:** pôr os nomes em `Textos.Equipe` (créditos), no README e no GDD.
@@ -65,7 +69,7 @@ O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora �
 Cada mecânica nova é **um arquivo novo** em `Assets/Scripts/Armadilhas/` (com `.meta`). Os sprites são registrados com
 `FabricaDeSprites.Registrar` num método `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]`. Integrar uma fase nova é:
 1. Pôr um `case` no `switch` de `ConstrutorDeFase.Construir`.
-2. Acrescentar a fase no lugar certo de `Fases.Todas`, com `corDoFundo` e, se for o caso, `noite`/`escura`. Pôr também a linha da legenda no topo de `Fases.cs`.
+2. Acrescentar a fase no lugar certo de `Fases.Todas`, com `corDoFundo` e, se for o caso, `noite`/`escura` e `velocidadeDaOnda` (se ela obrigar a esperar). Pôr também a linha da legenda no topo de `Fases.cs`.
 3. Pôr o ponto dela no `MapaDoMundo` e a fala do mapa em `Textos.DepoisDaFase`, pelo nome da fase.
 4. Se tiver conquista nova, pôr em `Conquistas.Todas`.
 5. Testar o terreno:
