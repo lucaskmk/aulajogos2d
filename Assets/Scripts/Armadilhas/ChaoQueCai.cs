@@ -62,3 +62,28 @@ public class ChaoQueCai : MonoBehaviour
         gameObject.SetActive(false);
     }
 }
+
+// A poção do chão da Loja: o chão que cai ('C') e o chão falso ('F') ficam pulsando em vermelho nesta fase.
+public class ChaoRevelado : MonoBehaviour
+{
+    readonly List<SpriteRenderer> desenhos = new List<SpriteRenderer>();
+
+    // (no Start: o gerenciador liga as poções depois de montar a fase, no mesmo quadro)
+    void Start()
+    {
+        GerenciadorDoJogo jogo = GerenciadorDoJogo.Instancia;
+        if (jogo == null || !jogo.VendoChaoFalso)
+        {
+            Destroy(this);
+            return;
+        }
+        foreach (SpriteRenderer desenho in GetComponentsInChildren<SpriteRenderer>())
+            if (!desenho.TryGetComponent<Sombra>(out _)) desenhos.Add(desenho);
+    }
+
+    void Update()
+    {
+        Color cor = Color.Lerp(new Color(1f, 0.62f, 0.35f), new Color(1f, 0.3f, 0.3f), 0.5f + 0.5f * Mathf.Sin(Time.time * 5f));
+        foreach (SpriteRenderer desenho in desenhos) desenho.color = cor;
+    }
+}

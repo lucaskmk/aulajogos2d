@@ -33,7 +33,7 @@ a onda traz o Grumete de volta, ele lembra onde errou e passa, de ilha em ilha, 
 
 ## Pilares
 1. **Passar raiva com graça.** A morte é a piada. O jogo ri junto (mensagens de morte, o Louro mentiroso, a bandeira que foge), mas nunca humilha.
-2. **Aprender morrendo (Volta da Maré).** Morrer é rápido, barato e informativo. Você volta na hora, com um X vermelho ("X marca o lugar!") mostrando onde morreu.
+2. **Aprender morrendo (Volta da Maré).** Morrer é rápido, barato e informativo. Você volta na hora, com um X vermelho ("X marca o lugar!") nas mortes anteriores e uma bandeira de morto fincada na última (em buraco ou chão falso, ela fica na altura do chão, mostrando onde ele mente).
 3. **Sempre justo depois que você sabe.** Toda armadilha pega uma vez. Na segunda tentativa existe uma resposta clara (pular, esperar, não pegar, ir por outro lado).
    Toda fase é passável (o checador de fases confere o terreno), e todo ataque de chefe avisa antes.
 
@@ -125,7 +125,7 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - **Plataformas mágicas (`j` / `J` / `D`):** vão e voltam até 6 blocos.
   - `J`: o cristal fica vermelho e ela despenca depois de 0,5 s.
   - `D`: o cristal fica amarelo, ela **dispara** e freia de repente. Quem pula enquanto ela treme cai.
-- **Vento do mar (`y`):** rajadas para a esquerda (calmo 1 s, aviso 0,5 s com folhas, rajada 2 s). Segure para a frente ou se esconda atrás de um bloco.
+- **Vento do mar (`y`):** rajadas para a esquerda (calmo 1,2 s, aviso 0,4 s com folhas, rajada 1,4 s; segurando para a frente ainda dá para avançar). Segure para a frente ou se esconda atrás de um bloco.
 - **Redemoinho (`n`):** levanta o Grumete até o topo da zona. Os "traiçoeiros" engasgam e desligam por 1,5 s.
 - **Portas das cabines do Navio Fantasma (`0`–`9`):** pares fixos de ida e volta (`1-4`, `3-5`, `2-9`, `6-7`, `8-0`). Uma leva a um beco cheio de caranguejos.
 - **Blocos do ritmo (`a` / `b` / `A`):** o azul (da maré) e o rosa (do coral) se revezam a cada **1,4 s**, piscando e fazendo "tic, tic, TAC" antes da troca.
@@ -206,7 +206,7 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 
 ### Loja do Porto
 - Abre no mapa depois da fase 2 (o Louro apresenta numa cutscene e dá o primeiro escudo).
-- Vende o escudo, o elixir de super salto e o duplo salto, e tem a roleta no meio (veja 2.5).
+- Vende o escudo, o elixir de super salto, o duplo salto e as duas poções de visão, e tem a roleta no meio (veja 2.5).
 - A roleta sorteia o resultado e salva o saldo no começo do giro: fechar o jogo no meio não muda nada.
 - Os itens ficam na partida salva; um Novo jogo zera.
 
@@ -298,6 +298,7 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
   e o dinheiro da **Loja do Porto** (no mapa, depois da fase 2; o botão fica no canto de baixo à direita, ou a tecla L):
   - **escudo** (15 moedas, até 3): te salva de uma morte;
   - **elixir de super salto** (20, até 3): entrar numa fase gasta um, e o pulo fica bem mais alto a fase inteira;
+  - **poção dos espinhos** e **poção do chão** (15 cada, até 3 de cada): mostram os espinhos escondidos (`h`) e o chão que cai ou falso (`C`, `F`) a fase inteira; só são gastas em fase que tenha o que mostrar;
   - **duplo salto** (45, uma vez): um segundo pulo no ar, para a partida toda;
   - **roleta**: aposte de 1 a 100 moedas numa cor. São 15 casas (7 vermelhas, 7 pretas e 1 verde): vermelho e preto pagam 2x,
     o verde paga 14x. A casa leva uma pequena vantagem, como numa roleta de verdade: é um jeito de arriscar, não de enriquecer.

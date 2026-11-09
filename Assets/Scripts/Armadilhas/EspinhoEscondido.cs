@@ -9,6 +9,7 @@ public class EspinhoEscondido : MonoBehaviour
     Transform espinho;
     Collider2D area;
     bool saiu;
+    SpriteRenderer revelado; // a silhueta vermelha que a poção dos espinhos mostra
 
     void Awake()
     {
@@ -21,8 +22,17 @@ public class EspinhoEscondido : MonoBehaviour
         area.enabled = false;
     }
 
+    // (no Start: o gerenciador liga as poções depois de montar a fase, no mesmo quadro)
+    void Start()
+    {
+        GerenciadorDoJogo jogo = GerenciadorDoJogo.Instancia;
+        if (jogo == null || !jogo.VendoEspinhos || saiu) return;
+        revelado = ConstrutorDeFase.Visual("EspinhoRevelado", transform, transform.position, "espinho", 7, false).GetComponent<SpriteRenderer>();
+    }
+
     void Update()
     {
+        if (revelado != null) revelado.color = new Color(1f, 0.25f, 0.25f, 0.55f + 0.3f * Mathf.Sin(Time.time * 6f));
         if (saiu || !GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return;
 
         Vector2 d = jogador - (Vector2)transform.position;
@@ -33,6 +43,7 @@ public class EspinhoEscondido : MonoBehaviour
     IEnumerator Sair()
     {
         saiu = true;
+        if (revelado != null) Destroy(revelado.gameObject);
         area.enabled = true;
         GerenciadorDoJogo.Som("armadilha");
 

@@ -275,7 +275,7 @@ public static class Textos
                 new LinhaDeAjuda("ETAPAS DO CHEFE", "cada etapa vencida vale como checkpoint da luta."),
                 new LinhaDeAjuda("BARRA NO TOPO", "o quanto falta até a bandeira (a mais longe, hehe)."),
                 new LinhaDeAjuda("SALVAR", "o jogo salva sozinho: dá para sair e Continuar depois."),
-                new LinhaDeAjuda("LOJA (L, NO MAPA)", "depois da fase 2: escudos, elixir de super salto, duplo salto e a roleta."),
+                new LinhaDeAjuda("LOJA (L, NO MAPA)", "depois da fase 2: escudos, elixir de super salto, duplo salto, poções e a roleta."),
             },
         },
         new PaginaDeAjuda

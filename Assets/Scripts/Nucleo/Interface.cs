@@ -29,7 +29,7 @@ public class Interface : MonoBehaviour
     // (montar "Mortes: " + número a cada quadro cria lixo na memória; veja FabricaDeSprites.TextoEmPixel)
     struct TextoComNumero { public int valor; public string texto; public Idioma.Lingua idioma; }
     TextoComNumero textoMortes, textoMoedas, textoTempo, textoDaFase, textoDoMapa, textoDoChefe, textoDaPagina;
-    TextoComNumero textoDosEscudos, textoDoSaldo, textoDoPreco, textoDaBolsa, textoDosElixires, textoDaAposta, textoDoPremio;
+    TextoComNumero textoDosEscudos, textoDoSaldo, textoDoPreco, textoDaBolsa, textoDosElixires, textoDasPocoesDeEspinhos, textoDasPocoesDoChao, textoDaAposta, textoDoPremio;
 
     // Mouse nos menus (veja Mouse(), lá embaixo).
     Vector2 mouseAntes;
@@ -170,19 +170,25 @@ public class Interface : MonoBehaviour
                 x = Texto(ComNumero(ref textoDosEscudos, jogo.Escudos, n => "x" + n), x, areaDasMortes.y, 2.5f, 0f, Branco).xMax + 10f * escala;
         }
         bool naFase = jogo.Estado != EstadoDoJogo.Mapa;
-        if (naFase ? jogo.ElixirAtivo : jogo.Elixires > 0)
+        Frasco("elixir", jogo.Elixires, jogo.ElixirAtivo, ref textoDosElixires);
+        Frasco("pocao_espinhos", jogo.PocoesDeEspinhos, jogo.VendoEspinhos, ref textoDasPocoesDeEspinhos);
+        Frasco("pocao_chao", jogo.PocoesDoChao, jogo.VendoChaoFalso, ref textoDasPocoesDoChao);
+        if (jogo.TemPuloDuplo)
+            GUI.DrawTexture(new Rect(x, y, alto * 14f / 12f, alto), FabricaDeSprites.Pegar("bota_alada").texture);
+
+        // Na fase: só se estiver valendo, piscando. No mapa: quantos você tem.
+        void Frasco(string desenho, int guardados, bool ativo, ref TextoComNumero texto)
         {
+            if (!(naFase ? ativo : guardados > 0)) return;
             float largo = alto * 12f / 13f;
             Color antes = GUI.color;
             if (naFase) GUI.color = new Color(1f, 1f, 1f, 0.75f + 0.25f * Mathf.Sin(Time.unscaledTime * 5f));
-            GUI.DrawTexture(new Rect(x, y, largo, alto), FabricaDeSprites.Pegar("elixir").texture);
+            GUI.DrawTexture(new Rect(x, y, largo, alto), FabricaDeSprites.Pegar(desenho).texture);
             GUI.color = antes;
             x += largo + 6f * escala;
-            if (!naFase && jogo.Elixires > 1)
-                x = Texto(ComNumero(ref textoDosElixires, jogo.Elixires, n => "x" + n), x, areaDasMortes.y, 2.5f, 0f, Branco).xMax + 10f * escala;
+            if (!naFase && guardados > 1)
+                x = Texto(ComNumero(ref texto, guardados, n => "x" + n), x, areaDasMortes.y, 2.5f, 0f, Branco).xMax + 10f * escala;
         }
-        if (jogo.TemPuloDuplo)
-            GUI.DrawTexture(new Rect(x, y, alto * 14f / 12f, alto), FabricaDeSprites.Pegar("bota_alada").texture);
     }
 
     void DesenharTitulo()
@@ -470,7 +476,7 @@ public class Interface : MonoBehaviour
         Texto("tecla L", botao.x + 54f * escala, botao.y + 58f * escala, 1.8f, 0f, CorDoRodape);
     }
 
-    // A Loja: o saldo lá em cima, os três itens à esquerda, a ROLETA no meio e a aposta à direita.
+    // A Loja: o saldo lá em cima, os itens à esquerda, a ROLETA no meio e a aposta à direita.
     void DesenharLoja()
     {
         float w = Screen.width, h = Screen.height;
@@ -486,7 +492,7 @@ public class Interface : MonoBehaviour
         bool tutorial = jogo.NoTutorial;
 
         // os itens
-        float y = 150f * escala, alto = 112f * escala, passo = alto + 14f * escala;
+        float y = 150f * escala, alto = 72f * escala, passo = alto + 6f * escala; // (5 cartões entre o saldo e o "Voltar")
         CartaoDoItem(new Rect(margem, y, largura, alto), GerenciadorDoJogo.ItemDaLoja.Escudo, "escudo", "ESCUDO", jogo.precoDoEscudo,
             ComNumero(ref textoDaBolsa, jogo.Escudos, n => Idioma.T("tem ", "own ") + $"{n}/{jogo.maximoDeEscudos}"), jogo.TemEscudo,
             "Te salva de UMA morte.", "Guarde até 3.", false);
@@ -496,9 +502,15 @@ public class Interface : MonoBehaviour
         CartaoDoItem(new Rect(margem, y + 2f * passo, largura, alto), GerenciadorDoJogo.ItemDaLoja.PuloDuplo, "bota_alada", "DUPLO SALTO",
             jogo.precoDoPuloDuplo, jogo.TemPuloDuplo ? "já tem!" : "", jogo.TemPuloDuplo,
             "Pule de novo no ar.", "Vale a partida toda.", tutorial);
+        CartaoDoItem(new Rect(margem, y + 3f * passo, largura, alto), GerenciadorDoJogo.ItemDaLoja.PocaoDeEspinhos, "pocao_espinhos", "POÇÃO ESPINHOS", jogo.precoDaPocaoDeEspinhos,
+            ComNumero(ref textoDasPocoesDeEspinhos, jogo.PocoesDeEspinhos, n => Idioma.T("tem ", "own ") + $"{n}/{jogo.maximoDePocoes}"), jogo.PocoesDeEspinhos > 0,
+            "Mostra espinhos escondidos.", "Só gasta em fase com eles.", tutorial);
+        CartaoDoItem(new Rect(margem, y + 4f * passo, largura, alto), GerenciadorDoJogo.ItemDaLoja.PocaoDoChao, "pocao_chao", "POÇÃO DO CHÃO", jogo.precoDaPocaoDoChao,
+            ComNumero(ref textoDasPocoesDoChao, jogo.PocoesDoChao, n => Idioma.T("tem ", "own ") + $"{n}/{jogo.maximoDePocoes}"), jogo.PocoesDoChao > 0,
+            "Mostra chão que cai e falso.", "Só gasta em fase com eles.", tutorial);
 
         DesenharRoleta(centro, diametro, tutorial);
-        DesenharAposta(new Rect(w - margem - largura, y, largura, 3f * passo - 14f * escala), tutorial);
+        DesenharAposta(new Rect(w - margem - largura, y, largura, 364f * escala), tutorial);
 
         // voltar
         float yVoltar = 548f * escala;
@@ -551,21 +563,22 @@ public class Interface : MonoBehaviour
         if (apagado) GUI.color = new Color(1f, 1f, 1f, 0.35f);
         Moldura(cartao, CorDoFundoDaFala);
         if (escolhido) DesenharBorda(cartao, Color.Lerp(CorDoFilete, Color.white, 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6f)));
-        float m = 12f * escala, lado = cartao.height - 2f * m - 8f * escala;
+        float m = 7f * escala, lado = cartao.height - 2f * m - 2f * escala;
         Texture desenho = FabricaDeSprites.Pegar(sprite).texture;
         float escalaDoDesenho = lado / Mathf.Max(desenho.width, desenho.height);
         float pulo = escolhido ? Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 5f * escala : 0f;
         GUI.DrawTexture(new Rect(cartao.x + m + 4f * escala + (lado - desenho.width * escalaDoDesenho) / 2f,
             cartao.center.y - desenho.height * escalaDoDesenho / 2f - pulo, desenho.width * escalaDoDesenho, desenho.height * escalaDoDesenho), desenho);
         float x = cartao.x + 2f * m + lado, larguraDoTexto = cartao.xMax - m - x;
-        Texto(nome, x, cartao.y + m, 2.6f, 0f, escolhido ? Amarelo : Branco, larguraDoTexto * 0.62f);
-        if (tem != "") Texto(tem, cartao.xMax - m, cartao.y + m + 4f * escala, 1.7f, 1f, temAlgum ? Verde : CorDoRodape, larguraDoTexto * 0.36f);
-        Texto(linha1, x, cartao.y + m + 34f * escala, 1.6f, 0f, CorDoRodape, larguraDoTexto);
-        Texto(linha2, x, cartao.y + m + 54f * escala, 1.6f, 0f, CorDoRodape, larguraDoTexto);
+        Texto(nome, x, cartao.y + m, 2.2f, 0f, escolhido ? Amarelo : Branco, larguraDoTexto * 0.68f);
+        if (tem != "") Texto(tem, cartao.xMax - m, cartao.y + m + 2f * escala, 1.5f, 1f, temAlgum ? Verde : CorDoRodape, larguraDoTexto * 0.3f);
+        float larguraDaDica = larguraDoTexto - 58f * escala; // (o preço fica à direita das duas linhas)
+        Texto(linha1, x, cartao.y + m + 25f * escala, 1.35f, 0f, CorDoRodape, larguraDaDica);
+        Texto(linha2, x, cartao.y + m + 42f * escala, 1.35f, 0f, CorDoRodape, larguraDaDica);
         // o preço, com a moedinha
         float icone = 16f * escala, yPreco = cartao.yMax - m - icone;
-        GUI.DrawTexture(new Rect(x, yPreco, icone * 8f / 14f, icone), FabricaDeSprites.Pegar("moeda").texture);
-        Texto(preco.ToString(), x + icone * 0.75f, yPreco - 2f * escala, 2f, 0f, jogo.Moedas >= preco ? Amarelo : Rosa);
+        Rect textoDoValor = Texto(preco.ToString(), cartao.xMax - m, yPreco - 2f * escala, 1.9f, 1f, jogo.Moedas >= preco ? Amarelo : Rosa);
+        GUI.DrawTexture(new Rect(textoDoValor.x - icone * 0.75f, yPreco, icone * 8f / 14f, icone), FabricaDeSprites.Pegar("moeda").texture);
         GUI.color = antes;
         if (!apagado && !jogo.Girando) Mouse(cartao, (int)item, true);
     }

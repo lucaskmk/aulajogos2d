@@ -80,7 +80,7 @@ Os controles abaixo são os de `Assets/Scripts/Nucleo/Controles.cs`. Teclado e c
 ### Dicas
 - **Não confie no Louro.** As dicas do papagaio às vezes ajudam e às vezes mentem. ("Chão 100% seguro à frente.")
 - **Não confie em nada que pareça normal:** moedas, nuvens, bandeiras, blocos `?` e até o chão podem ser armadilha.
-- Olhe o **X vermelho** ("X marca o lugar!"): ele fica onde aconteceram as suas últimas 5 mortes na fase.
+- Olhe o **X vermelho** ("X marca o lugar!") das suas mortes recentes e a **bandeira de morto** fincada na última: em buraco ou chão falso, ela mostra onde o chão mente.
 - O **cristal de save** guarda o ponto onde você renasce... mas na **3ª morte** depois de pegá-lo ele "muda de lugar" e você volta para o checkpoint anterior (sempre na 3ª, dá para contar). Isso não acontece nas fases de chefe.
 - Nos chefes, **todo ataque avisa antes** (linha vermelha, "!", marca no chão, olhos vermelhos) e os **padrões são fixos**: dá para decorar.
   Se morrer, você volta **na mesma etapa** da luta.
@@ -92,6 +92,7 @@ Os controles abaixo são os de `Assets/Scripts/Nucleo/Controles.cs`. Teclado e c
 Depois da fase 2, o mapa ganha o botão **LOJA** no canto de baixo à direita (ou a tecla **L**). Com as moedas das fases você compra:
 - **Escudo** (15 moedas, até 3): te salva de uma morte;
 - **Elixir de super salto** (20, até 3): entrar numa fase gasta um, e o Grumete pula bem mais alto a fase inteira;
+- **Poção dos espinhos** e **poção do chão** (15 cada, até 3 de cada): mostram os espinhos escondidos e o chão que cai ou falso a fase inteira (só são gastas em fase que tenha o que mostrar);
 - **Duplo salto** (45, compra uma vez): um segundo pulo no ar, para a partida toda.
 
 No meio da Loja fica a **roleta**: escolha quanto apostar (de 1 a 100) e a cor. Vermelho e preto pagam 2x, verde (uma casa só) paga 14x.
@@ -329,7 +330,7 @@ Ferramentas/     scripts de apoio (checador de fases, gerador das músicas em WA
 - `TelaPixelada.cs`: pixel nítido em escala inteira (e o tilt-shift opcional, desligado de fábrica: liga no F10).
 - `FeixesDeLuz.cs`, `SombrasDeNuvens.cs`, `Vento.cs` e `LuzDoDia.cs`: raios de sol, sombras de nuvens, plantas ao vento e a hora do dia.
 - `Paralaxe.cs`, `PrimeiroPlano.cs`, `Ambiente.cs`, `Luzes.cs`, `ArteHD2D.cs` e `MateriaisHD2D.cs`: o fundo em camadas (ilhas, galeão, palmeiras, nítidas e com a luz pintada), o primeiro plano, as partículas, as luzes 2D e os materiais.
-- `CameraSeguir.cs`, `Efeitos.cs`, `Particula.cs`, `MarcaDaMorte.cs` e `Sombra*.cs`: a câmera com tremida, a poeira, o X vermelho das mortes e as sombras.
+- `CameraSeguir.cs`, `Efeitos.cs`, `Particula.cs`, `MarcaDaMorte.cs` e `Sombra*.cs`: a câmera com tremida, a poeira, o X vermelho e a bandeira das mortes e as sombras.
 - `AjustesVisuais.cs` e `PainelDeGraficos.cs`: os valores de cada efeito e o painel de testes (F10).
 
 ### Jogador/

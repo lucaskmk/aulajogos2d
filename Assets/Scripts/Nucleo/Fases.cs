@@ -58,7 +58,7 @@ using UnityEngine;
 //   q  IGUAL ao 'Q'... mas quando você chega perto a corrente range, a Capitã fica brava e a bola volta
 //      girando para o OUTRO lado, 2x mais rápido
 //   y  vento do mar: células 'y' encostadas = UMA zona (o retângulo em volta delas; pode ter moedas e blocos dentro).
-//      Empurra para a ESQUERDA em rajadas, todas juntas: calmo 1 s, aviso 0,5 s (folhas e riscos começam a passar), rajada 2 s.
+//      Empurra para a ESQUERDA em rajadas, todas juntas: calmo 1,2 s, aviso 0,4 s (folhas e riscos começam a passar), rajada 1,4 s.
 //      Segure para a frente, ou se esconda até 2 blocos à esquerda de um bloco sólido (o vento não atravessa paredes)
 //   n  redemoinho: zona igual à 'y' que levanta o Grumete até o topo dela (ele fica boiando lá). Se a coluna da ESQUERDA
 //      da zona for ÍMPAR, ele é TRAIÇOEIRO: quando você chega perto (4 blocos), engasga (fica cinza) e desliga por 1,5 s
@@ -104,6 +104,8 @@ public class Fase
     // Modo difícil: a velocidade do tsunami nesta fase (blocos por segundo). 0 = a normal (5,2). O elástico mantém a onda
     // perto de quem corre bem; as fases que obrigam a esperar (plataformas, ritmo, vento) precisam de uma onda mais lenta.
     public float velocidadeDaOnda;
+    // O ponto de save desta fase NUNCA "muda de lugar" (a pegadinha da 3ª morte fica desligada).
+    public bool saveFiel;
 }
 
 public static class Fases
@@ -136,7 +138,7 @@ public static class Fases
                 "        ?B?    II                   ?K",
                 "               $$           $$                                        $$",
                 "                                        U            BBB",
-                "  P i       i       $$h          E                      i   R            E  *",
+                "  P i       i       $$h E        E  ^                   i ^ R         ^^ E  *",
                 "###############  ##########CCCC################   ###############   ##############",
                 "###############  ##########CCCC################   ###############   ##############",
             },
@@ -170,10 +172,10 @@ public static class Fases
                 "                  ######",
                 "          o       ######   ?                                                    ??                    $$$",
                 "                  ######                                                             $$               BBB                            $$$",
-                "         B        ######     $$$           $$                                                                s    i         >                 R   S",
-                "  P i    B      S ######         E  i        i  E B Z            <s i                     E   ###############################CCCC###########################",
-                "######################################FFF###################################  ######   ######################################CCCC###########################",
-                "######################################FFF###################################  ######   ######################################CCCC###########################",
+                "         B        ######     $$$           $$                                                     ^^      h  s    i  ^^     >      ^       E  R   S",
+                "  P i    B      S ######  ^      E  i      ^ i  E B Z            <s i   ^^       h        E   ###############################CCCC###########################",
+                "######################################FFF#################   ###############  ######   ######################################CCCC###########################",
+                "######################################FFF#################   ###############  ######   ######################################CCCC###########################",
             },
         },
 
@@ -205,7 +207,7 @@ public static class Fases
                 "                    ##    ?K?                            IIII                                                               ?K",
                 "                                              o                                                                                    $$",
                 "              ##  FF                U        $$                                                                           U",
-                "  P i h                        $$$     r          E   i                   s i  $$ m$            h             rr                 i    E  G",
+                "  P i h                     ^  $$$     r        ^ E   i         h   ^^ E  s i  $$ m$         ^  h  E       ^  rr   h          ^^ i  h E  G",
                 "###########            ##################CCC#############    ##########################   #############CCC############   #####################",
                 "###########            ##################CCC#############    ##########################   #############CCC############   #####################",
             },
@@ -241,7 +243,7 @@ public static class Fases
                 "      ?B?                    Q      Q                            Q",
                 "            $$   $                                 $$                  $$$",
                 "",
-                "  P i      i     Q     E        $$       i     Q        ^^                  q   E     s i   u                      i     G",
+                "  P i      i     Q     E  ^     $$     ^ i     Q        ^^        h         q   E     s i   u                      i     G",
                 "####################################################  ########  #####   ######################################################",
                 "####################################################  ########  #####   ######################################################",
             },
@@ -276,9 +278,9 @@ public static class Fases
                 "                    ?     ?                                                                                                                     BBB",
                 "                                                                            $$",
                 "          $$$                                                                                                                 $$$                      U",
-                "  P i           e                e   E       is X                   ^               X             s i                 i B  W             E  $m$           rr  >        G",
-                "#####################   #################CCC##################   ######   ################################# MM     ################   ######################################",
-                "#####################   #################CCC##################   ######   #################################        ################   ######################################",
+                "  P i     ^^    e          h  ^  e   E       is X    ^    E         ^         ^^  E X   h ^^      s i                 i B  W   ^         E  $m$     h     rr  >        G",
+                "#####################   #################CCC##################   ######   ####################   ########## MM     ################   ######################################",
+                "#####################   #################CCC##################   ######   ####################   ##########        ################   ######################################",
             },
         },
 
@@ -311,7 +313,7 @@ public static class Fases
                 "      ?K?                                                    $ $ $     ?K                  ?                  $$        ?",
                 "                                    $ $  $$               jj                                               JJ                                                    $$             $m$",
                 "          $$                $$     jj                                        $$                          $m$           $                         $ $                                         $",
-                "  P i            $$$    i         $               s  jjj                   i  h    $$$         >B s  jjj                    i      $ $ $ $             s      jjj        h    >          E    i   G",
+                "  P i  ^         $$$    i   ^     $        ^      s  jjj               E   i  h    $$$     ^   >B s  jjj                ^   i      $ $ $ $       h ^   s      jjj        h    >          E    i   G",
                 "###############jj      #########JJ      #############               #############jj      ############                #########DDD             #############          ##########  ####   ############",
                 "###############        #########        #############               #############        ############                #########                #############          ##########  ####   ############",
             },
@@ -347,7 +349,7 @@ public static class Fases
                 "       $$     $$    m                $$                  $$    $$",
                 "                         l",
                 "                         B",
-                "  P i           l  i  B  B       l        B   h    B   ^   B  l  s i    H                          i      G",
+                "  P i         ^ l  i  B  B       l      h B   h ^  B   ^ E B  l  s i    H                          i      G",
                 "##########  ################  #####   ##########################################################################",
                 "##########  ################  #####   ##########################################################################",
             },
@@ -391,7 +393,7 @@ public static class Fases
                 "#           #           #  BBBBBB   #           #                      ?B?                ?                bb       ####      tt      tt      ttt                   ?K?                aa                       $$",
                 "#           #           #           #      $    #                                   $m$         $$                  ####                                      $                aa              bb",
                 "#           #           #   $$$m    #           #                                                       aa          ####                                                           bb      bb",
-                "# Pi 1  2 3 # 4 h 5 h 6 # 7   E   8 # 9 i e  E  # 0   Y           s i             h      i                ^^^^^^^^^^#### s i           $       $        i            s     bb                      aaa  i   b Z       G",
+                "# Pi 1  2 3 # 4 h 5 h 6 # 7   E   8 # 9 i e  E  # 0   Y     ^^    s i   h         h      i                ^^^^^^^^^^#### s i           $       $        i            s     bb                      aaa  i   b Z       G",
                 "############################################################################aaaa####bbbb#####aaa  bbb############################bbb####bbbb#######aaa#####aaaAaaa########                             ########aaaa#######",
                 "############################################################################^^^^####^^^^#####^^^^^^^^############################^^^####^^^^#######^^^#####^^^^^^^########^^^^^^^^^^^^^^^^^^^^^^^^^^^^^########^^^^#######",
             },
@@ -401,6 +403,7 @@ public static class Fases
         new Fase
         {
             nome = "Vento em Popa!",
+            saveFiel = true, // (muitos checkpoints de propósito: morrer aqui não pode custar o caminho todo)
             bioma = Bioma.Penhasco,
             velocidadeDaOnda = 3.5f, // (e a rajada segura a onda também: veja Tsunami.Perseguir)
             corDoFundo = new Color32(245, 195, 215, 255),
@@ -422,12 +425,12 @@ public static class Fases
                 "                                                                                                                  yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         $nyyyynnn  n$n           yyyyyyyyy$$$yyyyyyyy",
                 "                                                    $$                                            nnnn$$$$nn      yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         nnyyyynnn  nnn           yyyyyyyyyyyyyyy?yyyy",
                 "                                                                                                  nnnnnnnnnn      yyyyyyy$yyy$m$yyyyyy   nnnnnnnnnnnnnn         nnyy$ynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
-                "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy                                                           nnnnnnnnnn      yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         nnyyyynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
-                "           yyyyyyyy$$yyyyyyyyyyyy?yyyyy               yyyyyyyyyyyyyyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn   s  yyyByyyyyyyyyyEyByyyi  nnnnnnnnnnnnnn   s i   nnyyyynnn  nnn      i    yyyyBByyZyyyyByyyyBy  G",
+                "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy                           v                               nnnnnnnnnn      yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         nnyyyynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
+                "           yyyyyyyy$$yyyyyyyyyyyy?yyyyy               yyyyyyyyyyyyyyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn   s  yyyByyyyyyy^yyEyByyyis nnnnnnnnnnnnnn   s i   nnyyyynnn  nnn   s  i    yyyyBByyZy^yyByyEyBy  G",
                 "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy         I ?K  yyyyyyyyy?yyyyyyyy yyyyyyyy?yyyy$yyyyyy?yy  nnnnn$$nnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######CC#####################",
                 "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy        $$     yyy$$yyyyy$$yyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
                 "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy               yyyyyyyyyyyyyyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
-                "  P i      yyyyyyByy^^yyyyyyyyyyByyyEyy             S yyyyyyByyyyyyByyyy yy^^yyEyyByyyyyyyyhyyyy innnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
+                "  P i      yyyyyyByy^^yyEyyyyyyyByyyEyy  ^^ h s     S yyyyyyByy^^yyByyEysyy^^yyEyyByyyyyyyyhyEyysinnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
                 "###########################   #######################################################   #############nnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
                 "###########################   #######################################################   #############nnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
             },
@@ -437,6 +440,7 @@ public static class Fases
         new Fase
         {
             nome = "A Baleia Branca",
+            saveFiel = true, // (muitos checkpoints de propósito: morrer aqui não pode custar o caminho todo)
             bioma = Bioma.Recife,
             tempoAlvo = 250f, // chefe
             noite = true,
@@ -460,10 +464,10 @@ public static class Fases
                 "",
                 "           o      o          BBBBBBBBB            o                      $$$",
                 "                               v   v                                     BBB    o",
-                "                                         o",
-                "  P i           ^  ^^                  h             E       $      h        E       E  h  s i  w                             i        G",
-                "###########   ##########CCC##############  #####   #######CCCC####   ######   #########################  ######  ###########################",
-                "###########   ##########CCC##############  #####   #######CCCC####   ######   #########################  ######  ###########################",
+                "",
+                "  P i           ^  ^^                  h     s       E       $      h ^      E       E  h  s i  w                             i        G",
+                "###########   ##########CCC##############  #####   #######CC##CC##   ######   #########################  ######  ###########################",
+                "###########   ##########CCC##############  #####   #######CC##CC##   ######   #########################  ######  ###########################",
             },
         },
 
@@ -495,7 +499,7 @@ public static class Fases
                 "                 ?         $                 $$                  $       $$                      BBBBBB                   $$$             ?                                                     $$",
                 "         $$           $$              $$                    $$      $$                                      $$                                                                 $$$",
                 "                                                  ######                                                                                                            h                        ##                *",
-                " N  P i             ######     i             ^^   ######                       s i  S                                      ^^       h        h                 > #######  s i           ##   ##    ##  R $  ######",
+                " N  P i   ^         ######     i h           ^^   ######                       s i  S                         h            ^^       h        h   ^       ^     > #######  s i           ##   ##    ##  R $  ######",
                 "##############  ##########   ########CC  ###################CC##CCC#CC##CCCC#########                    ##########   ##########  ##CCCC####   ###### #########################FFF###   ##   ##    ######C  ######",
                 "##############  ##########   ########CC  ###################CC##CCC#CC##CCCC#########                    ##########   ##########  ##CCCC####   ###### #########################FFF###   ##   ##    ######C  ######",
             },
@@ -526,8 +530,8 @@ public static class Fases
                 "",
                 "                 $$                                     ?K?                                                               ?K                  $$$          $$",
                 "                                                                                         $$$               $$                                                                        $m$",
-                "                             $$$                                                              U                                U    i R    h       s   h        E        iB Z               *",
-                "  P i    e      $    ^^^                     E     h     B Z          >   E   $m$                r  e           <                 ##################################    #########CCC############",
+                "                             $$$                                                              U                                U    i R    h   ^   s   h        E        iB Z               *",
+                "  P i    e  ^   $    ^^^            ^        E     h  E  B Z          >   E   $m$ ^       ^      r  e           <                 ##################################    #########CCC############",
                 "###############CCC###########    ##############MM##############CCCC##################   ############### MM     ########CC###########################################    #########CCC############",
                 "###############CCC###########    ##############  ##############CCCC##################   ###############        ########CC###########################################    #########CCC############",
             },
@@ -562,7 +566,7 @@ public static class Fases
                 "        ?K?               T                $$$",
                 "",
                 "                U",
-                "  P i       h      $m$      E           r       s i   g                         i         L    c",
+                "  P i       h      $m$      E ^         r  ^    s i   g                         i         L    c",
                 "##########   ############CC######    #################                         #####################",
                 "##########   ############CC######    #################                         #####################",
             },
@@ -626,6 +630,14 @@ public static class Fases
             case "porta": return fase.portas != null;
             default: return true;
         }
+        foreach (string linha in fase.mapa)
+            if (linha.IndexOfAny(letras.ToCharArray()) >= 0) return true;
+        return false;
+    }
+
+    // A fase tem alguma destas letras no mapa? (as poções da Loja só são gastas em fase que tenha o que mostrar)
+    public static bool TemLetras(Fase fase, string letras)
+    {
         foreach (string linha in fase.mapa)
             if (linha.IndexOfAny(letras.ToCharArray()) >= 0) return true;
         return false;
