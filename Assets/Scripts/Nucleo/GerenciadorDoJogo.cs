@@ -191,7 +191,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     // ------------------------------------------------------------------ menus
 
     // Menu do título. "Continuar" só aparece se tiver jogo salvo; "Sair" some no navegador (WebGL).
-    public enum OpcaoDoMenu { Continuar, CarregarJogo, NovoJogo, Opcoes, ComoJogar, Conquistas, Creditos, TrocarIdioma, Sair }
+    public enum OpcaoDoMenu { Continuar, CarregarJogo, NovoJogo, Opcoes, ComoJogar, Conquistas, Creditos, TrocarIdioma, Sair, Tempestade }
     public readonly List<OpcaoDoMenu> opcoesDoMenu = new List<OpcaoDoMenu>();
     public int OpcaoSelecionada { get; private set; }
 
@@ -249,7 +249,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         RolagemDasConquistas = Mathf.Clamp(RolagemDasConquistas, 0f, Mathf.Max(0f, maximo));
     }
 
-    public enum ItemDaLoja { Escudo, Elixir, PuloDuplo, PocaoDeEspinhos, PocaoDoChao, Aposta, Cor, Girar, Voltar }
+    public enum ItemDaLoja { Escudo, Elixir, PuloDuplo, PocaoDeEspinhos, PocaoDoChao, Aposta, Cor, Girar, Jogos, Voltar }
     public static readonly int TotalDaLoja = System.Enum.GetValues(typeof(ItemDaLoja)).Length;
     public bool LojaAberta { get; private set; }
     public int OpcaoDaLoja { get; private set; }
@@ -584,6 +584,8 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         ElixirAtivo = false;
         PocoesDeEspinhos = 0;
         PocoesDoChao = 0;
+        Fichas = fichasIniciais; // (as fichas dos jogos de habilidade da Loja)
+        JogosAbertos = false;
         VendoEspinhos = false;
         VendoChaoFalso = false;
         TemPuloDuplo = false;
@@ -990,6 +992,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
 
     void SalvarItensDaLoja()
     {
+        Progresso.SalvarFichas(Fichas);
         Progresso.SalvarItensDaLoja(escudos[0], elixires[0], puloDuplo[0], PocoesDeEspinhos, PocoesDoChao);
         for (int i = 1; i < Tripulacao.Maximo; i++) Progresso.SalvarItensDoJogador(i, escudos[i], elixires[i], puloDuplo[i]);
     }
@@ -1127,8 +1130,11 @@ public partial class GerenciadorDoJogo : MonoBehaviour
 
     // ------------------------------------------------------------------ os slots (Carregar jogo / Novo jogo)
 
+    bool novoNaTempestade; // o "Novo jogo" escolhido no menu é o do modo tempestade
+
     void AbrirSlots(bool paraNovoJogo)
     {
+        if (!paraNovoJogo) novoNaTempestade = false;
         AbrirSubmenu(Submenu.Slots);
         SlotsParaNovoJogo = paraNovoJogo;
         SlotPerguntando = -1;
@@ -1434,6 +1440,8 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         if (Progresso.TemJogoSalvo) opcoesDoMenu.Add(OpcaoDoMenu.Continuar);       // o último slot usado
         if (Progresso.AlgumJogoSalvo) opcoesDoMenu.Add(OpcaoDoMenu.CarregarJogo);  // a tela dos slots
         opcoesDoMenu.Add(OpcaoDoMenu.NovoJogo);                                     // a tela dos slots (escolhe onde)
+        // Já zerou alguma vez? O MODO TEMPESTADE (o difícil) aparece no menu: antes só dava para chegar nele roubando o tesouro.
+        if (Conquistas.Tem("zerou")) opcoesDoMenu.Add(OpcaoDoMenu.Tempestade);
         opcoesDoMenu.Add(OpcaoDoMenu.Opcoes);
         opcoesDoMenu.Add(OpcaoDoMenu.ComoJogar);
         opcoesDoMenu.Add(OpcaoDoMenu.Conquistas);
@@ -1512,6 +1520,11 @@ public partial class GerenciadorDoJogo : MonoBehaviour
                 AbrirSlots(false);
                 return;
             case OpcaoDoMenu.NovoJogo:
+                novoNaTempestade = false;
+                AbrirSlots(true);
+                return;
+            case OpcaoDoMenu.Tempestade: // um jogo novo já no modo difícil (escolhe o slot igual ao "Novo jogo")
+                novoNaTempestade = true;
                 AbrirSlots(true);
                 return;
         }
@@ -1540,6 +1553,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
             Elixires = Mathf.Max(0, Progresso.ElixiresSalvos);
             PocoesDeEspinhos = Mathf.Max(0, Progresso.PocoesDeEspinhosSalvas);
             PocoesDoChao = Mathf.Max(0, Progresso.PocoesDoChaoSalvas);
+            Fichas = Mathf.Clamp(Progresso.FichasSalvas(fichasIniciais), 0, maximoDeFichas);
             TemPuloDuplo = Progresso.PuloDuploSalvo;
             for (int i = 1; i < Tripulacao.Maximo; i++) // (os itens dos outros jogadores da tripulação)
             {
@@ -1558,6 +1572,19 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         {
             if (Progresso.EscolhaPendente) Trocar(TocarEscolhaDoTesouro); // fechou o jogo na frente do baú: volta para ele
             else Trocar(() => MostrarMapa(fase));
+            return;
+        }
+        // jogo novo no MODO TEMPESTADE (pelo menu, depois de zerar): direto para o mapa, com o tesouro no bolso
+        if (novoNaTempestade)
+        {
+            novoNaTempestade = false;
+            ComecarTempestade();
+            Trocar(() =>
+            {
+                MostrarMapa(0);
+                MostrarFala(Textos.TempestadeDoMenu);
+                SalvarProgresso();
+            });
             return;
         }
         // jogo novo: primeiro a história (a abertura), depois o mapa
@@ -1699,6 +1726,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     void FecharLoja()
     {
         LojaAberta = false;
+        JogosAbertos = false;
         Som("bloco", 0.4f);
     }
 
@@ -1708,6 +1736,11 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     {
         timerMensagemDaLoja -= Time.deltaTime;
         if (Girando) return;
+        if (JogosAbertos) // a tela dos jogos de habilidade, por cima da Loja (GerenciadorJogosDaLoja.cs)
+        {
+            AtualizarJogosDaLoja(clique);
+            return;
+        }
         if (Controles.Voltar() || Controles.Pausar() || Controles.AbrirLoja() || clique == BotaoVoltar)
         {
             FecharLoja();
@@ -1752,6 +1785,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
             case ItemDaLoja.Aposta: MudarAposta(clique >= 0 && lado < 0 ? -1 : 1); break; // (clique: metade esquerda diminui)
             case ItemDaLoja.Cor: EscolherCor((CorDaRoleta)(((int)CorEscolhida + 1) % 3)); break;
             case ItemDaLoja.Girar: GirarRoleta(); break;
+            case ItemDaLoja.Jogos: AbrirJogos(); break;
             default: FecharLoja(); break;
         }
     }
@@ -2165,6 +2199,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
 
         moedas += moedasNaFase;
         moedasNaFase = 0;
+        GanharFichas(); // (o Louro dá fichas para os jogos de habilidade da Loja)
         DarTitulosDaTripulacao();
         foreach (Jogador grumete in jogadores) grumete.Congelar();
         Som("vitoria");

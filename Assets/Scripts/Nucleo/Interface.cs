@@ -144,6 +144,7 @@ public partial class Interface : MonoBehaviour
         if (jogo.Estado == EstadoDoJogo.Mapa)
         {
             areaDasMortes = Texto(mortes, margem, 10f * escala, pixel, 0f, Branco);
+            Texto(TextoDasMedalhas(), margem, linha2, 2.2f, 0f, CorDoLogo); // (quantas medalhas faltam: motivo para voltar nas fases)
         }
         else
         {
@@ -229,6 +230,8 @@ public partial class Interface : MonoBehaviour
         if (recorde >= 0)
             Texto(Idioma.T($"Recorde: zerou com {recorde} mortes", $"Record: beat the game with {recorde} deaths"), w / 2f, h * 0.8f, 2f, 0.5f, Verde, w * 0.9f);
 
+        DesenharDestaquesNoTitulo(h * 0.84f); // as medalhas do slot e o lembrete do coop
+
         // rodapé discreto com os controles básicos (a lista completa fica em "Como jogar")
         Texto("A/D ou SETAS: andar    ESPAÇO/W: pular    R: reiniciar    ESC: pausa", w / 2f, h * 0.88f, 1.8f, 0.5f, CorDoRodape, w * 0.95f);
         Rodape("SETAS ou MOUSE: escolher    ENTER: confirmar    ESC: voltar");
@@ -293,6 +296,7 @@ public partial class Interface : MonoBehaviour
                 return Idioma.T($"Continuar (slot {slot}, fase {fase + 1})", $"Continue (slot {slot}, level {fase + 1})");
             }
             case GerenciadorDoJogo.OpcaoDoMenu.CarregarJogo: return "Carregar jogo";
+            case GerenciadorDoJogo.OpcaoDoMenu.Tempestade: return Idioma.T("Novo jogo: MODO TEMPESTADE", "New game: STORM MODE");
             case GerenciadorDoJogo.OpcaoDoMenu.Conquistas:
                 return Idioma.T("Conquistas", "Achievements") + $" ({Conquistas.Quantidade}/{Conquistas.Todas.Length})";
             case GerenciadorDoJogo.OpcaoDoMenu.Opcoes: return "Opções";
@@ -489,6 +493,11 @@ public partial class Interface : MonoBehaviour
     void DesenharLoja()
     {
         float w = Screen.width, h = Screen.height;
+        if (jogo.JogosAbertos)
+        {
+            DesenharJogosDaLoja(); // os jogos de habilidade, por cima da Loja (InterfaceJogosDaLoja.cs)
+            return;
+        }
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         Texto("LOJA DO PORTO", w / 2f, 18f * escala, 5f, 0.5f, CorDoLogo, w * 0.9f);
@@ -522,9 +531,10 @@ public partial class Interface : MonoBehaviour
         DesenharRoleta(centro, diametro, tutorial);
         DesenharAposta(new Rect(w - margem - largura, y, largura, 364f * escala), tutorial);
 
-        // voltar
-        float yVoltar = 548f * escala;
-        OpcaoDeMenu("Voltar ao mapa", yVoltar, 2.8f, 40f * escala, (int)GerenciadorDoJogo.ItemDaLoja.Voltar,
+        // os jogos de habilidade (sem aposta: gastam fichas) e o voltar
+        if (!tutorial) OpcaoDosJogos(526f * escala);
+        float yVoltar = 558f * escala;
+        OpcaoDeMenu("Voltar ao mapa", yVoltar, 2.6f, 34f * escala, (int)GerenciadorDoJogo.ItemDaLoja.Voltar,
             jogo.OpcaoDaLoja == (int)GerenciadorDoJogo.ItemDaLoja.Voltar);
 
         if (tutorial) // a cutscene do Louro: a fala dele no lugar das mensagens e do rodapé
@@ -1383,8 +1393,9 @@ public partial class Interface : MonoBehaviour
         Texto(Idioma.T("Moedas: ", "Coins: ") + jogo.Moedas, centro, h * 0.38f + 50f * escala, 3.5f, 0.5f, Amarelo);
         Texto(Idioma.T("Tempo: ", "Time: ") + FormatarTempo(jogo.TempoTotal), centro, h * 0.38f + 100f * escala, 3.5f, 0.5f, Branco);
         Texto(Idioma.T("Título: ", "Title: ") + Idioma.Traduzir(GerenciadorDoJogo.Titulo(jogo.Mortes)), centro, h * 0.38f + 165f * escala, 3.5f, 0.5f, Verde, largura);
+        DesenharOQueFalta(centro, h * 0.38f + 218f * escala, largura); // medalhas, modo tempestade, secreta e coop
         if (Time.unscaledTime % 1f < 0.65f)
-            Texto("Aperte ENTER para ver os créditos", centro, h * 0.85f, 3f, 0.5f, Branco, largura);
+            Texto("Aperte ENTER para ver os créditos", centro, h * 0.9f, 2.6f, 0.5f, Branco, largura);
     }
 
     // ------------------------------------------------------------------ a história (cutscenes)

@@ -32,6 +32,7 @@ public static class Progresso
     const string ChaveMortesPorFase = "salvo_mortes_por_fase";
     const string ChaveSecreta = "secreta_liberada";
     const string ChaveQuantasFases = "salvo_quantas_fases";
+    const string ChaveFichas = "salvo_fichas";             // as fichas dos jogos de habilidade da Loja
     const string ChaveEscudos = "salvo_escudos";
     const string ChaveElixires = "salvo_elixires";
     const string ChavePuloDuplo = "salvo_pulo_duplo";
@@ -52,6 +53,7 @@ public static class Progresso
         (ChaveEscudos + "_p2", 'i'), (ChaveElixires + "_p2", 'i'), (ChavePuloDuplo + "_p2", 'i'),
         (ChaveEscudos + "_p3", 'i'), (ChaveElixires + "_p3", 'i'), (ChavePuloDuplo + "_p3", 'i'),
         (ChaveEscudos + "_p4", 'i'), (ChaveElixires + "_p4", 'i'), (ChavePuloDuplo + "_p4", 'i'),
+        (ChaveFichas, 'i'),
     };
 
     public const int TotalDeSlots = 3;
@@ -250,6 +252,10 @@ public static class Progresso
     public static bool PuloDuploSalvo => PlayerPrefs.GetInt(NoSlot(ChavePuloDuplo), 0) == 1;
     public static int PocoesDeEspinhosSalvas => PlayerPrefs.GetInt(NoSlot(ChavePocoesDeEspinhos), 0);
     public static int PocoesDoChaoSalvas => PlayerPrefs.GetInt(NoSlot(ChavePocoesDoChao), 0);
+
+    // As fichas dos jogos de habilidade da Loja (um slot que nunca salvou fichas começa com "padrao").
+    public static int FichasSalvas(int padrao) => PlayerPrefs.GetInt(NoSlot(ChaveFichas), padrao);
+    public static void SalvarFichas(int fichas) => PlayerPrefs.SetInt(NoSlot(ChaveFichas), fichas); // (o Save vem logo depois)
 
     // Coop: os itens do jogador 2 em diante (jogador: 1 = P2...). Os do P1 são os de cima.
     static string DoJogador(string chave, int jogador) => chave + "_p" + (jogador + 1);

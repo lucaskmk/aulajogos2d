@@ -228,6 +228,10 @@ public static class TesteDoCoop
 
         // ---------------------------------------------------------------- a tela da Tripulação
         Conferir(Jogo.Estado == EstadoDoJogo.Titulo, "o jogo abre no título: " + Jogo.Estado);
+        Conferir(Application.productName == "Cilada à Vista!", "o nome do produto é o do jogo: " + Application.productName);
+        Conferir(Jogo.opcoesDoMenu.Contains(GerenciadorDoJogo.OpcaoDoMenu.Tempestade) == Conquistas.Tem("zerou"),
+            "o MODO TEMPESTADE só aparece no menu para quem já zerou (zerou: " + Conquistas.Tem("zerou") + ")");
+        yield return Foto("0_titulo");
         Conferir(!Tripulacao.Coop && Tripulacao.Quantos == 1, "começa com um jogador só");
         Estado(EstadoDoJogo.Mapa); // (o mapa já está montado atrás do título)
         yield return Quadros(2);
@@ -283,6 +287,43 @@ public static class TesteDoCoop
         Conferir(Jogo.EscudosDe(1) == 1 && Jogo.EscudosDe(0) == 0, $"o escudo foi só para o P2 (P1 {Jogo.EscudosDe(0)}, P2 {Jogo.EscudosDe(1)})");
         Conferir(Jogo.Moedas == 100 - Jogo.precoDoEscudo, "as moedas saíram do bolso da tripulação: " + Jogo.Moedas);
         yield return Foto("2b_loja_do_coop");
+
+        // ---------------------------------------------------------------- os jogos de habilidade (fichas, sem aposta)
+        Chamar("AbrirJogos");
+        Conferir(Jogo.JogosAbertos && Jogo.Fichas == Jogo.fichasIniciais, "os jogos abrem com as fichas iniciais: " + Jogo.Fichas);
+        yield return Foto("2c_jogos_do_louro");
+        int moedasAntesDosJogos = Jogo.Moedas;
+        yield return ApertarTecla(Key.Enter);
+        Conferir(Jogo.Rodada == GerenciadorDoJogo.FaseDaRodada.Valendo && Jogo.Fichas == Jogo.fichasIniciais - 1 && Jogo.Moedas == moedasAntesDosJogos,
+            "ENTER começa a pontaria gastando 1 ficha (e nenhuma moeda)");
+        float ponteiroAntes = Jogo.Ponteiro;
+        yield return Quadros(3);
+        Conferir(Jogo.Ponteiro != ponteiroAntes, "o ponteiro anda");
+        yield return Ate(() => Mathf.Abs(Jogo.Ponteiro - 0.5f) < 0.02f, 5f, v => deu = v);
+        Chamar("PararOPonteiro"); // (parado bem no verde; a tecla é conferida no reflexo, logo abaixo)
+        Conferir(deu && Jogo.UltimoPremioDoJogo == Jogo.premioEmCheio && Jogo.Moedas == moedasAntesDosJogos + Jogo.premioEmCheio && Jogo.AcertosSeguidos == 1,
+            "parar no verde paga o prêmio cheio: +" + Jogo.UltimoPremioDoJogo);
+        yield return Foto("2d_pontaria_no_verde");
+
+        yield return ApertarTecla(Key.RightArrow);
+        Conferir(Jogo.JogoEscolhido == GerenciadorDoJogo.JogoDeHabilidade.Reflexo, "a seta troca para o REFLEXO");
+        yield return ApertarTecla(Key.Enter);
+        yield return Ate(() => Jogo.SinalDoReflexo, 5f, v => deu = v);
+        Teclas(Key.Enter);
+        yield return Ate(() => Jogo.Rodada == GerenciadorDoJogo.FaseDaRodada.Resultado, 2f, v => deu = v);
+        Teclas();
+        yield return Quadros(2);
+        Conferir(deu && Jogo.TempoDeReacao > 0f && Jogo.UltimoPremioDoJogo > 0, $"apertar logo depois do JÁ paga (reagiu em {Jogo.TempoDeReacao:0.000} s, +{Jogo.UltimoPremioDoJogo})");
+        int moedasAntesDeQueimar = Jogo.Moedas;
+        yield return ApertarTecla(Key.Enter); // começa...
+        yield return ApertarTecla(Key.Enter); // ...e aperta antes do JÁ
+        Conferir(Jogo.Rodada == GerenciadorDoJogo.FaseDaRodada.Resultado && Jogo.TempoDeReacao < 0f && Jogo.Moedas == moedasAntesDeQueimar,
+            "apertar antes do JÁ queima a largada (sem prêmio)");
+        Conferir(Jogo.Fichas == 0, "as 3 fichas acabaram: " + Jogo.Fichas);
+        yield return ApertarTecla(Key.Enter);
+        Conferir(Jogo.Rodada != GerenciadorDoJogo.FaseDaRodada.Valendo && Jogo.Moedas == moedasAntesDeQueimar, "sem ficha não começa outra rodada");
+        yield return ApertarTecla(Key.Escape);
+        Conferir(!Jogo.JogosAbertos && Jogo.LojaAberta, "ESC volta dos jogos para a Loja");
         Chamar("FecharLoja");
 
         // ---------------------------------------------------------------- a fase, com 2 jogadores
@@ -425,6 +466,7 @@ public static class TesteDoCoop
         yield return Foto("4_dois_na_fase");
         Jogo.FaseConcluida();
         Conferir(Jogo.Estado == EstadoDoJogo.FaseConcluida, "fase concluída");
+        Conferir(Jogo.Fichas == Jogo.fichasPorFase, "passar de fase dá fichas para os jogos da Loja: " + Jogo.Fichas);
         var titulos = new List<string>();
         foreach (GerenciadorDoJogo.TituloDaTripulacao titulo in Jogo.TitulosDaTripulacao)
             titulos.Add($"{Tripulacao.Nome(titulo.jogador)} {titulo.nome} ({titulo.motivo})");
@@ -504,6 +546,14 @@ public static class TesteDoCoop
         Conferir(Jogo.Estado == EstadoDoJogo.Morreu, "sozinho: morreu, tela de morte (como sempre)");
         yield return Ate(() => Jogo.Estado == EstadoDoJogo.Jogando, 5f, v => deu = v);
         Conferir(deu && GerenciadorDoJogo.Jogadores.Count == 1, "sozinho: renasce");
+
+        // (só para a foto: a tela de vitória com o "E agora?")
+        if (!string.IsNullOrEmpty(pastaDasFotos) && !Application.isBatchMode)
+        {
+            Estado(EstadoDoJogo.Vitoria);
+            yield return Quadros(3);
+            yield return Foto("7_vitoria");
+        }
 
         Terminar();
     }

@@ -238,6 +238,13 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - **Fase 7:** um ponto de save a mais, depois das três cozinheiras das sombras, e a cozinheira do leque 3 blocos mais alta
   (as facas levam 0,3 s a mais para chegar).
 
+### Motivos para voltar, à vista (preparação para a Steam)
+- A campanha leva de 45 a 90 minutos na primeira vez, menos que as 2 horas da janela de reembolso da Steam. O que dá mais horas já existia,
+  mas ficava escondido. Agora aparece:
+  - **Modo Tempestade no menu:** depois de zerar uma vez, o título ganha "Novo jogo: MODO TEMPESTADE" (antes, só roubando o tesouro no final);
+  - **contador de medalhas** ("Medalhas: 12/39") no título e no mapa;
+  - **"E agora?" na tela de vitória:** as medalhas que faltam, o modo tempestade, a fase secreta (se ainda não achou) e o coop.
+
 ### Recordes por fase e medalhas (rejogabilidade)
 - Cada fase guarda o **melhor tempo**, o **menor número de mortes** e o **maior número de moedas** (cada um por si).
   Valem para sempre: um Novo jogo não apaga.
@@ -330,6 +337,10 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
   - **duplo salto** (45, uma vez): um segundo pulo no ar, para a partida toda;
   - **roleta**: aposte de 1 a 100 moedas numa cor. São 15 casas (7 vermelhas, 7 pretas e 1 verde): vermelho e preto pagam 2x,
     o verde paga 14x. A casa leva uma pequena vantagem, como numa roleta de verdade: é um jeito de arriscar, não de enriquecer.
+  - **jogos de habilidade** (a linha "Jogos de habilidade" na Loja, ao lado da roleta): sem sorte e sem aposta. Cada rodada gasta uma
+    **ficha** (não moedas); a partida começa com 3 e o Louro dá 2 a cada fase concluída (até 9). O prêmio é em moedas:
+    - **Pontaria:** o ponteiro vai e volta pela barra; parar no verde paga 10, no amarelo 4, fora nada. Cada acerto no verde seguido deixa o ponteiro 15% mais rápido;
+    - **Reflexo:** espere o "JÁ!" (de 1,2 a 3,2 s) e aperte: até 0,30 s paga 10, até 0,45 s paga 4. Apertou antes, queimou a largada.
 - As mortes são a "moeda" que importa: aparecem no HUD, nas caveiras do mapa, no recorde, na medalha do coração e no título final.
 - O tempo vira desafio na volta: depois de decorar as armadilhas, a medalha do relógio puxa o jogador para refazer a fase rápido.
 

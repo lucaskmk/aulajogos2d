@@ -462,6 +462,8 @@ public static class Traducoes
           "after level 2: shields, super jump elixir, double jump, potions and the roulette." },
         { "RECORDES E MEDALHAS",
           "RECORDS AND MEDALS" },
+        { "MODO TEMPESTADE! As mesmas fases, com um tsunami atrás de você. E o ouro do tesouro pra gastar na Loja. Currupaco!",
+          "STORM MODE! The same levels, with a tsunami chasing you. And the treasure gold to spend at the Shop. Squawk!" },
         { "COOP (ATÉ 4 JOGADORES)",
           "CO-OP (UP TO 4 PLAYERS)" },
         { "TECLA T NO MAPA",
