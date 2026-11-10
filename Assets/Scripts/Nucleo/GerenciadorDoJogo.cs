@@ -14,10 +14,11 @@ public enum EstadoDoJogo { Titulo, Conquistas, Mapa, Jogando, Pausado, Morreu, F
 //
 // Ele se cria SOZINHO quando você aperta Play em qualquer cena
 // (veja IniciarAutomaticamente), então não precisa arrastar nada para a cena.
-public class GerenciadorDoJogo : MonoBehaviour
+public partial class GerenciadorDoJogo : MonoBehaviour
 {
     public static GerenciadorDoJogo Instancia { get; private set; }
-    public static Jogador JogadorAtual => Instancia != null ? Instancia.jogador : null;
+    // O Grumete "principal" (no coop, quem está puxando a frente: veja GerenciadorCoop.cs). Todos: Jogadores.
+    public static Jogador JogadorAtual => Instancia != null ? Instancia.Lider : null;
     public static bool Pausado => Instancia != null && Instancia.Estado == EstadoDoJogo.Pausado;
 
     [Header("Configuração")]
@@ -88,18 +89,20 @@ public class GerenciadorDoJogo : MonoBehaviour
     // (girando a roleta, o prêmio já está nas moedas, mas só APARECE quando ela para: veja GirarRoleta)
     public int Moedas => moedas - (Girando ? premioPendente : 0) + moedasNaFase;
     // Escudos comprados na Loja e ainda não usados: cada um te salva de UMA morte (veja Jogador.Morrer).
-    public int Escudos { get; private set; }
+    // (no coop cada jogador tem os SEUS escudos, elixires e duplo salto; as moedas e as poções são da tripulação.
+    //  Estes aqui são os do "Comprador": quem está comprando na Loja; fora dela, o P1. Veja GerenciadorCoop.cs.)
+    public int Escudos { get => escudos[Comprador]; private set => escudos[Comprador] = value; }
     public bool TemEscudo => Escudos > 0;
     // Elixires de super salto guardados. Entrar numa fase pelo mapa gasta um, e ele vale a fase inteira (ElixirAtivo).
-    public int Elixires { get; private set; }
-    public bool ElixirAtivo { get; private set; }
+    public int Elixires { get => elixires[Comprador]; private set => elixires[Comprador] = value; }
+    public bool ElixirAtivo { get => elixirAtivo[Comprador]; private set => elixirAtivo[Comprador] = value; }
     // Poções guardadas. Entrar numa fase que tenha o que mostrar gasta uma de cada, e ela vale a fase inteira.
     public int PocoesDeEspinhos { get; private set; }
     public int PocoesDoChao { get; private set; }
     public bool VendoEspinhos { get; private set; }
     public bool VendoChaoFalso { get; private set; }
     // O duplo salto (comprado uma vez na Loja, vale para a partida inteira).
-    public bool TemPuloDuplo { get; private set; }
+    public bool TemPuloDuplo { get => puloDuplo[Comprador]; private set => puloDuplo[Comprador] = value; }
     public float TempoTotal { get; private set; }
     // Tempo nesta fase, desde que entrou pelo mapa (o tempo das mortes conta). É o tempo do recorde da fase.
     public float TempoNaFase { get; private set; }
@@ -305,6 +308,10 @@ public class GerenciadorDoJogo : MonoBehaviour
     public const int BotaoSim = -11, BotaoNao = -12, BotaoApagarSlot = -20;
     // (no título: as bandeiras do idioma)
     public const int BotaoBandeiraBrasil = -13, BotaoBandeiraEUA = -14;
+    // (no mapa: o botão da Tripulação, o coop)
+    public const int BotaoTripulacao = -15;
+    // (na Loja, no coop: o rostinho de cada jogador, para escolher quem compra: BotaoComprador - número do jogador)
+    public const int BotaoComprador = -30;
     const int SemClique = -1;
 
     public MapaDoMundo Mapa { get; private set; }
@@ -355,11 +362,14 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     // Volta da Maré: onde você morreu nas últimas tentativas desta fase.
     readonly List<Vector3> lugaresDasMortes = new List<Vector3>();
+    readonly List<int> donosDasMortes = new List<int>(); // qual jogador morreu em cada lugar (na mesma ordem)
     int faseDasMarcas = -1;
-    Vector3? lugarDaBandeira; // o pé da bandeira de morto (a última morte nesta fase)
+    // O pé da bandeira de morto de CADA jogador (a última morte dele nesta fase) e as bandeiras fincadas na fase.
+    readonly Vector3?[] bandeirasDeMorto = new Vector3?[Tripulacao.Maximo];
+    readonly GameObject[] bandeirasFincadas = new GameObject[Tripulacao.Maximo];
 
     Transform raizDaFase;
-    Jogador jogador;
+    Jogador jogador => Lider; // (os Grumetes da fase ficam em GerenciadorCoop.cs)
     CameraSeguir cameraSeguir;
     AudioSource fonteDeAudio;
     Dictionary<string, AudioClip> sons;
@@ -449,7 +459,8 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (indice != faseDasMarcas)
         {
             lugaresDasMortes.Clear();
-            lugarDaBandeira = null;
+            donosDasMortes.Clear();
+            System.Array.Clear(bandeirasDeMorto, 0, bandeirasDeMorto.Length);
             faseDasMarcas = indice;
         }
 
@@ -482,7 +493,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         InfoFase info = ConstrutorDeFase.Construir(dados, raizDaFase, MortesNaFase);
         bool noite = dados.noite || dados.escura;
         Paralaxe.Criar(raizDaFase, info.largura, corDoFundo, noite); // céu, montanhas, castelo, floresta...
-        MarcaDaMorte.Criar(raizDaFase, lugaresDasMortes, lugarDaBandeira);
+        MarcaDaMorte.Criar(raizDaFase, lugaresDasMortes, donosDasMortes, bandeirasDeMorto, bandeirasFincadas);
 
         PosicaoInicial = info.inicio;
         Bandeiras = info.bandeiras;
@@ -490,10 +501,12 @@ public class GerenciadorDoJogo : MonoBehaviour
         nasCabines = info.temPortas;
         PrepararClima(indice, noite);
         // renasce no ponto de save, se tiver um
-        jogador = ConstrutorDeFase.Criar<Jogador>("Jogador", raizDaFase, pontoDeSave ?? info.inicio);
-        jogador.inversores = info.inversores;
-        if (dados.escura) Luzes.Ponto(jogador.transform, new Color(1f, 0.95f, 0.85f), 6f, 1.6f); // no escuro: a "lanterna" do Grumete
-        else if (noite || nasCabines) Luzes.Ponto(jogador.transform, new Color(0.9f, 0.9f, 1f), 4.5f, 0.7f); // o Grumete "ilumina" em volta
+        CriarTripulacao(pontoDeSave ?? info.inicio, info.inversores); // (um Grumete por jogador: GerenciadorCoop.cs)
+        foreach (Jogador grumete in jogadores)
+        {
+            if (dados.escura) Luzes.Ponto(grumete.transform, new Color(1f, 0.95f, 0.85f), 6f, 1.6f); // no escuro: a "lanterna" do Grumete
+            else if (noite || nasCabines) Luzes.Ponto(grumete.transform, new Color(0.9f, 0.9f, 1f), 4.5f, 0.7f); // o Grumete "ilumina" em volta
+        }
         aviso = "";
         cameraSeguir.Configurar(jogador.transform, info.largura, info.altura);
 
@@ -534,7 +547,8 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (raizDaFase != null) Destroy(raizDaFase.gameObject);
 
         raizDaFase = new GameObject("Mapa").transform;
-        jogador = null;
+        jogadores.Clear();
+        lider = null;
         Sereia = null;
         Bandeiras = new List<Transform>();
         FaseAtual = no == Fases.IndiceSecreto && Progresso.SecretaLiberada ? no : Mathf.Clamp(no, 0, Fases.Todas.Length - 1);
@@ -553,7 +567,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         musica.TocarDaFase(FabricaDeMusica.MusicaDoMapa);
         LojaAberta = false;
         Tutorial = PassoDoTutorial.Nenhum;
-        ElixirAtivo = false; // saiu da fase: o elixir acabou
+        ApagarElixires(); // saiu da fase: o elixir acabou (o de todo mundo)
         VendoEspinhos = false; // (e as poções também)
         VendoChaoFalso = false;
         Estado = EstadoDoJogo.Mapa;
@@ -564,6 +578,7 @@ public class GerenciadorDoJogo : MonoBehaviour
         Mortes = 0;
         MortesNaFase = 0;
         moedas = 0;
+        ZerarItensDaTripulacao(); // (os itens e a contagem de mortes de cada jogador)
         Escudos = 0;
         Elixires = 0;
         ElixirAtivo = false;
@@ -617,15 +632,14 @@ public class GerenciadorDoJogo : MonoBehaviour
         KrakenRoubou = false;
         ChefeDerrotado = false;
         EtapaDoChefe = 0;
+        Tripulacao.ZerarPlacares();
         LimparFalas();
         CarregarFase(fase);
         Estado = EstadoDoJogo.Jogando;
         // tem elixir guardado? Entrar na fase gasta um, e ele vale a fase inteira (até depois de morrer)
-        ElixirAtivo = false;
-        if (Elixires > 0)
+        // (no coop, cada jogador gasta o dele)
+        if (UsarElixires())
         {
-            Elixires--;
-            ElixirAtivo = true;
             Avisar("ELIXIR DE SUPER SALTO! Você pula mais alto nesta fase.", 2.5f);
             Som("mola", 0.6f);
         }
@@ -699,7 +713,8 @@ public class GerenciadorDoJogo : MonoBehaviour
                 TempoNaFase += Time.deltaTime;
                 timerAviso -= Time.deltaTime;
                 if (Controles.Pausar()) Pausar(true);
-                else if (Controles.Reiniciar()) jogador.Morrer(ignorarEscudo: true); // reiniciar conta como morte. Óbvio. (e não gasta o escudo)
+                else if (Controles.Reiniciar()) ReiniciarDoSave(); // reiniciar conta como morte. Óbvio. (e não gasta o escudo)
+                else AtualizarTripulacao(); // coop: quem puxa a câmera e quem ficou para trás
                 break;
 
             case EstadoDoJogo.Pausado:
@@ -973,7 +988,11 @@ public class GerenciadorDoJogo : MonoBehaviour
         SalvarItensDaLoja();
     }
 
-    void SalvarItensDaLoja() => Progresso.SalvarItensDaLoja(Escudos, Elixires, TemPuloDuplo, PocoesDeEspinhos, PocoesDoChao);
+    void SalvarItensDaLoja()
+    {
+        Progresso.SalvarItensDaLoja(escudos[0], elixires[0], puloDuplo[0], PocoesDeEspinhos, PocoesDoChao);
+        for (int i = 1; i < Tripulacao.Maximo; i++) Progresso.SalvarItensDoJogador(i, escudos[i], elixires[i], puloDuplo[i]);
+    }
 
     void MostrarFala(Textos.Fala fala)
     {
@@ -1522,6 +1541,12 @@ public class GerenciadorDoJogo : MonoBehaviour
             PocoesDeEspinhos = Mathf.Max(0, Progresso.PocoesDeEspinhosSalvas);
             PocoesDoChao = Mathf.Max(0, Progresso.PocoesDoChaoSalvas);
             TemPuloDuplo = Progresso.PuloDuploSalvo;
+            for (int i = 1; i < Tripulacao.Maximo; i++) // (os itens dos outros jogadores da tripulação)
+            {
+                escudos[i] = Mathf.Max(0, Progresso.EscudosSalvosDe(i));
+                elixires[i] = Mathf.Max(0, Progresso.ElixiresSalvosDe(i));
+                puloDuplo[i] = Progresso.PuloDuploSalvoDe(i);
+            }
         }
         else
         {
@@ -1547,6 +1572,11 @@ public class GerenciadorDoJogo : MonoBehaviour
     // No ponto da fase do segredo, seta para baixo vai para a fase secreta (se ela já apareceu).
     void AtualizarMapa(int clique, int lado)
     {
+        if (Tripulacao.LobbyAberto)
+        {
+            AtualizarTelaDaTripulacao(clique); // (e mais nada: ENTER aqui fecha a tela, não entra na fase)
+            return;
+        }
         if (LojaAberta)
         {
             AtualizarRoleta();
@@ -1588,6 +1618,13 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (LojaLiberada && (Controles.AbrirLoja() || clique == BotaoLoja))
         {
             AbrirLoja();
+            return;
+        }
+
+        // T: a tela da Tripulação (coop local até 4: cada um aperta PULAR no seu aparelho para entrar)
+        if (Controles.AbrirTripulacao() || clique == BotaoTripulacao)
+        {
+            AbrirTripulacao();
             return;
         }
 
@@ -1651,6 +1688,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     void AbrirLoja()
     {
+        Comprador = Mathf.Clamp(Comprador, 0, Tripulacao.Quantos - 1);
         LojaAberta = true;
         OpcaoDaLoja = (int)ItemDaLoja.Escudo;
         LimparFalas();
@@ -1677,6 +1715,12 @@ public class GerenciadorDoJogo : MonoBehaviour
         }
         if (Controles.CimaApertou()) OpcaoDaLoja = Girar(OpcaoDaLoja, -1, TotalDaLoja);
         else if (Controles.BaixoApertou()) OpcaoDaLoja = Girar(OpcaoDaLoja, 1, TotalDaLoja);
+        // coop: para QUEM é a compra (TAB troca; ou clique no rostinho)
+        if (Tripulacao.Coop)
+        {
+            if (Controles.TrocarComprador()) EscolherComprador((Comprador + 1) % Tripulacao.Quantos);
+            else if (clique <= BotaoComprador && clique > BotaoComprador - Tripulacao.Quantos) EscolherComprador(BotaoComprador - clique);
+        }
         int mudar = Controles.EsquerdaApertou() ? -1 : Controles.DireitaApertou() ? 1 : 0;
         if (mudar != 0 && (ItemDaLoja)OpcaoDaLoja == ItemDaLoja.Aposta) MudarAposta(mudar);
         else if (mudar != 0 && (ItemDaLoja)OpcaoDaLoja == ItemDaLoja.Cor) EscolherCor((CorDaRoleta)(((int)CorEscolhida + mudar + 3) % 3));
@@ -1899,6 +1943,7 @@ public class GerenciadorDoJogo : MonoBehaviour
     // Durante o tutorial o resto do mapa fica parado (dá para sair com ESC: aí ele recomeça na próxima vez).
     void IniciarTutorialDaLoja()
     {
+        Comprador = 0; // (o escudo de presente do Louro é do P1)
         LimparFalas();
         IrParaOPasso(PassoDoTutorial.Chegada);
         Som("mola", 0.4f); // "fuuuu": o Louro chegando
@@ -2011,10 +2056,11 @@ public class GerenciadorDoJogo : MonoBehaviour
     }
 
     // Chamado pelo Jogador quando algo ia matar ele: se tiver escudo, gasta um e ele NÃO morre.
-    public bool UsarEscudo()
+    // (jogador: de quem é o escudo. No coop cada um gasta o seu.)
+    public bool UsarEscudo(int jogador = 0)
     {
-        if (Estado != EstadoDoJogo.Jogando || Escudos <= 0) return false;
-        Escudos--;
+        if (Estado != EstadoDoJogo.Jogando || escudos[jogador] <= 0) return false;
+        escudos[jogador]--;
         SalvarItensDaLoja(); // gastou, gastou: sair do jogo agora não devolve o escudo
         Avisar("O ESCUDO TE SALVOU!", 2f);
         Som("pancada", 0.7f);
@@ -2024,19 +2070,42 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     // ------------------------------------------------------------------ chamados pelos objetos
 
-    public void JogadorMorreu(bool caiuNoBuraco)
+    public void JogadorMorreu(Jogador quem, bool caiuNoBuraco)
     {
         if (Estado != EstadoDoJogo.Jogando) return;
         Mortes++;
         MortesNaFase++;
         mortesPorFase[Posicao(FaseAtual)]++;
-        if (!jogador.Reiniciou) // (apertar R não marca o lugar: a bandeira continua onde você morreu de verdade)
+        if (!reiniciando) // (R é da tripulação inteira: não entra na conta de ninguém)
         {
-            GuardarLugarDaMorte(jogador.transform.position, caiuNoBuraco);
-            lugarDaBandeira = jogador.LugarDaBandeira(caiuNoBuraco);
+            quem.Marujo.mortes++;
+            quem.Marujo.mortesNaPartida++;
+        }
+        if (!quem.Reiniciou) // (apertar R não marca o lugar: a bandeira continua onde você morreu de verdade)
+        {
+            bandeirasDeMorto[quem.Indice] = quem.LugarDaBandeira(caiuNoBuraco); // (cada jogador tem a sua bandeira)
+            GuardarLugarDaMorte(quem.transform.position, caiuNoBuraco, quem.Indice);
         }
         Conquistas.Desbloquear("primeira_morte");
         if (Mortes >= 100) Conquistas.Desbloquear("cem_mortes");
+
+        // COOP: ainda tem companheiro vivo? Então ninguém volta para o checkpoint: quem morreu vira um balão,
+        // que os outros têm que estourar (JogadorCoop.cs). A morte conta, mas a fase continua.
+        if (!reiniciando && TemOutroAtivo(quem))
+        {
+            // a fase não vai recomeçar agora: a bandeira dele é fincada na hora (a antiga sai)
+            if (!quem.Reiniciou)
+            {
+                if (bandeirasFincadas[quem.Indice] != null) Destroy(bandeirasFincadas[quem.Indice]);
+                bandeirasFincadas[quem.Indice] = MarcaDaMorte.FincarBandeira(raizDaFase, bandeirasDeMorto[quem.Indice].Value, quem.Indice);
+            }
+            quem.VirarBalaoDepois();
+            Som("morte", 0.6f);
+            if (!caiuNoBuraco) CameraSeguir.Tremer(0.15f, 0.2f);
+            string nome = Tripulacao.Nome(quem.Indice);
+            Avisar(Idioma.T($"{nome} virou balão! Estourem ele.", $"{nome} is on a balloon! Pop it."), 1.6f);
+            return;
+        }
 
         // Na 3ª morte desde que você pegou o ponto de save, ele "muda de lugar" e você volta para o checkpoint ANTERIOR
         // (ou para o começo, se era o primeiro). :) Sempre na 3ª: nunca antes, nunca depois.
@@ -2059,11 +2128,20 @@ public class GerenciadorDoJogo : MonoBehaviour
         if (!caiuNoBuraco) CameraSeguir.Tremer(0.2f, 0.2f);
     }
 
-    void GuardarLugarDaMorte(Vector3 lugar, bool caiuNoBuraco)
+    void GuardarLugarDaMorte(Vector3 lugar, bool caiuNoBuraco, int jogador)
     {
         if (caiuNoBuraco) lugar.y = 0.2f; // no fundo do buraco, onde ainda aparece na tela
         lugaresDasMortes.Add(lugar);
-        while (lugaresDasMortes.Count > marcasDeMorte) lugaresDasMortes.RemoveAt(0);
+        donosDasMortes.Add(jogador);
+        // (a última morte de cada jogador vira bandeira, não X: com mais bandeiras, cabem mais mortes na lista)
+        int bandeiras = 0;
+        foreach (Vector3? bandeira in bandeirasDeMorto)
+            if (bandeira.HasValue) bandeiras++;
+        while (lugaresDasMortes.Count > marcasDeMorte + Mathf.Max(0, bandeiras - 1))
+        {
+            lugaresDasMortes.RemoveAt(0);
+            donosDasMortes.RemoveAt(0);
+        }
     }
 
     public void FaseConcluida()
@@ -2087,7 +2165,8 @@ public class GerenciadorDoJogo : MonoBehaviour
 
         moedas += moedasNaFase;
         moedasNaFase = 0;
-        jogador.Congelar();
+        DarTitulosDaTripulacao();
+        foreach (Jogador grumete in jogadores) grumete.Congelar();
         Som("vitoria");
         if (EhUltimaFase && Sereia != null && !ModoDificil) Sereia.Comemorar(); // (quem roubou não ganha coraçõezinhos)
     }
@@ -2122,8 +2201,10 @@ public class GerenciadorDoJogo : MonoBehaviour
     }
 
     // "lugar": onde a moeda estava (a moeda '$' ou o bloco '?'): o checkpoint lembra quais já foram pegas.
-    public void GanharMoeda(Vector3 lugar)
+    // "quem": o Grumete que pegou (no coop, conta para o título de Mão-leve; as moedas são da tripulação).
+    public void GanharMoeda(Vector3 lugar, Jogador quem = null)
     {
+        if (quem != null) quem.Marujo.moedas++;
         moedasNaFase++;
         moedasPegas.Add(ChaveDaMoeda(lugar));
     }
@@ -2240,7 +2321,7 @@ public class GerenciadorDoJogo : MonoBehaviour
 
     public static bool JogadorVivo(out Vector2 posicao)
     {
-        Jogador j = Instancia != null ? Instancia.jogador : null;
+        Jogador j = Instancia != null ? Instancia.Lider : null;
         if (j == null || j.Morto || Instancia.Estado != EstadoDoJogo.Jogando)
         {
             posicao = Vector2.zero;

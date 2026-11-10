@@ -24,7 +24,7 @@ public class NuvemAssassina : MonoBehaviour
 
     void Update()
     {
-        bool perto = GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)
+        bool perto = GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 jogador)
                      && Vector2.Distance(jogador, transform.position) < distanciaParaMostrarACara;
         visual.sprite = perto ? malvada : normal;
     }

@@ -40,7 +40,7 @@ public class PontoDeSave : MonoBehaviour
         // ativo, o cristal flutua e "respira"
         if (ativo) cristal.localScale = Vector3.one * (1f + 0.05f * Mathf.Sin(Time.time * 4f));
 
-        if (ativo || !GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return;
+        if (ativo || !GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 jogador)) return;
         Vector2 d = jogador - (Vector2)transform.position;
         if (Mathf.Abs(d.x) < 0.7f && d.y > -0.2f && d.y < 2f) Ativar();
     }

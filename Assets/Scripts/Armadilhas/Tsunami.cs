@@ -182,10 +182,13 @@ public class Tsunami : MonoBehaviour
         return mao;
     }
 
+    Jogador ultimoLider; // quem a onda estava perseguindo no quadro anterior
+
     void Start()
     {
         // O jogador é criado DEPOIS da fase (no checkpoint, se tiver um), então só dá para olhar onde ele está aqui.
         Jogador jogador = GerenciadorDoJogo.JogadorAtual;
+        ultimoLider = jogador;
         Reposicionar(jogador != null ? jogador.transform.position.x : xDoN + distanciaParaAcordar);
         limite = AcharLimite();
     }
@@ -232,8 +235,11 @@ public class Tsunami : MonoBehaviour
 
         // O jogador sumiu de um lugar e apareceu em outro (porta, bandeira que manda de volta...)?
         // A onda reaparece atrás dele, como num checkpoint.
-        if (vivo && Mathf.Abs(jogador.x - ultimoX) > 3f) Reposicionar(jogador.x);
+        // (coop: se quem puxa a frente mudou, o "pulo" é só a troca de líder: a onda continua onde está)
+        Jogador lider = GerenciadorDoJogo.JogadorAtual;
+        if (vivo && lider == ultimoLider && Mathf.Abs(jogador.x - ultimoX) > 3f) Reposicionar(jogador.x);
         if (vivo) ultimoX = jogador.x;
+        ultimoLider = lider;
         float distancia = vivo ? jogador.x - frente : 99f;
 
         switch (estado)
@@ -301,7 +307,12 @@ public class Tsunami : MonoBehaviour
         frente = Mathf.Max(frente, jogador.x - distanciaMaxima); // nunca mais longe que a distância máxima
         frente = Mathf.Min(frente, limite);                       // e nunca passa da bandeira
 
-        if (jogador.x - MeiaLarguraDoJogador < frente) Abracar();
+        // coop: a onda persegue quem puxa a frente, mas engole qualquer um que ficar para trás (ele vira balão)
+        foreach (Jogador outro in GerenciadorDoJogo.Jogadores)
+            if (outro != null && !outro.Morto && outro != GerenciadorDoJogo.JogadorAtual
+                && outro.transform.position.x - MeiaLarguraDoJogador < frente) Abracar(outro);
+
+        if (jogador.x - MeiaLarguraDoJogador < frente) Abracar(GerenciadorDoJogo.JogadorAtual);
         else if (distancia < 2.5f && !jaSussurrou)
         {
             jaSussurrou = true;
@@ -310,9 +321,8 @@ public class Tsunami : MonoBehaviour
     }
 
     // Encostou na onda: ela te engole. Todos os jatos estouram de uma vez.
-    void Abracar()
+    void Abracar(Jogador jogador)
     {
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
         if (jogador == null || jogador.Morto) return;
         jogador.Morrer();
         if (!jogador.Morto) return;

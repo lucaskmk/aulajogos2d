@@ -187,7 +187,7 @@ public class Ancora : MonoBehaviour
 
     bool JogadorPerto()
     {
-        if (!GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return false;
+        if (!GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 jogador)) return false;
         Vector2 d = jogador - (Vector2)transform.position;
         return Mathf.Abs(d.x) < distanciaParaIrritar && Mathf.Abs(d.y) < raio + 2f;
     }
@@ -237,7 +237,7 @@ public class Ancora : MonoBehaviour
         if (dentro && !bolaDentroDoChao)
         {
             Efeitos.Poeira(transform.parent, bola.position, 5, 2.5f);
-            if (GerenciadorDoJogo.JogadorVivo(out Vector2 jogador) && Vector2.Distance(jogador, bola.position) < 8f)
+            if (GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 jogador) && Vector2.Distance(jogador, bola.position) < 8f)
             {
                 GerenciadorDoJogo.Som("pancada", estado == Estado.Brava ? 0.45f : 0.25f);
                 if (estado == Estado.Brava) CameraSeguir.Tremer(0.06f, 0.1f);

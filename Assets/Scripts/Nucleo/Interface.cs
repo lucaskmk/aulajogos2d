@@ -7,7 +7,7 @@ using UnityEngine;
 // Ela só LÊ o estado do GerenciadorDoJogo; quem decide as coisas é ele. A única "conversa" no outro
 // sentido é o mouse: só a Interface sabe ONDE cada opção foi desenhada, então ela avisa o
 // GerenciadorDoJogo quando o mouse passa por cima de uma opção ou clica nela (veja "mouse nos menus").
-public class Interface : MonoBehaviour
+public partial class Interface : MonoBehaviour
 {
     static readonly Color32 CorDoLogo = new Color32(255, 206, 72, 255);   // dourado (o logo)
     static readonly Color32 CorDaBordaDoLogo = new Color32(74, 40, 22, 255); // madeira escura (a borda do logo)
@@ -72,6 +72,8 @@ public class Interface : MonoBehaviour
             DesenharDicaDasPortas();
         }
         DesenharRetornoPelaMorte();
+        // coop: os rostinhos da tripulação no canto (com o balão em volta de quem está dentro de um)
+        if (estado == EstadoDoJogo.Jogando || estado == EstadoDoJogo.Morreu) DesenharTripulacaoNaFase();
         bool lutando = jogo.Chefe != null && jogo.Chefe.EmCombate;
         if ((estado == EstadoDoJogo.Jogando || estado == EstadoDoJogo.Morreu || estado == EstadoDoJogo.FaseConcluida) && !lutando)
             DesenharBarraDeProgresso();
@@ -106,7 +108,7 @@ public class Interface : MonoBehaviour
         // botão direito do mouse = ESC (volta uma tela), em qualquer menu
         bool emMenu = estado == EstadoDoJogo.Titulo || estado == EstadoDoJogo.Pausado
                       || estado == EstadoDoJogo.Conquistas || estado == EstadoDoJogo.Creditos || estado == EstadoDoJogo.Historia
-                      || (estado == EstadoDoJogo.Mapa && jogo.LojaAberta);
+                      || (estado == EstadoDoJogo.Mapa && (jogo.LojaAberta || Tripulacao.LobbyAberto));
         Event evento = Event.current;
         if (usarMouse && emMenu && evento.type == EventType.MouseDown && evento.button == 1)
         {
@@ -161,7 +163,8 @@ public class Interface : MonoBehaviour
     void DesenharItensNoHud(Rect areaDasMortes)
     {
         float alto = areaDasMortes.height * 1.15f, x = areaDasMortes.xMax + 14f * escala, y = areaDasMortes.center.y - alto / 2f;
-        if (jogo.TemEscudo)
+        bool sozinho = !Tripulacao.Coop; // (no coop cada um tem os seus itens: aparecem ao lado do rostinho, em InterfaceCoop.cs)
+        if (sozinho && jogo.TemEscudo)
         {
             float largo = alto * 11f / 12f;
             GUI.DrawTexture(new Rect(x, y, largo, alto), FabricaDeSprites.Pegar("escudo").texture);
@@ -170,10 +173,10 @@ public class Interface : MonoBehaviour
                 x = Texto(ComNumero(ref textoDosEscudos, jogo.Escudos, n => "x" + n), x, areaDasMortes.y, 2.5f, 0f, Branco).xMax + 10f * escala;
         }
         bool naFase = jogo.Estado != EstadoDoJogo.Mapa;
-        Frasco("elixir", jogo.Elixires, jogo.ElixirAtivo, ref textoDosElixires);
+        if (sozinho) Frasco("elixir", jogo.Elixires, jogo.ElixirAtivo, ref textoDosElixires);
         Frasco("pocao_espinhos", jogo.PocoesDeEspinhos, jogo.VendoEspinhos, ref textoDasPocoesDeEspinhos);
         Frasco("pocao_chao", jogo.PocoesDoChao, jogo.VendoChaoFalso, ref textoDasPocoesDoChao);
-        if (jogo.TemPuloDuplo)
+        if (sozinho && jogo.TemPuloDuplo)
             GUI.DrawTexture(new Rect(x, y, alto * 14f / 12f, alto), FabricaDeSprites.Pegar("bota_alada").texture);
 
         // Na fase: só se estiver valendo, piscando. No mapa: quantos você tem.
@@ -415,6 +418,11 @@ public class Interface : MonoBehaviour
         MapaDoMundo mapa = jogo.Mapa;
         if (mapa == null) return;
         float w = Screen.width, h = Screen.height;
+        if (Tripulacao.LobbyAberto)
+        {
+            DesenharTripulacao(); // a tela do coop (InterfaceCoop.cs)
+            return;
+        }
         if (jogo.LojaAberta)
         {
             DesenharLoja();
@@ -433,6 +441,7 @@ public class Interface : MonoBehaviour
             return;
         }
         if (!mapa.Andando && jogo.LojaLiberada) BotaoDaLoja(false);
+        if (!mapa.Andando) BotaoDaTripulacao(); // o coop, no canto de baixo à esquerda
         float larguraDoMeio = w - 2f * (RetanguloDoBotaoDaLoja().width + 40f * escala); // (sem passar por baixo do botão)
 
         int fase = mapa.Selecionado;
@@ -448,8 +457,8 @@ public class Interface : MonoBehaviour
             Texto(situacao, w / 2f, h - 78f * escala, 2f, 0.5f, secreta ? Rosa : fase < jogo.FaseMaisLonge ? Verde : Lilas, larguraDoMeio);
         }
         string comandos = mapa.Andando ? "..."
-            : jogo.LojaLiberada ? "SETAS: andar     ENTER: jogar     L: loja     ESC: título"
-            : "SETAS: andar     ENTER: jogar     ESC: título"; // a Loja só aparece depois da 2ª fase
+            : jogo.LojaLiberada ? "SETAS: andar     ENTER: jogar     L: loja     T: coop     ESC: título"
+            : "SETAS: andar     ENTER: jogar     T: coop     ESC: título"; // a Loja só aparece depois da 2ª fase
         Texto(comandos, w / 2f, h - 42f * escala, 2f, 0.5f, Branco, larguraDoMeio);
     }
 
@@ -484,6 +493,7 @@ public class Interface : MonoBehaviour
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         Texto("LOJA DO PORTO", w / 2f, 18f * escala, 5f, 0.5f, CorDoLogo, w * 0.9f);
         DesenharSaldo(w / 2f, 100f * escala);
+        if (Tripulacao.Coop && !jogo.NoTutorial) DesenharCompradores(24f * escala, 98f * escala); // coop: para quem é a compra
 
         // as três colunas: a roleta no meio e as laterais com o espaço que sobrar
         float diametro = Mathf.Min(300f * escala, w * 0.3f), margem = 24f * escala;
@@ -1128,6 +1138,7 @@ public class Interface : MonoBehaviour
         Texto(comentario, w / 2f, y + 82f * escala, 2.5f, 0.5f, Branco, w * 0.9f);
         DesenharResultado(y + 128f * escala, avisoDePrimeiraVez: false); // o painel já diz que é a primeira vez
         DesenharPainelDeTempos(y + 286f * escala);
+        DesenharTitulosDaTripulacao(y + 286f * escala); // coop: quem salvou, quem morreu mais... (InterfaceCoop.cs)
         if (jogo.PodeContinuar)
             BotaoDeTexto("ENTER: continuar", w / 2f, h - 62f * escala, 2.2f, 0.5f, GerenciadorDoJogo.BotaoProxima);
     }
@@ -1627,7 +1638,7 @@ public class Interface : MonoBehaviour
             if (porta == null || !Porta.PodeEntrar || !porta.JogadorNaFrente()) continue;
             Vector3 tela = TelaPixelada.MundoParaTela(cam, porta.transform.position + Vector3.up * 2.3f);
             if (Time.unscaledTime % 0.8f < 0.55f)
-                Texto("S: entrar", tela.x, Screen.height - tela.y - 30f * escala, 2.2f, 0.5f, Lilas);
+                Texto(Tripulacao.Coop ? "BAIXO: entrar" : "S: entrar", tela.x, Screen.height - tela.y - 30f * escala, 2.2f, 0.5f, Lilas);
         }
     }
 
@@ -1809,11 +1820,18 @@ public class Interface : MonoBehaviour
         GUI.DrawTexture(new Rect(barra.xMax - alturaBandeira / 6f, barra.yMax - alturaBandeira, alturaBandeira / 3f, alturaBandeira),
             FabricaDeSprites.Pegar("bandeira").texture);
 
-        // Grumete andando na barra
-        Texture grumete = FabricaDeSprites.Pegar("jogador").texture;
-        float alturaJogador = 32f * escala, larguraJogador = alturaJogador * grumete.width / grumete.height;
-        GUI.DrawTexture(new Rect(barra.x + barra.width * progresso - larguraJogador / 2f, barra.center.y - alturaJogador / 2f, larguraJogador, alturaJogador),
-            grumete);
+        // Grumete andando na barra (no coop, um de cada cor; quem está fora de combate não aparece)
+        List<Jogador> todos = GerenciadorDoJogo.Jogadores;
+        for (int i = todos.Count - 1; i >= 0; i--)
+        {
+            Jogador outro = todos[i];
+            if (outro == null || (outro != jogador && outro.Morto)) continue;
+            float onde = outro == jogador ? progresso : Mathf.Clamp01((outro.transform.position.x - inicio) / (fim - inicio));
+            Texture grumete = FabricaDeSprites.Pegar(Tripulacao.Sprite(outro.Indice)).texture;
+            float alturaJogador = 32f * escala, larguraJogador = alturaJogador * grumete.width / grumete.height;
+            GUI.DrawTexture(new Rect(barra.x + barra.width * onde - larguraJogador / 2f, barra.center.y - alturaJogador / 2f, larguraJogador, alturaJogador),
+                grumete);
+        }
     }
 
     // ------------------------------------------------------------------ texto em pixel

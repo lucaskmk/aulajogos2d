@@ -131,6 +131,35 @@ public static class Controles
             || (controle != null && controle.buttonWest.wasPressedThisFrame);
     }
 
+    // TAB: na Loja, no coop, troca para quem é a compra (no controle, RB ou LB).
+    public static bool TrocarComprador()
+    {
+        var teclado = Keyboard.current;
+        var controle = Gamepad.current;
+        return (teclado != null && teclado.tabKey.wasPressedThisFrame)
+            || (controle != null && (controle.rightShoulder.wasPressedThisFrame || controle.leftShoulder.wasPressedThisFrame));
+    }
+
+    // T: abre a tela da Tripulação no mapa, o coop (no controle, o botão Y / triângulo).
+    public static bool AbrirTripulacao()
+    {
+        var teclado = Keyboard.current;
+        var controle = Gamepad.current;
+        return (teclado != null && teclado.tKey.wasPressedThisFrame)
+            || (controle != null && controle.buttonNorth.wasPressedThisFrame);
+    }
+
+    // Fecha a tela da Tripulação: ENTER, ESC ou T (no controle, START ou Y em QUALQUER controle; A e B ali são entrar e sair).
+    public static bool FecharTripulacao()
+    {
+        var teclado = Keyboard.current;
+        if (teclado != null && (teclado.enterKey.wasPressedThisFrame || teclado.numpadEnterKey.wasPressedThisFrame
+                                || teclado.escapeKey.wasPressedThisFrame || teclado.tKey.wasPressedThisFrame)) return true;
+        foreach (Gamepad controle in Gamepad.all)
+            if (controle.startButton.wasPressedThisFrame || controle.buttonNorth.wasPressedThisFrame) return true;
+        return false;
+    }
+
     static bool Apertou(System.Func<Keyboard, KeyControl> seta, System.Func<Keyboard, KeyControl> letra, System.Func<Gamepad, ButtonControl> direcional)
     {
         var teclado = Keyboard.current;

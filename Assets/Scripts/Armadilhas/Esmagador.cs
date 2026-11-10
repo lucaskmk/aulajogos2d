@@ -46,13 +46,12 @@ public class Esmagador : MonoBehaviour
         switch (estado)
         {
             case Estado.Esperando:
-                if (GerenciadorDoJogo.JogadorVivo(out jogador)
-                    && Mathf.Abs(jogador.x - transform.position.x) < alcance
-                    && jogador.y < transform.position.y)
-                {
-                    estado = Estado.Caindo;
-                    velocidade = 0f;
-                }
+                for (int i = 0; estado == Estado.Esperando && GerenciadorDoJogo.ProximoVivo(ref i, out jogador);)
+                    if (Mathf.Abs(jogador.x - transform.position.x) < alcance && jogador.y < transform.position.y)
+                    {
+                        estado = Estado.Caindo;
+                        velocidade = 0f;
+                    }
                 break;
 
             case Estado.Caindo:
@@ -69,7 +68,7 @@ public class Esmagador : MonoBehaviour
             case Estado.NoChao:
                 timer -= Time.deltaTime;
                 // O jogador passou dele? Vai atrás!
-                if (tempoNoChao - timer > esperaAntesDeArrastar && GerenciadorDoJogo.JogadorVivo(out jogador))
+                if (tempoNoChao - timer > esperaAntesDeArrastar && GerenciadorDoJogo.JogadorVivo(transform.position, out jogador))
                 {
                     float dx = jogador.x - transform.position.x;
                     if (Mathf.Abs(dx) > 0.6f && Mathf.Abs(jogador.y - transform.position.y) < 3f)

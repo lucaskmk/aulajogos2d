@@ -62,6 +62,14 @@ public abstract class Chefe : MonoBehaviour
         return pes.x > xMin && pes.x < xMax && pes.y > topo - abaixo && pes.y < topo + 0.8f;
     }
 
+    // (coop) Qual Grumete está caindo com os pés na cabeça do chefe? null = nenhum.
+    protected static Jogador QuemPisou(float xMin, float xMax, float topo, float abaixo = 0.45f)
+    {
+        foreach (Jogador jogador in GerenciadorDoJogo.Jogadores)
+            if (PesNaCabeca(jogador, xMin, xMax, topo, abaixo)) return jogador;
+        return null;
+    }
+
     // Chamado por cada chefe quando leva um pisão (depois de tirar a vida). Tem que ser chamado do Update
     // (o TestarPisao), nunca de dentro de uma corrotina do chefe: ele para TODAS elas.
     protected void Golpeado()

@@ -63,6 +63,38 @@ Os controles abaixo são os de `Assets/Scripts/Nucleo/Controles.cs`. Teclado e c
 | Na pausa: ir direto para o mapa | **Q** | — |
 | Menus com mouse | passar o mouse escolhe, **clique** confirma, **botão direito** volta | — |
 
+### Coop local (até 4 jogadores)
+No mapa, aperte **T** (ou **Y / △** no controle, ou clique no botão **COOP** no canto de baixo à esquerda) para abrir a **Tripulação**.
+Cada jogador aperta **PULAR** no seu aparelho para entrar, na ordem (P1, P2, P3, P4), e a tecla do **balão** para sair. **Enter** fecha a tela.
+Sozinho, o jogo continua como sempre: o teclado inteiro e qualquer controle mexem o Grumete.
+
+| Aparelho | Andar | Pular | Porta | Empurrar | Balão (segure) |
+|---|---|---|---|---|---|
+| Teclado 1 | **A / D** | **W** ou **Espaço** | **S** | **E** | **Q** |
+| Teclado 2 | **← / →** | **↑** | **↓** | **Shift direito** | **Ctrl direito** |
+| Controle (até 4) | analógico ou direcional | **A / ✕** | direcional para baixo | **X / □** | **B / ◯** |
+
+Se só um jogador usa o teclado, ele fica com o teclado inteiro. As regras:
+- **A tela vai com quem corre na frente.** Juntos, ela fica no meio do grupo; espalhados, segue quem está puxando.
+  Quem fica para trás e sai da tela vira **balão** (não conta morte).
+- **Balão de resgate:** morreu com um companheiro ainda vivo? Você não volta para o checkpoint: volta pendurado num **balão de festa amarrado** nele (da cor do jogador), que vai boiando
+  até ficar em cima da cabeça do companheiro mais perto. Ele pula, encosta e **estoura**: você volta ao jogo ali, piscando por 1 s.
+  Dentro do balão, as teclas de andar empurram ele para os lados. A morte conta no total da tripulação.
+- **Todo mundo morto ou no balão:** a tripulação perdeu e volta inteira para o checkpoint (como a morte de um jogador só).
+- **Pulo na cabeça:** cair em cima do companheiro quica, sem limite (dá para ficar quicando nele).
+  Segurando PULAR, o pulo sai mais alto que o normal (dá para alcançar lugares novos).
+- **Empurrão:** joga para longe o companheiro que está na sua frente. Para ajudar... ou para a cilada.
+- **Balão de propósito:** segurar a tecla do balão por meio segundo (para quem ficou preso do lado errado de um buraco).
+- **O que é de todos e o que é de cada um:** as moedas e as poções de visão são da tripulação. Os **escudos, o elixir e o duplo salto
+  são de cada jogador**: na Loja, **TAB** (ou RB/LB, ou um clique no rostinho) escolhe para quem é a compra.
+- **Bandeira de morto e contagem de mortes por jogador:** cada um tem a sua bandeira (com o pano da cor dele), fincada na hora
+  em que morre, e ao lado do rostinho de cada um, no canto de baixo, aparecem as mortes dele e os itens dele.
+- **Chefes:** quando a luta começa e a arena fecha, quem ficou do lado de fora é puxado para dentro.
+  Na escuridão da Cozinheira (e da Baleia), cada Grumete tem o seu círculo de luz.
+- **R** reinicia todo mundo do checkpoint e conta uma morte só (que não entra na conta de nenhum jogador).
+- No fim da fase aparecem os **títulos da tripulação**: Salva-vidas (mais balões estourados), Mão-leve (mais moedas),
+  Âncora (mais mortes) e Traíra (mais empurrões).
+
 ### Menus
 - **Título:** Continuar (só se houver partida salva), Novo jogo, Opções, Como jogar, Conquistas, Créditos e Sair (o Sair não aparece no navegador).
 - **Pausa:** Continuar, Reiniciar fase (do começo, sem contar morte), Opções, Como jogar, Voltar ao mapa e Voltar ao título. O progresso fica salvo.
@@ -335,6 +367,16 @@ Ferramentas/     scripts de apoio (checador de fases, gerador das músicas em WA
 
 ### Jogador/
 - `Jogador.cs`: física com Rigidbody2D, pulo variável, *coyote time*, *buffer* de pulo, estica-e-achata e a inversão de controles.
+- `JogadorCoop.cs`: a outra metade do Grumete (classe parcial), só do coop: o balão de resgate, o pulo na cabeça do companheiro e o empurrão.
+
+### Coop (onde fica cada parte)
+- `Nucleo/Tripulacao.cs`: quem são os jogadores, o aparelho e as teclas de cada um, a tela da Tripulação e o placar da fase.
+- `Nucleo/GerenciadorCoop.cs`: a outra metade do `GerenciadorDoJogo` (classe parcial): cria um Grumete por jogador, escolhe quem "puxa"
+  a câmera, transforma em balão quem saiu da tela e dá os títulos do fim da fase. Também tem `JogadorMaisPerto` e `ProximoVivo`,
+  que as armadilhas e os chefes usam para olhar **todos** os Grumetes vivos (e não só o líder).
+- `Nucleo/InterfaceCoop.cs`: a outra metade da `Interface`: o botão e a tela da Tripulação, os rostinhos na fase e a caixa dos títulos.
+- `Assets/Editor/TesteDoCoop.cs`: o teste automático do coop (menu **Cilada (teste) > Testar coop**): cria controles de mentira e confere
+  o balão, a câmera, o pulo na cabeça, o empurrão e a volta para o save numa fase reta.
 
 ### Armadilhas/
 - `Perigo.cs`: a base ("encostou, morreu").

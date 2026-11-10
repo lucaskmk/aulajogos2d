@@ -38,7 +38,7 @@ public class Moeda : MonoBehaviour
 
         pega = true;
         GerenciadorDoJogo.Som("moeda");
-        GerenciadorDoJogo.Instancia.GanharMoeda(transform.position);
+        GerenciadorDoJogo.Instancia.GanharMoeda(transform.position, jogador);
         Destroy(gameObject);
     }
 }

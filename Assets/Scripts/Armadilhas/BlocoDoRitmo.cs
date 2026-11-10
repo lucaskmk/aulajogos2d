@@ -101,7 +101,7 @@ public class BlocoDoRitmo : MonoBehaviour
     // Os blocos do ritmo e os esmagadores do ritmo só fazem barulho e poeira perto do Grumete.
     public static bool PertoDoJogador(Vector3 posicao, float distancia = 13f)
     {
-        if (!GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return false;
+        if (!GerenciadorDoJogo.JogadorVivo(posicao, out Vector2 jogador)) return false;
         return Mathf.Abs(jogador.x - posicao.x) < distancia && Mathf.Abs(jogador.y - posicao.y) < 9f;
     }
 
@@ -231,13 +231,16 @@ public class BlocoDoRitmo : MonoBehaviour
     // A caixa do Grumete encosta (por dentro, não só na borda) na caixa deste bloco?
     bool JogadorDentro()
     {
-        if (!GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return false;
-        jogador.y += DesvioDoCorpo;
         const float folga = 0.04f; // em pé EM CIMA do bloco não conta como "dentro"
-        float distanciaX = Mathf.Abs(jogador.x - transform.position.x);
-        float distanciaY = Mathf.Abs(jogador.y - transform.position.y);
-        return distanciaX < largura / 2f + MeioCorpoDoJogador.x - folga
-            && distanciaY < 0.5f + MeioCorpoDoJogador.y - folga;
+        for (int i = 0; GerenciadorDoJogo.ProximoVivo(ref i, out Vector2 jogador);)
+        {
+            jogador.y += DesvioDoCorpo;
+            float distanciaX = Mathf.Abs(jogador.x - transform.position.x);
+            float distanciaY = Mathf.Abs(jogador.y - transform.position.y);
+            if (distanciaX < largura / 2f + MeioCorpoDoJogador.x - folga
+                && distanciaY < 0.5f + MeioCorpoDoJogador.y - folga) return true;
+        }
+        return false;
     }
 
     // Pedacinhos de luz saindo dos blocos: sobem quando acende, caem quando apaga.

@@ -62,7 +62,7 @@ public class Rato : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-        if (!GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return;
+        if (!GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 jogador)) return;
 
         float dx = jogador.x - transform.position.x;
         if (!acordado)

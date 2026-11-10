@@ -36,7 +36,7 @@ public class Serra : MonoBehaviour
         if (!ativa)
         {
             visual.Rotate(0f, 0f, -120f * Time.deltaTime);
-            if (GerenciadorDoJogo.JogadorVivo(out Vector2 jogador))
+            for (int i = 0; !ativa && GerenciadorDoJogo.ProximoVivo(ref i, out Vector2 jogador);)
             {
                 float dx = jogador.x - transform.position.x;
                 bool comecar = direcao > 0 ? dx > distanciaAtrasParaComecar : dx > -distanciaFrenteParaComecar;
@@ -50,7 +50,7 @@ public class Serra : MonoBehaviour
         }
 
         // Passou do jogador? Meia-volta!
-        if (voltas > 0 && GerenciadorDoJogo.JogadorVivo(out Vector2 alvo)
+        if (voltas > 0 && GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 alvo)
             && (transform.position.x - alvo.x) * direcao > distanciaParaVoltar)
         {
             direcao = -direcao;

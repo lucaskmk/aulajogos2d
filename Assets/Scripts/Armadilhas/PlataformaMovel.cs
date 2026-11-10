@@ -81,7 +81,8 @@ public class PlataformaMovel : MonoBehaviour
     bool freouAgora;
 
     Vector2 velocidadeAtual;   // quanto ela andou no último passo, por segundo (o Grumete herda isso quando sai)
-    Jogador jogadorEmCimaAntes;
+    // Quem está em pé em cima dela agora e quem estava no passo anterior (no coop pode ser mais de um).
+    readonly List<Jogador> emCima = new List<Jogador>(), emCimaAntes = new List<Jogador>();
     float afundado;            // a afundadinha quando o Grumete aterrissa (só no desenho)
     float aparecendo = 1f;     // 0 -> 1: animação de reaparecer (só no desenho)
     float timerDoBrilho;
@@ -160,13 +161,14 @@ public class PlataformaMovel : MonoBehaviour
     {
         if (!iniciada) return;
         float dt = Time.fixedDeltaTime;
-        Jogador jogador = JogadorEmCima();
+        AcharQuemEstaEmCima();
 
-        if (jogador != null && jogadorEmCimaAntes == null) Pisou();
+        if (emCima.Count > 0 && emCimaAntes.Count == 0) Pisou();
         // Saiu de cima (pulou, andou para fora, a plataforma caiu...)? Leva o embalo dela junto.
         // (no vai e volta isso quase não se nota; no disparo é o que faz ele voar para a frente)
-        if (jogador == null && jogadorEmCimaAntes != null && !jogadorEmCimaAntes.Morto)
-            jogadorEmCimaAntes.Corpo.linearVelocity += new Vector2(velocidadeAtual.x, 0f);
+        foreach (Jogador saiu in emCimaAntes)
+            if (saiu != null && !saiu.Morto && !emCima.Contains(saiu))
+                saiu.Corpo.linearVelocity += new Vector2(velocidadeAtual.x, 0f);
 
         Vector2 antes = posicao;
         switch (estado)
@@ -184,37 +186,43 @@ public class PlataformaMovel : MonoBehaviour
                 AvancarRelogio(dt);
                 EsperarParaReaparecer(dt);
                 break;
-            case Estado.Disparando: Disparar(dt, jogador); break;
+            case Estado.Disparando: Disparar(dt); break;
             case Estado.Parada: EsperarParaRecomecar(dt); break;
         }
         corpo.MovePosition(posicao);
 
         Vector2 deslocamento = posicao - antes;
         velocidadeAtual = deslocamento / dt;
-        if (jogador != null && estado != Estado.Caindo) jogador.Carregar(deslocamento);
-        jogadorEmCimaAntes = jogador;
+        if (estado != Estado.Caindo)
+            foreach (Jogador jogador in emCima) jogador.Carregar(deslocamento);
+        emCimaAntes.Clear();
+        emCimaAntes.AddRange(emCima);
 
         // Na freada o tranco já foi dado: não soma o embalo de novo quando ele sair voando.
         if (freouAgora)
         {
             freouAgora = false;
             velocidadeAtual = Vector2.zero;
-            jogadorEmCimaAntes = null;
+            emCimaAntes.Clear();
         }
     }
 
-    // O Grumete está em pé em cima de mim? (pela posição: os pés dele encostando no meu topo)
-    Jogador JogadorEmCima()
+    // Quais Grumetes estão em pé em cima de mim? (pela posição: os pés encostando no meu topo)
+    void AcharQuemEstaEmCima()
     {
-        if (colisor == null || !colisor.enabled || !GerenciadorDoJogo.JogadorVivo(out Vector2 _)) return null;
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
-        Vector2 p = jogador.Corpo.position;
-        float pes = p.y - 0.5f;          // a caixa do Grumete termina meio bloco abaixo do centro dele
+        emCima.Clear();
+        if (colisor == null || !colisor.enabled || !GerenciadorDoJogo.JogadorVivo(out Vector2 _)) return;
         float topo = posicao.y + 0.5f;
-        bool emCima = Mathf.Abs(pes - topo) < 0.12f
-                      && Mathf.Abs(p.x - posicao.x) < largura / 2f + 0.3f
-                      && jogador.Corpo.linearVelocity.y < 1f; // subindo num pulo não conta
-        return emCima ? jogador : null;
+        foreach (Jogador jogador in GerenciadorDoJogo.Jogadores)
+        {
+            if (jogador == null || jogador.Morto) continue;
+            Vector2 p = jogador.Corpo.position;
+            float pes = p.y - 0.5f;          // a caixa do Grumete termina meio bloco abaixo do centro dele
+            if (Mathf.Abs(pes - topo) < 0.12f
+                && Mathf.Abs(p.x - posicao.x) < largura / 2f + 0.3f
+                && jogador.Corpo.linearVelocity.y < 1f) // subindo num pulo não conta
+                emCima.Add(jogador);
+        }
     }
 
     void Pisou()
@@ -302,7 +310,7 @@ public class PlataformaMovel : MonoBehaviour
 
         // Não reaparece "dentro" do Grumete (se ele estiver bem ali no ar, espera ele sair).
         float x = XDoVaiEVolta();
-        if (GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)
+        if (GerenciadorDoJogo.JogadorVivo(new Vector2(x, origem.y), out Vector2 jogador)
             && Mathf.Abs(jogador.x - x) < largura / 2f + 0.45f && Mathf.Abs(jogador.y - origem.y) < 1.2f) return;
 
         estado = Estado.VaiEVolta;
@@ -327,7 +335,7 @@ public class PlataformaMovel : MonoBehaviour
         GerenciadorDoJogo.Som("mola");
     }
 
-    void Disparar(float dt, Jogador jogador)
+    void Disparar(float dt)
     {
         velocidadeDoDisparoAtual = Mathf.Min(velocidadeDoDisparoAtual + aceleracaoDoDisparo * dt, velocidadeDoDisparo);
         posicao.x += direcaoDoDisparo * velocidadeDoDisparoAtual * dt;
@@ -339,12 +347,12 @@ public class PlataformaMovel : MonoBehaviour
         if ((posicao.x - destinoDoDisparo) * direcaoDoDisparo >= 0f)
         {
             posicao.x = destinoDoDisparo;
-            Frear(jogador);
+            Frear();
         }
     }
 
     // Para DE REPENTE: barulhão, tremidinha na câmera e o Grumete (se estiver em cima) é jogado para a frente.
-    void Frear(Jogador jogador)
+    void Frear()
     {
         estado = Estado.Parada;
         timerDeEspera = descansoDepoisDoDisparo;
@@ -353,10 +361,12 @@ public class PlataformaMovel : MonoBehaviour
         CameraSeguir.Tremer(0.25f, 0.25f);
         Vector3 frente = (Vector3)posicao + new Vector3(direcaoDoDisparo * largura / 2f, 0.3f, 0f);
         Efeitos.Poeira(transform.parent, frente, 10, 3f);
-        if (jogador == null) return;
-        jogador.Quicar(pulinhoDoTranco, false);
-        jogador.Corpo.linearVelocity += new Vector2(direcaoDoDisparo * tranco, 0f);
-        Conquistas.Desbloquear("expressa"); // confiou e foi até o fim sem pular
+        foreach (Jogador jogador in emCima)
+        {
+            jogador.Quicar(pulinhoDoTranco, false);
+            jogador.Corpo.linearVelocity += new Vector2(direcaoDoDisparo * tranco, 0f);
+            Conquistas.Desbloquear("expressa"); // confiou e foi até o fim sem pular
+        }
     }
 
     // Depois do descanso, volta a ir e voltar a partir de onde parou (e a pegadinha arma de novo).

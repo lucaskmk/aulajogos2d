@@ -55,34 +55,46 @@ public class Porta : MonoBehaviour
     // Já dá para entrar de novo? (a Interface só mostra a dica quando pode)
     public static bool PodeEntrar => Time.time >= podeEntrarDepoisDe;
 
-    // O jogador está parado na frente desta porta?
-    public bool JogadorNaFrente()
+    // Tem um Grumete parado na frente desta porta? (a Interface mostra a dica)
+    public bool JogadorNaFrente() => QuemEstaNaFrente(apertando: false) != null;
+
+    // O Grumete parado na frente da porta (com apertando = true, só se ele apertou a tecla de entrar DELE).
+    Jogador QuemEstaNaFrente(bool apertando)
     {
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
-        if (jogador == null || jogador.Morto || !GerenciadorDoJogo.JogadorVivo(out Vector2 posicao)) return false;
-        Vector2 d = posicao - (Vector2)transform.position; // a posição da porta é o chão, embaixo dela
-        return Mathf.Abs(d.x) < 0.6f && d.y > 0f && d.y < 1.5f && jogador.NoChao;
+        for (int i = 0; GerenciadorDoJogo.ProximoVivo(ref i, out Vector2 posicao, out Jogador jogador);)
+        {
+            Vector2 d = posicao - (Vector2)transform.position; // a posição da porta é o chão, embaixo dela
+            if (Mathf.Abs(d.x) < 0.6f && d.y > 0f && d.y < 1.5f && jogador.NoChao
+                && (!apertando || jogador.Marujo.BaixoApertou())) return jogador;
+        }
+        return null;
     }
 
     void Update()
     {
         if (atravessando || destino == null || !PodeEntrar) return;
-        if (JogadorNaFrente() && Controles.BaixoApertou())
-            StartCoroutine(Atravessar(GerenciadorDoJogo.JogadorAtual));
+        Jogador jogador = QuemEstaNaFrente(apertando: true);
+        if (jogador != null) StartCoroutine(Atravessar(jogador));
     }
 
     IEnumerator Atravessar(Jogador jogador)
     {
         atravessando = true;
         podeEntrarDepoisDe = Time.time + 0.3f + Espera; // 0,3 s atravessando + a espera
-        jogador.Congelar(); // ninguém te mata dentro da porta
+        // coop: a tripulação inteira atravessa junto (senão os outros ficavam fora da tela)
+        var tripulacao = new System.Collections.Generic.List<Jogador>(GerenciadorDoJogo.Jogadores);
+        foreach (Jogador marujo in tripulacao) marujo.Congelar(); // ninguém te mata dentro da porta
         desenho.sprite = aberta;
         GerenciadorDoJogo.Som("porta");
         yield return new WaitForSeconds(0.3f);
 
         destino.Abrir();
-        jogador.Liberar();
-        jogador.Teletransportar(destino.transform.position + Vector3.up * 0.45f);
+        foreach (Jogador marujo in tripulacao)
+        {
+            if (marujo == null) continue;
+            marujo.Liberar();
+            marujo.Teletransportar(destino.transform.position + Vector3.up * 0.45f);
+        }
         CameraSeguir.Centralizar();
         Efeitos.Poeira(destino.transform.parent, destino.transform.position + Vector3.up * 0.5f, 6, 2f);
         Conquistas.Contar("portas", 20);

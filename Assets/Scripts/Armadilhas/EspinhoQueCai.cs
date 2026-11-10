@@ -21,13 +21,12 @@ public class EspinhoQueCai : MonoBehaviour
     {
         if (!caindo)
         {
-            if (GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)
-                && Mathf.Abs(jogador.x - transform.position.x) < alcance
-                && jogador.y < transform.position.y)
-            {
-                caindo = true;
-                GerenciadorDoJogo.Som("armadilha");
-            }
+            for (int i = 0; !caindo && GerenciadorDoJogo.ProximoVivo(ref i, out Vector2 jogador);)
+                if (Mathf.Abs(jogador.x - transform.position.x) < alcance && jogador.y < transform.position.y)
+                {
+                    caindo = true;
+                    GerenciadorDoJogo.Som("armadilha");
+                }
             return;
         }
 

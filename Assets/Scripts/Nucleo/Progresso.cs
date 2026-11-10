@@ -48,6 +48,10 @@ public static class Progresso
         (ChaveTempo, 'f'), (ChaveValida, 'i'), (ChaveMortesPorFase, 's'), (ChaveSecreta, 'i'), (ChaveQuantasFases, 'i'),
         (ChaveEscudos, 'i'), (ChaveElixires, 'i'), (ChavePuloDuplo, 'i'), (ChaveData, 's'), (ChaveDificil, 'i'), (ChaveEscolha, 'i'),
         (ChavePocoesDeEspinhos, 'i'), (ChavePocoesDoChao, 'i'),
+        // (coop: os itens dos jogadores 2, 3 e 4: veja SalvarItensDoJogador)
+        (ChaveEscudos + "_p2", 'i'), (ChaveElixires + "_p2", 'i'), (ChavePuloDuplo + "_p2", 'i'),
+        (ChaveEscudos + "_p3", 'i'), (ChaveElixires + "_p3", 'i'), (ChavePuloDuplo + "_p3", 'i'),
+        (ChaveEscudos + "_p4", 'i'), (ChaveElixires + "_p4", 'i'), (ChavePuloDuplo + "_p4", 'i'),
     };
 
     public const int TotalDeSlots = 3;
@@ -246,6 +250,20 @@ public static class Progresso
     public static bool PuloDuploSalvo => PlayerPrefs.GetInt(NoSlot(ChavePuloDuplo), 0) == 1;
     public static int PocoesDeEspinhosSalvas => PlayerPrefs.GetInt(NoSlot(ChavePocoesDeEspinhos), 0);
     public static int PocoesDoChaoSalvas => PlayerPrefs.GetInt(NoSlot(ChavePocoesDoChao), 0);
+
+    // Coop: os itens do jogador 2 em diante (jogador: 1 = P2...). Os do P1 são os de cima.
+    static string DoJogador(string chave, int jogador) => chave + "_p" + (jogador + 1);
+    public static int EscudosSalvosDe(int jogador) => PlayerPrefs.GetInt(NoSlot(DoJogador(ChaveEscudos, jogador)), 0);
+    public static int ElixiresSalvosDe(int jogador) => PlayerPrefs.GetInt(NoSlot(DoJogador(ChaveElixires, jogador)), 0);
+    public static bool PuloDuploSalvoDe(int jogador) => PlayerPrefs.GetInt(NoSlot(DoJogador(ChavePuloDuplo, jogador)), 0) == 1;
+
+    // (não chama o Save: quem chama é o SalvarItensDaLoja, logo antes ou logo depois)
+    public static void SalvarItensDoJogador(int jogador, int escudos, int elixires, bool puloDuplo)
+    {
+        PlayerPrefs.SetInt(NoSlot(DoJogador(ChaveEscudos, jogador)), escudos);
+        PlayerPrefs.SetInt(NoSlot(DoJogador(ChaveElixires, jogador)), elixires);
+        PlayerPrefs.SetInt(NoSlot(DoJogador(ChavePuloDuplo, jogador)), puloDuplo ? 1 : 0);
+    }
 
     public static void SalvarItensDaLoja(int escudos, int elixires, bool puloDuplo, int pocoesDeEspinhos, int pocoesDoChao)
     {

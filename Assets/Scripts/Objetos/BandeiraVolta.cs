@@ -26,7 +26,9 @@ public class BandeiraVolta : MonoBehaviour
 
         // volta para o último checkpoint (nas fases compridas, voltar para o começo de tudo seria maldade demais)
         Vector3? save = GerenciadorDoJogo.Instancia.PontoDeSave;
-        jogador.Teletransportar(save ?? GerenciadorDoJogo.Instancia.PosicaoInicial);
+        Vector3 destino = save ?? GerenciadorDoJogo.Instancia.PosicaoInicial;
+        jogador.Teletransportar(destino);
+        GerenciadorDoJogo.Instancia.LevarTripulacao(jogador, destino); // coop: volta todo mundo junto
         GerenciadorDoJogo.Som("risada");
         GerenciadorDoJogo.Instancia.Avisar(save.HasValue ? "VOLTA PRO CHECKPOINT! :)" : "VOLTA PRO COMEÇO! :)", 2.5f);
     }

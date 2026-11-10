@@ -57,7 +57,7 @@ public class Cano : MonoBehaviour
                 {
                     estado = Estado.Subindo;
                     timer = tempoSubindo;
-                    if (GerenciadorDoJogo.JogadorVivo(out Vector2 jogador) && Mathf.Abs(jogador.x - mao.position.x) < 10f)
+                    if (GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 jogador) && Mathf.Abs(jogador.x - mao.position.x) < 10f)
                         GerenciadorDoJogo.Som("armadilha", 0.5f);
                 }
                 break;

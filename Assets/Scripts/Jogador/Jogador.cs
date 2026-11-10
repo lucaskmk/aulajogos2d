@@ -8,7 +8,7 @@ using UnityEngine;
 //  - buffer de pulo: apertar pular um pouquinho antes de tocar o chão também funciona.
 // O desenho fica num objeto filho ("Visual") para poder esticar e achatar sem mexer no colisor.
 [RequireComponent(typeof(Rigidbody2D), typeof(BoxCollider2D))]
-public class Jogador : MonoBehaviour
+public partial class Jogador : MonoBehaviour
 {
     [Header("Movimento")]
     public float velocidade = 7f;
@@ -31,7 +31,10 @@ public class Jogador : MonoBehaviour
     [Tooltip("Depois que o escudo quebra, por quantos segundos nada te mata (fica piscando). Cair num buraco ainda mata.")]
     public float tempoInvencivel = 1.5f;
 
-    public bool Morto { get; private set; }
+    // Fora de combate: morrendo (a animação da morte) ou dentro do balão de resgate do coop (JogadorCoop.cs).
+    // Para o resto do jogo é a mesma coisa: nada acerta, nada reage a ele.
+    public bool Morto => morto || NaBolha;
+    bool morto;
     public bool NoChao { get; private set; }
     public Rigidbody2D Corpo { get; private set; }
 
@@ -111,22 +114,35 @@ public class Jogador : MonoBehaviour
         bolha = ConstrutorDeFase.Visual("Escudo", transform, transform.position, "bolha_escudo", 11, sombra: false).GetComponent<SpriteRenderer>();
         bolha.enabled = false;
         ultimoChao = transform.position;
+        marujo = Tripulacao.Do(0);
     }
 
     void Update()
     {
         AtualizarEscudo();
-        if (Morto || congelado || GerenciadorDoJogo.Pausado) return;
+        if (GerenciadorDoJogo.Pausado) return;
+        if (NaBolha)
+        {
+            AtualizarBalao();
+            return;
+        }
+        if (morto)
+        {
+            EsperarOBalao();
+            return;
+        }
+        if (congelado) return;
 
         AtualizarInversao();
-        entradaX = Controles.Horizontal() * (controlesInvertidos ? -1f : 1f);
-        segurandoPulo = Controles.PuloSegurando();
-        if (Controles.PuloApertou())
+        entradaX = marujo.Horizontal() * (controlesInvertidos ? -1f : 1f);
+        segurandoPulo = marujo.PuloSegurando();
+        if (marujo.PuloApertou())
         {
             timerBufferPulo = tempoBufferPulo;
             apertouPulo = true;
         }
         BrilharComOElixir();
+        AtualizarCoop();
 
         Animar();
     }
@@ -155,13 +171,15 @@ public class Jogador : MonoBehaviour
         timerBufferPulo -= dt;
 
         Vector2 v = Corpo.linearVelocity;
-        float vento = empurrao;
+        float vento = empurrao + impulsoDoEmpurrao; // (o empurrão do companheiro entra junto com o vento)
         empurrao = 0f;
+        impulsoDoEmpurrao = Mathf.MoveTowards(impulsoDoEmpurrao, 0f, 30f * dt);
+        velocidadeSuave = Mathf.Lerp(velocidadeSuave, v.x, 4f * dt);
         v.x = Mathf.MoveTowards(v.x, entradaX * velocidade + vento, aceleracao * dt);
         if (NoChao && entradaX != 0f) PassarPelaEmenda(ref v, vento);
 
         GerenciadorDoJogo jogo = GerenciadorDoJogo.Instancia;
-        bool comElixir = jogo != null && jogo.ElixirAtivo;
+        bool comElixir = jogo != null && jogo.ElixirAtivoDe(Indice);
         float forca = forcaDoPulo * (comElixir ? forcaDoElixir : 1f);
         if (timerBufferPulo > 0f && timerCoyote > 0f)
         {
@@ -177,7 +195,7 @@ public class Jogador : MonoBehaviour
 
         // DUPLO SALTO: apertou PULAR no ar (fora do coyote) e ainda não usou o segundo pulo neste voo.
         // Quase chegando no chão, o aperto fica guardado para o pulo normal (senão gastaria o do ar à toa).
-        else if (apertouPulo && !NoChao && timerCoyote <= 0f && !usouPuloDuplo && jogo != null && jogo.TemPuloDuplo && !QuaseNoChao(v.y))
+        else if (apertouPulo && !NoChao && timerCoyote <= 0f && !usouPuloDuplo && jogo != null && jogo.TemPuloDuploDe(Indice) && !QuaseNoChao(v.y))
         {
             v.y = forca * forcaDoPuloDuplo;
             usouPuloDuplo = true;
@@ -198,6 +216,7 @@ public class Jogador : MonoBehaviour
             pulando = false;
         }
         if (v.y <= 0f) pulando = false;
+        QuicarNoCompanheiro(ref v);
         if (v.y < -quedaMaxima) v.y = -quedaMaxima;
 
         Corpo.linearVelocity = v;
@@ -254,11 +273,13 @@ public class Jogador : MonoBehaviour
         int quantidade = Physics2D.OverlapBox(pes, new Vector2(0.6f, 0.1f), 0f, filtroSolido, encostados);
         for (int i = 0; i < quantidade; i++)
         {
-            Collider2D outro = encostados[i];
-            if (outro != colisor && !Inimigo.EhBicho(outro)) return true;
+            if (!NaoEhChao(encostados[i])) return true;
         }
         return false;
     }
+
+    // O próprio Grumete, os companheiros (no coop um atravessa o outro) e os bichos não servem de chão nem de parede.
+    bool NaoEhChao(Collider2D outro) => outro == colisor || Inimigo.EhBicho(outro) || outro.TryGetComponent<Jogador>(out _);
 
     void Animar()
     {
@@ -297,6 +318,7 @@ public class Jogador : MonoBehaviour
     public void Morrer(bool caiuNoBuraco = false, bool ignorarEscudo = false)
     {
         if (Morto || congelado || GerenciadorDoJogo.Pausado) return;
+        if (GerenciadorDoJogo.Instancia == null || GerenciadorDoJogo.Instancia.Estado != EstadoDoJogo.Jogando) return; // (a tripulação já perdeu ou já passou)
         if (!ignorarEscudo)
         {
             if (Invencivel) // o escudo acabou de quebrar: enquanto pisca, nada te mata
@@ -304,13 +326,13 @@ public class Jogador : MonoBehaviour
                 if (caiuNoBuraco) VoltarParaOChao();
                 return;
             }
-            if (GerenciadorDoJogo.Instancia != null && GerenciadorDoJogo.Instancia.UsarEscudo())
+            if (GerenciadorDoJogo.Instancia != null && GerenciadorDoJogo.Instancia.UsarEscudo(Indice))
             {
                 SalvoPeloEscudo(caiuNoBuraco);
                 return;
             }
         }
-        Morto = true;
+        morto = true;
         Reiniciou = ignorarEscudo;
 
         colisor.enabled = false;
@@ -328,7 +350,7 @@ public class Jogador : MonoBehaviour
             Corpo.linearVelocity = new Vector2(0f, 12f);
         }
 
-        GerenciadorDoJogo.Instancia.JogadorMorreu(caiuNoBuraco);
+        GerenciadorDoJogo.Instancia.JogadorMorreu(this, caiuNoBuraco);
     }
 
     // O escudo quebrou no lugar dele: um pulo para trás (ou de volta para o chão, se caiu num buraco)
@@ -389,7 +411,7 @@ public class Jogador : MonoBehaviour
     {
         if (timerInvencivel > 0f) timerInvencivel -= Time.deltaTime;
         GerenciadorDoJogo jogo = GerenciadorDoJogo.Instancia;
-        bool temEscudo = jogo != null && jogo.TemEscudo && !Morto;
+        bool temEscudo = jogo != null && jogo.TemEscudoDe(Indice) && !Morto;
         bolha.enabled = temEscudo;
         if (temEscudo)
         {
@@ -408,7 +430,7 @@ public class Jogador : MonoBehaviour
         Vector2 pes = (Vector2)transform.position + new Vector2(0f, -0.8f);
         int quantidade = Physics2D.OverlapBox(pes, new Vector2(0.6f, 0.6f), 0f, filtroSolido, encostados);
         for (int i = 0; i < quantidade; i++)
-            if (encostados[i] != colisor && !Inimigo.EhBicho(encostados[i])) return true;
+            if (!NaoEhChao(encostados[i])) return true;
         return false;
     }
 
@@ -439,7 +461,7 @@ public class Jogador : MonoBehaviour
     void BrilharComOElixir()
     {
         GerenciadorDoJogo jogo = GerenciadorDoJogo.Instancia;
-        if (jogo == null || !jogo.ElixirAtivo) return;
+        if (jogo == null || !jogo.ElixirAtivoDe(Indice)) return;
         timerBrilho -= Time.deltaTime;
         if (timerBrilho > 0f) return;
         timerBrilho = NoChao ? 0.3f : 0.08f; // no ar, um rastro mais forte
@@ -460,7 +482,7 @@ public class Jogador : MonoBehaviour
             ContactPoint2D c = contatos[i];
             Collider2D outro = c.collider == colisor ? c.otherCollider : c.collider;
             travado = Mathf.Abs(c.normal.x) > 0.7f && (c.point.x - Corpo.position.x) * direcao > 0.2f
-                      && c.point.y < pes + DegrauDaEmenda && !Inimigo.EhBicho(outro);
+                      && c.point.y < pes + DegrauDaEmenda && !NaoEhChao(outro);
         }
         if (!travado) return;
 
@@ -469,14 +491,14 @@ public class Jogador : MonoBehaviour
         var meioDoCorpo = new Vector2(frente, pes + DegrauDaEmenda + 0.38f);
         int noCorpo = Physics2D.OverlapBox(meioDoCorpo, new Vector2(0.08f, 0.72f), 0f, filtroSolido, encostados);
         for (int i = 0; i < noCorpo; i++)
-            if (encostados[i] != colisor && !Inimigo.EhBicho(encostados[i])) return;
+            if (!NaoEhChao(encostados[i])) return;
 
         // Acha o topo do que está na frente e sobe só o necessário.
         var deCima = new Vector2(frente, pes + DegrauDaEmenda + 0.02f);
         int abaixo = Physics2D.Raycast(deCima, Vector2.down, filtroSolido, acertos, DegrauDaEmenda + 0.08f);
         float topo = float.NegativeInfinity;
         for (int i = 0; i < abaixo; i++)
-            if (acertos[i].collider != colisor && !Inimigo.EhBicho(acertos[i].collider)) topo = Mathf.Max(topo, acertos[i].point.y);
+            if (!NaoEhChao(acertos[i].collider)) topo = Mathf.Max(topo, acertos[i].point.y);
         if (float.IsNegativeInfinity(topo) || topo > pes + DegrauDaEmenda) return;
 
         Corpo.position += Vector2.up * (Mathf.Max(topo - pes, 0f) + 0.015f);
@@ -495,7 +517,7 @@ public class Jogador : MonoBehaviour
             float menor = float.MaxValue;
             int quantos = Physics2D.Raycast(aqui, Vector2.down, filtroSolido, acertos, 14f);
             for (int i = 0; i < quantos; i++)
-                if (!Inimigo.EhBicho(acertos[i].collider)) menor = Mathf.Min(menor, acertos[i].distance);
+                if (!NaoEhChao(acertos[i].collider)) menor = Mathf.Min(menor, acertos[i].distance);
             if (menor < float.MaxValue) chao = aqui.y - menor;
         }
         return new Vector3(x, chao, 0f);
@@ -552,7 +574,7 @@ public class Jogador : MonoBehaviour
     public void Liberar()
     {
         congelado = false;
-        Corpo.simulated = true;
+        Corpo.simulated = !NaBolha; // (dentro do balão ele continua sem corpo)
         timerBufferPulo = 0f;
     }
 }
