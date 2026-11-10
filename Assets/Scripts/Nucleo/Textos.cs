@@ -150,6 +150,9 @@ public static class Textos
     public static readonly Fala ModoDeTeste =
         Louro("Modo de teste! Liberei o mapa inteiro, até o Kraken. Não conta pra ninguém. :3");
 
+    // Começou um jogo novo no modo tempestade pelo menu do título (aparece depois de zerar).
+    public static readonly Fala TempestadeDoMenu = Louro("MODO TEMPESTADE! As mesmas fases, com um tsunami atrás de você. E o ouro do tesouro pra gastar na Loja. Currupaco!");
+
     // As falas do F8 no mapa (liga e desliga o modo difícil).
     public static readonly Fala TesteTempestadeLigada = Louro("Modo de teste! Liguei a tempestade: um tsunami em cada fase. Currupaco!");
     public static readonly Fala TesteTempestadeDesligada = Louro("Modo de teste! Desliguei a tempestade. O mar acalmou. Por enquanto.");

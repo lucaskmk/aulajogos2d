@@ -129,6 +129,13 @@ Depois da fase 2, o mapa ganha o botão **LOJA** no canto de baixo à direita (o
 
 No meio da Loja fica a **roleta**: escolha quanto apostar (de 1 a 100) e a cor. Vermelho e preto pagam 2x, verde (uma casa só) paga 14x.
 
+### Jogos de habilidade (na Loja)
+Na Loja, a linha **Jogos de habilidade** abre os jogos do Louro. Aqui não tem sorte nem aposta: cada rodada gasta uma **ficha**
+(a partida começa com 3 e o Louro dá 2 a cada fase concluída, até 9) e o prêmio, em moedas, depende só de você.
+- **Pontaria:** ENTER solta o ponteiro e ENTER de novo para ele. No verde: 10 moedas. No amarelo: 4. Cada acerto seguido deixa ele mais rápido.
+- **Reflexo:** ENTER começa; espere o **JÁ!** e aperte ENTER o mais rápido que conseguir (até 0,30 s: 10 moedas; até 0,45 s: 4).
+- ESQUERDA/DIREITA trocam de jogo; ESC volta para a Loja.
+
 ### O final: devolver ou roubar
 Depois do Kraken, ao encostar no baú, você escolhe o que fazer com o tesouro:
 - **Devolver:** o Deus da Riqueza tira a maldição e o jogo termina, com os créditos. O slot continua, com o mapa todo aberto para buscar as medalhas (e vencer o Kraken de novo oferece a escolha de novo).

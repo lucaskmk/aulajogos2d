@@ -78,12 +78,21 @@ O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora �
 - **Mapa:** os navios no mar, a luz do farol, as palmeiras ao vento, o horizonte (mar com galeões e ilhas) e a névoa abrindo pelas pontes novas.
 - **Fundos das fases:** o galeão e as palmeiras no HD-2D e no Simples; se nada pontudo no fundo parece espinho.
 
+## Decisões para a Steam (10/11/2026)
+- **Online:** vai ser pelo **Remote Play Together** (o coop local serve do jeito que está; os convidados entram como controles a mais).
+  Não tem código de rede. Só dá para testar com o jogo já na Steam.
+- **Roleta:** fica. É aposta simulada: na Austrália isso dá classificação 18+ e o PEGI tem regra parecida. Responder com isso em mente
+  no questionário de conteúdo da Steam. Ao lado dela entraram os **jogos de habilidade** (Pontaria e Reflexo, com fichas, sem aposta).
+- **Duração:** em vez de fases novas, o que já existe ficou à vista (Modo Tempestade no menu depois de zerar, contador de medalhas
+  no título e no mapa e o "E agora?" na vitória).
+- **Nome do produto:** agora é `Cilada à Vista!` (a empresa ainda é `DefaultCompany`: trocar em Project Settings > Player).
+
 ## Publicar na Steam (o que falta)
 1. **Conta no Steamworks** (partner.steamgames.com): cadastro, dados fiscais e bancários e a taxa de US$ 100 por jogo (Steam Direct;
    não é devolvida, mas é descontada dos repasses depois de US$ 1.000 em vendas). A Valve leva alguns dias para aprovar a conta.
    Prazos: a página precisa ficar **pelo menos 2 semanas como "Em breve"** antes do lançamento, e a Valve pede cerca de 30 dias entre
    pagar a taxa e lançar (o painel do Steamworks mostra a data mais cedo possível).
-2. **Nome do produto e da empresa** no Unity (Project Settings > Player): hoje estão `Aulajogos2d_TESTE2` e `DefaultCompany`.
+2. **Nome da empresa** no Unity (Project Settings > Player): ainda é `DefaultCompany` (o do produto já é `Cilada à Vista!`).
    Trocar ANTES de lançar (muda a pasta do save: quem já jogou perde o save local).
 3. **Build de Windows** (File > Build Profiles > Windows, x86_64). O WebGL do itch não serve para a Steam.
    Testar o build em tela cheia, em 16:9 e 16:10, com controle de Xbox e de PlayStation.
