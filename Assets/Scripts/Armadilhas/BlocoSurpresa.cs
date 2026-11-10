@@ -62,7 +62,7 @@ public class BlocoSurpresa : MonoBehaviour
         else
         {
             GerenciadorDoJogo.Som("moeda");
-            GerenciadorDoJogo.Instancia.GanharMoeda(transform.position);
+            GerenciadorDoJogo.Instancia.GanharMoeda(transform.position, jogador);
             StartCoroutine(Efeitos.MoedaSaltando(transform.parent, transform.position + Vector3.up));
         }
     }

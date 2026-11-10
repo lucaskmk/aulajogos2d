@@ -132,7 +132,7 @@ public class FacasDaCozinheira : MonoBehaviour
         tempoEntreFacas = 2.4f;
         tempoDeAviso = 0.55f;
         alcanceHorizontal = 12f;
-        alcanceVertical = 7f;   // do alto ela também te vê
+        alcanceVertical = 9f;   // do alto ela também te vê (na Gruta ela fica 7 blocos acima do chão)
         anguloMaximo = 90f;     // e joga em qualquer ângulo (até reto para baixo)
     }
 
@@ -187,7 +187,7 @@ public class FacasDaCozinheira : MonoBehaviour
     // O Grumete está perto o bastante (e na altura certa) para ela atacar?
     bool JogadorNoAlcance(out Vector2 jogador)
     {
-        if (!GerenciadorDoJogo.JogadorVivo(out jogador)) return false;
+        if (!GerenciadorDoJogo.JogadorVivo(transform.position, out jogador)) return false;
         Vector2 d = jogador - (Vector2)transform.position;
         return Mathf.Abs(d.x) < alcanceHorizontal && Mathf.Abs(d.y) < alcanceVertical;
     }
@@ -198,11 +198,15 @@ public class FacasDaCozinheira : MonoBehaviour
     // Andando pelo chão, ele passa por ela sem pisar: os pés ficam bem abaixo do chapéu.
     bool PisaramNaCabeca(out Jogador jogador)
     {
-        jogador = GerenciadorDoJogo.JogadorAtual;
-        if (jogador == null || jogador.Morto || jogador.Corpo.linearVelocity.y > 0.5f) return false;
-        Vector2 pes = (Vector2)jogador.transform.position + Vector2.down * 0.43f; // (o colisor do Grumete tem 0,86 de altura)
         float topo = transform.position.y + TopoDaCabeca;
-        return Mathf.Abs(pes.x - transform.position.x) < 0.7f && pes.y > topo - 0.5f && pes.y < topo + 0.25f;
+        for (int i = 0; GerenciadorDoJogo.ProximoVivo(ref i, out Vector2 posicao, out jogador);)
+        {
+            if (jogador.Corpo.linearVelocity.y > 0.5f) continue;
+            Vector2 pes = posicao + Vector2.down * 0.43f; // (o colisor do Grumete tem 0,86 de altura)
+            if (Mathf.Abs(pes.x - transform.position.x) < 0.7f && pes.y > topo - 0.5f && pes.y < topo + 0.25f) return true;
+        }
+        jogador = null;
+        return false;
     }
 
     // Esmagada! O Grumete quica (como no caranguejo), as facas da mão somem e ela se desfaz no escuro.
@@ -412,7 +416,7 @@ public class FacasDaCozinheira : MonoBehaviour
             Particula.Criar(transform.parent, ponta, volta, Random.Range(0.15f, 0.3f), Random.Range(0.35f, 0.6f), CorDaFaisca);
         }
 
-        if (GerenciadorDoJogo.JogadorVivo(out Vector2 jogador))
+        if (GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 jogador))
         {
             float distancia = Vector2.Distance(jogador, ponta);
             if (distancia < 12f) GerenciadorDoJogo.Som("bloco", 0.5f);

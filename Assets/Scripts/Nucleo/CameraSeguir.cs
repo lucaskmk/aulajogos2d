@@ -2,6 +2,7 @@ using UnityEngine;
 
 // Câmera que segue o jogador na horizontal, sem mostrar nada fora da fase,
 // e que sabe "tremer" quando algo pesado cai.
+// No coop ela segue a tripulação: quem corre na frente leva a tela junto (e quem sai dela vira balão).
 //
 // Ela roda no LateUpdate: DEPOIS que o Grumete já andou neste quadro (o Rigidbody2D dele tem interpolação,
 // então a posição dele já está "lisa"). E com a tela pixelada (TelaPixelada), a posição final é
@@ -75,7 +76,9 @@ public class CameraSeguir : MonoBehaviour
     float PosicaoDesejada()
     {
         float meiaLargura = cam.orthographicSize * cam.aspect;
-        float x = alvo != null ? alvo.position.x + olharAFrente : 0f;
+        // coop: juntos, o meio do grupo; espalhados, quem está puxando a frente (GerenciadorDoJogo.FocoDaCamera)
+        float x = GerenciadorDoJogo.FocoDaCamera(out float foco) ? foco + olharAFrente
+            : alvo != null ? alvo.position.x + olharAFrente : 0f;
         if (limiteDireito - limiteEsquerdo <= meiaLargura * 2f) return (limiteEsquerdo + limiteDireito) / 2f;
         return Mathf.Clamp(x, limiteEsquerdo + meiaLargura, limiteDireito - meiaLargura);
     }

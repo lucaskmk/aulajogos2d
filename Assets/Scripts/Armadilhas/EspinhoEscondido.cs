@@ -33,11 +33,15 @@ public class EspinhoEscondido : MonoBehaviour
     void Update()
     {
         if (revelado != null) revelado.color = new Color(1f, 0.25f, 0.25f, 0.55f + 0.3f * Mathf.Sin(Time.time * 6f));
-        if (saiu || !GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return;
-
-        Vector2 d = jogador - (Vector2)transform.position;
-        if (Mathf.Abs(d.x) < distanciaParaSair && d.y > -0.3f && d.y < 1.5f)
-            StartCoroutine(Sair());
+        for (int i = 0; !saiu && GerenciadorDoJogo.ProximoVivo(ref i, out Vector2 jogador);)
+        {
+            Vector2 d = jogador - (Vector2)transform.position;
+            if (Mathf.Abs(d.x) < distanciaParaSair && d.y > -0.3f && d.y < 1.5f)
+            {
+                StartCoroutine(Sair());
+                return;
+            }
+        }
     }
 
     IEnumerator Sair()

@@ -222,8 +222,6 @@ public class BaleiaBranca : Chefe
         Animar();
         if (estrelas.Count > 0) GirarEstrelas();
         if (!TestarPisao()) TestarPerigos(); // pisou nas costas: neste quadro o corpo dela não machuca
-        if (escuridao != null && GerenciadorDoJogo.JogadorVivo(out Vector2 jogador))
-            escuridao.transform.position = jogador;
     }
 
     // Quando está "à toa", ela flutua lá no alto, balançando, sempre olhando para o Grumete.
@@ -261,6 +259,7 @@ public class BaleiaBranca : Chefe
         estado = Estado.Lutando;
         emCombate = true;
         FecharArena();
+        GerenciadorDoJogo.Instancia.PuxarParaAArena(esquerda, direita, PontoDeRenascer); // (coop: ninguém fica do lado de fora)
         CameraSeguir.Travar(esquerda - 1f, direita + 1f);
         GerenciadorDoJogo.Instancia.TocarMusicaDoChefe();
         GerenciadorDoJogo.Instancia.SalvarPonto(PontoDeRenascer); // morreu? renasce aqui, no começo da arena
@@ -512,7 +511,8 @@ public class BaleiaBranca : Chefe
         GerenciadorDoJogo.Instancia.Avisar("A NÉVOA ENGOLIU TUDO!", 2f);
         GerenciadorDoJogo.Som("rugido");
         escuridao = DesenhoFixo("Escuridao", "baleia_escuridao", baleia.position, OrdemDaEscuridao);
-        escuridao.transform.localScale = Vector3.one * 3.2f; // cobre a tela; o buraco em volta do Grumete tem ~3 blocos
+        // cobre a tela, com um buraco de uns 3 blocos em volta de CADA Grumete (veja EscuridaoDaTripulacao.cs)
+        EscuridaoDaTripulacao.Ligar(escuridao, 0.2f, 3f, 4.4f, new Color32(8, 4, 18, 255), 160);
         for (float t = 0f; t < 1f; t += Time.deltaTime)
         {
             escuridao.color = new Color(1f, 1f, 1f, t);
@@ -965,10 +965,10 @@ public class BaleiaBranca : Chefe
     bool TestarPisao()
     {
         if (!Vulneravel || estado != Estado.Atordoada) return false;
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
         CaixaNoMundo(CaixasDoCorpo[0], out Vector2 min, out Vector2 max);
         float costas = baleia.position.y + 0.55f * tamanho;
-        if (!PesNaCabeca(jogador, min.x - 0.2f, max.x + 0.2f, costas, abaixo: 0.5f)) return false;
+        Jogador jogador = QuemPisou(min.x - 0.2f, max.x + 0.2f, costas, abaixo: 0.5f);
+        if (jogador == null) return false;
         LevarGolpe(jogador);
         return true;
     }
@@ -1135,9 +1135,15 @@ public class BaleiaBranca : Chefe
         return zona;
     }
 
+    // (coop) os perigos do chefe valem para cada Grumete da tripulação
     void TestarPerigos()
     {
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
+        List<Jogador> todos = GerenciadorDoJogo.Jogadores;
+        for (int i = 0; i < todos.Count; i++) TestarPerigos(todos[i]);
+    }
+
+    void TestarPerigos(Jogador jogador)
+    {
         if (jogador == null || jogador.Morto || estado == Estado.Derrotada) return;
         Vector2 p = (Vector2)jogador.transform.position + new Vector2(0f, -0.02f); // centro da caixa dele
 

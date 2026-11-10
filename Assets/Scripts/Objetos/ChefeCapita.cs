@@ -308,6 +308,7 @@ public class ChefeCapita : Chefe
         estado = Estado.Lutando;
         emCombate = true;
         FecharArena();
+        GerenciadorDoJogo.Instancia.PuxarParaAArena(esquerda, direita, PontoDeRenascer); // (coop: ninguém fica do lado de fora)
         CameraSeguir.Travar(esquerda - 1f, direita + 1f);
         GerenciadorDoJogo.Instancia.TocarMusicaDoChefe();
         GerenciadorDoJogo.Instancia.SalvarPonto(PontoDeRenascer); // morreu? renasce aqui, no começo da arena
@@ -976,9 +977,9 @@ public class ChefeCapita : Chefe
     bool TestarPisao()
     {
         if (!Vulneravel || estado != Estado.Presa) return false;
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
         float cabeca = capita.position.y + TopoDaCabeca;
-        if (!PesNaCabeca(jogador, capita.position.x - 0.75f, capita.position.x + 0.75f, cabeca)) return false;
+        Jogador jogador = QuemPisou(capita.position.x - 0.75f, capita.position.x + 0.75f, cabeca);
+        if (jogador == null) return false;
         LevarGolpe(jogador);
         return true;
     }
@@ -1162,9 +1163,15 @@ public class ChefeCapita : Chefe
         return zona;
     }
 
+    // (coop) os perigos do chefe valem para cada Grumete da tripulação
     void TestarPerigos()
     {
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
+        List<Jogador> todos = GerenciadorDoJogo.Jogadores;
+        for (int i = 0; i < todos.Count; i++) TestarPerigos(todos[i]);
+    }
+
+    void TestarPerigos(Jogador jogador)
+    {
         if (jogador == null || jogador.Morto || estado == Estado.Derrotada) return;
         Vector2 p = (Vector2)jogador.transform.position + new Vector2(0f, -0.02f); // centro da caixa dele
 

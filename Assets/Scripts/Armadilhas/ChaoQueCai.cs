@@ -24,18 +24,18 @@ public class ChaoQueCai : MonoBehaviour
 
     void Update()
     {
-        if (caindo || !GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return;
-
-        foreach (Transform bloco in blocos)
-        {
-            float dx = Mathf.Abs(jogador.x - bloco.position.x);
-            float dy = jogador.y - bloco.position.y;
-            if (dx < 0.6f && dy > 0.4f && dy < 1.3f) // jogador em cima do bloco
+        if (caindo) return;
+        for (int i = 0; GerenciadorDoJogo.ProximoVivo(ref i, out Vector2 jogador);)
+            foreach (Transform bloco in blocos)
             {
-                StartCoroutine(Cair());
-                return;
+                float dx = Mathf.Abs(jogador.x - bloco.position.x);
+                float dy = jogador.y - bloco.position.y;
+                if (dx < 0.6f && dy > 0.4f && dy < 1.3f) // jogador em cima do bloco
+                {
+                    StartCoroutine(Cair());
+                    return;
+                }
             }
-        }
     }
 
     IEnumerator Cair()

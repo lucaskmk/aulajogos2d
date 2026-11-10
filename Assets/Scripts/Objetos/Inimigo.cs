@@ -62,7 +62,7 @@ public class Inimigo : MonoBehaviour
     // O jogador ficou para trás (e está perto, mais ou menos na mesma altura)?
     bool PassouDoJogador()
     {
-        if (!GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return false;
+        if (!GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 jogador)) return false;
         Vector2 diferenca = (Vector2)transform.position - jogador;
         return diferenca.x * direcao > distanciaParaVoltar
             && Mathf.Abs(diferenca.x) < alcanceDaPerseguicao

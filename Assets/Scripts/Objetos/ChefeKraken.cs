@@ -304,8 +304,8 @@ public class ChefeKraken : Chefe
     void FixedUpdate()
     {
         if (succao <= 0f || parado) return;
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
-        if (jogador != null && !jogador.Morto) jogador.Empurrar(succao);
+        foreach (Jogador jogador in GerenciadorDoJogo.Jogadores) // (coop: puxa a tripulação inteira)
+            if (jogador != null && !jogador.Morto) jogador.Empurrar(succao);
     }
 
     // O corpo boiando (e a cara certa), a aura da furiosa, a escuridão e os tentáculos.
@@ -393,6 +393,7 @@ public class ChefeKraken : Chefe
         estado = Estado.Lutando;
         emCombate = true;
         FecharArena();
+        GerenciadorDoJogo.Instancia.PuxarParaAArena(esquerda, direita, PontoDeRenascer); // (coop: ninguém fica do lado de fora)
         CameraSeguir.Travar(esquerda - 0.5f, direita + 5.2f); // a arena e ela, na poça
         GerenciadorDoJogo.Instancia.TocarMusicaDoChefe();
         GerenciadorDoJogo.Instancia.SalvarPonto(PontoDeRenascer); // morreu? renasce aqui, no começo da arena
@@ -968,15 +969,12 @@ public class ChefeKraken : Chefe
     // Racha a tábua em que o Grumete pisa (no convés podre), derruba as rachadas e traz de volta as que caíram.
     void AnimarConves()
     {
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
-        bool pisando = jogador != null && !jogador.Morto && jogador.NoChao;
-        Vector2 pes = jogador != null ? (Vector2)jogador.transform.position + Vector2.down * 0.48f : Vector2.zero;
         foreach (Tabua tabua in tabuas)
         {
             switch (tabua.estado)
             {
                 case EstadoDaTabua.Firme:
-                    if (convesPodre && pisando && Mathf.Abs(pes.x - tabua.x) < 0.8f && Mathf.Abs(pes.y - chao) < 0.2f)
+                    if (convesPodre && AlguemPisando(tabua.x))
                     {
                         tabua.estado = EstadoDaTabua.Rachando;
                         tabua.timer = RachaEm[etapa];
@@ -1002,6 +1000,18 @@ public class ChefeKraken : Chefe
                     break;
             }
         }
+    }
+
+    // Tem um Grumete em pé nesta tábua do convés? (no coop, qualquer um da tripulação racha a tábua)
+    bool AlguemPisando(float xDaTabua)
+    {
+        foreach (Jogador jogador in GerenciadorDoJogo.Jogadores)
+        {
+            if (jogador == null || jogador.Morto || !jogador.NoChao) continue;
+            Vector2 pes = (Vector2)jogador.transform.position + Vector2.down * 0.48f;
+            if (Mathf.Abs(pes.x - xDaTabua) < 0.8f && Mathf.Abs(pes.y - chao) < 0.2f) return true;
+        }
+        return false;
     }
 
     void VoltarTabua(Tabua tabua)
@@ -1236,8 +1246,8 @@ public class ChefeKraken : Chefe
     bool TestarPisao()
     {
         if (!Vulneravel || estado != Estado.Cansada) return false;
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
-        if (!PesNaCabeca(jogador, direita - 3.4f, direita - 0.2f, chao + AlturaDaCabeca)) return false;
+        Jogador jogador = QuemPisou(direita - 3.4f, direita - 0.2f, chao + AlturaDaCabeca);
+        if (jogador == null) return false;
         LevarGolpe(jogador);
         return true;
     }
@@ -1380,9 +1390,15 @@ public class ChefeKraken : Chefe
         return zona;
     }
 
+    // (coop) os perigos do chefe valem para cada Grumete da tripulação
     void TestarPerigos()
     {
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
+        List<Jogador> todos = GerenciadorDoJogo.Jogadores;
+        for (int i = 0; i < todos.Count; i++) TestarPerigos(todos[i]);
+    }
+
+    void TestarPerigos(Jogador jogador)
+    {
         if (jogador == null || jogador.Morto || estado == Estado.Derrotada) return;
         Vector2 p = (Vector2)jogador.transform.position + new Vector2(0f, -0.02f); // centro da caixa dele
 

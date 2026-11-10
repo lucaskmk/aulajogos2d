@@ -33,16 +33,18 @@ public class BlocoQueFoge : MonoBehaviour
 
     void Update()
     {
-        if (fugiu || !GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return;
-        if (GerenciadorDoJogo.JogadorAtual.NoChao) return; // só se assusta quando você pula
-
-        foreach (Transform bloco in blocos)
+        if (fugiu) return;
+        for (int i = 0; GerenciadorDoJogo.ProximoVivo(ref i, out Vector2 jogador, out Jogador quem);)
         {
-            Vector2 d = (Vector2)bloco.position - jogador;
-            if (Mathf.Abs(d.x) < distanciaParaFugir && Mathf.Abs(d.y) < 3f)
+            if (quem.NoChao) continue; // só se assusta quando você pula
+            foreach (Transform bloco in blocos)
             {
-                Fugir(Mathf.Sign(d.x));
-                return;
+                Vector2 d = (Vector2)bloco.position - jogador;
+                if (Mathf.Abs(d.x) < distanciaParaFugir && Mathf.Abs(d.y) < 3f)
+                {
+                    Fugir(Mathf.Sign(d.x));
+                    return;
+                }
             }
         }
     }

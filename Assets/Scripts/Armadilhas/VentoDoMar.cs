@@ -272,12 +272,19 @@ public class VentoDoMar : MonoBehaviour
 
     void FixedUpdate()
     {
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
-        bool vivo = GerenciadorDoJogo.JogadorVivo(out _);
         bool estavaDentro = jogadorDentro;
-        jogadorDentro = vivo && jogador != null && area.Contains(jogador.Corpo.position);
-        if (!jogadorDentro) return;
+        jogadorDentro = false;
+        // (no coop, o vento sopra cada Grumete que estiver dentro da zona)
+        for (int i = 0; GerenciadorDoJogo.ProximoVivo(ref i, out _, out Jogador jogador);)
+        {
+            if (!area.Contains(jogador.Corpo.position)) continue;
+            Soprar(jogador, estavaDentro || jogadorDentro);
+            jogadorDentro = true;
+        }
+    }
 
+    void Soprar(Jogador jogador, bool estavaDentro)
+    {
         Vector2 posicao = jogador.Corpo.position; // a posição da física (o desenho pode estar interpolado)
         if (tipo == Tipo.Rajada)
         {
@@ -340,7 +347,7 @@ public class VentoDoMar : MonoBehaviour
     // Distância na horizontal do jogador até a zona (0 = está em cima ou embaixo dela). Infinito se não tem jogador.
     float DistanciaAte(out Vector2 jogador)
     {
-        if (!GerenciadorDoJogo.JogadorVivo(out jogador)) return float.MaxValue;
+        if (!GerenciadorDoJogo.JogadorVivo(area.center, out jogador)) return float.MaxValue;
         return Mathf.Max(area.xMin - jogador.x, 0f, jogador.x - area.xMax);
     }
 

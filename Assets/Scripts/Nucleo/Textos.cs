@@ -280,6 +280,22 @@ public static class Textos
         },
         new PaginaDeAjuda
         {
+            titulo = "COOP (ATÉ 4 JOGADORES)",
+            linhas = new[]
+            {
+                new LinhaDeAjuda("TECLA T NO MAPA", "abre a Tripulação: cada um aperta PULAR no seu controle para entrar."),
+                new LinhaDeAjuda("TECLADO 1", "A/D anda, W ou ESPAÇO pula, S porta, E empurra, Q (segurando) chama o balão"),
+                new LinhaDeAjuda("TECLADO 2", "SETAS andam, CIMA pula, BAIXO porta, SHIFT dir. empurra, CTRL dir. chama o balão"),
+                new LinhaDeAjuda("CONTROLES 1 A 4", "direcional anda, A pula, BAIXO porta, X empurra, B (segurando) chama o balão"),
+                new LinhaDeAjuda("A TELA", "vai com quem corre na frente. Ficou para trás e saiu dela? Volta de balão."),
+                new LinhaDeAjuda("BALÃO", "morreu com um amigo vivo? Você volta pendurado num balão, boiando até ele. Ele pula e estoura."),
+                new LinhaDeAjuda("TODOS NO BALÃO", "aí a tripulação perdeu: volta todo mundo para o save."),
+                new LinhaDeAjuda("CABEÇA DO AMIGO", "cair em cima dele quica. Segurando PULAR, você sobe mais alto que no pulo normal."),
+                new LinhaDeAjuda("EMPURRÃO", "joga longe o amigo na sua frente. Para o bem ou para a cilada. :)"),
+            },
+        },
+        new PaginaDeAjuda
+        {
             titulo = "RECORDES E MEDALHAS",
             linhas = new[]
             {

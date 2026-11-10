@@ -247,8 +247,6 @@ public class ChefeCozinheira : Chefe
         AnimarOlhos();
         if (estrelas.Count > 0) GirarEstrelas();
         if (!TestarPisao()) TestarPerigos(); // pisou na cabeça: neste quadro nada machuca
-        if (escuridao != null && GerenciadorDoJogo.JogadorVivo(out Vector2 jogador))
-            escuridao.transform.position = jogador;
     }
 
     // ------------------------------------------------------------------ a luta
@@ -258,6 +256,7 @@ public class ChefeCozinheira : Chefe
         estado = Estado.Lutando;
         emCombate = true;
         FecharArena();
+        GerenciadorDoJogo.Instancia.PuxarParaAArena(esquerda, direita, PontoDeRenascer); // (coop: ninguém fica do lado de fora)
         CameraSeguir.Travar(esquerda - 1f, direita + 1f);
         GerenciadorDoJogo.Instancia.TocarMusicaDoChefe();
         GerenciadorDoJogo.Instancia.SalvarPonto(PontoDeRenascer); // morreu? renasce aqui, no começo da arena
@@ -479,14 +478,43 @@ public class ChefeCozinheira : Chefe
         yield return new WaitForSeconds(0.8f);
     }
 
-    // Etapa 3: um desenho preto do tamanho da tela com um buraco em volta do Grumete (o Update leva junto).
+    // Etapa 3: um desenho preto do tamanho da tela com um buraco de luz (uns 2 blocos de raio) em volta de CADA
+    // Grumete, os vivos e os do balão (veja EscuridaoDaTripulacao.cs: no coop, cada um enxerga onde pisa).
     void CriarEscuridao()
     {
         if (escuridao != null) return;
-        Vector3 lugar = GerenciadorDoJogo.JogadorVivo(out Vector2 jogador) ? (Vector3)jogador : transform.position;
-        escuridao = Desenho("Escuridao", "cozinheira_escuridao", lugar, OrdemDaEscuridao);
+        escuridao = Desenho("Escuridao", "cozinheira_escuridao", transform.position, OrdemDaEscuridao);
         escuridao.transform.SetParent(transform, true);
-        escuridao.transform.localScale = Vector3.one * 2.4f; // o buraco claro fica com uns 2 blocos de raio
+        EscuridaoDaTripulacao.Ligar(escuridao, 0.15f, 1.95f, 2.85f, new Color32(6, 2, 14, 255));
+    }
+
+    // ------------------------------------------------------------------ em quem ela mira e em que andar ele está
+
+    int vezDoAlvo;
+
+    // Cada ataque mirado escolhe um Grumete vivo, um de cada vez (sozinho, é sempre o mesmo): no coop ninguém
+    // fica de fora da mira só porque não é o líder.
+    Jogador ProximoAlvo()
+    {
+        List<Jogador> todos = GerenciadorDoJogo.Jogadores;
+        for (int k = 0; k < todos.Count; k++)
+        {
+            int i = (vezDoAlvo + k) % todos.Count;
+            if (todos[i] == null || todos[i].Morto) continue;
+            vezDoAlvo = (i + 1) % todos.Count;
+            return todos[i];
+        }
+        return null;
+    }
+
+    // O andar em que um Grumete está: o topo do degrau, se ele estiver em cima (ou pulando em cima) de um; senão, o chão.
+    // Os cortes e o bumerangue saem na altura do andar: em cima do degrau não é mais um lugar seguro.
+    float PisoDe(Vector2 grumete)
+    {
+        foreach (Rect degrau in degraus)
+            if (grumete.x > degrau.xMin - 0.3f && grumete.x < degrau.xMax + 0.3f && grumete.y - 0.5f > degrau.yMax - 0.3f)
+                return degrau.yMax;
+        return chao;
     }
 
     IEnumerator SerDerrotada()
@@ -544,8 +572,10 @@ public class ChefeCozinheira : Chefe
         while (true)
         {
             bool vivo = GerenciadorDoJogo.JogadorVivo(out Vector2 jogador); // (na pausa ele "não está vivo")
-            if (vivo && Vector2.Distance(jogador, lampiao.position) < RaioDoLampiao)
-                break;
+            bool acendeu = false; // (coop: qualquer um da tripulação acende o lampião)
+            for (int i = 0; !acendeu && GerenciadorDoJogo.ProximoVivo(ref i, out Vector2 quem);)
+                acendeu = Vector2.Distance(quem, lampiao.position) < RaioDoLampiao;
+            if (acendeu) break;
             proxima -= Time.deltaTime;
             if (vivo && proxima <= 0f && !arremessando)
             {
@@ -636,12 +666,11 @@ public class ChefeCozinheira : Chefe
     bool TestarPisao()
     {
         if (!Vulneravel || estado != Estado.Atordoada) return false;
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
         Vector3 base_ = corpo.transform.position;
         float meia = MeiaLarguraTonta + 0.2f;
-        bool acertou = PesNaCabeca(jogador, base_.x - meia, base_.x + meia, base_.y + AlturaDaCabecaTonta, abaixo: 0.5f);
-        if (acertou) LevarGolpe(jogador);
-        return acertou;
+        Jogador jogador = QuemPisou(base_.x - meia, base_.x + meia, base_.y + AlturaDaCabecaTonta, abaixo: 0.5f);
+        if (jogador != null) LevarGolpe(jogador);
+        return jogador != null;
     }
 
     void LevarGolpe(Jogador jogador)
@@ -711,7 +740,8 @@ public class ChefeCozinheira : Chefe
             facas.Add(FacasDaCozinheira.DesenharFaca(efeitos, olhos.position, OrdemDosAtaques, out _));
             linhas.Add(NovoAviso());
         }
-        GerenciadorDoJogo.JogadorVivo(out Vector2 alvo);
+        Jogador mirado = ProximoAlvo(); // (coop: cada arremesso mira num Grumete, um de cada vez)
+        Vector2 alvo = mirado != null ? (Vector2)mirado.transform.position : new Vector2(meio, chao + 0.5f);
         Vector2 origem = olhos.position;
         GerenciadorDoJogo.Som("pop", 0.6f);
 
@@ -720,7 +750,7 @@ public class ChefeCozinheira : Chefe
         for (float t = 0f; t < mira + trava; t += Time.deltaTime)
         {
             bool travou = t >= mira;
-            if (!travou && GerenciadorDoJogo.JogadorVivo(out Vector2 agora)) alvo = agora;
+            if (!travou && mirado != null && !mirado.Morto) alvo = mirado.transform.position;
             if (travou && !olhosVermelhos) GerenciadorDoJogo.Som("armadilha", 0.4f); // travou!
             olhosVermelhos = travou;
             for (int i = 0; i < quantas; i++)
@@ -840,23 +870,50 @@ public class ChefeCozinheira : Chefe
         olhosVermelhos = true;
         float aviso = alto ? Aviso + 0.1f : AvisoDePulo;
         LinhaDeAviso linha = NovoAviso();
+        // O mesmo corte passa também EM CIMA de cada degrau, na mesma altura a partir do piso dele: quem está lá em
+        // cima tem que pular (ou não pular) igual a quem está no chão. Senão, parado no degrau, nada pegava.
+        float alturaNoPiso = alto ? AlturaDoCorteAlto : AlturaDoCorteRente;
+        var linhasDosDegraus = new List<LinhaDeAviso>();
+        foreach (Rect degrau in degraus) linhasDosDegraus.Add(NovoAviso());
         var exclamacao = Desenho("Exclamacao", "aviso", new Vector3(xDeSaida, y + 1.1f, 0f), OrdemDosAvisos + 1);
         GerenciadorDoJogo.Som("armadilha", 0.5f);
         for (float t = 0f; t < aviso; t += Time.deltaTime)
         {
             bool aceso = Piscando(t, aviso);
             linha.Mostrar(new Vector2(esquerda, y), new Vector2(direita, y), aceso ? Vermelho : VermelhoFraco, 1f);
+            for (int i = 0; i < degraus.Count; i++)
+                linhasDosDegraus[i].Mostrar(PontaDoCorteNoDegrau(degraus[i], alturaNoPiso, false), PontaDoCorteNoDegrau(degraus[i], alturaNoPiso, true),
+                    aceso ? Vermelho : VermelhoFraco, 1f);
             exclamacao.enabled = aceso;
             yield return null;
         }
         linha.Apagar();
+        foreach (LinhaDeAviso linhaDoDegrau in linhasDosDegraus) linhaDoDegrau.Apagar();
         Destroy(exclamacao.gameObject);
         olhosVermelhos = false;
-        // o rastro que mata pega a arena inteira, de parede a parede
+        // o rastro que mata pega a arena inteira, de parede a parede (e os degraus, de ponta a ponta)
+        var cortesNosDegraus = new List<Zona>();
+        var rastrosNosDegraus = new List<LinhaDeAviso>();
+        foreach (Rect degrau in degraus)
+        {
+            Zona corte = NovaZona(raio);
+            corte.a = PontaDoCorteNoDegrau(degrau, alturaNoPiso, false);
+            corte.b = PontaDoCorteNoDegrau(degrau, alturaNoPiso, true);
+            cortesNosDegraus.Add(corte);
+            LinhaDeAviso rastro = NovoAviso("cozinheira_rastro", Color.white);
+            rastro.Mostrar(corte.a, corte.b, CorDoRastro, 1.2f);
+            rastrosNosDegraus.Add(rastro);
+        }
         Vector2 de = new Vector2(daEsquerda ? esquerda : direita, y), ate = new Vector2(daEsquerda ? direita : esquerda, y);
         yield return Golpe(de, ate, raio, alto);
+        foreach (Zona corte in cortesNosDegraus) zonas.Remove(corte);
+        foreach (LinhaDeAviso rastro in rastrosNosDegraus) rastro.Apagar();
         olhos.position = new Vector2(xDeChegada, y + 0.35f);
     }
+
+    // Uma ponta do corte que passa por cima de um degrau (um tiquinho além da beirada dele).
+    static Vector2 PontaDoCorteNoDegrau(Rect degrau, float alturaNoPiso, bool direitaDoDegrau) =>
+        new Vector2(direitaDoDegrau ? degrau.xMax + 0.3f : degrau.xMin - 0.3f, degrau.yMax + alturaNoPiso);
 
     // O golpe de faca em si: o rastro de luz de "de" até "ate" mata por DuracaoDoCorte segundos,
     // e o corpo dela aparece passando como um borrão.
@@ -871,7 +928,7 @@ public class ChefeCozinheira : Chefe
         float sentido = Mathf.Sign(ate.x - de.x);
         olhosAbertos = false;
         aberturaDosOlhos = 0f;
-        float alturaDoCorpo = alto ? de.y - 0.9f : chao;
+        float alturaDoCorpo = alto ? de.y - 0.9f : de.y - AlturaDoCorteRente; // (os pés dela no piso do corte: o chão ou um degrau)
         for (float t = 0f; t < DuracaoDoCorte; t += Time.deltaTime)
         {
             float p = Mathf.Clamp01(t / (DuracaoDoCorte * 0.6f)); // o corpo passa voando
@@ -895,7 +952,10 @@ public class ChefeCozinheira : Chefe
     IEnumerator Bumerangue(bool alta, bool daEsquerda)
     {
         Dica(alta ? "Faca ALTA! Fique no chão... ela VOLTA!" : "Faca no PÉ! Pule... e pule de novo: ela VOLTA!");
-        float y = chao + (alta ? AlturaDaFacaAlta : AlturaDaFacaRente);
+        // (a faca sai na altura do ANDAR de quem ela mirou: no chão ou em cima de um degrau)
+        Jogador mirado = ProximoAlvo();
+        float piso = mirado != null ? PisoDe(mirado.transform.position) : chao;
+        float y = piso + (alta ? AlturaDaFacaAlta : AlturaDaFacaRente);
         float sentido = daEsquerda ? 1f : -1f;
         Vector2 inicio = new Vector2(daEsquerda ? esquerda + 0.1f : direita - 0.1f, y);
         yield return MoverOlhos(inicio + new Vector2(0.3f * sentido, 0.45f), 0.3f);
@@ -979,10 +1039,13 @@ public class ChefeCozinheira : Chefe
         olhosAbertos = false;
         aberturaDosOlhos = 0f;
         yield return new WaitForSeconds(0.15f);
-        if (!GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) yield break;
+        Jogador mirado = ProximoAlvo(); // (coop: cada vez atrás de um)
+        if (mirado == null || !GerenciadorDoJogo.JogadorVivo(out _)) yield break;
+        Vector2 jogador = mirado.transform.position;
+        float piso = PisoDe(jogador); // (o corte sai no andar dele: no chão ou em cima do degrau)
 
         // "atrás" = do lado contrário de onde ele está indo; parado, do lado com mais espaço
-        float vx = GerenciadorDoJogo.JogadorAtual.Corpo.linearVelocity.x;
+        float vx = mirado.Corpo.linearVelocity.x;
         float lado = vx > 0.5f ? -1f : vx < -0.5f ? 1f : (jogador.x - esquerda > direita - jogador.x ? -1f : 1f);
         float x = jogador.x + lado * DistanciaDoAtras;
         if (x < esquerda + 0.6f || x > direita - 0.6f) // sem espaço atrás: aparece na frente
@@ -990,8 +1053,8 @@ public class ChefeCozinheira : Chefe
             lado = -lado;
             x = jogador.x + lado * DistanciaDoAtras;
         }
-        float y = chao + AlturaDoCorteRente;
-        olhos.position = new Vector2(x, chao + 1.1f);
+        float y = piso + AlturaDoCorteRente;
+        olhos.position = new Vector2(x, piso + 1.1f);
         olhosAbertos = true;
         aberturaDosOlhos = 1f;
         olhosVermelhos = true;
@@ -1009,7 +1072,7 @@ public class ChefeCozinheira : Chefe
         linha.Apagar();
         olhosVermelhos = false;
         yield return Golpe(de, ate, RaioDoCorteRente, false);
-        olhos.position = new Vector2(ate.x, chao + 1.1f);
+        olhos.position = new Vector2(ate.x, piso + 1.1f);
     }
 
     // ------------------------------------------------------------------ os olhos e o corpo
@@ -1259,9 +1322,15 @@ public class ChefeCozinheira : Chefe
         zona.b = centro + direcao * 0.45f;
     }
 
+    // (coop) os perigos do chefe valem para cada Grumete da tripulação
     void TestarPerigos()
     {
-        Jogador jogador = GerenciadorDoJogo.JogadorAtual;
+        List<Jogador> todos = GerenciadorDoJogo.Jogadores;
+        for (int i = 0; i < todos.Count; i++) TestarPerigos(todos[i]);
+    }
+
+    void TestarPerigos(Jogador jogador)
+    {
         if (jogador == null || jogador.Morto || estado == Estado.Derrotada) return;
         Vector2 p = (Vector2)jogador.transform.position + new Vector2(0f, -0.02f); // centro da caixa dele
         bool encostou = false;

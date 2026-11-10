@@ -37,7 +37,7 @@ public class Placa : MonoBehaviour
             visual.localPosition = Vector3.down * 0.5f;
             visual.localScale = new Vector3(1f, 1f + 0.03f * Mathf.Sin(Time.time * 2.5f), 1f);
         }
-        if (GerenciadorDoJogo.JogadorVivo(out Vector2 jogador))
+        if (GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 jogador))
             desenho.flipX = jogador.x > transform.position.x; // a cauda fica do lado oposto ao jogador
     }
 

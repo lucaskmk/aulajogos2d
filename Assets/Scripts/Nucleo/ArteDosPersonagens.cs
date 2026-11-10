@@ -40,6 +40,7 @@ public static class ArteDosPersonagens
         { 'X', new Color32(255, 248, 196, 255) }, // ouro (brilho)
         { 'U', new Color32(70, 124, 224, 255) },  // azul
         { 'u', new Color32(40, 72, 158, 255) },   // azul (sombra)
+        { '8', new Color32(150, 196, 255, 255) }, // azul (luz)
         { 'M', new Color32(168, 166, 186, 255) }, // cinza
         { 'm', new Color32(112, 110, 136, 255) }, // cinza (sombra)
         { 'Z', new Color32(216, 216, 230, 255) }, // cinza (luz)
@@ -109,6 +110,16 @@ public static class ArteDosPersonagens
         "...ktTTk.kTTtk..",
         "..kBBbk..kBBbk..",
     };
+
+    // Coop: o mesmo Grumete com a bandana de outra cor (P2 azul, P3 verde, P4 amarela).
+    // Só as 8 linhas de cima mudam (a bandana e as pontas do nó): a boca, que também é vermelha, fica como está.
+    static string[] ComBandana(string[] linhas, char cor, char sombra, char luz)
+    {
+        var novas = new string[linhas.Length];
+        for (int i = 0; i < linhas.Length; i++)
+            novas[i] = i < 8 ? linhas[i].Replace('R', cor).Replace('r', sombra).Replace('Q', luz) : linhas[i];
+        return novas;
+    }
 
     // ---------------------------------------------------------------- o Louro (16 x 16, olhando para a esquerda)
     // Papagaio verde com a testa clara, o bico amarelo curvo, o peito e a ponta da asa vermelhos e azuis.
@@ -826,6 +837,15 @@ public static class ArteDosPersonagens
         Vector2 centro = FabricaDeSprites.Centro, base_ = FabricaDeSprites.Base;
         FabricaDeSprites.Registrar("jogador", () => Desenhar(Grumete, centro));
         FabricaDeSprites.Registrar("jogador_andando", () => Desenhar(GrumeteAndando, centro));
+        // coop: os Grumetes dos outros jogadores (os nomes vêm de Tripulacao.Sprite)
+        (char cor, char sombra, char luz)[] bandanas = { ('U', 'u', '8'), ('G', 'g', 'L'), ('Y', 'y', 'X') };
+        for (int i = 0; i < bandanas.Length; i++)
+        {
+            var b = bandanas[i];
+            string nome = "jogador_" + (i + 2);
+            FabricaDeSprites.Registrar(nome, () => Desenhar(ComBandana(Grumete, b.cor, b.sombra, b.luz), centro));
+            FabricaDeSprites.Registrar(nome + "_andando", () => Desenhar(ComBandana(GrumeteAndando, b.cor, b.sombra, b.luz), centro));
+        }
         FabricaDeSprites.Registrar("louro", () => Desenhar(Louro, centro));
         FabricaDeSprites.Registrar("louro_grande", () => Desenhar(LouroGrande, centro));
         FabricaDeSprites.Registrar("inimigo", () => Desenhar(Caranguejo, centro));

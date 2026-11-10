@@ -43,7 +43,7 @@ public class BandeiraFujona : MonoBehaviour
 
     void Update()
     {
-        if (fugiu || !destino.HasValue || !GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return;
+        if (fugiu || !destino.HasValue || !GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 jogador)) return;
 
         Vector2 baseDaBandeira = transform.position + Vector3.up;
         if (Vector2.Distance(jogador, baseDaBandeira) < distanciaParaFugir)

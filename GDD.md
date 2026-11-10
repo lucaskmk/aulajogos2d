@@ -210,6 +210,34 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - A roleta sorteia o resultado e salva o saldo no começo do giro: fechar o jogo no meio não muda nada.
 - Os itens ficam na partida salva; um Novo jogo zera.
 
+### Coop local: a Tripulação (até 4 jogadores)
+- **Entrar e sair:** no mapa, a tecla T abre a tela da Tripulação; cada um aperta PULAR no seu aparelho (metade do teclado ou um controle).
+  Cada jogador tem uma bandana de cor diferente (vermelha, azul, verde, amarela) e uma etiqueta "P1...P4" em cima da cabeça.
+- **Câmera compartilhada:** juntos (até 4 blocos), ela fica no meio do grupo; espalhados (10 blocos ou mais), vai com quem puxa a frente.
+  O líder é um dos dois das pontas, e só muda quando o da outra ponta se afasta claramente mais rápido: parar na frente para esperar não perde a liderança.
+- **Balão de resgate:** quem morre com um companheiro vivo, ou fica mais de 0,6 s fora da tela, volta pendurado num **balão de festa amarrado** nele, da cor do jogador
+  (cheio e opaco, para não parecer a bolha azul do escudo; pendurado ele fica sem corpo: nada acerta, nada segura).
+  O balão boia a 3,2 blocos/s até 1,9 bloco acima do companheiro mais perto, que precisa pular para estourar. Sair do balão dá 1 s de invencibilidade.
+  A morte conta para o total; ficar para trás não. Todos mortos ou no balão = a tripulação volta para o checkpoint.
+- **Pulo na cabeça:** cair no companheiro quica (8), sem limite de vezes; segurando PULAR, o pulo sai com 115% da força normal
+  (uns 3,8 blocos em vez de 2,85).
+- **Empurrão:** joga o companheiro da frente para longe (11 blocos/s, perde a força em 0,4 s), com meio segundo de espera entre um e outro.
+- **Balão de propósito:** segurando a tecla por 0,45 s, se tiver alguém vivo para estourar.
+- **O que é da tripulação:** moedas, poções de visão, checkpoint e o contador geral de mortes. **De cada jogador:** os escudos, o elixir,
+  o duplo salto (na Loja, TAB escolhe para quem é a compra), a bandeira de morto (da cor dele) e a contagem de mortes dele.
+  A onda, o vento, as plataformas, as portas e os chefes valem para todos os Grumetes (a porta leva a tripulação inteira).
+- **Chefes no coop:** a arena puxa para dentro quem ficou de fora quando ela fecha; os ataques mirados escolhem um Grumete vivo de cada vez;
+  na escuridão (Cozinheira e Baleia) cada Grumete tem o seu círculo de luz.
+- **Títulos no fim da fase:** Salva-vidas, Mão-leve, Âncora e Traíra, para quem mais estourou balão, pegou moeda, morreu e empurrou.
+- **Por que assim:** o jogo é de decorar armadilhas; no coop, a morte de um vira informação para os outros sem parar a fase,
+  e o empurrão e o pulo na cabeça deixam os próprios jogadores armarem ciladas uns para os outros.
+
+### A Cozinheira depois do playtest em coop
+- **Sem lugar seguro em cima do degrau:** o corte (rente e alto) passa no chão **e** em cima dos dois degraus, na mesma altura a partir do piso;
+  o bumerangue e o "atrás de você" saem na altura do andar de quem ela mirou. Antes, parado no degrau, só a faca mirada e a chuva pegavam.
+- **Fase 7:** um ponto de save a mais, depois das três cozinheiras das sombras, e a cozinheira do leque 3 blocos mais alta
+  (as facas levam 0,3 s a mais para chegar).
+
 ### Recordes por fase e medalhas (rejogabilidade)
 - Cada fase guarda o **melhor tempo**, o **menor número de mortes** e o **maior número de moedas** (cada um por si).
   Valem para sempre: um Novo jogo não apaga.
