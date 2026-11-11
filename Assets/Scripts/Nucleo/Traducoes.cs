@@ -462,6 +462,10 @@ public static class Traducoes
           "after level 2: shields, super jump elixir, double jump, potions and the roulette." },
         { "RECORDES E MEDALHAS",
           "RECORDS AND MEDALS" },
+        { "Troca as teclas de andar, pular, reiniciar, Loja e coop.",
+          "Change the keys for walking, jumping, restarting, the Shop and co-op." },
+        { "encostou, você renasce ali. Ele é seu até o fim da fase.",
+          "touch it and you respawn there. It is yours until the end of the level." },
         { "MODO TEMPESTADE! As mesmas fases, com um tsunami atrás de você. E o ouro do tesouro pra gastar na Loja. Currupaco!",
           "STORM MODE! The same levels, with a tsunami chasing you. And the treasure gold to spend at the Shop. Squawk!" },
         { "COOP (ATÉ 4 JOGADORES)",
@@ -908,7 +912,7 @@ public static class Traducoes
           "Normal controls... for now." },
 
         // ---------------------------------------------------------------- Avisos de objetos (PontoDeSave.cs, BandeiraVolta.cs)
-        { "Ponto de save! (confia?)",
+        { "Ponto de save!",
           "Save point! (trust it?)" },
         { "Ponto de save! Suas moedas estão guardadas.",
           "Save point! Your coins are saved." },

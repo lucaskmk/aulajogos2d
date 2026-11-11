@@ -86,9 +86,9 @@ public class BlocoDoRitmo : MonoBehaviour
         if (!alguemPertoAntes) return;
 
         // Metrônomo: "tic" 0,35 s antes da troca, "tic" de novo na metade disso, e "TAC" na troca.
-        if (Cruzou(antes, relogio, TempoDoAviso)) GerenciadorDoJogo.Som("bloco", 0.18f);
-        else if (Cruzou(antes, relogio, TempoDoAviso / 2f)) GerenciadorDoJogo.Som("bloco", 0.18f);
-        else if (Cruzou(antes, relogio, 0f)) GerenciadorDoJogo.Som("bloco", 0.32f);
+        if (Cruzou(antes, relogio, TempoDoAviso)) GerenciadorDoJogo.Som("tic", 0.5f);
+        else if (Cruzou(antes, relogio, TempoDoAviso / 2f)) GerenciadorDoJogo.Som("tic", 0.5f);
+        else if (Cruzou(antes, relogio, 0f)) GerenciadorDoJogo.Som("tac", 0.6f);
     }
 
     // O relógio passou, neste quadro, pelo instante "falta 'antecedencia' segundos para trocar"?

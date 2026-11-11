@@ -78,7 +78,9 @@ using UnityEngine;
 //
 //  As placas (quem fala é o Louro) recebem os textos na ordem da esquerda para a direita.
 //
-//  MUDANÇAS (opcional, nenhuma fase usa agora): a fase pode MUDAR depois que você morre (estilo Level Devil).
+//  MUDANÇAS (três fases usam: a 2, a 5 e a 11): a fase pode MUDAR depois que você morre (estilo Level Devil).
+//  Regra da casa: a mudança só ACRESCENTA uma armadilha num lugar em que dá para desviar (o checador confere),
+//  nunca troca uma moeda de verdade (senão a medalha das moedas ficaria impossível).
 //  Cada item de "mudancas" é uma versão da fase usada nas tentativas seguintes,
 //  escrita como uma lista de trocas "coluna,linha,caractere" ('.' = vazio).
 //  Coluna e linha começam em 0 (linha 0 = topo). Na 1ª tentativa vale o mapa
@@ -148,6 +150,8 @@ public static class Fases
         new Fase
         {
             nome = "Confia em mim (e corre!)",
+            // morreu uma vez? Aparece um espinho escondido logo depois da segunda placa (pule: ele sai do chão quando você chega)
+            mudancas = new[] { new[] { "46,12,h" } },
             bioma = Bioma.Selva,
             corDoFundo = new Color32(245, 190, 120, 255),
             clima = Ambiente.Tipo.Folhas,
@@ -253,6 +257,8 @@ public static class Fases
         new Fase
         {
             nome = "Cadê a direita? (Foge, bloco!)",
+            // morreu uma vez? Aparece uma "moeda" a mais do lado das três primeiras... e essa morde
+            mudancas = new[] { new[] { "14,11,m" } },
             bioma = Bioma.Vila,
             velocidadeDaOnda = 4f, // (o trecho de controles invertidos)
             corDoFundo = new Color32(195, 165, 230, 255),
@@ -475,6 +481,8 @@ public static class Fases
         new Fase
         {
             nome = "O Tsunami (CORRE!)",
+            // morreu uma vez? Aparece um espinho escondido no trecho reto, um pouco antes dos dois espinhos de sempre (correndo da onda, pule)
+            mudancas = new[] { new[] { "43,12,h" } },
             bioma = Bioma.Praia,
             corDoFundo = new Color32(120, 140, 150, 255), // tempestade de dia: cinza-esverdeado
             clima = Ambiente.Tipo.Chuva,

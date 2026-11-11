@@ -233,7 +233,7 @@ public partial class Interface : MonoBehaviour
         DesenharDestaquesNoTitulo(h * 0.84f); // as medalhas do slot e o lembrete do coop
 
         // rodapé discreto com os controles básicos (a lista completa fica em "Como jogar")
-        Texto("A/D ou SETAS: andar    ESPAÇO/W: pular    R: reiniciar    ESC: pausa", w / 2f, h * 0.88f, 1.8f, 0.5f, CorDoRodape, w * 0.95f);
+        Texto(Dica("A/D ou SETAS: andar    ESPAÇO/W: pular    R: reiniciar    ESC: pausa"), w / 2f, h * 0.88f, 1.8f, 0.5f, CorDoRodape, w * 0.95f);
         Rodape("SETAS ou MOUSE: escolher    ENTER: confirmar    ESC: voltar");
     }
 
@@ -463,7 +463,7 @@ public partial class Interface : MonoBehaviour
         string comandos = mapa.Andando ? "..."
             : jogo.LojaLiberada ? "SETAS: andar     ENTER: jogar     L: loja     T: coop     ESC: título"
             : "SETAS: andar     ENTER: jogar     T: coop     ESC: título"; // a Loja só aparece depois da 2ª fase
-        Texto(comandos, w / 2f, h - 42f * escala, 2f, 0.5f, Branco, larguraDoMeio);
+        Texto(Dica(comandos), w / 2f, h - 42f * escala, 2f, 0.5f, Branco, larguraDoMeio);
     }
 
     // ------------------------------------------------------------------ loja
@@ -486,7 +486,7 @@ public partial class Interface : MonoBehaviour
         float lado = 40f * escala, pulo = Mathf.Round(Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 3f) * escala;
         GUI.DrawTexture(new Rect(botao.x + 18f * escala, botao.center.y - lado / 2f - pulo, lado * 8f / 14f, lado), FabricaDeSprites.Pegar("moeda").texture);
         Texto("LOJA", botao.x + 52f * escala, botao.y + 18f * escala, 3.6f, 0f, emCima || destaque ? Branco : CorDoLogo);
-        Texto("tecla L", botao.x + 54f * escala, botao.y + 58f * escala, 1.8f, 0f, CorDoRodape);
+        Texto(Dica("tecla L"), botao.x + 54f * escala, botao.y + 58f * escala, 1.8f, 0f, CorDoRodape);
     }
 
     // A Loja: o saldo lá em cima, os itens à esquerda, a ROLETA no meio e a aposta à direita.
@@ -883,6 +883,7 @@ public partial class Interface : MonoBehaviour
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         if (jogo.SubmenuAberto == GerenciadorDoJogo.Submenu.Opcoes) DesenharOpcoes();
+        else if (jogo.SubmenuAberto == GerenciadorDoJogo.Submenu.Teclas) DesenharTeclas();
         else if (jogo.SubmenuAberto == GerenciadorDoJogo.Submenu.Slots) DesenharSlots();
         else DesenharComoJogar();
     }
@@ -1044,6 +1045,7 @@ public partial class Interface : MonoBehaviour
         "HD-2D: fundo desfocado, luzes e névoa. Simples: mais leve.",
         "Liga ou desliga a tela cheia.",
         "Mostra o tempo da partida no canto da tela.",
+        "Troca as teclas de andar, pular, reiniciar, Loja e coop.",
         "Volta para o menu anterior. (as opções já ficam salvas)",
     };
 
@@ -1052,7 +1054,7 @@ public partial class Interface : MonoBehaviour
         float w = Screen.width, h = Screen.height;
         Texto("OPÇÕES", w / 2f, h * 0.08f, 7f, 0.5f, Lilas);
 
-        float passo = 50f * escala, y = h * 0.3f;
+        float passo = 46f * escala, y = h * 0.28f;
         for (int i = 0; i < GerenciadorDoJogo.TotalDasOpcoes; i++)
         {
             OpcaoDeMenu(TextoDaConfiguracao((GerenciadorDoJogo.ItemDasOpcoes)i), y, 3f, passo, i, i == jogo.OpcaoDasOpcoes);
@@ -1074,6 +1076,7 @@ public partial class Interface : MonoBehaviour
             case GerenciadorDoJogo.ItemDasOpcoes.Graficos: return Opcoes.GraficosHD2D ? "Gráficos: < HD-2D >" : "Gráficos: < Simples >";
             case GerenciadorDoJogo.ItemDasOpcoes.TelaCheia: return Opcoes.TelaCheia ? "Tela cheia: < Sim >" : "Tela cheia: < Não >";
             case GerenciadorDoJogo.ItemDasOpcoes.Cronometro: return Opcoes.MostrarTempo ? "Cronômetro: < Sim >" : "Cronômetro: < Não >";
+            case GerenciadorDoJogo.ItemDasOpcoes.Teclas: return Idioma.T("Teclas >", "Keys >");
             default: return "Voltar";
         }
     }
@@ -1115,7 +1118,29 @@ public partial class Interface : MonoBehaviour
     }
 
     // Linha de ajuda bem embaixo da tela, pequena e discreta.
-    void Rodape(string texto) => Texto(texto, Screen.width / 2f, Screen.height * 0.93f, 1.8f, 0.5f, CorDoRodape, Screen.width * 0.95f);
+    void Rodape(string texto) => Texto(Dica(texto), Screen.width / 2f, Screen.height * 0.93f, 1.8f, 0.5f, CorDoRodape, Screen.width * 0.95f);
+
+    // Uma dica de tecla ("ENTER: jogar", "tecla L"): com o jogador no CONTROLE, vira o botão dele ("A: jogar", "botão X").
+    // (traduz antes: as regras de DicasDoControle valem para o texto já no idioma da tela)
+    static string Dica(string texto)
+    {
+        if (Controles.UsandoControle) return DicasDoControle.Trocar(Idioma.Traduzir(texto));
+        if (!Teclas.Mudaram) return texto;
+        // o jogador trocou alguma tecla em Opções > Teclas: as dicas que citam a tecla mostram a nova
+        if (versaoDasDicas != Teclas.Versao || idiomaDasDicas != Idioma.Atual || dicasComTeclas.Count > 200)
+        {
+            dicasComTeclas.Clear();
+            versaoDasDicas = Teclas.Versao;
+            idiomaDasDicas = Idioma.Atual;
+        }
+        if (!dicasComTeclas.TryGetValue(texto, out string trocada))
+            dicasComTeclas[texto] = trocada = Teclas.TrocarNasDicas(Idioma.Traduzir(texto));
+        return trocada;
+    }
+
+    static readonly Dictionary<string, string> dicasComTeclas = new Dictionary<string, string>();
+    static int versaoDasDicas = -1;
+    static Idioma.Lingua idiomaDasDicas;
 
     void DesenharMorte()
     {
@@ -1126,7 +1151,7 @@ public partial class Interface : MonoBehaviour
             DesenharTextoEmPixel(FabricaDeSprites.TextoEmPixel("> CONTINUE", Color.white, Preto), w / 2f, h * 0.17f + 125f * escala, 36f * escala);
         Texto(jogo.Mensagem, w / 2f, h * 0.48f, 3.5f, 0.5f, Vermelho, w * 0.9f);
         if (jogo.PodePularMorte)
-            Texto("ESPAÇO: pular", w / 2f, h * 0.88f, 2f, 0.5f, Branco);
+            Texto(Dica("ESPAÇO: pular"), w / 2f, h * 0.88f, 2f, 0.5f, Branco);
     }
 
     // Fim da fase: o título, as 3 medalhas e, embaixo, o painel com os melhores tempos da fase.
@@ -1395,7 +1420,7 @@ public partial class Interface : MonoBehaviour
         Texto(Idioma.T("Título: ", "Title: ") + Idioma.Traduzir(GerenciadorDoJogo.Titulo(jogo.Mortes)), centro, h * 0.38f + 165f * escala, 3.5f, 0.5f, Verde, largura);
         DesenharOQueFalta(centro, h * 0.38f + 218f * escala, largura); // medalhas, modo tempestade, secreta e coop
         if (Time.unscaledTime % 1f < 0.65f)
-            Texto("Aperte ENTER para ver os créditos", centro, h * 0.9f, 2.6f, 0.5f, Branco, largura);
+            Texto(Dica("Aperte ENTER para ver os créditos"), centro, h * 0.9f, 2.6f, 0.5f, Branco, largura);
     }
 
     // ------------------------------------------------------------------ a história (cutscenes)
@@ -1443,7 +1468,7 @@ public partial class Interface : MonoBehaviour
         bool terminou = visiveis >= texto.Length;
         if (jogo.MostrandoOpcoes) DesenharOpcoesDaHistoria(caixa);
         if (terminou && Time.unscaledTime % 1f < 0.65f)
-            Texto(jogo.MostrandoOpcoes ? "SETAS ou MOUSE: escolher    ENTER: confirmar" : atual < quadros.Length - 1 ? "ENTER >" : "ENTER: continuar",
+            Texto(Dica(jogo.MostrandoOpcoes ? "SETAS ou MOUSE: escolher    ENTER: confirmar" : atual < quadros.Length - 1 ? "ENTER >" : "ENTER: continuar"),
                 caixa.xMax - m, caixa.yMax - m - 10f * escala, 1.8f, 1f, CorDoNome);
 
         // em que quadro está: um pontinho por quadro
@@ -1595,7 +1620,7 @@ public partial class Interface : MonoBehaviour
             Texto(linhas[i], xDoTexto, yDoTexto + (i * AlturaDaLinha - 3f) * pixel * escala, pixel, 0f, Branco);
 
         if (dica != null && Time.unscaledTime % 1f < 0.65f)
-            Texto(dica, caixa.xMax - m, caixa.yMax - m - 12f * escala, 1.8f, 1f, CorDoNome);
+            Texto(Dica(dica), caixa.xMax - m, caixa.yMax - m - 12f * escala, 1.8f, 1f, CorDoNome);
         GUI.color = antes;
         return altura;
     }
@@ -1649,7 +1674,7 @@ public partial class Interface : MonoBehaviour
             if (porta == null || !Porta.PodeEntrar || !porta.JogadorNaFrente()) continue;
             Vector3 tela = TelaPixelada.MundoParaTela(cam, porta.transform.position + Vector3.up * 2.3f);
             if (Time.unscaledTime % 0.8f < 0.55f)
-                Texto(Tripulacao.Coop ? "BAIXO: entrar" : "S: entrar", tela.x, Screen.height - tela.y - 30f * escala, 2.2f, 0.5f, Lilas);
+                Texto(Tripulacao.Coop ? "BAIXO: entrar" : Dica("S: entrar"), tela.x, Screen.height - tela.y - 30f * escala, 2.2f, 0.5f, Lilas);
         }
     }
 
@@ -1906,6 +1931,7 @@ public partial class Interface : MonoBehaviour
     // GerenciadorDoJogo como "botao" (GerenciadorDoJogo.BotaoVoltar...). O teclado tem as próprias teclas.
     void BotaoDeTexto(string texto, float x, float y, float pixel, float alinhamento, int botao)
     {
+        texto = Dica(texto); // ("Voltar (ESC)" vira "Voltar (B)" no controle)
         Rect medida = MedirTexto(texto, x, y, pixel, alinhamento, Screen.width * 0.9f);
         var area = new Rect(medida.x - 12f * escala, medida.y, medida.width + 24f * escala, medida.height);
         bool emCima = Mouse(area, botao, false);

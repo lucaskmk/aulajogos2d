@@ -273,7 +273,7 @@ public static class Textos
                 new LinhaDeAjuda("NADA É O QUE PARECE", "chão, moedas, nuvens... até a bandeira pode mentir."),
                 new LinhaDeAjuda("MORRER FAZ PARTE", "é a Volta da Maré: você volta e tenta de novo."),
                 new LinhaDeAjuda("O LOURO", "o papagaio dá dicas... não confie nelas. :)"),
-                new LinhaDeAjuda("CRISTAL DE SAVE", "encostou, você renasce ali. Às vezes ele muda de lugar."),
+                new LinhaDeAjuda("CRISTAL DE SAVE", "encostou, você renasce ali. Ele é seu até o fim da fase."),
                 new LinhaDeAjuda("CHEFES", "desvie e, quando ele ficar tonto, PULE NA CABEÇA dele!"),
                 new LinhaDeAjuda("ETAPAS DO CHEFE", "cada etapa vencida vale como checkpoint da luta."),
                 new LinhaDeAjuda("BARRA NO TOPO", "o quanto falta até a bandeira (a mais longe, hehe)."),

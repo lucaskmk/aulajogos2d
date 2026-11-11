@@ -786,7 +786,7 @@ public class ChefeKraken : Chefe
         for (float t = 0f; t < 3f && (x - limite) * sentido < 0f && !zona.pegou; t += Time.deltaTime)
         {
             // pulou por cima (ficou para trás da ponta)? Ele desiste e volta.
-            if (GerenciadorDoJogo.JogadorVivo(out Vector2 jogador) && (x - jogador.x) * sentido > 1f) break;
+            if (GerenciadorDoJogo.AlvoDoChefe(out Vector2 jogador) && (x - jogador.x) * sentido > 1f) break;
             x += sentido * VelocidadeDoAgarrao[etapa] * Time.deltaTime;
             tt.fim = new Vector2(x, altura + 0.08f * Mathf.Sin(t * 22f));
             zona.a = zona.b = tt.fim;
@@ -814,7 +814,7 @@ public class ChefeKraken : Chefe
     {
         Dica("Bolas de TINTA: saia das marcas no chão!", 1);
         float[] desvios = { 0f, -2.4f, 2.4f, -4.8f, 4.8f, -7.2f, 7.2f };
-        float jogadorX = GerenciadorDoJogo.JogadorVivo(out Vector2 jogador) ? jogador.x : (esquerda + direita) / 2f;
+        float jogadorX = GerenciadorDoJogo.AlvoDoChefe(out Vector2 jogador) ? jogador.x : (esquerda + direita) / 2f;
         var alvos = new float[quantas];
         var marcas = new SpriteRenderer[quantas];
         for (int i = 0; i < quantas; i++)

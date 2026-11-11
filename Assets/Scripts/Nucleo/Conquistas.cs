@@ -31,7 +31,6 @@ public static class Conquistas
         new Conquista("baleia", "Caçador de Baleias", "Derrotar a Baleia Branca."),
         new Conquista("portas", "Viajante das cabines", "Atravessar 20 portas do Navio Fantasma."),
         new Conquista("cabines", "Buuu!", "Encontrar a Dóris no Navio Fantasma."),
-        new Conquista("save_mudou", "Mudaram meu save!", "Ver o ponto de save mudar de lugar."),
         new Conquista("secreta", "Explorador", "Terminar a fase secreta."),
         new Conquista("expressa", "Passageiro da Expressa", "Ir até o fim na plataforma expressa sem pular."),
         new Conquista("cozinheira", "Picadinho", "Levar uma faca da Cozinheira."),
@@ -66,7 +65,7 @@ public static class Conquistas
         QuandoFoi = -100f;
     }
 
-    public static bool Tem(string id) => PlayerPrefs.GetInt(Prefixo + id, 0) == 1;
+    public static bool Tem(string id) => Guardado.GetInt(Prefixo + id, 0) == 1;
 
     public static int Quantidade
     {
@@ -78,6 +77,12 @@ public static class Conquistas
         }
     }
 
+    // Chamado toda vez que uma conquista é desbloqueada, com o id dela ("zerou", "primeira_morte"...).
+    // É aqui que as conquistas da Steam se ligam: com o Steamworks.NET instalado e o AppID do jogo, basta
+    //     Conquistas.AoDesbloquear += id => { SteamUserStats.SetAchievement(id); SteamUserStats.StoreStats(); };
+    // e cadastrar no Steamworks uma conquista com o mesmo id para cada item de "Todas".
+    public static event System.Action<string> AoDesbloquear;
+
     public static void Desbloquear(string id)
     {
         if (Tem(id)) return;
@@ -87,8 +92,9 @@ public static class Conquistas
             Debug.LogWarning("Conquista desconhecida: " + id);
             return;
         }
-        PlayerPrefs.SetInt(Prefixo + id, 1);
-        PlayerPrefs.Save();
+        Guardado.SetInt(Prefixo + id, 1);
+        Guardado.Save();
+        AoDesbloquear?.Invoke(id); // (o gancho da Steam: veja o comentário do AoDesbloquear)
         Recente = conquista;
         QuandoFoi = Time.unscaledTime;
         GerenciadorDoJogo.Som("conquista");
@@ -98,8 +104,8 @@ public static class Conquistas
     public static void Contar(string id, int meta)
     {
         if (Tem(id)) return;
-        int vezes = PlayerPrefs.GetInt(Prefixo + id + "_vezes", 0) + 1;
-        PlayerPrefs.SetInt(Prefixo + id + "_vezes", vezes);
+        int vezes = Guardado.GetInt(Prefixo + id + "_vezes", 0) + 1;
+        Guardado.SetInt(Prefixo + id + "_vezes", vezes);
         if (vezes >= meta) Desbloquear(id);
     }
 }

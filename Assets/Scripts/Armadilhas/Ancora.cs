@@ -197,7 +197,7 @@ public class Ancora : MonoBehaviour
     {
         estado = Estado.Avisando;
         timer = tempoDeAviso;
-        GerenciadorDoJogo.Som("armadilha");
+        GerenciadorDoJogo.Som("corrente", 0.9f); // a corrente range: ela ficou brava
         chifre.gameObject.SetActive(true); // a bandeirinha pirata sobe do eixo
         StartCoroutine(Efeitos.Pulinho(chifre, 0.3f, 0.2f));
     }
@@ -239,7 +239,7 @@ public class Ancora : MonoBehaviour
             Efeitos.Poeira(transform.parent, bola.position, 5, 2.5f);
             if (GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 jogador) && Vector2.Distance(jogador, bola.position) < 8f)
             {
-                GerenciadorDoJogo.Som("pancada", estado == Estado.Brava ? 0.45f : 0.25f);
+                GerenciadorDoJogo.Som("ancora", estado == Estado.Brava ? 0.6f : 0.35f);
                 if (estado == Estado.Brava) CameraSeguir.Tremer(0.06f, 0.1f);
             }
         }

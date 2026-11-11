@@ -33,7 +33,7 @@ public partial class Interface
             x += lado + 4f * escala;
         }
         Texto(Idioma.T("COOP", "CO-OP"), botao.x + 16f * escala, botao.y + 44f * escala, 2.6f, 0f, emCima ? Branco : CorDoLogo, botao.width - 32f * escala);
-        Texto(Idioma.T("tecla T", "T key"), botao.x + 16f * escala, botao.y + 70f * escala, 1.6f, 0f, CorDoRodape);
+        Texto(Dica(Idioma.T("tecla T", "T key")), botao.x + 16f * escala, botao.y + 70f * escala, 1.6f, 0f, CorDoRodape);
     }
 
     // ------------------------------------------------------------------ a tela da Tripulação
@@ -77,7 +77,7 @@ public partial class Interface
             {
                 Tripulacao.Marujo marujo = Tripulacao.Do(i);
                 Texto(marujo.Aparelho(), cartao.center.x, yTexto, 1.9f, 0.5f, Branco, largura - 24f * escala);
-                Texto(marujo.Teclas(), cartao.center.x, yTexto + 34f * escala, 1.5f, 0.5f, CorDoRodape, largura - 24f * escala);
+                Texto(marujo.TeclasDoAparelho(), cartao.center.x, yTexto + 34f * escala, 1.5f, 0.5f, CorDoRodape, largura - 24f * escala);
             }
             else if (i == dentro && Time.unscaledTime % 0.9f < 0.6f)
                 Texto(Idioma.T("aperte PULAR", "press JUMP"), cartao.center.x, yTexto + 10f * escala, 2f, 0.5f, Amarelo, largura - 24f * escala);
@@ -123,7 +123,7 @@ public partial class Interface
             if (escolhido) DesenharBorda(new Rect(area.x - 4f * escala, area.y - 4f * escala, lado + 8f * escala, lado + 8f * escala), CorDoJogador(i));
             xRosto += lado + 12f * escala;
         }
-        Texto(Tripulacao.Nome(jogo.Comprador) + Idioma.T("   (TAB troca)", "   (TAB switches)"), xRosto + 4f * escala, y + 10f * escala, 1.8f, 0f, CorDoJogador(jogo.Comprador));
+        Texto(Tripulacao.Nome(jogo.Comprador) + Dica(Idioma.T("   (TAB troca)", "   (TAB switches)")), xRosto + 4f * escala, y + 10f * escala, 1.8f, 0f, CorDoJogador(jogo.Comprador));
     }
 
     // ------------------------------------------------------------------ os rostinhos na fase

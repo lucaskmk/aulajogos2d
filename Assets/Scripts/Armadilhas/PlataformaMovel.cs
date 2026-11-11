@@ -228,7 +228,7 @@ public class PlataformaMovel : MonoBehaviour
     void Pisou()
     {
         afundado = 1f / FabricaDeSprites.PixelsPorUnidade; // afunda 1 pixel com o peso (só no desenho)
-        GerenciadorDoJogo.Som("bloco", 0.25f);
+        GerenciadorDoJogo.Som("madeira", 0.5f);
         if (tipo != Tipo.Normal && estado == Estado.VaiEVolta && contagem < 0f && !tremendo)
             contagem = esperaAntesDoTruque; // começou a contagem... e não para mais, nem se você sair
     }

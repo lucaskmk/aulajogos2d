@@ -29,7 +29,7 @@ a fase é uma captura do jogo rodando no editor da Unity.*
 4. [Os chefes](#os-chefes)
 5. [Atalhos de teste (para avaliação)](#atalhos-de-teste-para-avaliação)
 6. [Como abrir e rodar no Unity](#como-abrir-e-rodar-no-unity)
-7. [Como gerar o build WebGL (itch.io)](#como-gerar-o-build-webgl-itchio)
+7. [Como gerar o build de Windows (Steam)](#como-gerar-o-build-de-windows-steam) e [o build WebGL (itch.io)](#como-gerar-o-build-webgl-itchio)
 8. [Estrutura do código](#estrutura-do-código)
 9. [Créditos e referências](#créditos-e-referências)
 10. [Licença e aviso](#licença-e-aviso)
@@ -95,6 +95,11 @@ Se só um jogador usa o teclado, ele fica com o teclado inteiro. As regras:
 - No fim da fase aparecem os **títulos da tripulação**: Salva-vidas (mais balões estourados), Mão-leve (mais moedas),
   Âncora (mais mortes) e Traíra (mais empurrões).
 
+### Trocar as teclas
+Em **Opções > Teclas** dá para trocar as teclas de andar, pular (duas), entrar na porta, reiniciar, Loja, coop, empurrar e balão.
+Escolha a ação, aperte ENTER e depois a tecla nova (ESC cancela). Uma tecla que já está em uso troca de lugar com a outra ação.
+As setas, o Shift e o Ctrl da direita (o 2º jogador no teclado), ENTER e ESC não mudam. As dicas da tela passam a mostrar a tecla nova.
+
 ### Menus
 - **Título:** Continuar (só se houver partida salva), Novo jogo, Opções, Como jogar, Conquistas, Créditos e Sair (o Sair não aparece no navegador).
 - **Pausa:** Continuar, Reiniciar fase (do começo, sem contar morte), Opções, Como jogar, Voltar ao mapa e Voltar ao título. O progresso fica salvo.
@@ -113,7 +118,7 @@ Se só um jogador usa o teclado, ele fica com o teclado inteiro. As regras:
 - **Não confie no Louro.** As dicas do papagaio às vezes ajudam e às vezes mentem. ("Chão 100% seguro à frente.")
 - **Não confie em nada que pareça normal:** moedas, nuvens, bandeiras, blocos `?` e até o chão podem ser armadilha.
 - Olhe o **X vermelho** ("X marca o lugar!") das suas mortes recentes e a **bandeira de morto** fincada na última: em buraco ou chão falso, ela mostra onde o chão mente.
-- O **cristal de save** guarda o ponto onde você renasce... mas na **3ª morte** depois de pegá-lo ele "muda de lugar" e você volta para o checkpoint anterior (sempre na 3ª, dá para contar). Isso não acontece nas fases de chefe.
+- O **cristal de save** guarda o ponto onde você renasce. Pegou, é seu até o fim da fase: ele não muda mais de lugar.
 - Nos chefes, **todo ataque avisa antes** (linha vermelha, "!", marca no chão, olhos vermelhos) e os **padrões são fixos**: dá para decorar.
   Se morrer, você volta **na mesma etapa** da luta.
 - A partir da 3ª morte na mesma fase, a animação da morte fica mais curta. Ela também pode ser pulada.
@@ -264,7 +269,8 @@ Cada chefe tem **a sua própria música** de luta, e morrer não recomeça a mú
 
 ## Atalhos de teste (para avaliação)
 
-> Estes atalhos existem **para testes e para a avaliação da disciplina**. Eles não fazem parte da experiência normal.
+> Estes atalhos existem **para testes e para a avaliação da disciplina**. Eles não fazem parte da experiência normal:
+> só funcionam **no editor e no build de teste** (*Development Build*). No build publicado (o da Steam) eles não existem.
 
 | Tecla | Onde | O que faz |
 |---|---|---|
@@ -291,6 +297,20 @@ volte ao título e escolha **Novo jogo**.
    O jogo se monta sozinho por código: o `GerenciadorDoJogo` se cria ao dar Play, então não é preciso arrastar nada para a cena.
 5. No Console deve aparecer `[Cilada à Vista] visual v3 (HD-2D escuro) rodando...`.
    Se essa linha não aparecer, há um erro de compilação (mensagem vermelha) e a Unity está rodando a última versão que compilou.
+
+---
+
+## Como gerar o build de Windows (Steam)
+
+- No editor: menu **Cilada → Build Windows (Steam)**. O jogo sai em `Builds/Windows/CiladaAVista.exe` (a pasta `Builds` não entra no git).
+  O menu **Cilada → Build Windows de teste** gera em `Builds/WindowsDeTeste/` um build com os atalhos F7 a F10.
+- Pela linha de comando (com o editor fechado):
+  ```
+  Unity.exe -batchmode -quit -projectPath <pasta do projeto> -executeMethod Construir.WindowsPelaLinhaDeComando -logFile build.log
+  ```
+- Para a Steam vai a pasta `Builds/Windows` inteira (o `.exe`, a pasta `CiladaAVista_Data`, o `UnityPlayer.dll` e o `UnityCrashHandler64.exe`).
+- **Controle:** quando o jogador usa um controle, as dicas de tecla da tela viram os botões dele ("ENTER: jogar" vira "A: jogar";
+  veja `DicasDoControle.cs`). Vale o último aparelho usado.
 
 ---
 
@@ -344,13 +364,18 @@ Ferramentas/     scripts de apoio (checador de fases, gerador das músicas em WA
   e a névoa e a animação em `NevoaDoMapa.cs` e `VidaDoMapa.cs`.
 - `Interface.cs`: tudo o que é desenhado por cima do jogo (HUD, menus, pausa, morte, falas, barra do chefe, transições). Usa IMGUI e a fonte pixel própria.
 - `Controles.cs`: a leitura de teclado e controle (Input System).
-- `Progresso.cs`: o save em PlayerPrefs, com validação de versão. A partida (fase, mortes, moedas, tempo, itens da Loja, mortes por fase e secreta)
+- `Guardado.cs`: onde tudo é guardado. É um **arquivo** (`save.json` em `Application.persistentDataPath`; no Windows,
+  `AppData\LocalLow\<empresa>\<produto>`), com os mesmos nomes do PlayerPrefs. O save antigo, do registro, é trazido para o arquivo na
+  primeira leitura de cada chave. No navegador (WebGL) continua no PlayerPrefs. Com arquivo, a Steam sincroniza o save (Auto-Cloud).
+- `Teclas.cs`, `GerenciadorTeclas.cs` e `InterfaceTeclas.cs`: **Opções > Teclas**, para trocar as teclas de andar, pular, porta, reiniciar,
+  Loja, coop, empurrar e balão. As setas, ENTER e ESC não mudam (são dos menus e do 2º jogador no teclado).
+- `Progresso.cs`: o save da partida (usa o `Guardado`), com validação de versão. A partida (fase, mortes, moedas, tempo, itens da Loja, mortes por fase e secreta)
   fica em um de **3 slots** (`cilada_slot1_...`); o título tem "Continuar" (último slot usado), "Carregar jogo" e "Novo jogo" (a tela dos slots,
   com DEL ou a lixeira para apagar). Os recordes, as medalhas e os melhores tempos de cada fase (guardados pelo nome da fase) também são de cada slot;
   o recorde do título (zerar com menos mortes) e as conquistas valem para o jogo todo.
   O save de antes dos slots vira o Slot 1 sozinho na primeira vez.
 - `Medalhas.cs`: as 3 medalhas de cada fase (tempo, sem morrer, todas as moedas), o tempo-alvo e o desenho delas.
-- `Conquistas.cs`, `Opcoes.cs` e `Textos.cs`: as 31 conquistas, o volume e os gráficos, e as falas do mapa e os créditos.
+- `Conquistas.cs`, `Opcoes.cs` e `Textos.cs`: as 30 conquistas, o volume e os gráficos, e as falas do mapa e os créditos.
 - `Historia.cs`: a história contada em quadros (cutscenes): a abertura (num Novo jogo, antes do mapa), a escolha do baú (depois do Kraken) e os finais.
   O modo difícil é o `GerenciadorDoJogo.ModoDificil` (salvo no slot); `Fase.velocidadeDaOnda` ajusta o tsunami de cada fase e `Relampago.cs` faz os relâmpagos.
   As imagens (256 x 144) ficam em `Assets/Resources/Arte/historia/` e são desenhadas por `Ferramentas/historia/desenhar_historia.py`,

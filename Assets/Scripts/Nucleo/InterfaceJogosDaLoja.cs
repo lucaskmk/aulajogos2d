@@ -129,7 +129,7 @@ public partial class Interface
     // No título: as medalhas do último slot e o lembrete do coop, numa linha discreta embaixo do recorde.
     void DesenharDestaquesNoTitulo(float y)
     {
-        string coop = Idioma.T("Coop local até 4: tecla T no mapa", "Local co-op for up to 4: T key on the map");
+        string coop = Dica(Idioma.T("Coop local até 4: tecla T no mapa", "Local co-op for up to 4: T key on the map"));
         string texto = Progresso.TemJogoSalvo ? TextoDasMedalhas() + "      " + coop : coop;
         Texto(texto, Screen.width / 2f, y, 1.9f, 0.5f, Lilas, Screen.width * 0.95f);
     }

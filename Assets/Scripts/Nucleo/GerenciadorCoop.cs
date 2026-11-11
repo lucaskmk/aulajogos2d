@@ -136,6 +136,31 @@ public partial class GerenciadorDoJogo
         return false;
     }
 
+    [Tooltip("No coop, de quantos em quantos segundos os chefes trocam de alvo (um Grumete vivo de cada vez).")]
+    public float tempoDeCadaAlvo = 5f;
+
+    // Em quem os chefes miram. Sozinho, é o Grumete (igual ao JogadorVivo). No coop, um Grumete vivo de cada vez,
+    // trocando a cada "tempoDeCadaAlvo" segundos: ninguém fica fora da mira só porque não está puxando a frente.
+    public static bool AlvoDoChefe(out Vector2 posicao)
+    {
+        posicao = Vector2.zero;
+        GerenciadorDoJogo jogo = Instancia;
+        if (jogo == null || jogo.Estado != EstadoDoJogo.Jogando) return false;
+        int vivos = 0;
+        foreach (Jogador j in jogo.jogadores)
+            if (j != null && !j.Morto) vivos++;
+        if (vivos == 0) return false;
+        int vez = vivos == 1 ? 0 : (int)(Time.time / Mathf.Max(0.5f, jogo.tempoDeCadaAlvo)) % vivos;
+        foreach (Jogador j in jogo.jogadores)
+        {
+            if (j == null || j.Morto) continue;
+            if (vez-- > 0) continue;
+            posicao = j.transform.position;
+            return true;
+        }
+        return false;
+    }
+
     // Cria um Grumete para cada marujo da tripulação, todos no mesmo lugar (um atravessa o outro).
     void CriarTripulacao(Vector3 lugar, List<float> inversores)
     {

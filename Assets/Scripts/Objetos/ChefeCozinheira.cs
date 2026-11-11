@@ -768,7 +768,7 @@ public class ChefeCozinheira : Chefe
         foreach (LinhaDeAviso linha in linhas) linha.Apagar();
         olhosVermelhos = false;
 
-        GerenciadorDoJogo.Som("serra", 0.45f); // "ziiing"
+        GerenciadorDoJogo.Som("faca", 0.8f); // "ziiing"
         for (int i = 0; i < quantas; i++)
             Paralelo(Voar(facas[i], facas[i].transform.position, direcoes[i], VelocidadeDaFaca[etapa]));
         arremessando = false;
@@ -806,7 +806,7 @@ public class ChefeCozinheira : Chefe
         for (int i = 0; i < 5; i++)
             Particula.Criar(efeitos, ponta, -direcao * Random.Range(1.5f, 4f) + Random.insideUnitCircle * 2.5f,
                 Random.Range(0.15f, 0.3f), Random.Range(0.35f, 0.6f), FacasDaCozinheira.CorDaFaisca);
-        GerenciadorDoJogo.Som("bloco", 0.35f);
+        GerenciadorDoJogo.Som("crava", 0.45f);
         for (float t = 0f; t < 0.3f; t += Time.deltaTime)
         {
             faca.color = new Color(1f, 1f, 1f, 1f - t / 0.3f);
