@@ -27,14 +27,14 @@ public static class Opcoes
     {
         get
         {
-            if (cronometro < 0) cronometro = PlayerPrefs.GetInt(ChaveCronometro, 1);
+            if (cronometro < 0) cronometro = Guardado.GetInt(ChaveCronometro, 1);
             return cronometro == 1;
         }
         set
         {
             cronometro = value ? 1 : 0;
-            PlayerPrefs.SetInt(ChaveCronometro, cronometro);
-            PlayerPrefs.Save();
+            Guardado.SetInt(ChaveCronometro, cronometro);
+            Guardado.Save();
         }
     }
 
@@ -79,14 +79,14 @@ public static class Opcoes
     {
         get
         {
-            if (graficos < 0) graficos = PlayerPrefs.GetInt(ChaveGraficos, 1);
+            if (graficos < 0) graficos = Guardado.GetInt(ChaveGraficos, 1);
             return graficos == 1;
         }
         set
         {
             graficos = value ? 1 : 0;
-            PlayerPrefs.SetInt(ChaveGraficos, graficos);
-            PlayerPrefs.Save();
+            Guardado.SetInt(ChaveGraficos, graficos);
+            Guardado.Save();
         }
     }
 
@@ -94,14 +94,14 @@ public static class Opcoes
     {
         get
         {
-            if (musica < 0f) musica = PlayerPrefs.GetFloat(ChaveMusica, 0.8f);
+            if (musica < 0f) musica = Guardado.GetFloat(ChaveMusica, 0.8f);
             return musica;
         }
         set
         {
             musica = Mathf.Clamp01(value);
-            PlayerPrefs.SetFloat(ChaveMusica, musica);
-            PlayerPrefs.Save();
+            Guardado.SetFloat(ChaveMusica, musica);
+            Guardado.Save();
         }
     }
 
@@ -109,14 +109,14 @@ public static class Opcoes
     {
         get
         {
-            if (efeitos < 0f) efeitos = PlayerPrefs.GetFloat(ChaveEfeitos, 1f);
+            if (efeitos < 0f) efeitos = Guardado.GetFloat(ChaveEfeitos, 1f);
             return efeitos;
         }
         set
         {
             efeitos = Mathf.Clamp01(value);
-            PlayerPrefs.SetFloat(ChaveEfeitos, efeitos);
-            PlayerPrefs.Save();
+            Guardado.SetFloat(ChaveEfeitos, efeitos);
+            Guardado.Save();
         }
     }
 }

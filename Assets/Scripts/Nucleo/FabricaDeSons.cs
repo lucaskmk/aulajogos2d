@@ -22,7 +22,16 @@ public static class FabricaDeSons
             { "trovao", Ruido("trovao", 1.8f, 0.5f, 110) },                           // a tempestade do modo difícil
             { "serra", Varredura("serra", 900f, 1200f, 0.4f, 0.12f, true) },
             { "risada", Notas("risada", new[] { 620f, 0f, 560f, 0f, 500f, 0f, 440f }, new[] { 0.07f, 0.04f, 0.07f, 0.04f, 0.07f, 0.04f, 0.16f }, 0.18f) },
-            { "pop", Varredura("pop", 500f, 1100f, 0.07f, 0.2f, false) },             // rato se multiplicando
+            { "pop", Varredura("pop", 500f, 1100f, 0.07f, 0.2f, false) },
+            // --- os sons próprios das mecânicas (antes elas reaproveitavam "armadilha", "bloco", "serra" e "rugido") ---
+            { "corrente", Notas("corrente", new[] { 1480f, 0f, 1245f, 0f, 1480f, 0f, 1110f }, new[] { 0.035f, 0.02f, 0.035f, 0.02f, 0.035f, 0.02f, 0.06f }, 0.14f) }, // a corrente da âncora rangendo
+            { "ancora", Mistura("ancora", Varredura("a", 150f, 48f, 0.34f, 0.34f, false), Ruido("anc", 0.22f, 0.3f, 14)) },      // a âncora batendo no chão: grave e pesada
+            { "faca", Varredura("faca", 1700f, 3300f, 0.16f, 0.13f, false) },                                                     // a faca cortando o ar ("ziiing")
+            { "crava", Mistura("crava", Varredura("c", 420f, 130f, 0.09f, 0.3f, true), Ruido("cr", 0.07f, 0.22f, 3)) },           // a faca cravando na madeira ("tunk")
+            { "onda", Ruido("onda", 1.25f, 0.42f, 46) },                                                                           // o tsunami: um estrondo grave e comprido
+            { "tic", Varredura("tic", 1900f, 1750f, 0.035f, 0.16f, true) },                                                        // o relógio dos blocos do ritmo
+            { "tac", Varredura("tac", 880f, 620f, 0.07f, 0.26f, true) },                                                           // ...e a batida em que eles trocam
+            { "madeira", Mistura("madeira", Varredura("m", 210f, 120f, 0.1f, 0.26f, false), Ruido("md", 0.06f, 0.14f, 9)) },       // pisou na plataforma: a tábua range             // rato se multiplicando
             { "rugido", Varredura("rugido", 120f, 45f, 1.1f, 0.35f, true) },          // Baleia Branca
             { "porta", Varredura("porta", 320f, 140f, 0.3f, 0.2f, true) },            // porta da Dóris rangendo
             { "conquista", Notas("conquista", new[] { 784f, 988f, 1175f, 1568f }, new[] { 0.08f, 0.08f, 0.08f, 0.3f }, 0.16f) },
@@ -77,6 +86,19 @@ public static class FabricaDeSons
             float t = i / (float)total;
             dados[i] = valor * volume * (1f - t) * (1f - t);
         }
+        return Montar(nome, dados);
+    }
+
+    // Dois sons tocados juntos (um tom e um chiado, por exemplo), num clipe só.
+    static AudioClip Mistura(string nome, AudioClip um, AudioClip outro)
+    {
+        var a = new float[um.samples];
+        var b = new float[outro.samples];
+        um.GetData(a, 0);
+        outro.GetData(b, 0);
+        var dados = new float[Mathf.Max(a.Length, b.Length)];
+        for (int i = 0; i < dados.Length; i++)
+            dados[i] = Mathf.Clamp((i < a.Length ? a[i] : 0f) + (i < b.Length ? b[i] : 0f), -1f, 1f);
         return Montar(nome, dados);
     }
 

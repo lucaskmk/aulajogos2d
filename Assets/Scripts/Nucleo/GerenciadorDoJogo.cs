@@ -48,8 +48,6 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     public float tempoParaPularMorte = 0.5f;
     [Tooltip("Quantos X vermelhos ficam no lugar das últimas mortes.")]
     public int marcasDeMorte = 5;
-    [Tooltip("Com quantas mortes o ponto de save \"muda de lugar\" (volta para o anterior). Sempre o mesmo número: dá para contar.")]
-    public int mortesParaOSaveMudar = 3;
 
     [Header("Fases")]
     public float tempoAposConcluir = 2.2f;
@@ -201,7 +199,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     public int OpcaoDaPausa { get; private set; }
 
     // Submenus que abrem por cima do título ou da pausa.
-    public enum Submenu { Nenhum, Opcoes, ComoJogar, Slots }
+    public enum Submenu { Nenhum, Opcoes, ComoJogar, Slots, Teclas }
     public Submenu SubmenuAberto { get; private set; }
 
     // A tela dos SLOTS (do título): "Carregar jogo" (só os slots com partida) ou "Novo jogo" (qualquer slot;
@@ -292,7 +290,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     bool DeveMostrarTutorialDaLoja => LojaLiberada && !Progresso.TutorialDaLojaVisto;
 
     // Tela de opções (a ordem aqui é a ordem na tela). "Voltar" também é uma opção, para quem usa só o teclado.
-    public enum ItemDasOpcoes { Musica, Efeitos, Graficos, TelaCheia, Cronometro, Voltar }
+    public enum ItemDasOpcoes { Musica, Efeitos, Graficos, TelaCheia, Cronometro, Teclas, Voltar }
     public static readonly int TotalDasOpcoes = System.Enum.GetValues(typeof(ItemDasOpcoes)).Length;
     public int OpcaoDasOpcoes { get; private set; }
 
@@ -354,7 +352,6 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     }
     readonly List<SavePego> savesPegos = new List<SavePego>();
     readonly HashSet<Vector2Int> moedasPegas = new HashSet<Vector2Int>(); // as moedas pegas nesta tentativa (com as guardadas)
-    int mortesNoSave; // mortes desde que você pegou o ponto de save atual (na 3ª ele "muda de lugar")
 
     // Troca de tela com as sombras: primeiro cobre a tela, depois executa a troca.
     System.Action trocaPendente;
@@ -597,7 +594,6 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         faseDasMarcas = -1; // partida nova: apaga as marcas das mortes
         pontoDeSave = null;
         savesPegos.Clear();
-        mortesNoSave = 0;
         LimparFalas();
         System.Array.Clear(mortesPorFase, 0, mortesPorFase.Length);
         ModoDificil = Progresso.TemJogoSalvo && Progresso.ModoDificil; // (o título mostra o mapa do "Continuar")
@@ -629,7 +625,6 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         TempoNaFase = 0f;
         pontoDeSave = null;
         savesPegos.Clear();
-        mortesNoSave = 0;
         MoedasComOKraken = 0;
         KrakenRoubou = false;
         ChefeDerrotado = false;
@@ -666,6 +661,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
 
     void Update()
     {
+        Controles.NotarAparelho(); // teclado ou controle? (as dicas de tecla da tela acompanham)
         timerRenascer -= Time.deltaTime;
         timerEntrada -= Time.unscaledDeltaTime; // tempo real: a transição funciona até com o jogo pausado
         if (timerEntrada <= 0f && trocaPendente == null) TituloNaTransicao = false; // a fase já apareceu: some o nome
@@ -1124,6 +1120,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     void AtualizarSubmenu(int clique, int lado)
     {
         if (SubmenuAberto == Submenu.Opcoes) AtualizarOpcoes(clique, lado);
+        else if (SubmenuAberto == Submenu.Teclas) AtualizarTeclas(clique);
         else if (SubmenuAberto == Submenu.Slots) AtualizarSlots(clique);
         else AtualizarComoJogar(clique);
     }
@@ -1274,6 +1271,11 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         if (item == ItemDasOpcoes.Voltar)
         {
             if (confirmou || clique >= 0) FecharSubmenu();
+            return;
+        }
+        if (item == ItemDasOpcoes.Teclas) // abre a tela de trocar as teclas (GerenciadorTeclas.cs)
+        {
+            if (confirmou || clique >= 0) AbrirTeclas();
             return;
         }
         if (mudanca == 0 && !confirmou) return;
@@ -2141,23 +2143,12 @@ public partial class GerenciadorDoJogo : MonoBehaviour
             return;
         }
 
-        // Na 3ª morte desde que você pegou o ponto de save, ele "muda de lugar" e você volta para o checkpoint ANTERIOR
-        // (ou para o começo, se era o primeiro). :) Sempre na 3ª: nunca antes, nunca depois.
-        // (menos nas fases de chefe: lá o save da arena e a etapa da luta nunca se perdem; e no modo difícil, onde com a onda a 3ª morte vem rápido)
-        if (pontoDeSave.HasValue && Chefe == null) mortesNoSave++;
-        bool saveMudou = pontoDeSave.HasValue && Chefe == null && !ModoDificil && !Fases.Dados(FaseAtual).saveFiel && mortesNoSave >= mortesParaOSaveMudar;
-        if (saveMudou) // (e as moedas voltam a ser as que o checkpoint anterior guardou)
-        {
-            savesPegos.Remove(SaveAtual());
-            pontoDeSave = savesPegos.Count > 0 ? savesPegos[savesPegos.Count - 1].lugar : (Vector3?)null;
-            mortesNoSave = 0;
-            Conquistas.Desbloquear("save_mudou");
-        }
-
+        // (o ponto de save é FIXO: pegou, é seu até o fim da fase. A pegadinha antiga, em que ele "mudava de lugar"
+        //  na 3ª morte, foi tirada: o checkpoint não se perde mais.)
         Estado = EstadoDoJogo.Morreu;
         duracaoDaMorte = MortesNaFase >= mortesParaEncurtar ? tempoAposMorteCurta : tempoAposMorte;
         timerEstado = duracaoDaMorte;
-        Mensagem = saveMudou ? "O ponto de save mudou de lugar... :)" : EscolherMensagem();
+        Mensagem = EscolherMensagem();
         sonsDaMorte.Tocar(duracaoDaMorte);
         if (!caiuNoBuraco) CameraSeguir.Tremer(0.2f, 0.2f);
     }
@@ -2330,7 +2321,6 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         if (!EhPontoDeSave(lugar))
         {
             savesPegos.Add(new SavePego { lugar = lugar });
-            mortesNoSave = 0; // save novo: a contagem das 3 mortes recomeça
         }
         pontoDeSave = lugar;
         GuardarMoedasNoSave(); // as moedas de até agora ficam guardadas: morrer não perde mais elas

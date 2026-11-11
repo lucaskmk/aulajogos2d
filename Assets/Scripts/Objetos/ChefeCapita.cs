@@ -1046,7 +1046,7 @@ public class ChefeCapita : Chefe
     // Onde ela quer cair no salto: em cima do Grumete (sem sair da arena).
     float AlvoDoSalto()
     {
-        if (!GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) return capita.position.x;
+        if (!GerenciadorDoJogo.AlvoDoChefe(out Vector2 jogador)) return capita.position.x;
         return Mathf.Clamp(jogador.x, esquerda + 0.8f, direita - 0.8f);
     }
 
@@ -1056,9 +1056,9 @@ public class ChefeCapita : Chefe
     {
         float x = capita.position.x;
         float lado = Lado;
-        if (GerenciadorDoJogo.JogadorVivo(out Vector2 jogador) && Mathf.Abs(jogador.x - x) > 0.05f)
+        if (GerenciadorDoJogo.AlvoDoChefe(out Vector2 jogador) && Mathf.Abs(jogador.x - x) > 0.05f)
             lado = Mathf.Sign(jogador.x - x);
-        float distancia = GerenciadorDoJogo.JogadorVivo(out jogador) ? Mathf.Clamp(Mathf.Abs(jogador.x - x), 1.6f, 6f) : 2f;
+        float distancia = GerenciadorDoJogo.AlvoDoChefe(out jogador) ? Mathf.Clamp(Mathf.Abs(jogador.x - x), 1.6f, 6f) : 2f;
         float alvo = Mathf.Clamp(x + lado * distancia, esquerda + 0.6f, direita - 0.6f);
         if (Mathf.Abs(alvo - x) < 1.6f) alvo = x - lado * 1.6f; // sem espaço do lado da parede: cai do outro lado
         return alvo;
@@ -1117,7 +1117,7 @@ public class ChefeCapita : Chefe
 
     void OlharParaOJogador()
     {
-        if (GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) Olhar(jogador.x);
+        if (GerenciadorDoJogo.AlvoDoChefe(out Vector2 jogador)) Olhar(jogador.x);
     }
 
     static Vector2 Direcao(float graus) => new Vector2(Mathf.Cos(graus * Mathf.Deg2Rad), Mathf.Sin(graus * Mathf.Deg2Rad));

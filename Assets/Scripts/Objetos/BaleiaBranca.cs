@@ -230,7 +230,7 @@ public class BaleiaBranca : Chefe
         if (!livre || !desenho.enabled) return;
         Vector2 alvo = descanso + new Vector2(Mathf.Sin(relogio * 0.8f) * 1.5f, Mathf.Sin(relogio * 2.2f) * 0.3f);
         baleia.position = Vector2.MoveTowards(baleia.position, alvo, 9f * Time.deltaTime);
-        if (GerenciadorDoJogo.JogadorVivo(out Vector2 jogador)) Olhar(jogador.x);
+        if (GerenciadorDoJogo.AlvoDoChefe(out Vector2 jogador)) Olhar(jogador.x);
     }
 
     // Escolhe o desenho (rabo batendo ou uma pose), pisca depois de apanhar e posiciona o olho e o chifre.
@@ -765,7 +765,7 @@ public class BaleiaBranca : Chefe
     {
         Dica("Raio do chifre! NÃO FIQUE PARADO!");
         livre = false;
-        GerenciadorDoJogo.JogadorVivo(out Vector2 jogador);
+        GerenciadorDoJogo.AlvoDoChefe(out Vector2 jogador);
         Vector2 canto = new Vector2(jogador.x < meio ? direita - 3.5f : esquerda + 3.5f, chao + 8.5f);
         if (!desenho.enabled)
         {
@@ -785,7 +785,7 @@ public class BaleiaBranca : Chefe
             for (float t = 0f; t < mirando + trava; t += Time.deltaTime)
             {
                 bool travou = t >= mirando;
-                if (!travou && GerenciadorDoJogo.JogadorVivo(out Vector2 agora))
+                if (!travou && GerenciadorDoJogo.AlvoDoChefe(out Vector2 agora))
                 {
                     alvo = agora;
                     Olhar(alvo.x);
@@ -813,7 +813,7 @@ public class BaleiaBranca : Chefe
             zonas.Remove(zona);
             Destroy(raio.gameObject);
             yield return new WaitForSeconds(0.12f);
-            GerenciadorDoJogo.JogadorVivo(out jogador);
+            GerenciadorDoJogo.AlvoDoChefe(out jogador);
         }
         poseFixa = null;
         livre = true;
@@ -877,7 +877,7 @@ public class BaleiaBranca : Chefe
 
         // ela nunca cai colada na parede: assim os cantinhos da arena são SEMPRE seguros no mergulho
         float minimo = esquerda + 3.7f, maximo = direita - 3.7f;
-        float x = GerenciadorDoJogo.JogadorVivo(out Vector2 jogador) ? Mathf.Clamp(jogador.x, minimo, maximo) : meio;
+        float x = GerenciadorDoJogo.AlvoDoChefe(out Vector2 jogador) ? Mathf.Clamp(jogador.x, minimo, maximo) : meio;
         var marca = Desenho("MarcaDoMergulho", "baleia_alvo", new Vector3(x, chao + 0.15f, 0f), OrdemDosAvisos);
         marca.transform.localScale = new Vector3(3f, 1.3f, 1f);
         var bordas = new[] // duas linhas mostrando a largura dela: fique FORA delas
@@ -889,7 +889,7 @@ public class BaleiaBranca : Chefe
         for (float t = 0f; t < seguir + TravaDoMergulho; t += Time.deltaTime)
         {
             bool travou = t >= seguir;
-            if (!travou && GerenciadorDoJogo.JogadorVivo(out jogador))
+            if (!travou && GerenciadorDoJogo.AlvoDoChefe(out jogador))
                 x = Mathf.MoveTowards(x, Mathf.Clamp(jogador.x, minimo, maximo), 8f * Time.deltaTime);
             Color cor = !travou ? Lilas : Piscando(t - seguir, TravaDoMergulho) ? Vermelho : VermelhoFraco;
             marca.transform.position = new Vector3(x, chao + 0.15f, 0f);

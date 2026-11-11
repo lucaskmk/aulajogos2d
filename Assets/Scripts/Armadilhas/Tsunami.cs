@@ -278,7 +278,7 @@ public class Tsunami : MonoBehaviour
         estado = Estado.Acordando;
         timer = tempoAcordando;
         GerenciadorDoJogo.Som("risada");
-        GerenciadorDoJogo.Som("rugido", 0.45f);
+        GerenciadorDoJogo.Som("onda", 0.7f);
         CameraSeguir.Tremer(0.25f, 0.5f);
         if (GerenciadorDoJogo.Instancia.MortesNaFase < 3) GerenciadorDoJogo.Instancia.Avisar("CORRE!", 1.2f);
         // um "estouro" de espuma e todos os jatos se esticam de uma vez
@@ -327,7 +327,7 @@ public class Tsunami : MonoBehaviour
         jogador.Morrer();
         if (!jogador.Morto) return;
         Conquistas.Desbloquear("mare_negra");
-        GerenciadorDoJogo.Som("rugido", 0.6f);
+        GerenciadorDoJogo.Som("onda", 0.9f);
         CameraSeguir.Tremer(0.3f, 0.35f);
         foreach (Mao mao in maos)
         {
@@ -557,7 +557,7 @@ public class Tsunami : MonoBehaviour
         if (timerRuido <= 0f)
         {
             timerRuido = Random.Range(2.2f, 4f);
-            GerenciadorDoJogo.Som("rugido", Mathf.Lerp(0.08f, 0.3f, perto));
+            GerenciadorDoJogo.Som("onda", Mathf.Lerp(0.12f, 0.45f, perto));
         }
 
         if (distancia > 6f) return;

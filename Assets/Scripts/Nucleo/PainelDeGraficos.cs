@@ -37,7 +37,7 @@ public class PainelDeGraficos : MonoBehaviour
     void Update()
     {
         var teclado = Keyboard.current;
-        if (teclado != null && (teclado.f10Key.wasPressedThisFrame || teclado.backquoteKey.wasPressedThisFrame))
+        if (Controles.AtalhosDeTeste && teclado != null && (teclado.f10Key.wasPressedThisFrame || teclado.backquoteKey.wasPressedThisFrame))
             aberto = !aberto;
 
         // FPS: média de meio segundo, e o pior quadro nesse tempo (tempo real: funciona até na pausa)

@@ -57,7 +57,7 @@ public static class Controles
     {
         var teclado = Keyboard.current;
         var controle = Gamepad.current;
-        return (teclado != null && teclado.rKey.wasPressedThisFrame)
+        return (teclado != null && Teclas.Apertou(Teclas.Acao.Reiniciar))
             || (controle != null && controle.buttonNorth.wasPressedThisFrame);
     }
 
@@ -92,25 +92,61 @@ public static class Controles
     public static bool EsquerdaApertou() => Apertou(t => t.leftArrowKey, t => t.aKey, c => c.dpad.left);
     public static bool DireitaApertou() => Apertou(t => t.rightArrowKey, t => t.dKey, c => c.dpad.right);
 
+    // Os atalhos de teste (F7, F8, F9 e o painel F10) só existem no editor e no build de teste ("Development Build"):
+    // no jogo publicado eles seriam trapaça (liberam todas as fases e pulam para o final).
+    public static bool AtalhosDeTeste => Application.isEditor || Debug.isDebugBuild;
+
+    // Teclado ou controle? Vale o último que o jogador usou. A Interface troca as dicas de tecla da tela
+    // ("ENTER: jogar" vira "A: jogar": veja DicasDoControle.cs).
+    public static bool UsandoControle { get; private set; }
+
+    // Necessário porque o projeto está com "Enter Play Mode Options" (sem recarregar o domínio).
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void Limpar() => UsandoControle = false;
+
+    // Chamado uma vez por quadro (GerenciadorDoJogo.Update).
+    public static void NotarAparelho()
+    {
+        var teclado = Keyboard.current;
+        var mouse = Mouse.current;
+        if ((teclado != null && teclado.anyKey.wasPressedThisFrame)
+            || (mouse != null && (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)))
+        {
+            UsandoControle = false;
+            return;
+        }
+        foreach (Gamepad controle in Gamepad.all)
+        {
+            if (!controle.wasUpdatedThisFrame) continue;
+            if (controle.buttonSouth.isPressed || controle.buttonEast.isPressed || controle.buttonWest.isPressed || controle.buttonNorth.isPressed
+                || controle.startButton.isPressed || controle.selectButton.isPressed || controle.leftShoulder.isPressed || controle.rightShoulder.isPressed
+                || controle.dpad.ReadValue().sqrMagnitude > 0.1f || controle.leftStick.ReadValue().sqrMagnitude > 0.25f)
+            {
+                UsandoControle = true;
+                return;
+            }
+        }
+    }
+
     // F9 (no mapa): libera todas as fases SÓ na partida atual (atalho para testar as fases e os chefes).
     public static bool LiberarTudo()
     {
         var teclado = Keyboard.current;
-        return teclado != null && teclado.f9Key.wasPressedThisFrame;
+        return AtalhosDeTeste && teclado != null && teclado.f9Key.wasPressedThisFrame;
     }
 
     // F8 (no mapa): liga e desliga o modo difícil, sem precisar zerar o jogo (atalho de teste).
     public static bool AlternarTempestade()
     {
         var teclado = Keyboard.current;
-        return teclado != null && teclado.f8Key.wasPressedThisFrame;
+        return AtalhosDeTeste && teclado != null && teclado.f8Key.wasPressedThisFrame;
     }
 
     // F7 (no mapa): vai direto para a escolha do final (atalho de teste).
     public static bool IrParaOFinal()
     {
         var teclado = Keyboard.current;
-        return teclado != null && teclado.f7Key.wasPressedThisFrame;
+        return AtalhosDeTeste && teclado != null && teclado.f7Key.wasPressedThisFrame;
     }
 
     // DEL: apaga um slot na tela dos saves (no controle, o botão Y / triângulo).
@@ -127,7 +163,7 @@ public static class Controles
     {
         var teclado = Keyboard.current;
         var controle = Gamepad.current;
-        return (teclado != null && teclado.lKey.wasPressedThisFrame)
+        return (teclado != null && Teclas.Apertou(Teclas.Acao.Loja))
             || (controle != null && controle.buttonWest.wasPressedThisFrame);
     }
 
@@ -145,7 +181,7 @@ public static class Controles
     {
         var teclado = Keyboard.current;
         var controle = Gamepad.current;
-        return (teclado != null && teclado.tKey.wasPressedThisFrame)
+        return (teclado != null && Teclas.Apertou(Teclas.Acao.Coop))
             || (controle != null && controle.buttonNorth.wasPressedThisFrame);
     }
 
@@ -154,7 +190,7 @@ public static class Controles
     {
         var teclado = Keyboard.current;
         if (teclado != null && (teclado.enterKey.wasPressedThisFrame || teclado.numpadEnterKey.wasPressedThisFrame
-                                || teclado.escapeKey.wasPressedThisFrame || teclado.tKey.wasPressedThisFrame)) return true;
+                                || teclado.escapeKey.wasPressedThisFrame || Teclas.Apertou(Teclas.Acao.Coop))) return true;
         foreach (Gamepad controle in Gamepad.all)
             if (controle.startButton.wasPressedThisFrame || controle.buttonNorth.wasPressedThisFrame) return true;
         return false;

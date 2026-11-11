@@ -30,15 +30,15 @@ public static class Idioma
             if (atual < 0)
             {
                 int padrao = Application.systemLanguage == SystemLanguage.Portuguese ? 0 : 1;
-                atual = PlayerPrefs.GetInt(Chave, padrao);
+                atual = Guardado.GetInt(Chave, padrao);
             }
             return (Lingua)atual;
         }
         set
         {
             atual = (int)value;
-            PlayerPrefs.SetInt(Chave, atual);
-            PlayerPrefs.Save();
+            Guardado.SetInt(Chave, atual);
+            Guardado.Save();
         }
     }
 

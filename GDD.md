@@ -137,13 +137,17 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
   Quando você fica perto, um jato d'água sai da onda (avisa recuando e piscando). Ela tem espuma, a crista enrolando lá em cima e destroços boiando.
 - **Kraken Vermelho (`g`):** a arena do chefe final, no convés de um navio (as tábuas são dela e quebram), com o mar no fim (4 colunas sem chão).
 
-### Checkpoints que "mudam de lugar"
-- O **cristal de save (`s`)** marca onde você renasce.
-- Na **3ª morte** depois de pegar o save, ele "muda de lugar" ("O ponto de save mudou de lugar... :)") e você volta para o **checkpoint anterior**
-  (ou para o começo, se era o primeiro). Antes era uma chance de 25% a cada morte: às vezes mudava na primeira, às vezes demorava muito, e
-  parecia bug. Agora é sempre na 3ª (a contagem recomeça em cada save novo).
-- A **bandeira que volta (`W`)** também manda para o último checkpoint (sem checkpoint, para o começo).
-- Isso nunca acontece em fase com chefe, nem no modo difícil (com a onda atrás, a 3ª morte chegaria rápido demais).
+### Checkpoints (fixos)
+- O **cristal de save (`s`)** marca onde você renasce, e é **fixo**: pegou, é seu até o fim da fase, não importa quantas vezes morra.
+- Até novembro de 2026 existia a pegadinha do save que "mudava de lugar" na 3ª morte (voltava para o checkpoint anterior).
+  Foi tirada: perder o checkpoint não era uma armadilha para decorar, era só refazer o trecho. A conquista dela saiu junto (ficaram 30).
+- A **bandeira que volta (`W`)** continua mandando para o último checkpoint (sem checkpoint, para o começo).
+
+### A fase muda depois da primeira morte
+- Três fases usam o sistema de `mudancas` (a 2, a 5 e a 11): a partir da segunda tentativa aparece **uma armadilha a mais**
+  (um espinho escondido na 2 e na 11, uma moeda assassina na 5), e a tela de morte avisa: "Ah, e eu mudei umas coisinhas. :)".
+- Regras: a mudança só **acrescenta** (nunca troca uma moeda de verdade, senão a medalha das moedas ficaria impossível), fica num lugar
+  em que dá para desviar pulando e é sempre a mesma (decorou, passou). O checador de fases confere o mapa já mudado.
 
 ### Chefes (molde Helltaker)
 - 3 etapas × 2 golpes (vida 6). Tudo mata com um toque.
@@ -231,6 +235,12 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
 - **Títulos no fim da fase:** Salva-vidas, Mão-leve, Âncora e Traíra, para quem mais estourou balão, pegou moeda, morreu e empurrou.
 - **Por que assim:** o jogo é de decorar armadilhas; no coop, a morte de um vira informação para os outros sem parar a fase,
   e o empurrão e o pulo na cabeça deixam os próprios jogadores armarem ciladas uns para os outros.
+
+### Chefes: sem modo fácil
+- **Não existe ajuda automática.** Chegou a ser feito um escudo de graça depois de 6 mortes na mesma etapa de um chefe, e foi tirado:
+  a graça do jogo é ser difícil (ninguém espera modo fácil num *souls-like*). Quem quer folga compra escudo na Loja, com as próprias moedas.
+- **No coop, os chefes trocam de alvo** a cada 5 segundos (um Grumete vivo de cada vez). A Cozinheira troca a cada ataque mirado.
+- A vida dos chefes é a mesma com 1 ou com 4 jogadores (falta playtest para decidir se aumenta).
 
 ### A Cozinheira depois do playtest em coop
 - **Sem lugar seguro em cima do degrau:** o corte (rente e alto) passa no chão **e** em cima dos dois degraus, na mesma altura a partir do piso;
@@ -532,7 +542,7 @@ Dificuldade de 1 a 5 (estimativa da equipe). "Saves" = cristais `s` na fase. A l
 - **Recriação da fase a cada morte:** a fase é destruída e montada de novo do texto. Nenhuma armadilha fica "meio disparada" e não sobra estado sujo.
   O que precisa sobreviver (save, etapa do chefe, chefe já vencido, marcas das mortes) fica no gerenciador.
 
-## Saves (Progresso.cs, PlayerPrefs)
+## Saves (Progresso.cs e Guardado.cs: um arquivo; no navegador, PlayerPrefs)
 - O que é salvo:
   - a partida em andamento (o ponto do mapa, a fase mais longe, mortes, moedas, tempo e se a partida vale recorde);
   - as mortes por fase;

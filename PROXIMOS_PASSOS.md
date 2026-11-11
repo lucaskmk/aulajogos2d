@@ -12,7 +12,7 @@ O README explica o jogo e o código; o GDD explica o design. Aqui fica só o est
   atordoada depois do mergulho, cansada com a cabeça no convés).
 - **O tsunami** (`Tsunami.cs`, a letra `N`) no lugar da Maré Negra, e os tentáculos do jogo (cano e tela de morte) vermelhos, do Kraken.
 - **Recordes por fase e medalhas** (`Progresso.cs`, `Medalhas.cs`, `Interface.cs`, `MapaDoMundo.cs`) e a conquista "Perfeccionista".
-- **Atalhos de teste:** F9 no mapa (libera tudo só na partida atual) e F10 (painel de gráficos, FPS e pior quadro).
+- **Atalhos de teste:** F9 no mapa (libera tudo só na partida atual) e F10 (painel de gráficos, FPS e pior quadro). Só no editor e no build de teste.
 - **Visual v3 (HD-2D):** blocos (`ArteDosBlocos.cs`), fundo nítido com a luz pintada, raios de sol, sombras de nuvens, vento nas plantas e a tela pixelada
   (o tilt-shift ficou desligado de fábrica; dá para ligar no F10).
 - **O final com escolha e o modo difícil:** o baú no fim da fase 13 (`c`), devolver ou roubar, a tempestade nas fases e no mapa, o tsunami em toda fase e 3 finais
@@ -86,6 +86,18 @@ O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora �
 - **Duração:** em vez de fases novas, o que já existe ficou à vista (Modo Tempestade no menu depois de zerar, contador de medalhas
   no título e no mapa e o "E agora?" na vitória).
 - **Nome do produto:** agora é `Cilada à Vista!` (a empresa ainda é `DefaultCompany`: trocar em Project Settings > Player).
+- **Feito depois (itens 4, 5, 7 e 11 da lista):** o save só "muda de lugar" uma vez por partida; os chefes trocam de alvo no coop
+  (a "ajuda do Louro", um escudo de graça depois de 6 mortes num chefe, foi feita e TIRADA: o jogo não tem modo fácil); as dicas de tecla viram botões do controle; os atalhos F7 a F10 só existem
+  no editor e no build de teste; e o build de Windows sai pelo menu **Cilada → Build Windows (Steam)** (`Assets/Editor/Construir.cs`).
+- **O build de Windows ainda não saiu:** a primeira tentativa (10/11/2026, 33 minutos) falhou no fim, no compilador Burst, por falta de memória
+  ("LLVM ERROR: out of memory"). O disco C: estava com 4,5 GB livres de 457 GB, e o Windows não tinha onde crescer a memória virtual.
+  Liberar espaço (uns 20 GB) e rodar o menu de novo. Um build que falha deixa lixo no projeto: desfazer com `git checkout` as mudanças em
+  `Assets/Settings/*.asset` e `ProjectSettings/*.asset` e apagar `Assets/Resources/PerformanceTestRun*.json`.
+- **Acabamentos (11/11/2026):** o ponto de save é fixo (a pegadinha do save que mudava de lugar saiu, e a conquista dela também);
+  sons próprios das mecânicas; Opções > Teclas; o save em arquivo (`Guardado.cs`) e o gancho das conquistas da Steam; o ícone do
+  executável (`Ferramentas/gerar_icone.py`); e as fases 2, 5 e 11 mudam depois da primeira morte.
+- **Ainda da lista:** usar o sistema de "a fase muda depois que você morre" (`mudancas` em `Fases.cs`, hoje sem uso) para manter a novidade;
+  sons das mecânicas; remapear teclas; vida dos chefes no coop; conquistas e nuvem da Steam (dependem do AppID); página e demo.
 
 ## Publicar na Steam (o que falta)
 1. **Conta no Steamworks** (partner.steamgames.com): cadastro, dados fiscais e bancários e a taxa de US$ 100 por jogo (Steam Direct;
@@ -94,10 +106,10 @@ O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora �
    pagar a taxa e lançar (o painel do Steamworks mostra a data mais cedo possível).
 2. **Nome da empresa** no Unity (Project Settings > Player): ainda é `DefaultCompany` (o do produto já é `Cilada à Vista!`).
    Trocar ANTES de lançar (muda a pasta do save: quem já jogou perde o save local).
-3. **Build de Windows** (File > Build Profiles > Windows, x86_64). O WebGL do itch não serve para a Steam.
+3. **Build de Windows:** menu **Cilada → Build Windows (Steam)** (sai em `Builds/Windows`). O WebGL do itch não serve para a Steam.
    Testar o build em tela cheia, em 16:9 e 16:10, com controle de Xbox e de PlayStation.
-4. **Steamworks SDK** (opcional, mas vale): o pacote Steamworks.NET para as **conquistas** (as 31 de `Conquistas.cs` viram conquistas da Steam)
-   e o Steam Cloud (o save está em PlayerPrefs, no registro do Windows: para a nuvem, passar o save para um arquivo em `Application.persistentDataPath`).
+4. **Steamworks SDK** (opcional, mas vale): o pacote Steamworks.NET para as **conquistas** (as 30 de `Conquistas.cs` viram conquistas da Steam: o gancho é o evento `Conquistas.AoDesbloquear`, que já existe)
+   e o Steam Cloud (o save já é um arquivo, `save.json` em `Application.persistentDataPath`: configurar o Auto-Cloud para essa pasta).
 5. **Página da loja** (tamanhos conferidos na documentação do Steamworks em 10/11/2026):
    - loja: cápsula de cabeçalho 920x430, pequena 462x174, principal 1232x706, vertical 748x896 e **5 ou mais capturas** em 1920x1080 (16:9);
    - biblioteca: cápsula 600x900, cabeçalho 920x430, herói 3840x1240 e o logo (1280 de largura ou 720 de altura, fundo transparente);
@@ -118,8 +130,8 @@ O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora �
 - **Tempos-alvo das medalhas:** são estimativas. Ajustar o campo `tempoAlvo` em `Fases.cs` depois de jogar,
   e conferir se TODAS as moedas de cada fase dá para pegar (senão a medalha de moeda fica impossível).
 - **Quadros pintados dos finais:** os quadros novos (`escolha_*`, `roubou_*`, `tempestade_*`, `verdadeiro_1`, `rei_*`) estão desenhados por código, como `final_1` e `final_2`.
-- **Modo Justo (opcional, desligado por padrão):** o save nunca "muda de lugar" e a bandeira `W` não manda para o começo.
-- **Sons das mecânicas:** efeitos para a âncora, o vento, as facas, o tsunami, o tic do ritmo e as plataformas.
+- **Ouvir os sons novos** (corrente e batida da âncora, faca e faca cravando, onda do tsunami, tic e tac do ritmo, tábua da plataforma):
+  foram feitos por código e conferidos só por existirem; ajustar volume e timbre em `FabricaDeSons.cs` depois de jogar.
 - **Equipe:** pôr os nomes em `Textos.Equipe` (créditos), no README e no GDD.
 
 ## Como integrar uma mecânica ou fase nova

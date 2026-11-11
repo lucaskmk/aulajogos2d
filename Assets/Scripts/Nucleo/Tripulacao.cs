@@ -62,8 +62,9 @@ public static class Tripulacao
             Keyboard teclado = Keyboard.current;
             if (teclado != null)
             {
-                if ((Wasd && teclado.aKey.isPressed) || (Setas && teclado.leftArrowKey.isPressed)) x -= 1f;
-                if ((Wasd && teclado.dKey.isPressed) || (Setas && teclado.rightArrowKey.isPressed)) x += 1f;
+                // (as teclas do "teclado 1" são as de Opções > Teclas: veja Teclas.cs)
+                if ((Wasd && Teclas.Segurando(Teclas.Acao.Esquerda)) || (Setas && teclado.leftArrowKey.isPressed)) x -= 1f;
+                if ((Wasd && Teclas.Segurando(Teclas.Acao.Direita)) || (Setas && teclado.rightArrowKey.isPressed)) x += 1f;
             }
             Gamepad c = Controle;
             if (c != null && x == 0f)
@@ -80,7 +81,7 @@ public static class Tripulacao
         {
             Keyboard teclado = Keyboard.current;
             Gamepad c = Controle;
-            return (teclado != null && ((Wasd && (teclado.wKey.wasPressedThisFrame || teclado.spaceKey.wasPressedThisFrame))
+            return (teclado != null && ((Wasd && (Teclas.Apertou(Teclas.Acao.Pular) || Teclas.Apertou(Teclas.Acao.PularDeNovo)))
                                         || (Setas && teclado.upArrowKey.wasPressedThisFrame)))
                 || (c != null && c.buttonSouth.wasPressedThisFrame);
         }
@@ -89,7 +90,7 @@ public static class Tripulacao
         {
             Keyboard teclado = Keyboard.current;
             Gamepad c = Controle;
-            return (teclado != null && ((Wasd && (teclado.wKey.isPressed || teclado.spaceKey.isPressed))
+            return (teclado != null && ((Wasd && (Teclas.Segurando(Teclas.Acao.Pular) || Teclas.Segurando(Teclas.Acao.PularDeNovo)))
                                         || (Setas && teclado.upArrowKey.isPressed)))
                 || (c != null && c.buttonSouth.isPressed);
         }
@@ -99,7 +100,7 @@ public static class Tripulacao
         {
             Keyboard teclado = Keyboard.current;
             Gamepad c = Controle;
-            return (teclado != null && ((Wasd && teclado.sKey.wasPressedThisFrame) || (Setas && teclado.downArrowKey.wasPressedThisFrame)))
+            return (teclado != null && ((Wasd && Teclas.Apertou(Teclas.Acao.Baixo)) || (Setas && teclado.downArrowKey.wasPressedThisFrame)))
                 || (c != null && (c.dpad.down.wasPressedThisFrame || c.leftStick.down.wasPressedThisFrame));
         }
 
@@ -108,7 +109,7 @@ public static class Tripulacao
         {
             Keyboard teclado = Keyboard.current;
             Gamepad c = Controle;
-            return (teclado != null && ((Wasd && teclado.eKey.wasPressedThisFrame) || (Setas && teclado.rightShiftKey.wasPressedThisFrame)))
+            return (teclado != null && ((Wasd && Teclas.Apertou(Teclas.Acao.Empurrar)) || (Setas && teclado.rightShiftKey.wasPressedThisFrame)))
                 || (c != null && c.buttonWest.wasPressedThisFrame);
         }
 
@@ -117,7 +118,7 @@ public static class Tripulacao
         {
             Keyboard teclado = Keyboard.current;
             Gamepad c = Controle;
-            return (teclado != null && ((Wasd && teclado.qKey.isPressed) || (Setas && teclado.rightCtrlKey.isPressed)))
+            return (teclado != null && ((Wasd && Teclas.Segurando(Teclas.Acao.Balao)) || (Setas && teclado.rightCtrlKey.isPressed)))
                 || (c != null && c.buttonEast.isPressed);
         }
 
@@ -138,7 +139,7 @@ public static class Tripulacao
         }
 
         // As teclas deste aparelho, numa linha (na tela da Tripulação).
-        public string Teclas()
+        public string TeclasDoAparelho()
         {
             switch (esquema)
             {
@@ -216,7 +217,7 @@ public static class Tripulacao
             Marujo m = marujos[i];
             bool sair = m.esquema == Esquema.Controle
                 ? m.controle == null || !m.controle.added || m.controle.buttonEast.wasPressedThisFrame
-                : teclado != null && (m.esquema == Esquema.TecladoWASD ? teclado.qKey.wasPressedThisFrame : teclado.rightCtrlKey.wasPressedThisFrame);
+                : teclado != null && (m.esquema == Esquema.TecladoWASD ? Teclas.Apertou(Teclas.Acao.Balao) : teclado.rightCtrlKey.wasPressedThisFrame);
             if (!sair) continue;
             marujos.RemoveAt(i);
             mudou = -1;
@@ -224,7 +225,7 @@ public static class Tripulacao
 
         if (teclado != null)
         {
-            if ((teclado.wKey.wasPressedThisFrame || teclado.spaceKey.wasPressedThisFrame) && !Tem(Esquema.TecladoWASD) && Entrar(Esquema.TecladoWASD, null)) mudou = 1;
+            if ((Teclas.Apertou(Teclas.Acao.Pular) || Teclas.Apertou(Teclas.Acao.PularDeNovo)) && !Tem(Esquema.TecladoWASD) && Entrar(Esquema.TecladoWASD, null)) mudou = 1;
             if (teclado.upArrowKey.wasPressedThisFrame && !Tem(Esquema.TecladoSetas) && Entrar(Esquema.TecladoSetas, null)) mudou = 1;
         }
         foreach (Gamepad controle in Gamepad.all)

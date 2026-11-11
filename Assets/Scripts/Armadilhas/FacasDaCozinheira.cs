@@ -335,7 +335,7 @@ public class FacasDaCozinheira : MonoBehaviour
             faca.estado = EstadoDaFaca.Voando;
             faca.perigo.ativo = true;
         }
-        GerenciadorDoJogo.Som("serra", 0.45f); // "ziiing"
+        GerenciadorDoJogo.Som("faca", 0.8f); // "ziiing"
         estado = aindaVendo ? Estado.Cacando : Estado.Espreitando;
         recarga = tempoEntreFacas;
     }
@@ -419,7 +419,7 @@ public class FacasDaCozinheira : MonoBehaviour
         if (GerenciadorDoJogo.JogadorVivo(transform.position, out Vector2 jogador))
         {
             float distancia = Vector2.Distance(jogador, ponta);
-            if (distancia < 12f) GerenciadorDoJogo.Som("bloco", 0.5f);
+            if (distancia < 12f) GerenciadorDoJogo.Som("crava", 0.6f);
             if (distancia < 4f) CameraSeguir.Tremer(0.05f, 0.08f);
         }
     }

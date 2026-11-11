@@ -72,15 +72,15 @@ public static class Progresso
             if (slotAtual < 0)
             {
                 TrazerSaveAntigo();
-                slotAtual = Mathf.Clamp(PlayerPrefs.GetInt(ChaveUltimoSlot, 0), 0, TotalDeSlots - 1);
+                slotAtual = Mathf.Clamp(Guardado.GetInt(ChaveUltimoSlot, 0), 0, TotalDeSlots - 1);
             }
             return slotAtual;
         }
         set
         {
             slotAtual = Mathf.Clamp(value, 0, TotalDeSlots - 1);
-            PlayerPrefs.SetInt(ChaveUltimoSlot, slotAtual);
-            PlayerPrefs.Save();
+            Guardado.SetInt(ChaveUltimoSlot, slotAtual);
+            Guardado.Save();
         }
     }
 
@@ -109,17 +109,17 @@ public static class Progresso
 
     static void TrazerPartidaAntiga()
     {
-        if (PlayerPrefs.GetInt(ChaveMigrou, 0) == 1) return;
+        if (Guardado.GetInt(ChaveMigrou, 0) == 1) return;
         foreach ((string nome, char tipo) in ChavesDoSlot)
         {
             string antiga = "cilada_" + nome, nova = NoSlot(nome, 0);
-            if (!PlayerPrefs.HasKey(antiga) || PlayerPrefs.HasKey(nova)) continue;
-            if (tipo == 'i') PlayerPrefs.SetInt(nova, PlayerPrefs.GetInt(antiga));
-            else if (tipo == 'f') PlayerPrefs.SetFloat(nova, PlayerPrefs.GetFloat(antiga));
-            else PlayerPrefs.SetString(nova, PlayerPrefs.GetString(antiga));
+            if (!Guardado.HasKey(antiga) || Guardado.HasKey(nova)) continue;
+            if (tipo == 'i') Guardado.SetInt(nova, Guardado.GetInt(antiga));
+            else if (tipo == 'f') Guardado.SetFloat(nova, Guardado.GetFloat(antiga));
+            else Guardado.SetString(nova, Guardado.GetString(antiga));
         }
-        PlayerPrefs.SetInt(ChaveMigrou, 1);
-        PlayerPrefs.Save();
+        Guardado.SetInt(ChaveMigrou, 1);
+        Guardado.Save();
     }
 
     // Uma partida salva quando o jogo tinha OUTRA lista de fases (ex.: a versão antiga, de 10 fases) não
@@ -127,8 +127,8 @@ public static class Progresso
     public static bool TemJogoNoSlot(int slot)
     {
         TrazerSaveAntigo();
-        return PlayerPrefs.GetInt(NoSlot(ChaveTemJogo, slot), 0) == 1
-            && PlayerPrefs.GetInt(NoSlot(ChaveQuantasFases, slot), 0) == Fases.Todas.Length;
+        return Guardado.GetInt(NoSlot(ChaveTemJogo, slot), 0) == 1
+            && Guardado.GetInt(NoSlot(ChaveQuantasFases, slot), 0) == Fases.Todas.Length;
     }
 
     public static bool TemJogoSalvo => TemJogoNoSlot(SlotAtual); // (o do "Continuar")
@@ -159,12 +159,12 @@ public static class Progresso
         return new ResumoDoSlot
         {
             temJogo = true,
-            fase = PlayerPrefs.GetInt(NoSlot(ChaveFase, slot), 0),
-            mortes = PlayerPrefs.GetInt(NoSlot(ChaveMortes, slot), 0),
-            moedas = PlayerPrefs.GetInt(NoSlot(ChaveMoedas, slot), 0),
-            tempo = PlayerPrefs.GetFloat(NoSlot(ChaveTempo, slot), 0f),
-            data = PlayerPrefs.GetString(NoSlot(ChaveData, slot), ""),
-            dificil = PlayerPrefs.GetInt(NoSlot(ChaveDificil, slot), 0) == 1,
+            fase = Guardado.GetInt(NoSlot(ChaveFase, slot), 0),
+            mortes = Guardado.GetInt(NoSlot(ChaveMortes, slot), 0),
+            moedas = Guardado.GetInt(NoSlot(ChaveMoedas, slot), 0),
+            tempo = Guardado.GetFloat(NoSlot(ChaveTempo, slot), 0f),
+            data = Guardado.GetString(NoSlot(ChaveData, slot), ""),
+            dificil = Guardado.GetInt(NoSlot(ChaveDificil, slot), 0) == 1,
         };
     }
 
@@ -172,40 +172,40 @@ public static class Progresso
     // As conquistas e o recorde do título NÃO: eles valem para o jogo todo.
     public static void ApagarSlot(int slot)
     {
-        foreach ((string nome, char _) in ChavesDoSlot) PlayerPrefs.DeleteKey(NoSlot(nome, slot));
+        foreach ((string nome, char _) in ChavesDoSlot) Guardado.DeleteKey(NoSlot(nome, slot));
         for (int coluna = 0; coluna <= Fases.Todas.Length; coluna++)
             foreach ((string nome, char _) in ChavesDoRecorde)
             {
-                PlayerPrefs.DeleteKey(ChaveNaColuna(slot, coluna) + nome);
-                PlayerPrefs.DeleteKey(ChaveNaColuna(slot, coluna) + SufixoDificil + nome);
+                Guardado.DeleteKey(ChaveNaColuna(slot, coluna) + nome);
+                Guardado.DeleteKey(ChaveNaColuna(slot, coluna) + SufixoDificil + nome);
             }
-        PlayerPrefs.Save();
+        Guardado.Save();
     }
 
     // ------------------------------------------------------------------ a partida (no SlotAtual)
 
-    public static int FaseSalva => PlayerPrefs.GetInt(NoSlot(ChaveFase), 0);
-    public static int FaseMaxima => PlayerPrefs.GetInt(ChaveFaseMaxima, 0);
+    public static int FaseSalva => Guardado.GetInt(NoSlot(ChaveFase), 0);
+    public static int FaseMaxima => Guardado.GetInt(ChaveFaseMaxima, 0);
 
     // A fase secreta (vale para sempre depois de liberada).
-    public static bool SecretaLiberada => PlayerPrefs.GetInt(NoSlot(ChaveSecreta), 0) == 1;
+    public static bool SecretaLiberada => Guardado.GetInt(NoSlot(ChaveSecreta), 0) == 1;
 
     public static void LiberarSecreta()
     {
-        PlayerPrefs.SetInt(NoSlot(ChaveSecreta), 1);
-        PlayerPrefs.Save();
+        Guardado.SetInt(NoSlot(ChaveSecreta), 1);
+        Guardado.Save();
     }
 
     // Mortes em cada fase nesta partida (as caveiras do mapa), guardadas como "3,0,12,...".
     public static void SalvarMortesPorFase(int[] mortes)
     {
-        PlayerPrefs.SetString(NoSlot(ChaveMortesPorFase), string.Join(",", mortes));
-        PlayerPrefs.Save();
+        Guardado.SetString(NoSlot(ChaveMortesPorFase), string.Join(",", mortes));
+        Guardado.Save();
     }
 
     public static void CarregarMortesPorFase(int[] mortes)
     {
-        string[] partes = PlayerPrefs.GetString(NoSlot(ChaveMortesPorFase), "").Split(',');
+        string[] partes = Guardado.GetString(NoSlot(ChaveMortesPorFase), "").Split(',');
         for (int i = 0; i < mortes.Length; i++)
             mortes[i] = i < partes.Length && int.TryParse(partes[i], out int n) ? n : 0;
     }
@@ -214,122 +214,122 @@ public static class Progresso
     // valida: a partida foi jogada em ordem desde a fase 1? Só assim ela vale para o recorde.
     public static void Salvar(int fase, int maisLonge, int mortes, int moedas, float tempo, bool valida)
     {
-        PlayerPrefs.SetInt(NoSlot(ChaveTemJogo), 1);
-        PlayerPrefs.SetInt(NoSlot(ChaveQuantasFases), Fases.Todas.Length);
-        PlayerPrefs.SetInt(NoSlot(ChaveFase), fase);
-        PlayerPrefs.SetInt(NoSlot(ChaveMaisLonge), maisLonge);
-        PlayerPrefs.SetInt(NoSlot(ChaveMortes), mortes);
-        PlayerPrefs.SetInt(NoSlot(ChaveMoedas), moedas);
-        PlayerPrefs.SetFloat(NoSlot(ChaveTempo), tempo);
-        PlayerPrefs.SetInt(NoSlot(ChaveValida), valida ? 1 : 0);
-        PlayerPrefs.SetString(NoSlot(ChaveData), System.DateTime.Now.ToString("yyyy-MM-dd", Invariante));
+        Guardado.SetInt(NoSlot(ChaveTemJogo), 1);
+        Guardado.SetInt(NoSlot(ChaveQuantasFases), Fases.Todas.Length);
+        Guardado.SetInt(NoSlot(ChaveFase), fase);
+        Guardado.SetInt(NoSlot(ChaveMaisLonge), maisLonge);
+        Guardado.SetInt(NoSlot(ChaveMortes), mortes);
+        Guardado.SetInt(NoSlot(ChaveMoedas), moedas);
+        Guardado.SetFloat(NoSlot(ChaveTempo), tempo);
+        Guardado.SetInt(NoSlot(ChaveValida), valida ? 1 : 0);
+        Guardado.SetString(NoSlot(ChaveData), System.DateTime.Now.ToString("yyyy-MM-dd", Invariante));
         int maxima = Mathf.Max(fase == Fases.IndiceSecreto ? 0 : fase, maisLonge); // a secreta não conta
-        if (maxima > FaseMaxima) PlayerPrefs.SetInt(ChaveFaseMaxima, maxima);
-        PlayerPrefs.Save();
+        if (maxima > FaseMaxima) Guardado.SetInt(ChaveFaseMaxima, maxima);
+        Guardado.Save();
     }
 
     // Só as moedas guardadas (o Kraken roubou ou devolveu no meio da fase: salva na hora).
     public static void SalvarMoedas(int moedas)
     {
-        PlayerPrefs.SetInt(NoSlot(ChaveMoedas), moedas);
-        PlayerPrefs.Save();
+        Guardado.SetInt(NoSlot(ChaveMoedas), moedas);
+        Guardado.Save();
     }
 
     public static void Carregar(out int fase, out int maisLonge, out int mortes, out int moedas, out float tempo, out bool valida)
     {
-        fase = PlayerPrefs.GetInt(NoSlot(ChaveFase), 0);
-        maisLonge = PlayerPrefs.GetInt(NoSlot(ChaveMaisLonge), 0);
-        mortes = PlayerPrefs.GetInt(NoSlot(ChaveMortes), 0);
-        moedas = PlayerPrefs.GetInt(NoSlot(ChaveMoedas), 0);
-        tempo = PlayerPrefs.GetFloat(NoSlot(ChaveTempo), 0f);
-        valida = PlayerPrefs.GetInt(NoSlot(ChaveValida), 0) == 1;
+        fase = Guardado.GetInt(NoSlot(ChaveFase), 0);
+        maisLonge = Guardado.GetInt(NoSlot(ChaveMaisLonge), 0);
+        mortes = Guardado.GetInt(NoSlot(ChaveMortes), 0);
+        moedas = Guardado.GetInt(NoSlot(ChaveMoedas), 0);
+        tempo = Guardado.GetFloat(NoSlot(ChaveTempo), 0f);
+        valida = Guardado.GetInt(NoSlot(ChaveValida), 0) == 1;
     }
 
     // O que foi comprado na Loja e ainda não foi usado (escudos e elixires) e o duplo salto. Fazem parte da
     // partida salva (um Novo Jogo zera).
-    public static int EscudosSalvos => PlayerPrefs.GetInt(NoSlot(ChaveEscudos), 0);
-    public static int ElixiresSalvos => PlayerPrefs.GetInt(NoSlot(ChaveElixires), 0);
-    public static bool PuloDuploSalvo => PlayerPrefs.GetInt(NoSlot(ChavePuloDuplo), 0) == 1;
-    public static int PocoesDeEspinhosSalvas => PlayerPrefs.GetInt(NoSlot(ChavePocoesDeEspinhos), 0);
-    public static int PocoesDoChaoSalvas => PlayerPrefs.GetInt(NoSlot(ChavePocoesDoChao), 0);
+    public static int EscudosSalvos => Guardado.GetInt(NoSlot(ChaveEscudos), 0);
+    public static int ElixiresSalvos => Guardado.GetInt(NoSlot(ChaveElixires), 0);
+    public static bool PuloDuploSalvo => Guardado.GetInt(NoSlot(ChavePuloDuplo), 0) == 1;
+    public static int PocoesDeEspinhosSalvas => Guardado.GetInt(NoSlot(ChavePocoesDeEspinhos), 0);
+    public static int PocoesDoChaoSalvas => Guardado.GetInt(NoSlot(ChavePocoesDoChao), 0);
 
     // As fichas dos jogos de habilidade da Loja (um slot que nunca salvou fichas começa com "padrao").
-    public static int FichasSalvas(int padrao) => PlayerPrefs.GetInt(NoSlot(ChaveFichas), padrao);
-    public static void SalvarFichas(int fichas) => PlayerPrefs.SetInt(NoSlot(ChaveFichas), fichas); // (o Save vem logo depois)
+    public static int FichasSalvas(int padrao) => Guardado.GetInt(NoSlot(ChaveFichas), padrao);
+    public static void SalvarFichas(int fichas) => Guardado.SetInt(NoSlot(ChaveFichas), fichas); // (o Save vem logo depois)
 
     // Coop: os itens do jogador 2 em diante (jogador: 1 = P2...). Os do P1 são os de cima.
     static string DoJogador(string chave, int jogador) => chave + "_p" + (jogador + 1);
-    public static int EscudosSalvosDe(int jogador) => PlayerPrefs.GetInt(NoSlot(DoJogador(ChaveEscudos, jogador)), 0);
-    public static int ElixiresSalvosDe(int jogador) => PlayerPrefs.GetInt(NoSlot(DoJogador(ChaveElixires, jogador)), 0);
-    public static bool PuloDuploSalvoDe(int jogador) => PlayerPrefs.GetInt(NoSlot(DoJogador(ChavePuloDuplo, jogador)), 0) == 1;
+    public static int EscudosSalvosDe(int jogador) => Guardado.GetInt(NoSlot(DoJogador(ChaveEscudos, jogador)), 0);
+    public static int ElixiresSalvosDe(int jogador) => Guardado.GetInt(NoSlot(DoJogador(ChaveElixires, jogador)), 0);
+    public static bool PuloDuploSalvoDe(int jogador) => Guardado.GetInt(NoSlot(DoJogador(ChavePuloDuplo, jogador)), 0) == 1;
 
     // (não chama o Save: quem chama é o SalvarItensDaLoja, logo antes ou logo depois)
     public static void SalvarItensDoJogador(int jogador, int escudos, int elixires, bool puloDuplo)
     {
-        PlayerPrefs.SetInt(NoSlot(DoJogador(ChaveEscudos, jogador)), escudos);
-        PlayerPrefs.SetInt(NoSlot(DoJogador(ChaveElixires, jogador)), elixires);
-        PlayerPrefs.SetInt(NoSlot(DoJogador(ChavePuloDuplo, jogador)), puloDuplo ? 1 : 0);
+        Guardado.SetInt(NoSlot(DoJogador(ChaveEscudos, jogador)), escudos);
+        Guardado.SetInt(NoSlot(DoJogador(ChaveElixires, jogador)), elixires);
+        Guardado.SetInt(NoSlot(DoJogador(ChavePuloDuplo, jogador)), puloDuplo ? 1 : 0);
     }
 
     public static void SalvarItensDaLoja(int escudos, int elixires, bool puloDuplo, int pocoesDeEspinhos, int pocoesDoChao)
     {
-        PlayerPrefs.SetInt(NoSlot(ChaveEscudos), escudos);
-        PlayerPrefs.SetInt(NoSlot(ChaveElixires), elixires);
-        PlayerPrefs.SetInt(NoSlot(ChavePuloDuplo), puloDuplo ? 1 : 0);
-        PlayerPrefs.SetInt(NoSlot(ChavePocoesDeEspinhos), pocoesDeEspinhos);
-        PlayerPrefs.SetInt(NoSlot(ChavePocoesDoChao), pocoesDoChao);
-        PlayerPrefs.Save();
+        Guardado.SetInt(NoSlot(ChaveEscudos), escudos);
+        Guardado.SetInt(NoSlot(ChaveElixires), elixires);
+        Guardado.SetInt(NoSlot(ChavePuloDuplo), puloDuplo ? 1 : 0);
+        Guardado.SetInt(NoSlot(ChavePocoesDeEspinhos), pocoesDeEspinhos);
+        Guardado.SetInt(NoSlot(ChavePocoesDoChao), pocoesDoChao);
+        Guardado.Save();
     }
 
     // O Louro já apresentou a Loja (a cutscene depois da 2ª fase)? Vale para sempre, como as conquistas:
     // só acontece uma vez (um Novo Jogo NÃO mostra de novo). Para rever: menu "Cilada (teste)" no Editor.
-    public static bool TutorialDaLojaVisto => PlayerPrefs.GetInt(ChaveTutorialDaLoja, 0) == 1;
+    public static bool TutorialDaLojaVisto => Guardado.GetInt(ChaveTutorialDaLoja, 0) == 1;
 
     public static void MarcarTutorialDaLoja()
     {
-        PlayerPrefs.SetInt(ChaveTutorialDaLoja, 1);
-        PlayerPrefs.Save();
+        Guardado.SetInt(ChaveTutorialDaLoja, 1);
+        Guardado.Save();
     }
 
     public static void ApagarSecreta()
     {
-        PlayerPrefs.SetInt(NoSlot(ChaveSecreta), 0);
-        PlayerPrefs.Save();
+        Guardado.SetInt(NoSlot(ChaveSecreta), 0);
+        Guardado.Save();
     }
 
     // Zerou: o slot continua vivo, com o mapa todo aberto (dá para buscar as medalhas e vencer o Kraken de novo).
     public static void Zerou(int totalDeFases)
     {
-        PlayerPrefs.SetInt(ChaveFaseMaxima, totalDeFases - 1);
-        PlayerPrefs.Save();
+        Guardado.SetInt(ChaveFaseMaxima, totalDeFases - 1);
+        Guardado.Save();
     }
 
     // O modo difícil (o Grumete roubou o tesouro): é do slot.
-    public static bool ModoDificil => PlayerPrefs.GetInt(NoSlot(ChaveDificil), 0) == 1;
+    public static bool ModoDificil => Guardado.GetInt(NoSlot(ChaveDificil), 0) == 1;
 
     public static void SalvarModoDificil(bool ligado)
     {
-        PlayerPrefs.SetInt(NoSlot(ChaveDificil), ligado ? 1 : 0);
-        PlayerPrefs.Save();
+        Guardado.SetInt(NoSlot(ChaveDificil), ligado ? 1 : 0);
+        Guardado.Save();
     }
 
     // Chegou no baú e ainda não escolheu? (fechar o jogo no meio da escolha não pode custar a luta com o Kraken)
-    public static bool EscolhaPendente => PlayerPrefs.GetInt(NoSlot(ChaveEscolha), 0) == 1;
+    public static bool EscolhaPendente => Guardado.GetInt(NoSlot(ChaveEscolha), 0) == 1;
 
     public static void SalvarEscolhaPendente(bool pendente)
     {
-        PlayerPrefs.SetInt(NoSlot(ChaveEscolha), pendente ? 1 : 0);
-        PlayerPrefs.Save();
+        Guardado.SetInt(NoSlot(ChaveEscolha), pendente ? 1 : 0);
+        Guardado.Save();
     }
 
     // -1 = ainda não tem recorde
-    public static int Recorde => PlayerPrefs.GetInt(ChaveRecorde, -1);
+    public static int Recorde => Guardado.GetInt(ChaveRecorde, -1);
 
     public static void TentarSalvarRecorde(int mortes)
     {
         if (Recorde >= 0 && mortes >= Recorde) return;
-        PlayerPrefs.SetInt(ChaveRecorde, mortes);
-        PlayerPrefs.Save();
+        Guardado.SetInt(ChaveRecorde, mortes);
+        Guardado.Save();
     }
 
     // ------------------------------------------------------------------ recordes de cada fase
@@ -390,20 +390,20 @@ public static class Progresso
     // Os recordes de antes dos slots (de todos) viram os do Slot 1, onde também foi parar a partida antiga.
     static void TrazerRecordesAntigos()
     {
-        if (PlayerPrefs.GetInt(ChaveRecordesMigrados, 0) == 1) return;
+        if (Guardado.GetInt(ChaveRecordesMigrados, 0) == 1) return;
         for (int coluna = 0; coluna <= Fases.Todas.Length; coluna++)
         {
             string antiga = "cilada_" + RaizDaFase(coluna), nova = ChaveNaColuna(0, coluna);
             foreach ((string nome, char tipo) in ChavesDoRecorde)
             {
-                if (!PlayerPrefs.HasKey(antiga + nome) || PlayerPrefs.HasKey(nova + nome)) continue;
-                if (tipo == 'i') PlayerPrefs.SetInt(nova + nome, PlayerPrefs.GetInt(antiga + nome));
-                else if (tipo == 'f') PlayerPrefs.SetFloat(nova + nome, PlayerPrefs.GetFloat(antiga + nome));
-                else PlayerPrefs.SetString(nova + nome, PlayerPrefs.GetString(antiga + nome));
+                if (!Guardado.HasKey(antiga + nome) || Guardado.HasKey(nova + nome)) continue;
+                if (tipo == 'i') Guardado.SetInt(nova + nome, Guardado.GetInt(antiga + nome));
+                else if (tipo == 'f') Guardado.SetFloat(nova + nome, Guardado.GetFloat(antiga + nome));
+                else Guardado.SetString(nova + nome, Guardado.GetString(antiga + nome));
             }
         }
-        PlayerPrefs.SetInt(ChaveRecordesMigrados, 1);
-        PlayerPrefs.Save();
+        Guardado.SetInt(ChaveRecordesMigrados, 1);
+        Guardado.Save();
     }
 
     // O nome da fase só com letras e números, sem acento ("A Capitã Âncora" vira "acapitaancora").
@@ -425,13 +425,13 @@ public static class Progresso
     public static RecordeDaFase RecordeDe(int fase)
     {
         string chave = ChaveDaFase(fase);
-        if (PlayerPrefs.GetInt(chave + "existe", 0) != 1) return default;
+        if (Guardado.GetInt(chave + "existe", 0) != 1) return default;
         return new RecordeDaFase
         {
             existe = true,
-            tempo = PlayerPrefs.GetFloat(chave + "tempo", 0f),
-            mortes = PlayerPrefs.GetInt(chave + "mortes", 0),
-            moedas = PlayerPrefs.GetInt(chave + "moedas", 0),
+            tempo = Guardado.GetFloat(chave + "tempo", 0f),
+            mortes = Guardado.GetInt(chave + "mortes", 0),
+            moedas = Guardado.GetInt(chave + "moedas", 0),
         };
     }
 
@@ -443,21 +443,21 @@ public static class Progresso
         Novidade novidade = antes.existe ? Novidade.Nada : Novidade.Primeira;
         if (!antes.existe || tempo < antes.tempo)
         {
-            PlayerPrefs.SetFloat(chave + "tempo", tempo);
+            Guardado.SetFloat(chave + "tempo", tempo);
             if (antes.existe) novidade |= Novidade.Tempo;
         }
         if (!antes.existe || mortes < antes.mortes)
         {
-            PlayerPrefs.SetInt(chave + "mortes", mortes);
+            Guardado.SetInt(chave + "mortes", mortes);
             if (antes.existe) novidade |= Novidade.Mortes;
         }
         if (!antes.existe || moedas > antes.moedas)
         {
-            PlayerPrefs.SetInt(chave + "moedas", moedas);
+            Guardado.SetInt(chave + "moedas", moedas);
             if (antes.existe) novidade |= Novidade.Moedas;
         }
-        PlayerPrefs.SetInt(chave + "existe", 1);
-        PlayerPrefs.Save();
+        Guardado.SetInt(chave + "existe", 1);
+        Guardado.Save();
         return novidade;
     }
 
@@ -483,14 +483,14 @@ public static class Progresso
     {
         var lista = new List<TempoDoRanking>();
         string chave = ChaveDaFase(fase);
-        if (!PlayerPrefs.HasKey(chave + "ranking"))
+        if (!Guardado.HasKey(chave + "ranking"))
         {
             // fase que você já tinha passado antes do painel existir: o recorde antigo vira o 1º lugar
             RecordeDaFase recorde = RecordeDe(fase);
             if (recorde.existe) lista.Add(new TempoDoRanking { tempo = recorde.tempo, mortes = -1, data = "" });
             return lista;
         }
-        foreach (string item in PlayerPrefs.GetString(chave + "ranking", "").Split(';'))
+        foreach (string item in Guardado.GetString(chave + "ranking", "").Split(';'))
         {
             string[] partes = item.Split('|');
             if (partes.Length < 3 || !float.TryParse(partes[0], System.Globalization.NumberStyles.Float, Invariante, out float tempo))
@@ -509,7 +509,7 @@ public static class Progresso
 
     // Quantas vezes você já passou dessa fase neste slot.
     public static int VezesConcluida(int fase) =>
-        PlayerPrefs.GetInt(ChaveDaFase(fase) + "vezes", RecordeDe(fase).existe ? 1 : 0);
+        Guardado.GetInt(ChaveDaFase(fase) + "vezes", RecordeDe(fase).existe ? 1 : 0);
 
     // Coloca o tempo que você acabou de fazer no ranking da fase e conta mais uma vez concluída.
     // Devolve a posição (0 = o mais rápido) ou -1 se não entrou entre os 5.
@@ -517,13 +517,13 @@ public static class Progresso
     public static int RegistrarNoRanking(int fase, float tempo, int mortes)
     {
         string chave = ChaveDaFase(fase);
-        PlayerPrefs.SetInt(chave + "vezes", VezesConcluida(fase) + 1);
+        Guardado.SetInt(chave + "vezes", VezesConcluida(fase) + 1);
         List<TempoDoRanking> lista = MelhoresTempos(fase);
         int posicao = 0;
         while (posicao < lista.Count && lista[posicao].tempo <= tempo) posicao++; // empate: quem fez antes fica na frente
         if (posicao >= TamanhoDoRanking)
         {
-            PlayerPrefs.Save();
+            Guardado.Save();
             return -1;
         }
         lista.Insert(posicao, new TempoDoRanking
@@ -536,8 +536,8 @@ public static class Progresso
         var partes = new string[lista.Count];
         for (int i = 0; i < lista.Count; i++)
             partes[i] = lista[i].tempo.ToString("R", Invariante) + "|" + lista[i].mortes + "|" + lista[i].data;
-        PlayerPrefs.SetString(chave + "ranking", string.Join(";", partes));
-        PlayerPrefs.Save();
+        Guardado.SetString(chave + "ranking", string.Join(";", partes));
+        Guardado.Save();
         return posicao;
     }
 }
