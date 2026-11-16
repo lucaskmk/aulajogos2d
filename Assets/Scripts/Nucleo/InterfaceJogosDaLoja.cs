@@ -50,8 +50,8 @@ public partial class Interface
         Texto(pontaria
                 ? Idioma.T($"VERDE: +{jogo.premioEmCheio} moedas     AMARELO: +{jogo.premioPerto}     FORA: nada",
                            $"GREEN: +{jogo.premioEmCheio} coins     YELLOW: +{jogo.premioPerto}     OUTSIDE: nothing")
-                : Idioma.T($"ATÉ 0,30 s: +{jogo.premioEmCheio} moedas     ATÉ 0,45 s: +{jogo.premioPerto}     DEPOIS: nada",
-                           $"UNDER 0.30 s: +{jogo.premioEmCheio} coins     UNDER 0.45 s: +{jogo.premioPerto}     AFTER: nothing"),
+                : Idioma.T($"ATÉ {jogo.reflexoRapido:0.00} s: +{jogo.premioEmCheio} moedas     ATÉ {jogo.reflexoBom:0.00} s: +{jogo.premioPerto}     DEPOIS: nada",
+                           $"UNDER {jogo.reflexoRapido:0.00} s: +{jogo.premioEmCheio} coins     UNDER {jogo.reflexoBom:0.00} s: +{jogo.premioPerto}     AFTER: nothing"),
             w / 2f, 430f * escala, 1.9f, 0.5f, CorDoRodape, w * 0.9f);
         Texto(Idioma.T("Cada rodada gasta 1 ficha (não moedas). O Louro dá fichas quando você passa de fase.",
                        "Each round costs 1 token (not coins). The parrot hands out tokens when you clear a level."),
@@ -112,7 +112,8 @@ public partial class Interface
     float quandoConteiAsMedalhas = -10f;
     string textoDasMedalhas = "";
     Idioma.Lingua idiomaDasMedalhas;
-    public static int TotalDeMedalhas => Fases.Todas.Length * Medalhas.Ordem.Length;
+    // (a campanha, as fases bônus e o Mar de Baixo; a secreta fica de fora, como antes)
+    public static int TotalDeMedalhas => (Fases.Todas.Length + Fases.Bonus.Length + Fases.MarDeBaixo.Length) * Medalhas.Ordem.Length;
 
     string TextoDasMedalhas()
     {
@@ -121,8 +122,11 @@ public partial class Interface
         idiomaDasMedalhas = Idioma.Atual;
         int ganhas = 0;
         for (int fase = 0; fase < Fases.Todas.Length; fase++) ganhas += Medalhas.Quantas(Medalhas.DaFase(fase));
+        for (int i = 0; i < Fases.Bonus.Length; i++) ganhas += Medalhas.Quantas(Medalhas.DaFase(Fases.PrimeiroBonus + i));
+        for (int i = 0; i < Fases.MarDeBaixo.Length; i++) ganhas += Medalhas.Quantas(Medalhas.DaFase(Fases.PrimeiroDoMar + i));
         medalhasGanhas = ganhas;
-        textoDasMedalhas = Idioma.T("Medalhas: ", "Medals: ") + ganhas + "/" + TotalDeMedalhas;
+        textoDasMedalhas = Idioma.T("Medalhas: ", "Medals: ") + ganhas + "/" + TotalDeMedalhas
+            + (Desafios.Liberados ? Idioma.T("   Desafios: ", "   Challenges: ") + Desafios.Quantos + "/" + Desafios.Todos.Length : "");
         return textoDasMedalhas;
     }
 

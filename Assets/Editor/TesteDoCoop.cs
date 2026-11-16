@@ -465,6 +465,19 @@ public static class TesteDoCoop
         Conferir(Tripulacao.Do(0).empurroes == 1, "o empurrão contou para o P1");
         yield return Ate(() => P(0).NoChao && P(1).NoChao, 3f, v => deu = v);
 
+        // colo: SEGURANDO o empurrão com o P2 colado, o P1 pega ele no colo; soltando, arremessa (JogadorCarregar.cs)
+        P(1).Teletransportar(P(0).transform.position + Vector3.right * 0.8f);
+        yield return Quadros(4);
+        Controle(0, 0f, GamepadButton.West);
+        yield return Ate(() => P(1).CarregadoPor == P(0), 1.5f, v => deu = v);
+        Conferir(deu && P(1).transform.position.y > P(0).transform.position.y + 0.6f, "segurando o empurrão, o P1 pega o P2 no colo (em cima da cabeça)");
+        float xNoColo = P(1).transform.position.x;
+        Controle(0);
+        yield return new WaitForSeconds(0.6f);
+        Conferir(P(1).CarregadoPor == null && P(1).transform.position.x > xNoColo + 1.5f, "soltando, o P1 arremessa o P2 para a frente: " + (P(1).transform.position.x - xNoColo) + " blocos");
+        Conferir(Tripulacao.Do(0).empurroes == 1, "pegar no colo não conta como empurrão");
+        yield return Ate(() => P(0).NoChao && P(1).NoChao, 3f, v => deu = v);
+
         // virar balão de propósito (segurando B)
         Controle(1, 0f, GamepadButton.East);
         yield return Ate(() => P(1).NaBolha, 2f, v => deu = v);

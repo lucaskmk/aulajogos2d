@@ -47,6 +47,7 @@ public partial class Jogador : MonoBehaviour
 
     BoxCollider2D colisor;
     SpriteRenderer visual;
+    public SpriteRenderer Desenho => visual; // (o replay das mortes copia o desenho dele: ReplayDasMortes.cs)
     Sprite spriteParado, spriteAndando;
 
     // "Estica e achata": (1, 1) é o normal; volta sozinho para o normal aos poucos.
@@ -132,6 +133,7 @@ public partial class Jogador : MonoBehaviour
             return;
         }
         if (congelado) return;
+        if (NoColo()) { Animar(); return; } // (coop: no colo de um companheiro: JogadorCarregar.cs)
 
         AtualizarInversao();
         entradaX = marujo.Horizontal() * (controlesInvertidos ? -1f : 1f);
@@ -145,11 +147,12 @@ public partial class Jogador : MonoBehaviour
         AtualizarCoop();
 
         Animar();
+        DesenharAr();
     }
 
     void FixedUpdate()
     {
-        if (Morto || congelado) return;
+        if (Morto || congelado || CarregadoPor != null) return;
         float dt = Time.fixedDeltaTime;
 
         bool estavaNoChao = NoChao;
@@ -175,8 +178,19 @@ public partial class Jogador : MonoBehaviour
         empurrao = 0f;
         impulsoDoEmpurrao = Mathf.MoveTowards(impulsoDoEmpurrao, 0f, 30f * dt);
         velocidadeSuave = Mathf.Lerp(velocidadeSuave, v.x, 4f * dt);
-        v.x = Mathf.MoveTowards(v.x, entradaX * velocidade + vento, aceleracao * dt);
+        if (timerLancado > 0f) timerLancado -= dt; // (o canhão: o arco do tiro não é controlado)
+        else v.x = Mathf.MoveTowards(v.x, entradaX * velocidade + vento, aceleracao * dt);
         if (NoChao && entradaX != 0f) PassarPelaEmenda(ref v, vento);
+
+        // NA ÁGUA (JogadorNaAgua.cs): braçadas no lugar do pulo, queda lenta e o ar acabando
+        if (Nadar(ref v, dt, vento))
+        {
+            apertouPulo = false;
+            QuicarNoCompanheiro(ref v);
+            Corpo.linearVelocity = v;
+            if (transform.position.y < -2f) Morrer(caiuNoBuraco: true);
+            return;
+        }
 
         GerenciadorDoJogo jogo = GerenciadorDoJogo.Instancia;
         bool comElixir = jogo != null && jogo.ElixirAtivoDe(Indice);
@@ -199,6 +213,7 @@ public partial class Jogador : MonoBehaviour
         {
             v.y = forca * forcaDoPuloDuplo;
             usouPuloDuplo = true;
+            Desafios.DuplosSaltos++;
             pulando = true; // soltar o botão também corta o segundo pulo
             timerBufferPulo = 0f;
             GerenciadorDoJogo.Som("pulo");

@@ -24,17 +24,19 @@ public partial class GerenciadorDoJogo
 
     [Header("Pontaria")]
     [Tooltip("Quantas vezes por segundo o ponteiro atravessa a barra.")]
-    public float velocidadeDoPonteiro = 1.15f;
+    public float velocidadeDoPonteiro = 2.4f; // (16/11/2026: era 1,15; o usuário pediu "quase impossível")
     [Tooltip("A cada acerto no verde seguido, o ponteiro fica isto mais rápido (até 6 acertos).")]
-    public float aceleraPorAcerto = 0.15f;
+    public float aceleraPorAcerto = 0.3f;
     [Tooltip("Metade da largura do VERDE e do AMARELO, como fração da barra.")]
-    public float meiaLarguraDoVerde = 0.045f;
-    public float meiaLarguraDoAmarelo = 0.14f;
+    public float meiaLarguraDoVerde = 0.012f;
+    public float meiaLarguraDoAmarelo = 0.045f;
+    [Tooltip("O ponteiro não anda num ritmo só: a velocidade balança esta fração para mais e para menos (não dá para decorar o tempo).")]
+    public float tremidaDoPonteiro = 0.45f;
 
     [Header("Reflexo")]
     [Tooltip("Até este tempo (em segundos) depois do JÁ, o prêmio é o cheio; até o segundo, o menor.")]
-    public float reflexoRapido = 0.3f;
-    public float reflexoBom = 0.45f;
+    public float reflexoRapido = 0.19f; // (era 0,30 e 0,45: perto do limite humano, de propósito)
+    public float reflexoBom = 0.24f;
     [Tooltip("Quanto tempo o JÁ espera antes de desistir de você.")]
     public float reflexoMaximo = 1.5f;
 
@@ -101,7 +103,8 @@ public partial class GerenciadorDoJogo
         tempoDaRodada += Time.deltaTime;
         if (JogoEscolhido == JogoDeHabilidade.Pontaria)
         {
-            float velocidade = velocidadeDoPonteiro * (1f + Mathf.Min(AcertosSeguidos, 6) * aceleraPorAcerto);
+            float velocidade = velocidadeDoPonteiro * (1f + Mathf.Min(AcertosSeguidos, 6) * aceleraPorAcerto)
+                * (1f + tremidaDoPonteiro * Mathf.Sin(tempoDaRodada * 9.3f) * Mathf.Sin(tempoDaRodada * 3.7f + 1f));
             float p = Ponteiro + sentidoDoPonteiro * velocidade * Time.deltaTime;
             if (p >= 1f) { p = 2f - p; sentidoDoPonteiro = -1f; }
             else if (p <= 0f) { p = -p; sentidoDoPonteiro = 1f; }

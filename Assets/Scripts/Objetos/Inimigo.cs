@@ -104,6 +104,7 @@ public class Inimigo : MonoBehaviour
         jogador.Quicar(11f, true);
         GerenciadorDoJogo.Som("pisao");
         Conquistas.Contar("caranguejos", 10);
+        Desafios.Pisoes++;
         Destroy(gameObject, 0.5f);
     }
 }

@@ -121,6 +121,52 @@ O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora �
 8. **Direitos:** tudo no jogo é próprio (arte por código, músicas sintetizadas). Conferir as imagens pintadas em `Assets/Resources/Arte`
    (se foram geradas por IA, a Steam pede para declarar no questionário) e pôr os nomes da equipe nos créditos.
 
+## Plano de conteúdo para a Steam (16/11/2026): FEITO
+A campanha leva de 45 a 90 minutos, menos que as 2 horas do reembolso da Steam. Por isso a decisão de 10/11 ("destacar o que existe")
+foi revista e entrou conteúdo novo. Regra que valeu para tudo: **nada disso deixa o jogo mais fácil** (sem modo fácil, sem ajuda automática).
+Decisões do usuário (16/11/2026): Mundo 2 = **Mar de Baixo**; renascer em **0,5 s sempre**; chefes com **+1 golpe por etapa no coop com 3 ou 4**.
+
+### O que entrou
+- **Renascer em 0,5 s** (`tempoAposMorte` no `GerenciadorDoJogo`): a piada da morte continua por 1,6 s no alto da tela, já jogando.
+- **Chefes no coop:** com 3 ou 4 Grumetes, cada etapa pede 3 pisões (`Chefe.GolpesNoCoop`); o golpe extra repete a 1ª rodada da etapa.
+- **Replay das mortes** (`ReplayDasMortes.cs`): no fim da fase, todas as tentativas correm juntas como fantasmas e morrem nos mesmos
+  lugares (com X e "puf"); a câmera segue a tentativa que passou. Acelera para caber em ~9 s; ENTER pula. Só aparece se você morreu.
+- **Modo speedrun** (Opções > Speedrun, `Speedrun.cs`): tempo da fase com centésimos, o **fantasma do recorde** (arquivo por fase em
+  `fantasmas/`, ao lado do save) e as **parciais** contra a melhor partida completa (verde/vermelho no HUD).
+- **Placares:** o gancho `Placares.AoEnviar(nome, valor)` já é chamado no fim de cada fase e ao zerar (nomes em `Speedrun.cs`).
+  Falta ligar no Steamworks.NET (`FindOrCreateLeaderboard` + `UploadLeaderboardScore`), como as conquistas.
+- **Ciladas "ao vivo"** (`ArmadilhasAoVivo.cs`): `d` chão que desliza, `V` o "Mortes" do HUD cai em você, `p` pausa falsa.
+  Na fase 3 (chão que desliza antes do buraco de 3) e na 12 (HUD que cai e pausa falsa).
+- **"A fase muda depois da primeira morte" em 7 fases** (2, 3, 5, 6, 9, 11 e 12), sempre um espinho escondido num lugar em que dá para pular.
+- **Saídas secretas** (`O`, a bandeira preta): fases 6, 9 e 12, em cima de uma escadinha de blocos invisíveis. Liberam as **3 fases bônus**
+  (`FasesExtras.cs`): O Porão do Tesouro, Corrida da Maré e O Louro Mentiroso. No mapa: "?" lilás no ponto de origem, seta para baixo.
+- **Desafios depois de zerar** (`Desafios.cs`): 8 desafios (tempo, sem moedas, sem pisão, sem escudo, sem duplo salto, sem bolha de ar...),
+  aparecem no mapa no ponto da fase, com 2 conquistas (4 desafios e todos).
+- **Mecânicas novas das ilhas** (`ArmadilhasNovas.cs`): `)` canhão, `_` prancha, `!` baú que morde (fase 3 e bônus), `|` clone espelhado,
+  `-` maré que sobe e desce.
+- **Coop novo:** **carregar e arremessar** (segurar o empurrão com o amigo colado; `JogadorCarregar.cs`) e **alavanca e portão**
+  (`/`, `+` e o baú da tripulação `;`, em `AlavancaEPortao.cs`; o portão só guarda salas de bônus, nunca o caminho da bandeira).
+- **MUNDO 2: O MAR DE BAIXO** (abre depois de vencer o Kraken: a bolha no ponto do Kraken, seta para baixo):
+  - **nado** (`JogadorNaAgua.cs`): braçadas, queda lenta e **8 s de ar** (as bolhinhas em cima da cabeça); afogar mata;
+  - mecânicas (`MarDeBaixo.cs`): `~` água, `@` bolha de ar, `%` bolha falsa, `f` peixe-lanterna, `=` correnteza, `x` ostra, `z`/`&` águas-vivas;
+  - **7 fases** (3, o chefe, 2, a chefe), com o mapa próprio (`MapaDoMundo.DesenhoDoMar`);
+  - **2 chefes** (`ChefeDoMar.cs` e `ChefesDoMar.cs`, no molde Helltaker): o **Tubarão-Martelo** (marteladas com ondas de choque,
+    bigornas, brasas) e a **Mãe do Mar** (ondas, chuva de águas-vivas, pilares de tentáculos, correnteza que puxa);
+  - o final do Mar (3 quadros novos em `Resources/Arte/historia/mar_*.png`, desenhados por `desenhar_historia.py --mar`).
+- **Demo** (`Demo.cs`, menu **Cilada > Build Demo (fases 1 a 4)**): o mesmo jogo com o símbolo `CILADA_DEMO`; acaba na Capitã com o
+  convite para a lista de desejos, sem Mar, bônus nem tempestade, e com o save em `save_demo.json`.
+- **Ferramentas:** o checador entende água (nado livre no tanque) e as letras novas; `MapaDoMundo` tem dois mundos;
+  fases extras com índices próprios (bônus 110+, Mar 200+) para os saves antigos continuarem valendo.
+- **Testes:** `Cilada (teste) > Testar conteúdo novo` (`TesteDoConteudo.cs`) e o teste do coop ganhou o colo/arremesso.
+
+### O que falta (depende de gente jogando ou da conta na Steam)
+- **Jogar** o Mar inteiro, as bônus e os dois chefes novos e ajustar: o tempo do ar, a força da correnteza, as janelas dos chefes
+  (`TempoTonto` em `ChefeDoMar.cs`) e os `tempoAlvo` das medalhas. O checador garante o terreno, não a dificuldade.
+- **Placares e conquistas da Steam:** instalar o Steamworks.NET e ligar `Placares.AoEnviar` e `Conquistas.AoDesbloquear`.
+- **Página "Em breve" + demo no Next Fest** (precisa da conta no Steamworks).
+- **Trilha própria** para os chefes do Mar (hoje o Martelo usa a música da Capitã e a Mãe do Mar a da Baleia).
+- **Editor de fases** com códigos para compartilhar e o Workshop: só se o jogo pegar.
+
 ## Ainda falta
 - **Página do itch.io:** como jogar e os segredos (fase secreta: todas as moedas da fase 3 e depois seta para baixo no ponto 3).
 - **Testar as fases novas jogando:** o checador confere o terreno, mas não as plataformas, o vento, as portas e o tsunami. Jogar os trechos novos

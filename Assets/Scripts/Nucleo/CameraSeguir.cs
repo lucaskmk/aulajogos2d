@@ -73,11 +73,16 @@ public class CameraSeguir : MonoBehaviour
         instancia.transform.position = TelaPixelada.AlinharAoPixel(new Vector3(instancia.xSuave, instancia.alturaFixa, -10f), instancia.cam);
     }
 
+    // O replay das mortes (fim da fase) leva a câmera junto com o fantasma que passou. null = volta ao normal.
+    static Transform alvoDoReplay;
+    public static void SeguirNoReplay(Transform alvo) => alvoDoReplay = alvo;
+
     float PosicaoDesejada()
     {
         float meiaLargura = cam.orthographicSize * cam.aspect;
         // coop: juntos, o meio do grupo; espalhados, quem está puxando a frente (GerenciadorDoJogo.FocoDaCamera)
-        float x = GerenciadorDoJogo.FocoDaCamera(out float foco) ? foco + olharAFrente
+        float x = alvoDoReplay != null ? alvoDoReplay.position.x + olharAFrente
+            : GerenciadorDoJogo.FocoDaCamera(out float foco) ? foco + olharAFrente
             : alvo != null ? alvo.position.x + olharAFrente : 0f;
         if (limiteDireito - limiteEsquerdo <= meiaLargura * 2f) return (limiteEsquerdo + limiteDireito) / 2f;
         return Mathf.Clamp(x, limiteEsquerdo + meiaLargura, limiteDireito - meiaLargura);

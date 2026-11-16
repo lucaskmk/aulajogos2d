@@ -22,6 +22,17 @@ public static class Textos
     static readonly Dictionary<string, Fala> DepoisDaFase = new Dictionary<string, Fala>
     {
         { "Bem-vindo :)", Louro("Viu só? Tranquilo! Só {0} morte(s)... por enquanto. Currupaco!") },
+        // as fases bônus (saídas secretas)
+        { "O Porão do Tesouro", Louro("Moeda, canhão e baú que morde. Fase bônus é isso. {0} morte(s) bem gastas.") },
+        { "Corrida da Maré", Marina("Você correu da maré E de você mesmo? Que dia, Grumete.") },
+        { "O Louro Mentiroso", Louro("Gostou da MINHA fase? {0} morte(s)! Eu sabia que você ia adorar.") },
+        // o Mar de Baixo
+        { "Mergulho de Cabeça", Marina("Você nadou! Mais ou menos. Mais pra menos. {0} morte(s).") },
+        { "Bolha que Mente", Louro("Bolha que mente, água-viva que queima... e eu achando que EU era o mentiroso.") },
+        { "O Peixe da Luz", Marina("Nem toda luz no escuro é moeda. Agora você sabe. {0} vezes.") },
+        { "A Forja do Martelo", Louro("O ferreiro dormiu. Sério, que cabeça dura. Currupaco!") },
+        { "Correnteza", Marina("A correnteza puxa pra trás, mas você foi pra frente. {0} morte(s), mas foi!") },
+        { "O Jardim das Ostras", Louro("Ostra que morde, prancha que cai, clone roxo... o Mar é pior que as ilhas.") },
         { "Confia em mim (e corre!)", Marina("Grumete, você confiou no Louro E fugiu de uma SERRA? Toma cuidado, tá?") },
         { "O Final (mudei de ideia)", Louro("\"O Final\". Hahaha. Você acreditou mesmo? E pegou TODAS as moedas? Dizem que isso abre um caminho...") },
         { "A Capitã Âncora", Louro("Venceu a Capitã! Ela mandou pedir desculpas pelas {0} vez(es). Mentira, ela não mandou.") },
@@ -127,6 +138,39 @@ public static class Textos
 
     public static readonly Fala SecretaLiberada =
         Louro("Todas as moedas?! Abriu um caminho na lagoa! Aperte S no ponto 3.");
+
+    // ------------------------------------------------------------------ saídas secretas e o Mar de Baixo
+
+    // Achou a bandeira secreta 'O' de uma fase: a fase bônus dela aparece no mapa.
+    public static Fala BonusLiberada(int bonus) =>
+        Louro("Bandeira secreta?! Achou um atalho pra fase bônus! Aperte S no ponto dessa fase (o do ? lilás).");
+
+    // Venceu o Kraken: no mapa das ilhas, a Marina conta do mundo 2 (uma vez por slot).
+    public static readonly Fala[] MarAbriu =
+    {
+        Marina("Grumete... o Kraken fugiu pro fundo do mar. Pro MEU reino, o Mar de Baixo."),
+        Marina("Tem uma bolha no ponto do covil dela. Aperte S lá e mergulhe comigo!"),
+        Louro("Debaixo d'água? Eu não sei nadar. Nem você, aliás. Currupaco!"),
+    };
+
+    // O primeiro mergulho.
+    public static readonly Fala[] ChegadaNoMar =
+    {
+        Marina("Bem-vindo ao Mar de Baixo! Na água, aperte PULAR para dar braçadas."),
+        Marina("Mas o ar acaba! Fique de olho nas bolhinhas em cima da sua cabeça e pegue as bolhas de ar."),
+        Louro("E nem toda bolha é bolha. Tô só avisando. Aperte W no ponto 1 pra voltar pras ilhas."),
+    };
+
+    // O fim da DEMO (Demo.cs): depois da Capitã.
+    public static readonly Fala[] FimDaDemo =
+    {
+        Marina("Você venceu a Capitã! Mas o Kraken ainda está lá fora... e o Mar de Baixo também."),
+        Louro("FIM DA DEMO! O jogo completo tem 13 fases, 4 chefes, o Mar de Baixo e fases secretas. Põe na lista de desejos!"),
+    };
+
+    // Venceu a Mãe do Mar (a última fase do Mar).
+    public static readonly Fala DepoisDoMar =
+        Marina("O Mar de Baixo está livre! Obrigada, Grumete. Agora... quer tentar sem morrer? Hihi.");
 
     public static readonly Fala DepoisDaSecreta =
         Louro("Você achou a ilha secreta! Sério, como? Nem eu lembrava dela.");

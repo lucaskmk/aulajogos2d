@@ -1090,8 +1090,80 @@ def quadro_20():
     q.vinheta(0.75)
     q.salvar('rei_2')
 
+
+# ------------------------------------------------------------------ o fim do Mar de Baixo (o mundo 2)
+
+MAR_FUNDO = [(8, 20, 48), (14, 40, 84), (22, 70, 120), (40, 110, 160)]
+
+def fundo_do_mar(q, semente):
+    """O fundo do mar: escuro embaixo, raios de luz vindo da superfície, bolhas e o chão de areia com corais."""
+    q.ceu(0, H, list(reversed(MAR_FUNDO)))
+    for dx in (-60, 0, 50):
+        q.raio_de_luz(128 + dx, 10, 128 + dx * 1.6, 40, 0, 130, (150, 210, 255), 0.35)
+    rnd = random.Random(semente)
+    for _ in range(40):
+        x, y = rnd.randrange(W), rnd.randrange(H - 20)
+        q.ponto(x, y, (190, 230, 255))
+        if rnd.random() < 0.3:
+            q.ponto(x + 1, y - 1, (230, 245, 255))
+    q.ceu(124, H, [(70, 80, 110), (40, 46, 70)])
+    for i in range(9):
+        cx = rnd.randrange(W)
+        cor = rnd.choice([(230, 110, 150), (255, 160, 90), (170, 110, 230)])
+        for k in range(rnd.randrange(6, 14)):
+            q.ponto(cx + rnd.randrange(-2, 3), 124 - k, cor)
+
+def quadro_21():
+    """A Mãe do Mar afundando no escuro, soltando bolhas."""
+    q = Quadro()
+    fundo_do_mar(q, 81)
+    q.brilho(128, 90, 50, (120, 60, 160), 0.5)
+    q.circulo(128, 92, 26, (110, 70, 150))
+    q.circulo(128, 88, 22, (176, 120, 220))
+    for i in range(7):
+        x = 106 + i * 7
+        for k in range(18):
+            q.ponto(x + int(2 * math.sin(k / 3 + i)), 112 + k, (150, 90, 200))
+    q.retangulo(116, 78, 120, 82, (30, 20, 40))
+    q.retangulo(136, 78, 140, 82, (30, 20, 40))
+    rnd = random.Random(82)
+    for _ in range(30):
+        q.circulo(128 + rnd.uniform(-30, 30), rnd.uniform(10, 70), rnd.uniform(0.6, 2.2), (200, 236, 255))
+    q.vinheta(0.6)
+    q.salvar('mar_1')
+
+def quadro_22():
+    """A Marina e o Grumete no reino livre, embaixo dos raios de luz."""
+    q = Quadro()
+    fundo_do_mar(q, 83)
+    marina = personagem('Marina', 2)
+    q.aura(marina, 98 - marina.size[0] // 2, 124 - marina.size[1], (190, 230, 255), 2)
+    q.colar_no_chao(marina, 98, 124)
+    q.colar_no_chao(grumete(2), 150, 124)
+    rnd = random.Random(84)
+    for _ in range(14):
+        q.circulo(150 + rnd.uniform(-6, 6), 90 - rnd.uniform(0, 60), rnd.uniform(0.6, 1.8), (210, 240, 255))
+    q.vinheta(0.4)
+    q.salvar('mar_2')
+
+def quadro_23():
+    """O Louro numa pedra na superfície, de olho num baú brilhando lá no fundo."""
+    q = Quadro()
+    q.ceu(0, 60, [(120, 180, 240), (200, 230, 250)])
+    q.mar(60, list(MAR_FUNDO[::-1][:3]) + [(8, 20, 48)], (120, 190, 240), (220, 245, 255), 85, 1.0)
+    q.morro(150, 210, 64, 14, (90, 84, 90), 86, 2)
+    q.colar(louro(2, True), 170, 26)
+    q.colar(bau(1), 84, 112)
+    q.brilho(96, 118, 18, (255, 220, 110), 0.6)
+    q.vinheta(0.4)
+    q.salvar('mar_3')
+
+DO_MAR = (quadro_21, quadro_22, quadro_23)
+
 NOVOS = (quadro_10, quadro_11, quadro_12, quadro_13, quadro_14, quadro_15, quadro_16, quadro_17, quadro_18, quadro_19, quadro_20)
 
 if __name__ == '__main__':
-    for f in (quadro_1, quadro_2, quadro_3, quadro_4, quadro_5, quadro_6, quadro_7, quadro_8, quadro_9) + NOVOS:
+    # (--mar: só os quadros do fim do Mar de Baixo)
+    lista = DO_MAR if '--mar' in sys.argv else (quadro_1, quadro_2, quadro_3, quadro_4, quadro_5, quadro_6, quadro_7, quadro_8, quadro_9) + NOVOS + DO_MAR
+    for f in lista:
         f()

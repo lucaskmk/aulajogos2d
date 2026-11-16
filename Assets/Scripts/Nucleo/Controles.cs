@@ -136,6 +136,13 @@ public static class Controles
     }
 
     // F8 (no mapa): liga e desliga o modo difícil, sem precisar zerar o jogo (atalho de teste).
+    // F6 no mapa (só no editor e no build de teste): troca de mundo na hora (ilhas <-> Mar de Baixo), já liberando o Mar.
+    public static bool TrocarDeMundo()
+    {
+        var teclado = Keyboard.current;
+        return AtalhosDeTeste && teclado != null && teclado.f6Key.wasPressedThisFrame;
+    }
+
     public static bool AlternarTempestade()
     {
         var teclado = Keyboard.current;

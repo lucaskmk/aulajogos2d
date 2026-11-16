@@ -8,10 +8,12 @@ public static class Opcoes
     const string ChaveEfeitos = "cilada_volume_efeitos";
     const string ChaveGraficos = "cilada_graficos_hd2d";
     const string ChaveCronometro = "cilada_mostrar_tempo";
+    const string ChaveSpeedrun = "cilada_speedrun";
 
     static float musica = -1f, efeitos = -1f; // -1 = ainda não leu do PlayerPrefs
     static int graficos = -1;                 // -1 = ainda não leu; 1 = HD-2D; 0 = Simples
     static int cronometro = -1;               // -1 = ainda não leu; 1 = mostra o tempo no HUD; 0 = esconde
+    static int speedrun = -1;                 // -1 = ainda não leu; 1 = modo speedrun (Speedrun.cs); 0 = desligado
 
     // Necessário porque o projeto está com "Enter Play Mode Options" (sem recarregar o domínio).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -20,6 +22,23 @@ public static class Opcoes
         musica = efeitos = -1f;
         graficos = -1;
         cronometro = -1;
+        speedrun = -1;
+    }
+
+    // Modo speedrun: tempo da fase com centésimos, o fantasma do recorde e as parciais (veja Speedrun.cs).
+    public static bool Speedrun
+    {
+        get
+        {
+            if (speedrun < 0) speedrun = Guardado.GetInt(ChaveSpeedrun, 0);
+            return speedrun == 1;
+        }
+        set
+        {
+            speedrun = value ? 1 : 0;
+            Guardado.SetInt(ChaveSpeedrun, speedrun);
+            Guardado.Save();
+        }
     }
 
     // Mostrar o tempo da partida no canto do HUD? (as mortes sempre aparecem: elas são o "placar" do jogo)

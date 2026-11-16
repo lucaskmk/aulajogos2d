@@ -28,7 +28,8 @@ public static class Guardado
     static bool mudou;
 
     static bool NoPlayerPrefs => Application.platform == RuntimePlatform.WebGLPlayer;
-    public static string Caminho => Path.Combine(Application.persistentDataPath, Application.isEditor ? "save_editor.json" : "save.json");
+    public static string Caminho => Path.Combine(Application.persistentDataPath,
+        Application.isEditor ? "save_editor.json" : Demo.Ativa ? "save_demo.json" : "save.json"); // (a demo tem o save dela)
 
     // Necessário porque o projeto está com "Enter Play Mode Options" (sem recarregar o domínio).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

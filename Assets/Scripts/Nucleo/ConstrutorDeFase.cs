@@ -73,6 +73,12 @@ public static class ConstrutorDeFase
         composto.generationType = CompositeCollider2D.GenerationType.Manual;
 
         var celulasQueCaem = new HashSet<Vector2Int>();
+        var celulasQueDeslizam = new HashSet<Vector2Int>();           // 'd' (o chão que desliza: ArmadilhasAoVivo.cs)
+        var celulasDeAgua = new HashSet<Vector2Int>();                // '~' (a água do Mar de Baixo: MarDeBaixo.cs)
+        var celulasDeMare = new HashSet<Vector2Int>();                // '-' (a maré que sobe e desce)
+        var celulasDeCorrenteza = new HashSet<Vector2Int>();          // '=' (a correnteza)
+        var celulasDePrancha = new HashSet<Vector2Int>();             // '_' (a prancha: ArmadilhasNovas.cs)
+        var celulasDePortao = new HashSet<Vector2Int>();              // '+' (o portão do coop: AlavancaEPortao.cs)
         var celulasQueFogem = new HashSet<Vector2Int>();
         var celulasDePlataforma = new Dictionary<Vector2Int, char>(); // 'j', 'J' e 'D' (a letra diz o tipo)
         var celulasDoRitmo = new Dictionary<Vector2Int, char>();      // 'a', 'b' e 'A' (blocos do ritmo)
@@ -107,6 +113,32 @@ public static class ConstrutorDeFase
                     case 'B': BlocoSolido(chaoSolido.transform, pos, "tijolo", !SombraEscondida(x, linha)); break;
                     case 'F': Visual("ChaoFalso", raiz, pos, SpriteDoChao(x, linha), 0, parado: true).AddComponent<ChaoRevelado>(); break;
                     case 'C': celulasQueCaem.Add(new Vector2Int(x, linha)); break;
+                    case 'd': celulasQueDeslizam.Add(new Vector2Int(x, linha)); break;
+                    case 'V': Criar<HudQueCai>("HudQueCai", raiz, pos); break;   // o "Mortes" do HUD cai em você
+                    case 'p': Criar<PausaFalsa>("PausaFalsa", raiz, pos); break; // a pausa que não pausa
+                    case 'O': Criar<Bandeira>("BandeiraSecreta", raiz, chaoDaCelula).VirarSecreta(); break; // a saída secreta (não entra na barra de progresso)
+                    // o Mar de Baixo (MarDeBaixo.cs)
+                    case '~': celulasDeAgua.Add(new Vector2Int(x, linha)); break;
+                    case '-': celulasDeMare.Add(new Vector2Int(x, linha)); break;
+                    case '=': celulasDeCorrenteza.Add(new Vector2Int(x, linha)); celulasDeAgua.Add(new Vector2Int(x, linha)); break; // (a correnteza é sempre debaixo d'água)
+                    case '@': Criar<BolhaDeAr>("BolhaDeAr", raiz, pos); break;
+                    case '%': Criar<BolhaDeAr>("BolhaFalsa", raiz, pos).falsa = true; break;
+                    case 'f': Criar<PeixeLanterna>("PeixeLanterna", raiz, pos); break;
+                    case 'x': Criar<Ostra>("Ostra", raiz, pos); break;
+                    case 'z': Criar<AguaViva>("AguaViva", raiz, pos).Preparar(false); break;
+                    case '&': Criar<AguaViva>("AguaVivaQueQueima", raiz, pos).Preparar(true); break;
+                    // as mecânicas novas das ilhas (ArmadilhasNovas.cs)
+                    case ')': Criar<Canhao>("Canhao", raiz, chaoDaCelula); break;
+                    case '_': celulasDePrancha.Add(new Vector2Int(x, linha)); break;
+                    // o coop (AlavancaEPortao.cs)
+                    case '/': Criar<Alavanca>("Alavanca", raiz, pos); break;
+                    case '+': celulasDePortao.Add(new Vector2Int(x, linha)); break;
+                    case ';': Criar<BauDaTripulacao>("BauDaTripulacao", raiz, chaoDaCelula); break;
+                    case '!': Criar<Mimico>("Mimico", raiz, chaoDaCelula); break;
+                    case '|': Criar<CloneEspelhado>("CloneEspelhado", raiz, pos); break;
+                    // os chefes do Mar de Baixo (ChefesDoMar.cs)
+                    case '{': Criar<ChefeMartelo>("ChefeMartelo", raiz, pos); break;
+                    case '}': Criar<ChefeMaeDoMar>("ChefeMaeDoMar", raiz, pos); break;
                     case 'P': info.inicio = pos; break;
                     case '?': Criar<BlocoSurpresa>("BlocoMoeda", raiz, pos); info.totalDeMoedas++; break;
                     case 'K': Criar<BlocoSurpresa>("BlocoPegadinha", raiz, pos).soltaInimigo = true; break;
@@ -171,6 +203,33 @@ public static class ConstrutorDeFase
             objeto.AddComponent<ChaoRevelado>();
             foreach (Vector2Int celula in grupo)
                 chaoQueCai.AdicionarBloco(Posicao(celula.x, celula.y), FabricaDeSprites.Pegar(SpriteDoChao(celula.x, celula.y)));
+        }
+
+        foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasDeAgua)) AguaDoMar.Criar(raiz, grupo, altura, false);
+        foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasDeMare)) AguaDoMar.Criar(raiz, grupo, altura, true);
+        foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasDeCorrenteza)) Correnteza.Criar(raiz, grupo, altura);
+        foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasDePortao))
+        {
+            var objeto = new GameObject("Portao");
+            objeto.transform.SetParent(raiz, false);
+            var portao = objeto.AddComponent<Portao>();
+            foreach (Vector2Int celula in grupo) portao.AdicionarGrade(Posicao(celula.x, celula.y));
+        }
+        foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasDePrancha))
+        {
+            var objeto = new GameObject("Prancha");
+            objeto.transform.SetParent(raiz, false);
+            var prancha = objeto.AddComponent<Prancha>();
+            foreach (Vector2Int celula in grupo) prancha.AdicionarTabua(Posicao(celula.x, celula.y));
+        }
+
+        foreach (List<Vector2Int> grupo in AgruparVizinhos(celulasQueDeslizam))
+        {
+            var objeto = new GameObject("ChaoQueDesliza");
+            objeto.transform.SetParent(raiz, false);
+            var desliza = objeto.AddComponent<ChaoQueDesliza>();
+            foreach (Vector2Int celula in grupo)
+                desliza.AdicionarBloco(Posicao(celula.x, celula.y), FabricaDeSprites.Pegar(SpriteDoChao(celula.x, celula.y)));
         }
 
         // Vento do mar: células 'y' (ou 'n') encostadas viram UMA zona (o retângulo em volta delas).

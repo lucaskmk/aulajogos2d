@@ -113,6 +113,15 @@ public static class Tripulacao
                 || (c != null && c.buttonWest.wasPressedThisFrame);
         }
 
+        // O mesmo botão do empurrão, SEGURADO (pegar o companheiro no colo: JogadorCarregar.cs).
+        public bool EmpurraoSegurando()
+        {
+            Keyboard teclado = Keyboard.current;
+            Gamepad c = Controle;
+            return (teclado != null && ((Wasd && Teclas.Segurando(Teclas.Acao.Empurrar)) || (Setas && teclado.rightShiftKey.isPressed)))
+                || (c != null && c.buttonWest.isPressed);
+        }
+
         // Virar balão de propósito (segurando) e, na tela da Tripulação, sair dela.
         public bool BalaoSegurando()
         {

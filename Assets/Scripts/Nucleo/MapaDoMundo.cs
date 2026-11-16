@@ -47,7 +47,53 @@ public class MapaDoMundo : MonoBehaviour
     //   o covil do Kraken Vermelho (13), perto da Rocha da Caveira.
     // As 3 primeiras linhas são o céu. As 4 últimas ficam atrás da faixa escura da interface:
     // lá embaixo é só enfeite (nenhum ponto): o mar aberto, com navios passando.
-    static readonly string[] Desenho =
+    // MUNDO 2 (o Mar de Baixo): o mesmo tamanho e as mesmas letras, mas tudo é "região sombria" (o fundo do mar,
+    // com os olhos e os vaga-lumes virando bichos que brilham) e o céu é a superfície lá em cima.
+    // Os pontos 1 a 7 são as fases do Mar (Fases.MarDeBaixo).
+    public enum QualMundo { Ilhas, MarDeBaixo }
+    static QualMundo mundo = QualMundo.Ilhas;
+    public static QualMundo MundoAtual => mundo;
+    static string[] Desenho => mundo == QualMundo.MarDeBaixo ? DesenhoDoMar : DesenhoDasIlhas;
+    static string[] Personagens => mundo == QualMundo.MarDeBaixo ? PersonagensDoMar : PersonagensDasIlhas;
+    // O primeiro índice de fase deste mapa (os pontos do Mar são as fases 200, 201...: veja Fases.PrimeiroDoMar).
+    static int Base => mundo == QualMundo.MarDeBaixo ? Fases.PrimeiroDoMar : 0;
+    static int QuantasFases => mundo == QualMundo.MarDeBaixo ? Fases.MarDeBaixo.Length : Fases.Todas.Length;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void LimparMundo() => mundo = QualMundo.Ilhas;
+
+    static readonly string[] DesenhoDoMar =
+    {
+            "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "~~~~~...o....~~~~~~~~~...^^....~~~~~~~~~~~~~~~...o..R...~~~~~~~~~~~~~~~~~...^^.....~~~~~~~~~~~~~~~...o....~~~~~~",
+            "~~~~.^......o..~~~~~~..^^..o.....~~~~~~~~~~~...........~~~~~~~~~~~~~~~~...^...o..~~~~~~~~~~~~~~~~.^..R.....~~~~~",
+            "~~~..R...........~~~~...o.....^...~~~~~~~~~..o..^^......~~~~~~~~~~~~~~..o.......^~~~~~~~~~~~~~~...........o~~~~~",
+            "~~~.....o...^.......~~.....^^......~~~~~~~......o........~~~~~~~~~~~~...^...*....~~~~~~~~~~~~~..^^..o.......~~~~",
+            "~~~..1+++++++2.......~~..o....R.....~~~~~~...^.....o.....~~~~~~~~~~~..o.....^....~~~~~~~~~~~~...o.....^.....~~~~",
+            "~~~...o.....+..^^.....~.....^.......~~~~~....R....^......~~~~~~~~~~~........o...~~~~~~~~~~~~~..R.......o....~~~~",
+            "~~~~....^...+++++++++++===+++++3.......~~.o.........o....~~~~~~~~~~...^^..R.....~~~~~~~~~~~~~...o.^.........~~~~",
+            "~~~~~.o.....R....o.....~.^....+..^.....=.....^^.....^....~~~~~~~~~~.o.......o...~~~~~~~~~~~~...........R...~~~~~",
+            "~~~~~~..^^.....^.....~~~...o..+++++++++=+++++++++4..o....~~~~~~~~~~...^.....^...~~~~~~~~~~~...o..^^....o..~~~~~~",
+            "~~~~~~~...o.......~~~~~~~...^.......~~~~~..o....+....^...~~~~~~~~~~..o..*.....~~~~~~~~~~~~~..^........^..~~~~~~~",
+            "~~~~~~~~~.....^..~~~~~~~~~.....o...~~~~~~~...^..++++++5++++====++++++6.....o..~~~~~~~~~~~~~..o..R...o...~~~~~~~~",
+            "~~~~~~~~~~~...o~~~~~~~~~~~~~..^...~~~~~~~~~~.....o...........~~~~~~.+..^....~~~~~~~~~~~~~~~..........~~~~~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+==========================7~~~~~~~~~~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "~~~~~~~n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~n~~~~~~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    };
+
+    // O "personagem" de cada fase do Mar (do lado do ponto).
+    static readonly string[] PersonagensDoMar =
+    {
+        "sereia", "bolha_ar", "peixe_lanterna", "martelo", "agua_viva", "ostra", "mae_do_mar",
+    };
+
+    static readonly string[] DesenhoDasIlhas =
     {
             "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
             "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
@@ -73,7 +119,7 @@ public class MapaDoMundo : MonoBehaviour
     };
 
     // O "personagem" de cada fase, que fica do lado do ponto (o primeiro é o da fase 1).
-    static readonly string[] Personagens =
+    static readonly string[] PersonagensDasIlhas =
     {
         "louro", "serra", "rato", "ancora", "esmagador", "mapa_navio", "faca",
         "fantasma", "vento", "baleia", "tsunami", "bandeira_falsa", "kraken",
@@ -91,8 +137,10 @@ public class MapaDoMundo : MonoBehaviour
 
     // Regiões com o chão de outro jeito (números = colunas do Desenho): a ArteDoMapa pinta a terra seca
     // e a terra sombria a partir daqui, com a borda ondulada.
-    const int InicioDoDesfiladeiro = 64, FimDoDesfiladeiro = 89; // terra seca: a baía, a gruta, o navio fantasma e o deserto do penhasco (9)
-    const int InicioDaSombra = 90;                                 // daqui para a direita: a terra morta da região sombria
+    // (no Mar de Baixo não tem terra seca, e é tudo "sombrio": o fundo do mar)
+    static int InicioDoDesfiladeiro => mundo == QualMundo.MarDeBaixo ? 999 : 64; // terra seca: a baía, a gruta, o navio fantasma e o deserto do penhasco (9)
+    static int FimDoDesfiladeiro => mundo == QualMundo.MarDeBaixo ? 999 : 89;
+    static int InicioDaSombra => mundo == QualMundo.MarDeBaixo ? -4 : 90;     // daqui para a direita: a terra morta da região sombria
     static readonly Color TomDaSombra = new Color(0.62f, 0.55f, 0.78f); // os enfeites da região sombria ficam mais escuros
 
     static readonly Color CorConcluida = new Color(0.45f, 0.95f, 0.45f);
@@ -113,6 +161,8 @@ public class MapaDoMundo : MonoBehaviour
 
     public Transform Grumete { get; private set; }
     public int Selecionado { get; private set; }
+    // A FASE do ponto escolhido (Selecionado é o número do ponto NESTE mapa; no Mar, o ponto 0 é a fase 200).
+    public int FaseSelecionada => Selecionado == Fases.IndiceSecreto ? Selecionado : Base + Selecionado;
     public bool Andando { get; private set; }
 
     int liberado;    // última fase liberada
@@ -130,6 +180,10 @@ public class MapaDoMundo : MonoBehaviour
     float timerPasso;
     int nascendo = -1; // ponto que está aparecendo agora (animação própria)
 
+    // As marcas do lado dos pontos: o "?" lilás das fases bônus (saídas secretas) e a bolha do mergulho
+    // (no Kraken: desce para o Mar; no ponto 1 do Mar: sobe para as ilhas). Seta para baixo/cima no ponto.
+    readonly List<(Transform marca, int ponto)> marcas = new List<(Transform, int)>();
+
     // Fase secreta
     bool secretaLiberada;
     Vector2Int? pontoSecreto;
@@ -141,9 +195,14 @@ public class MapaDoMundo : MonoBehaviour
     // andarPara: se >= 0, ele anda sozinho até lá (acabou de passar de fase).
     // caminhoNovo: o caminho até "andarPara" acabou de ser liberado (a névoa some aos pouquinhos).
     // mostrarSecreta: a fase secreta acabou de ser liberada (aparece com animação).
-    public static MapaDoMundo Criar(Transform raiz, int no, int liberado, int concluidas, int[] mortes,
-        bool secretaLiberada, int andarPara = -1, bool caminhoNovo = false, bool mostrarSecreta = false)
+    // (no, liberado, concluidas e andarPara são pontos DESTE mapa; no Mar o ponto 0 é a primeira fase do Mar)
+    // bonus: os pontos que ganham o "?" das fases bônus; mergulho: o ponto que ganha a bolha (-1 = nenhum).
+    public static MapaDoMundo Criar(Transform raiz, QualMundo qual, int no, int liberado, int concluidas, int[] mortes,
+        bool secretaLiberada, int andarPara = -1, bool caminhoNovo = false, bool mostrarSecreta = false,
+        ICollection<int> bonus = null, int mergulho = -1)
     {
+        mundo = qual;
+        if (qual == QualMundo.MarDeBaixo) secretaLiberada = false; // (a secreta é das ilhas)
         var mapa = new GameObject("MapaDoMundo").AddComponent<MapaDoMundo>();
         mapa.transform.SetParent(raiz, false);
         mapa.LerDesenho();
@@ -154,7 +213,36 @@ public class MapaDoMundo : MonoBehaviour
         mapa.Selecionado = no == Fases.IndiceSecreto && mapa.secretaLiberada ? no : Mathf.Clamp(no, 0, ultimo);
         if (andarPara > ultimo) andarPara = -1;
         mapa.Montar(andarPara, caminhoNovo && andarPara >= 0, mostrarSecreta && mapa.secretaLiberada, mortes);
+        if (bonus != null)
+            foreach (int ponto in bonus)
+                if (ponto >= 0 && ponto <= mapa.liberado && ponto < mapa.pontos.Count) mapa.Marca(ponto, false);
+        if (mergulho >= 0 && mergulho <= mapa.liberado && mergulho < mapa.pontos.Count) mapa.Marca(mergulho, true);
         return mapa;
+    }
+
+    // A marca do lado do ponto: o "?" lilás (fase bônus) ou a bolha azul (mergulho).
+    void Marca(int ponto, bool bolha)
+    {
+        Vector3 lugar = Mundo(pontos[ponto]) + new Vector3(0.05f, 1.05f, 0f);
+        Transform marca;
+        if (bolha)
+        {
+            marca = ConstrutorDeFase.Visual("Mergulho", transform, lugar, "bolha_escudo", 8, false).transform;
+            marca.localScale = Vector3.one * 0.7f;
+        }
+        else
+        {
+            var desenho = ConstrutorDeFase.Visual("Bonus", transform, lugar, "no_mapa", 8, false).GetComponent<SpriteRenderer>();
+            desenho.color = CorSecreta;
+            desenho.transform.localScale = Vector3.one * 0.7f;
+            var numero = new GameObject("Numero");
+            numero.transform.SetParent(desenho.transform, false);
+            var texto = numero.AddComponent<SpriteRenderer>();
+            texto.sprite = FabricaDeSprites.SpriteDeTexto("?", Preto, new Color32(255, 255, 255, 0));
+            texto.sortingOrder = 9;
+            marca = desenho.transform;
+        }
+        marcas.Add((marca, ponto));
     }
 
     // Posição no mundo do centro de uma célula (a linha 0 do texto é o topo).
@@ -187,7 +275,7 @@ public class MapaDoMundo : MonoBehaviour
                 if (Desenho[y][x] == 'S') pontoSecreto = new Vector2Int(x, y);
             }
         foreach (var par in achados)
-            if (par.Key == pontos.Count && pontos.Count < Fases.Todas.Length) pontos.Add(par.Value);
+            if (par.Key == pontos.Count && pontos.Count < QuantasFases) pontos.Add(par.Value);
 
         for (int i = 0; i + 1 < pontos.Count; i++)
         {
@@ -200,7 +288,7 @@ public class MapaDoMundo : MonoBehaviour
             caminhos.Add(caminho);
         }
 
-        if (pontoSecreto.HasValue && Fases.FaseDoSegredo < pontos.Count)
+        if (mundo == QualMundo.Ilhas && pontoSecreto.HasValue && Fases.FaseDoSegredo < pontos.Count)
         {
             caminhoSecreto = AcharCaminho(pontos[Fases.FaseDoSegredo], pontoSecreto.Value);
             if (caminhoSecreto == null) pontoSecreto = null; // sem caminho, sem fase secreta no mapa
@@ -289,7 +377,7 @@ public class MapaDoMundo : MonoBehaviour
             personagens[i].localPosition = LugarDoPersonagem(i, 0f);
 
             if (i <= liberado && mortes != null && i < mortes.Length) Caveira(pontos[i], mortes[i]);
-            if (i <= liberado) MostrarMedalhas(pontos[i], i);
+            if (i <= liberado) MostrarMedalhas(pontos[i], Base + i);
         }
 
         // A fase secreta: um ponto lilás com "?" e uma moeda girando em cima.
@@ -887,6 +975,11 @@ public class MapaDoMundo : MonoBehaviour
                 desenhoSecreto.transform.localScale = Vector3.one * (1f + 0.08f * Mathf.Sin(Time.time * 6f));
             else desenhoSecreto.transform.localScale = Vector3.one;
         }
+
+        // as marcas (bônus e mergulho) boiam de leve
+        for (int i = 0; i < marcas.Count; i++)
+            if (marcas[i].marca != null)
+                marcas[i].marca.localPosition = Mundo(pontos[marcas[i].ponto]) + new Vector3(0.05f, 1.05f + 0.08f * Mathf.Sin(Time.time * 2.5f + i), 0f);
 
         // parado, o Grumete respira
         if (!Andando) Grumete.localScale = new Vector3(1f, 1f + 0.04f * Mathf.Sin(Time.time * 3f), 1f);

@@ -31,6 +31,19 @@ public class Bandeira : MonoBehaviour
         return this;
     }
 
+    // 'O' - a BANDEIRA SECRETA (saída secreta): preta de pirata, num lugar difícil. Passa de fase E libera a
+    // fase bônus desta fase (Fase.saidaSecreta), que aparece no mapa com um "?" lilás do lado do ponto.
+    bool secreta;
+    public Bandeira VirarSecreta()
+    {
+        secreta = true;
+        var desenho = GetComponent<SpriteRenderer>();
+        desenho.color = new Color(0.3f, 0.26f, 0.38f);
+        var luz = GetComponentInChildren<UnityEngine.Rendering.Universal.Light2D>();
+        if (luz != null) luz.color = new Color(0.8f, 0.55f, 1f);
+        return this;
+    }
+
     void OnTriggerEnter2D(Collider2D outro) => Testar(outro);
     void OnTriggerStay2D(Collider2D outro) => Testar(outro);
 
@@ -41,6 +54,7 @@ public class Bandeira : MonoBehaviour
         if (jogador == null || jogador.Morto) return;
 
         podeTocar = false;
-        GerenciadorDoJogo.Instancia.FaseConcluida();
+        if (secreta) GerenciadorDoJogo.Instancia.SaidaSecreta();
+        else GerenciadorDoJogo.Instancia.FaseConcluida();
     }
 }

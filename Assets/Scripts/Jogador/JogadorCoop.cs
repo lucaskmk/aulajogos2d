@@ -147,7 +147,8 @@ public partial class Jogador
         }
         else segurandoBalao = 0f;
 
-        if (!NaBolha && marujo.EmpurraoApertou() && Time.time >= proximoEmpurrao) EmpurrarQuemEstaNaFrente();
+        // o empurrão (apertar) e o colo (segurar com o amigo colado): JogadorCarregar.cs
+        if (!NaBolha) AtualizarColo();
     }
 
     // ------------------------------------------------------------------ empurrão

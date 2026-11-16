@@ -76,9 +76,26 @@ using UnityEngine;
 //   N  TSUNAMI: a onda gigante que o Kraken levantou, que PERSEGUE você a partir desta coluna (acorda quando você se
 //      afasta 4 blocos; anda 5,2 b/s e acelera se você abrir vantagem). Encostou, morreu. No checkpoint ela nasce 9 blocos atrás
 //
+//   d  CHÃO QUE DESLIZA (ao vivo): parece chão; quando você chega perto, o pedaço escorrega para a direita a largura
+//      dele inteira (tampa o buraco que tinha depois e abre outro onde estava). Logo à direita dos 'd' tem que ter um
+//      buraco do mesmo tamanho, de no máximo 3. Veja ArmadilhasAoVivo.cs
+//   V  O HUD CAI (ao vivo): linha invisível; o "Mortes: N" do canto da tela voa até em cima de você e despenca (vira bloco)
+//   p  PAUSA FALSA (ao vivo): linha invisível; a tela de pausa aparece, mas o jogo continua rodando por trás
+//   O  BANDEIRA SECRETA (saída secreta): passa de fase e libera a fase bônus da fase (o campo saidaSecreta).
+//      Fica num lugar difícil (em cima de blocos invisíveis 'I', por exemplo). Veja FasesExtras.cs
+//   )  CANHÃO: entrou, ele dispara o Grumete em arco para a direita (uns 9 blocos)
+//   _  PRANCHA: tábua que tomba se você ficar mais de 0,35 s em cima (volta 1,2 s depois)
+//   !  BAÚ QUE MORDE: igual ao baú; chegou perto, morde. Pule na cabeça dele (3 moedas)
+//   |  CLONE ESPELHADO: linha invisível; um Grumete roxo vem espelhado de 12 blocos à frente e copia seus pulos 0,5 s depois
+//   -  MARÉ: zona de água que sobe e desce (6 s); dentro dela o Grumete nada
+//   /  ALAVANCA (coop): placa no chão; com alguém em cima, os portões '+' abrem. ';' é o baú da tripulação (10 moedas)
+//      O portão nunca fica no caminho da bandeira: sozinho não dá para abrir. Veja AlavancaEPortao.cs
+//  As letras do Mar de Baixo (~ água, @ bolha de ar, % bolha falsa, f peixe-lanterna, = correnteza, x ostra,
+//  z água-viva, & água-viva que queima) estão explicadas em MarDeBaixo.cs.
+//
 //  As placas (quem fala é o Louro) recebem os textos na ordem da esquerda para a direita.
 //
-//  MUDANÇAS (três fases usam: a 2, a 5 e a 11): a fase pode MUDAR depois que você morre (estilo Level Devil).
+//  MUDANÇAS (sete fases usam: a 2, 3, 5, 6, 9, 11 e 12): a fase pode MUDAR depois que você morre (estilo Level Devil).
 //  Regra da casa: a mudança só ACRESCENTA uma armadilha num lugar em que dá para desviar (o checador confere),
 //  nunca troca uma moeda de verdade (senão a medalha das moedas ficaria impossível).
 //  Cada item de "mudancas" é uma versão da fase usada nas tentativas seguintes,
@@ -108,9 +125,13 @@ public class Fase
     public float velocidadeDaOnda;
     // O ponto de save desta fase NUNCA "muda de lugar" (a pegadinha da 3ª morte fica desligada).
     public bool saveFiel;
+    // SAÍDA SECRETA: o número da fase bônus (Fases.Bonus) que a bandeira secreta 'O' desta fase libera. -1 = não tem.
+    public int saidaSecreta = -1;
+    // O chefe do Mar de Baixo que mora nesta fase (só para as mensagens de morte: veja TemNaFase).
+    public string etiqueta;
 }
 
-public static class Fases
+public static partial class Fases
 {
     public static readonly Fase[] Todas =
     {
@@ -172,7 +193,7 @@ public static class Fases
                 "",
                 "                           BBBBBBBBB",
                 "                             T   T                                                                                                  BBBBBBBB           *",
-                "                  ######                                                                                                              v  v          BBBBBB",
+                "                  ######                                                                                    T                         v  v          BBBBBB",
                 "                  ######",
                 "          o       ######   ?                                                    ??                    $$$",
                 "                  ######                                                             $$               BBB                            $$$",
@@ -187,6 +208,8 @@ public static class Fases
         new Fase
         {
             nome = "O Final (mudei de ideia)",
+            // morreu uma vez? Um espinho escondido antes dos dois espinhos do meio (pule cedo)
+            mudancas = new[] { new[] { "64,12,h" } },
             bioma = Bioma.Lagoa,
             corDoFundo = new Color32(240, 150, 205, 255),
             petalas = true,
@@ -211,9 +234,9 @@ public static class Fases
                 "                    ##    ?K?                            IIII                                                               ?K",
                 "                                              o                                                                                    $$",
                 "              ##  FF                U        $$                                                                           U",
-                "  P i h                     ^  $$$     r          E  ^i             ^^ E  s i  $$ m$            h  E          rr              ^^ i    E  G",
-                "###########            ##################CCC#############    ##########################   #############CCC############   #####################",
-                "###########            ##################CCC#############    ##########################   #############CCC############   #####################",
+                "  P i h                     ^  $$$!    r          E  ^i             ^^ E  s i  $$ m$            h  E          rr              ^^ i    E  G",
+                "###########            ##################CCC#############    #######################ddd   #############CCC############   #####################",
+                "###########            ##################CCC#############    #######################ddd   #############CCC############   #####################",
             },
         },
 
@@ -294,6 +317,10 @@ public static class Fases
         new Fase
         {
             nome = "Abordagem!",
+            // SAÍDA SECRETA: a bandeira preta (O) em cima dos blocos invisíveis libera a fase bônus 1
+            saidaSecreta = 0,
+            // morreu uma vez? Um espinho escondido entre o espinho e o ponto de save
+            mudancas = new[] { new[] { "47,12,h" } },
             bioma = Bioma.Navios,
             velocidadeDaOnda = 3f, // (a plataforma leva 4,8 s para dar a volta)
             corDoFundo = new Color32(250, 165, 120, 255),
@@ -315,10 +342,10 @@ public static class Fases
                 "",
                 "                                                              v",
                 "                                            BBBBB",
-                "                           ?                  T            o                                                                                                                ?",
-                "      ?K?                                                    $ $ $     ?K                  ?                  $$        ?",
+                "                           ?                  T            o                                                                                                           O    ?",
+                "      ?K?                                                    $ $ $     ?K                  ?                  $$        ?                                             BBB",
                 "                                    $ $  $$               jj                                               JJ                                                    $$             $m$",
-                "          $$                $$     jj                                        $$                          $m$           $                         $ $                                         $",
+                "          $$                $$     jj                                        $$                          $m$           $                         $ $                 I                       $",
                 "  P i  ^         $$$    i   ^     $        ^      s  jjj               E   i  h    $$$         >B s  jjj                ^   i      $ $ $ $       h     s      jjj        h    >          E    i   G",
                 "###############jj      #########JJ      #############               #############jj      ############                #########DDD             #############          ##########  ####   ############",
                 "###############        #########        #############               #############        ############                #########                #############          ##########  ####   ############",
@@ -409,6 +436,10 @@ public static class Fases
         new Fase
         {
             nome = "Vento em Popa!",
+            // SAÍDA SECRETA: a bandeira preta (O) em cima dos blocos invisíveis libera a fase bônus 2
+            saidaSecreta = 1,
+            // morreu uma vez? Um espinho escondido logo depois do ponto de save (embaixo das moedas)
+            mudancas = new[] { new[] { "49,12,h" } },
             saveFiel = true, // (muitos checkpoints de propósito: morrer aqui não pode custar o caminho todo)
             bioma = Bioma.Penhasco,
             velocidadeDaOnda = 3.5f, // (e a rajada segura a onda também: veja Tsunami.Perseguir)
@@ -430,12 +461,12 @@ public static class Fases
                 "                                                                                                                                         nnnnn$$$$nnnnn           yyyy                   yyyyyyyyyyyyyyyyyyyy",
                 "                                                                                                                  yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         $nyyyynnn  n$n           yyyyyyyyy$$$yyyyyyyy",
                 "                                                    $$                                            nnnn$$$$nn      yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         nnyyyynnn  nnn           yyyyyyyyyyyyyyy?yyyy",
-                "                                                                                                  nnnnnnnnnn      yyyyyyy$yyy$m$yyyyyy   nnnnnnnnnnnnnn         nnyy$ynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
-                "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy                                                           nnnnnnnnnn      yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         nnyyyynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
+                "        O                                                                                         nnnnnnnnnn      yyyyyyy$yyy$m$yyyyyy   nnnnnnnnnnnnnn         nnyy$ynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
+                "       BBB yyyyyyyyyyyyyyyyyyyyyyyyyyyy                                                           nnnnnnnnnn      yyyyyyyyyyyyyyyyyyyy   nnnnnnnnnnnnnn         nnyyyynnn  nnn           yyyyyyyyyyyyyyyyyyyy",
                 "           yyyyyyyy$$yyyyyyyyyyyy?yyyyy               yyyyyyyyyyyyyyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn   s  yyyByyyyyyyyyyEyByyyis nnnnnnnnnnnnnn   s i   nnyyyynnn  nnn   s  i    yyyyBByyZyyyyByyEyBy  G",
-                "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy         I ?K  yyyyyyyyy?yyyyyyyy yyyyyyyy?yyyy$yyyyyy?yy  nnnnn$$nnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######CC#####################",
+                "      I    yyyyyyyyyyyyyyyyyyyyyyyyyyyy         I ?K  yyyyyyyyy?yyyyyyyy yyyyyyyy?yyyy$yyyyyy?yy  nnnnn$$nnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######CC#####################",
                 "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy        $$     yyy$$yyyyy$$yyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
-                "           yyyyyyyyyyyyyyyyyyyyyyyyyyyy               yyyyyyyyyyyyyyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
+                "     I     yyyyyyyyyyyyyyyyyyyyyyyyyyyy               yyyyyyyyyyyyyyyyyy yyyyyyyyyyyyyyyyyyyyyyy  nnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
                 "  P i      yyyyyyByy^^yyEyyyyyyyByyyEyy  ^^   s     S yyyyyyBy^yyyyByyEysyy^^yyEyyByyyyyyyyhyEyysinnnnnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
                 "###########################   #######################################################   #############nnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
                 "###########################   #######################################################   #############nnnnnnn ###########   ##############nnnnnnnnnnnnnn ####### nnyyyynnn  nnn  ######  #####################",
@@ -517,6 +548,10 @@ public static class Fases
         new Fase
         {
             nome = "O Verdadeiro Final (juro)",
+            // SAÍDA SECRETA: a bandeira preta (O) em cima dos blocos invisíveis libera a fase bônus 3
+            saidaSecreta = 2,
+            // morreu uma vez? Um espinho escondido entre o espinho e o caranguejo
+            mudancas = new[] { new[] { "40,12,h" } },
             bioma = Bioma.Rochedo,
             corDoFundo = new Color32(240, 160, 130, 255),
             placas = new[]
@@ -533,13 +568,13 @@ public static class Fases
                 "",
                 "",
                 "                                       BBBBBBB                                               BBBBB",
-                "                                         T  T                                                  T                                                          BBBB",
-                "                                                                                                                                                            v",
+                "                           O             T  T                                                  T                                                          BBBB",
+                "                          BBB                                                                                                                               v",
                 "",
-                "                 $$                                     ?K?                                                               ?K                  $$$          $$",
+                "                 $$      I                              ?K?                                                               ?K                  $$$          $$",
                 "                                                                                         $$$               $$                                                                        $m$",
-                "                             $$$                                                              U                                U    i R    h       s   h        E        iB Z               *",
-                "  P i  ^ e      $    ^^^            ^        E     h  E  B Z          >   E   $m$                r  e           <                 ##################################    #########CCC############",
+                "                        I    $$$                                                              U                                U    i R    h       s   h   V    E        iB Z               *",
+                "  P i  ^ e      $    ^^^            ^        E     h  E  B Z          >   E   $m$                r  e           < p               ##################################    #########CCC############",
                 "###############CCC###########    ##############MM##############CCCC##################   ############### MM     ########CC###########################################    #########CCC############",
                 "###############CCC###########    ##############  ##############CCCC##################   ###############        ########CC###########################################    #########CCC############",
             },
@@ -634,7 +669,8 @@ public static class Fases
             case "vento": letras = "yn"; break;
             case "ritmo": letras = "abAt"; break;
             case "plataforma": letras = "jJD"; break;
-            case "chefe": letras = "uHwg"; break;
+            case "chefe": letras = "uHwg{}"; break;
+            case "agua": letras = "~-"; break;
             case "porta": return fase.portas != null;
             default: return true;
         }
@@ -651,8 +687,48 @@ public static class Fases
         return false;
     }
 
-    // Dados de uma fase pelo índice (inclui a secreta).
-    public static Fase Dados(int indice) => indice == IndiceSecreto ? Secreta : Todas[indice];
+    // Dados de uma fase pelo índice (inclui a secreta, as fases bônus e o Mar de Baixo).
+    public static Fase Dados(int indice) =>
+        indice == IndiceSecreto ? Secreta
+        : EhDoMar(indice) ? MarDeBaixo[indice - PrimeiroDoMar]
+        : EhBonus(indice) ? Bonus[indice - PrimeiroBonus]
+        : Todas[indice];
+
+    // ------------------------------------------------------------------ as fases de FORA da campanha
+    // Os índices delas ficam longe dos da campanha (0 a 12): assim os saves e os recordes de antes continuam valendo
+    // (o save confere quantas fases a campanha tem, e os recordes das extras são guardados pelo nome).
+    //  - 99: a secreta (Ilha do Louro);
+    //  - 110, 111...: as fases BÔNUS, que a bandeira secreta 'O' de uma fase da campanha libera (Fase.saidaSecreta).
+    //    No mapa: seta para baixo no ponto da fase de origem (aparece um "?" lilás do lado dele);
+    //  - 200, 201...: o MUNDO 2, o Mar de Baixo (o reino da Marina), que abre depois de vencer o Kraken:
+    //    seta para baixo no ponto do Kraken mergulha; no Mar, seta para cima no ponto 1 volta para as ilhas.
+    public const int PrimeiroBonus = 110; // (o 100 é a música do mapa: FabricaDeMusica.MusicaDoMapa)
+    public const int PrimeiroDoMar = 200;
+
+    public static bool EhBonus(int indice) => indice >= PrimeiroBonus && indice < PrimeiroBonus + Bonus.Length;
+    public static bool EhDoMar(int indice) => indice >= PrimeiroDoMar && indice < PrimeiroDoMar + MarDeBaixo.Length;
+    // Fase "de visita": a secreta e as bônus (passou, volta para o ponto de onde saiu).
+    public static bool EhExtra(int indice) => indice == IndiceSecreto || EhBonus(indice);
+    public static bool Existe(int indice) => indice == IndiceSecreto || EhBonus(indice) || EhDoMar(indice) || (indice >= 0 && indice < Todas.Length);
+    public static int UltimaDoMar => PrimeiroDoMar + MarDeBaixo.Length - 1;
+
+    // De que fase da campanha sai a bônus (o ponto do mapa em que ela fica). -1 = nenhuma.
+    public static int OrigemDoBonus(int indice)
+    {
+        int bonus = indice - PrimeiroBonus;
+        for (int i = 0; i < Todas.Length; i++)
+            if (Todas[i].saidaSecreta == bonus) return i;
+        return -1;
+    }
+
+    // O nome curto para os textos ("Fase 3/13", "Mar 2/7", "Bônus 1").
+    public static string Numero(int indice)
+    {
+        if (indice == IndiceSecreto) return Idioma.T("Fase secreta", "Secret level");
+        if (EhBonus(indice)) return Idioma.T("Bônus ", "Bonus ") + (indice - PrimeiroBonus + 1);
+        if (EhDoMar(indice)) return Idioma.T("Mar ", "Deep ") + (indice - PrimeiroDoMar + 1) + "/" + MarDeBaixo.Length;
+        return Idioma.T("Fase ", "Level ") + (indice + 1) + "/" + Todas.Length;
+    }
 
     // Frases que aparecem quando você morre (escolhidas aleatoriamente).
     // Uma frase que fala de uma coisa específica começa com a ETIQUETA dela ("cozinheira:..."): ela só aparece numa fase

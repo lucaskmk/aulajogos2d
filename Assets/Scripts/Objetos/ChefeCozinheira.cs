@@ -39,7 +39,7 @@ using UnityEngine.Rendering.Universal;
 public class ChefeCozinheira : Chefe
 {
     const int EtapasDaLuta = 3;
-    const int GolpesDaEtapa = 2;
+    static int GolpesDaEtapa => GolpesNoCoop(2); // coop com 3 ou 4: um golpe a mais por etapa (Chefe.cs)
 
     public float larguraDaArena = 24f;
 
@@ -280,7 +280,7 @@ public class ChefeCozinheira : Chefe
             int vidaNoFimDaEtapa = VidaMaxima - (etapa + 1) * GolpesPorEtapa;
             while (vida > vidaNoFimDaEtapa)
             {
-                int rodada = etapa * GolpesPorEtapa + (VidaMaxima - etapa * GolpesPorEtapa - vida);
+                int rodada = RodadaDoGolpe(etapa, VidaMaxima - etapa * GolpesPorEtapa - vida);
                 yield return RodarRodada(RodadaComLampiao(rodada));
             }
             if (vida <= 0) break;
