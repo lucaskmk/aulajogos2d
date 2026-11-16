@@ -44,6 +44,16 @@ public abstract class Chefe : MonoBehaviour
     // se a luta vai continuar depois da morte (aí a música do chefe continua tocando, sem recomeçar).
     public abstract Vector3 PontoDeRenascer { get; }
 
+    // ------------------------------------------------------------------ coop: vida maior com 3 ou 4
+
+    // Golpes por etapa: com 3 ou 4 Grumetes na tripulação, um a mais (4 pés contra um chefe é covardia).
+    // A vida é lida na hora em que a luta começa, e a tripulação só muda no mapa.
+    protected static int GolpesNoCoop(int golpesSozinho) => Tripulacao.Quantos >= 3 ? golpesSozinho + 1 : golpesSozinho;
+
+    // Qual das rodadas da etapa toca neste golpe. Cada etapa tem 2 rodadas (0 e 1); o golpe extra do coop
+    // repete a primeira (0, 1, 0), então nenhum chefe precisa de rodada nova.
+    protected static int RodadaDoGolpe(int etapa, int golpe) => etapa * 2 + golpe % 2;
+
     // ------------------------------------------------------------------ o pisão
 
     protected const float TempoSemApanhar = 0.8f;

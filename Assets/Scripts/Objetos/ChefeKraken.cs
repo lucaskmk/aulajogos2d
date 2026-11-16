@@ -48,9 +48,9 @@ using UnityEngine;
 public class ChefeKraken : Chefe
 {
     const int EtapasDaLuta = 3;
-    const int GolpesDaEtapa = 2;
+    static int GolpesDaEtapa => GolpesNoCoop(2); // coop com 3 ou 4: um golpe a mais por etapa (Chefe.cs)
 
-    public int vidaMaxima = EtapasDaLuta * GolpesDaEtapa;
+    int vidaMaxima => EtapasDaLuta * GolpesDaEtapa;
     public float larguraDaArena = 21f;
 
     // O que a barra de vida (Interface) lê. Tudo isso vem da classe base Chefe (veja Chefe.cs).
@@ -421,7 +421,7 @@ public class ChefeKraken : Chefe
             while (vida > vidaNoFimDaEtapa)
             {
                 int golpe = vidaMaxima - etapa * GolpesDaEtapa - vida; // 0 = 1º golpe da etapa, 1 = 2º
-                yield return RodarRodada(Rodada(etapa * GolpesDaEtapa + golpe));
+                yield return RodarRodada(Rodada(RodadaDoGolpe(etapa, golpe)));
             }
             if (vida <= 0) break;
 

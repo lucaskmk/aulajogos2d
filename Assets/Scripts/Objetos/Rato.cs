@@ -138,6 +138,7 @@ public class Rato : MonoBehaviour
         jogador.Quicar(11f, true);
         GerenciadorDoJogo.Som("pisao");
         Conquistas.Contar("ratos", 10);
+        Desafios.Pisoes++;
         Destroy(gameObject, 0.4f);
     }
 }

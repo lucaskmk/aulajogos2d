@@ -25,6 +25,12 @@ public static class Construir
 
     public static void WindowsPelaLinhaDeComando() => EditorApplication.Exit(Fazer(deTeste: false) ? 0 : 1);
 
+    // A DEMO (fases 1 a 4, até a Capitã: veja Demo.cs). Sai em Builds/Demo/CiladaAVista.exe.
+    [MenuItem("Cilada/Build Demo (fases 1 a 4)")]
+    public static void WindowsDemo() => Fazer(deTeste: false, demo: true);
+
+    public static void DemoPelaLinhaDeComando() => EditorApplication.Exit(Fazer(deTeste: false, demo: true) ? 0 : 1);
+
     const string Icone = "Assets/Icone/icone.png"; // (gerado por Ferramentas/gerar_icone.py, a partir do desenho do Grumete)
 
     // O ícone do executável: o Grumete em pixel art, sem borrar (filtro "Point", sem compressão).
@@ -47,7 +53,7 @@ public static class Construir
         PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.Unknown, new[] { textura }, IconKind.Any);
     }
 
-    static bool Fazer(bool deTeste)
+    static bool Fazer(bool deTeste, bool demo = false)
     {
         PorOIcone();
         // as cenas marcadas no Build Profiles; se não tiver nenhuma, a cena do projeto (o jogo se cria sozinho em qualquer cena)
@@ -59,7 +65,8 @@ public static class Construir
         var opcoes = new BuildPlayerOptions
         {
             scenes = cenas.ToArray(),
-            locationPathName = Pasta + (deTeste ? "DeTeste/" : "/") + Executavel,
+            locationPathName = (demo ? "Builds/Demo/" : Pasta + (deTeste ? "DeTeste/" : "/")) + Executavel,
+            extraScriptingDefines = demo ? new[] { "CILADA_DEMO" } : null,
             target = BuildTarget.StandaloneWindows64,
             targetGroup = BuildTargetGroup.Standalone,
             options = deTeste ? BuildOptions.Development : BuildOptions.None,

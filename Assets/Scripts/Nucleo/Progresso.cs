@@ -41,6 +41,12 @@ public static class Progresso
     const string ChaveData = "salvo_data";                 // quando foi jogado por último ("2026-11-05")
     const string ChaveDificil = "salvo_dificil";           // 1 = o Grumete roubou o tesouro: o modo difícil (a tempestade)
     const string ChaveEscolha = "salvo_escolha";           // 1 = chegou no baú e ainda não escolheu (o "Continuar" volta na escolha)
+    const string ChaveBonus = "bonus_liberadas";           // as fases bônus (saídas secretas) já achadas: "0,2"
+    const string ChaveMar = "mar_liberado";                // 1 = venceu o Kraken: o Mar de Baixo abriu
+    const string ChaveMarMaisLonge = "mar_mais_longe";     // até que ponto do Mar já chegou (0 = a primeira fase do Mar)
+    const string ChaveAvisoDoMar = "mar_aviso";            // 1 = a Marina já contou do Mar de Baixo (no mapa das ilhas)
+    const string ChaveFalaDoMar = "mar_fala";              // 1 = já mergulhou uma vez (a fala da chegada)
+    const string ChaveMortesExtras = "mortes_extras";      // mortes nas fases bônus e do Mar (as caveiras do mapa): "200:3,101:7"
 
     // Todas as chaves de um slot (para apagar o slot e para trazer o save antigo). 'i' = int, 'f' = float, 's' = texto.
     static readonly (string nome, char tipo)[] ChavesDoSlot =
@@ -54,6 +60,7 @@ public static class Progresso
         (ChaveEscudos + "_p3", 'i'), (ChaveElixires + "_p3", 'i'), (ChavePuloDuplo + "_p3", 'i'),
         (ChaveEscudos + "_p4", 'i'), (ChaveElixires + "_p4", 'i'), (ChavePuloDuplo + "_p4", 'i'),
         (ChaveFichas, 'i'),
+        (ChaveBonus, 's'), (ChaveMar, 'i'), (ChaveMarMaisLonge, 'i'), (ChaveMortesExtras, 's'), (ChaveAvisoDoMar, 'i'), (ChaveFalaDoMar, 'i'),
     };
 
     public const int TotalDeSlots = 3;
@@ -179,6 +186,12 @@ public static class Progresso
                 Guardado.DeleteKey(ChaveNaColuna(slot, coluna) + nome);
                 Guardado.DeleteKey(ChaveNaColuna(slot, coluna) + SufixoDificil + nome);
             }
+        foreach (int extra in FasesExtras())
+            foreach ((string nome, char _) in ChavesDoRecorde)
+            {
+                Guardado.DeleteKey(ChaveDaExtra(slot, extra) + nome);
+                Guardado.DeleteKey(ChaveDaExtra(slot, extra) + SufixoDificil + nome);
+            }
         Guardado.Save();
     }
 
@@ -223,7 +236,7 @@ public static class Progresso
         Guardado.SetFloat(NoSlot(ChaveTempo), tempo);
         Guardado.SetInt(NoSlot(ChaveValida), valida ? 1 : 0);
         Guardado.SetString(NoSlot(ChaveData), System.DateTime.Now.ToString("yyyy-MM-dd", Invariante));
-        int maxima = Mathf.Max(fase == Fases.IndiceSecreto ? 0 : fase, maisLonge); // a secreta não conta
+        int maxima = Mathf.Max(fase >= 0 && fase < Fases.Todas.Length ? fase : 0, maisLonge); // a secreta, as bônus e o Mar não contam
         if (maxima > FaseMaxima) Guardado.SetInt(ChaveFaseMaxima, maxima);
         Guardado.Save();
     }
@@ -359,6 +372,7 @@ public static class Progresso
 
     static string ChaveDaFase(int fase)
     {
+        if (Fases.EhBonus(fase) || Fases.EhDoMar(fase)) return ChaveDaExtra(SlotAtual, fase) + (ModoDificil ? SufixoDificil : "");
         if (fase != Fases.IndiceSecreto && (fase < 0 || fase >= Fases.Todas.Length)) return "cilada_recorde_fase" + fase + "_";
         return ChaveNaColuna(SlotAtual, fase == Fases.IndiceSecreto ? Fases.Todas.Length : fase) + (ModoDificil ? SufixoDificil : "");
     }
@@ -376,6 +390,89 @@ public static class Progresso
         return chavesDasFases[slot, coluna];
     }
     static string[,] chavesDasFases; // calculadas uma vez só
+
+    // As fases bônus e as do Mar guardam o recorde pelo NOME (e não pela coluna): fases novas não trocam os recordes de lugar.
+    static readonly Dictionary<(int, int), string> chavesDasExtras = new Dictionary<(int, int), string>();
+    static string ChaveDaExtra(int slot, int fase)
+    {
+        if (!chavesDasExtras.TryGetValue((slot, fase), out string chave))
+            chavesDasExtras[(slot, fase)] = chave = "cilada_slot" + (slot + 1) + "_recorde_v2_" + Apelido(Fases.Dados(fase).nome) + "_";
+        return chave;
+    }
+
+    static IEnumerable<int> FasesExtras()
+    {
+        for (int i = 0; i < Fases.Bonus.Length; i++) yield return Fases.PrimeiroBonus + i;
+        for (int i = 0; i < Fases.MarDeBaixo.Length; i++) yield return Fases.PrimeiroDoMar + i;
+    }
+
+    // ------------------------------------------------------------------ as saídas secretas e o Mar de Baixo (do slot)
+
+    public static bool BonusLiberado(int bonus) => ("," + Guardado.GetString(NoSlot(ChaveBonus), "") + ",").Contains("," + bonus + ",");
+
+    public static void LiberarBonus(int bonus)
+    {
+        if (BonusLiberado(bonus)) return;
+        string agora = Guardado.GetString(NoSlot(ChaveBonus), "");
+        Guardado.SetString(NoSlot(ChaveBonus), agora == "" ? bonus.ToString() : agora + "," + bonus);
+        Guardado.Save();
+    }
+
+    public static int QuantasBonusLiberadas
+    {
+        get
+        {
+            int n = 0;
+            for (int i = 0; i < Fases.Bonus.Length; i++) if (BonusLiberado(i)) n++;
+            return n;
+        }
+    }
+
+    public static bool MarLiberado => Guardado.GetInt(NoSlot(ChaveMar), 0) == 1;
+    public static int MarMaisLonge => Guardado.GetInt(NoSlot(ChaveMarMaisLonge), 0);
+
+    public static bool ViuAvisoDoMar => Guardado.GetInt(NoSlot(ChaveAvisoDoMar), 0) == 1;
+    public static void MarcarAvisoDoMar()
+    {
+        Guardado.SetInt(NoSlot(ChaveAvisoDoMar), 1);
+        Guardado.Save();
+    }
+
+    public static bool ViuFalaDoMar => Guardado.GetInt(NoSlot(ChaveFalaDoMar), 0) == 1;
+    public static void MarcarFalaDoMar()
+    {
+        Guardado.SetInt(NoSlot(ChaveFalaDoMar), 1);
+        Guardado.Save();
+    }
+
+    public static void LiberarMar()
+    {
+        Guardado.SetInt(NoSlot(ChaveMar), 1);
+        Guardado.Save();
+    }
+
+    public static void SalvarMarMaisLonge(int ponto)
+    {
+        Guardado.SetInt(NoSlot(ChaveMarMaisLonge), Mathf.Max(0, ponto));
+        Guardado.Save();
+    }
+
+    public static void SalvarMortesExtras(Dictionary<int, int> mortes)
+    {
+        var partes = new List<string>();
+        foreach (var par in mortes) partes.Add(par.Key + ":" + par.Value);
+        Guardado.SetString(NoSlot(ChaveMortesExtras), string.Join(",", partes));
+    }
+
+    public static void CarregarMortesExtras(Dictionary<int, int> mortes)
+    {
+        mortes.Clear();
+        foreach (string parte in Guardado.GetString(NoSlot(ChaveMortesExtras), "").Split(','))
+        {
+            string[] kv = parte.Split(':');
+            if (kv.Length == 2 && int.TryParse(kv[0], out int fase) && int.TryParse(kv[1], out int n)) mortes[fase] = n;
+        }
+    }
 
     // O meio da chave (o mesmo de antes dos slots, quando era "cilada_" + isto). O "v2" é a versão da lista de fases.
     static string RaizDaFase(int coluna) =>

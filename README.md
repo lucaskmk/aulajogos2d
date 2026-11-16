@@ -55,10 +55,14 @@ Os controles abaixo são os de `Assets/Scripts/Nucleo/Controles.cs`. Teclado e c
 | Confirmar nos menus | **Enter** ou **Espaço** | Start ou botão de baixo |
 | Escolher nos menus | **↑ / ↓** (ou W / S) | direcional |
 | Mudar um valor (volume, gráficos) | **← / →** | direcional |
-| Pular a animação da morte (depois de 0,5 s) | **Espaço / Enter** | botão de baixo |
+| Pular a animação da morte (ela dura 0,5 s) | **Espaço / Enter** | botão de baixo |
+| Na água (Mar de Baixo): dar uma braçada | **Espaço**, **W** ou **↑** (a cada aperto) | botão de baixo |
+| Pular o replay das mortes (fim da fase) | **Enter** ou **Espaço** | botão de baixo |
 | Entrar numa porta do Navio Fantasma | **S** ou **↓** | direcional para baixo |
 | No mapa: andar pelo caminho / entrar na fase | **setas** / **Enter** | direcional / botão de baixo |
 | No mapa: voltar ao título | **Esc** | Start |
+| No mapa: fase bônus (no ponto com o "?" lilás) / mergulhar no Mar de Baixo (no ponto do Kraken) | **↓** ou **S** | direcional para baixo |
+| No mapa do Mar: voltar para as ilhas (no ponto 1) | **↑** ou **W** | direcional para cima |
 | Voltar um nível nos menus | **Esc** ou **Backspace** | botão da direita (B / ◯) |
 | Na pausa: ir direto para o mapa | **Q** | — |
 | Menus com mouse | passar o mouse escolhe, **clique** confirma, **botão direito** volta | — |
@@ -84,6 +88,11 @@ Se só um jogador usa o teclado, ele fica com o teclado inteiro. As regras:
 - **Pulo na cabeça:** cair em cima do companheiro quica, sem limite (dá para ficar quicando nele).
   Segurando PULAR, o pulo sai mais alto que o normal (dá para alcançar lugares novos).
 - **Empurrão:** joga para longe o companheiro que está na sua frente. Para ajudar... ou para a cilada.
+- **Carregar e arremessar:** **segure** o botão do empurrão com o companheiro colado (na frente ou em cima) e ele vai para o seu colo.
+  Soltando, você **arremessa** ele em arco para a frente (atravessa buracos, alcança moedas altas). Quem está no colo sai pulando.
+- **Alavanca e portão:** a placa `/` abre os portões `+` enquanto alguém está em cima dela (soltou, fecha com força). Atrás deles fica
+  o **baú da tripulação** (10 moedas). Sozinho não dá: os portões só guardam salas de bônus.
+- **Chefes com 3 ou 4 jogadores:** cada etapa pede **3 pisões** em vez de 2.
 - **Balão de propósito:** segurar a tecla do balão por meio segundo (para quem ficou preso do lado errado de um buraco).
 - **O que é de todos e o que é de cada um:** as moedas e as poções de visão são da tripulação. Os **escudos, o elixir e o duplo salto
   são de cada jogador**: na Loja, **TAB** (ou RB/LB, ou um clique no rostinho) escolhe para quem é a compra.
@@ -137,8 +146,8 @@ No meio da Loja fica a **roleta**: escolha quanto apostar (de 1 a 100) e a cor. 
 ### Jogos de habilidade (na Loja)
 Na Loja, a linha **Jogos de habilidade** abre os jogos do Louro. Aqui não tem sorte nem aposta: cada rodada gasta uma **ficha**
 (a partida começa com 3 e o Louro dá 2 a cada fase concluída, até 9) e o prêmio, em moedas, depende só de você.
-- **Pontaria:** ENTER solta o ponteiro e ENTER de novo para ele. No verde: 10 moedas. No amarelo: 4. Cada acerto seguido deixa ele mais rápido.
-- **Reflexo:** ENTER começa; espere o **JÁ!** e aperte ENTER o mais rápido que conseguir (até 0,30 s: 10 moedas; até 0,45 s: 4).
+- **Pontaria:** ENTER solta o ponteiro e ENTER de novo para ele. No verde (bem fininho): 10 moedas. No amarelo: 4. O ponteiro é rápido, muda de velocidade sozinho e cada acerto seguido deixa ele mais rápido.
+- **Reflexo:** ENTER começa; espere o **JÁ!** e aperte ENTER o mais rápido que conseguir (até 0,19 s: 10 moedas; até 0,24 s: 4: quase no limite humano).
 - ESQUERDA/DIREITA trocam de jogo; ESC volta para a Loja.
 
 ### O final: devolver ou roubar
@@ -154,11 +163,17 @@ Depois do Kraken, ao encostar no baú, você escolhe o que fazer com o tesouro:
 
 > ⚠️ Spoilers!
 
+- **Saídas secretas:** as fases 6, 9 e 12 têm uma **bandeira preta** (`O`) em cima de blocos invisíveis (bata a cabeça para eles aparecerem).
+  Ela também termina a fase e libera uma **fase bônus**: no mapa aparece um "?" lilás do lado do ponto, e **↓** entra nela.
+- **O Mar de Baixo (mundo 2):** depois de vencer o Kraken, aparece uma bolha no ponto dele. **↓** mergulha no reino da Marina:
+  7 fases debaixo d'água, com o **Tubarão-Martelo** e a **Mãe do Mar**.
+- **Desafios:** depois de zerar, cada fase com desafio mostra ele no mapa ("passar a fase 3 sem pegar nenhuma moeda"...).
+
 - **Fase secreta, a "Ilha do Louro":** na fase 3, *"O Final (mudei de ideia)"*, pegue **todas as moedas** da fase inteira (as moedas `$` e os blocos `?`) **numa mesma tentativa** e chegue à bandeira.
   Cuidado: uma das moedas é uma **moeda assassina**, e essa não conta. Se você conseguir, o Louro avisa e uma ilhota aparece na lagoa do mapa.
   No **ponto 3** do mapa, aperte **↓ (ou S)** para atravessar a ponte até a ilhota.
   (No código: `Fases.FaseDoSegredo = 2` e `GerenciadorDoJogo.FaseConcluida`. Um Novo jogo esconde a secreta de novo.)
-- **Conquistas:** são 31 (lista no título, salvas para sempre). Algumas são segredos, como "Olhou para o céu" (ser mordido por uma nuvem),
+- **Conquistas:** são 41 (lista no título, salvas para sempre). Algumas são segredos, como "Olhou para o céu" (ser mordido por uma nuvem),
   "Mudaram meu save!", "Passageiro da Expressa" (ir até o fim na plataforma expressa sem pular), "Buuu!", "Fora do Ritmo" e "Bolso fechado"
   (vencer o Kraken sem ela roubar nenhuma moeda).
 - **Recorde:** zere o jogo **em ordem, desde a fase 1**, com o menor número de mortes. O recorde aparece no título.
@@ -189,6 +204,21 @@ Depois do Kraken, ao encostar no baú, você escolhe o que fazer com o tesouro:
 | 12 | O Verdadeiro Final (juro) | O **rochedo** do pôr do sol | Revisão de tudo, agora bem mais longa: chão falso com isca, esmagadores, blocos que fogem, bandeira falsa, serras e ratos. |
 | 13 | O Kraken Vermelho | O **alto-mar**, debaixo de tempestade | De convés em convés até o navio do **CHEFE FINAL: Kraken Vermelho**, que rouba moedas. A Marina espera no fim. |
 | ★ | Ilha do Louro (secreta) | A ilhota dourada | Só moedas e molas, "sem pegadinha"... ("tá, só uma"). |
+
+### O Mar de Baixo (mundo 2) e as fases bônus
+
+| # | Fase | O que tem |
+|---|---|---|
+| M1 | Mergulho de Cabeça | Aprender a **nadar** e a **respirar** (8 s de ar); a **bolha falsa** em cima e a de verdade no fundo. |
+| M2 | Bolha que Mente | Tanques longos e as **águas-vivas** iguaizinhas: umas quicam, outras queimam. |
+| M3 | O Peixe da Luz | No escuro, cada "moeda" pode ser a isca de um **peixe-lanterna**. |
+| M4 | A Forja do Martelo | **CHEFE: Tubarão-Martelo** (marteladas com ondas de choque, bigornas e brasas). |
+| M5 | Correnteza | **Correntezas** debaixo d'água que empurram para trás. |
+| M6 | O Jardim das Ostras | **Ostras** que mordem, a **maré** que sobe, o **clone espelhado**, a prancha e o baú que morde. |
+| M7 | O Trono da Mãe do Mar | **CHEFE: Mãe do Mar** (ondas, chuva de águas-vivas, pilares de tentáculos e a correnteza que puxa). |
+| B1 | O Porão do Tesouro | (saída secreta da fase 6) Moedas, **canhões**, **pranchas**, o **baú que morde** e a sala do coop (**alavanca e portão**). |
+| B2 | Corrida da Maré | (saída secreta da fase 9) O tsunami atrás, a **maré** subindo e o **clone espelhado**. |
+| B3 | O Louro Mentiroso | (saída secreta da fase 12) As ciladas "ao vivo": o **chão que desliza**, o **HUD que cai** e a **pausa falsa**. |
 
 A viagem tem **4 chefes**: 3 fases e a Capitã, 2 fases e a Cozinheira, 2 fases e a Baleia, 2 fases e o Kraken.
 Fora a primeira, todas as fases são longas (de 112 a 218 blocos) e têm checkpoints no meio.
@@ -274,7 +304,8 @@ Cada chefe tem **a sua própria música** de luta, e morrer não recomeça a mú
 
 | Tecla | Onde | O que faz |
 |---|---|---|
-| **F9** | no mapa do mundo | Libera **todas** as fases, os chefes e a secreta, **só na partida atual**. A partida deixa de valer para o recorde, e um Novo jogo volta tudo para a névoa. |
+| **F6** | no mapa do mundo | **Troca de mundo** na hora: vai para o mapa do **Mar de Baixo** (com as 7 fases abertas) e, apertando de novo, volta para as ilhas. |
+| **F9** | no mapa do mundo | Libera **todas** as fases, os chefes a secreta, as 3 fases bônus e o Mar de Baixo, **só na partida atual**. A partida deixa de valer para o recorde, e um Novo jogo volta tudo para a névoa. |
 | **F8** | no mapa do mundo | Liga e desliga o **modo difícil** (tempestade e um tsunami em cada fase), sem precisar zerar o jogo. A partida deixa de valer para o recorde. |
 | **F7** | no mapa do mundo | Vai direto para a **escolha do final** (devolver ou roubar), como se tivesse vencido o Kraken. Com o F8 ligado, abre a segunda escolha. |
 | **F10** (ou a tecla à esquerda do 1) | em qualquer tela | **Painel de gráficos**: liga e desliga cada efeito visual e mostra o FPS e o pior quadro. |
@@ -303,7 +334,7 @@ volte ao título e escolha **Novo jogo**.
 ## Como gerar o build de Windows (Steam)
 
 - No editor: menu **Cilada → Build Windows (Steam)**. O jogo sai em `Builds/Windows/CiladaAVista.exe` (a pasta `Builds` não entra no git).
-  O menu **Cilada → Build Windows de teste** gera em `Builds/WindowsDeTeste/` um build com os atalhos F7 a F10.
+  O menu **Cilada → Build Windows de teste** gera em `Builds/WindowsDeTeste/` um build com os atalhos F6 a F10.
 - Pela linha de comando (com o editor fechado):
   ```
   Unity.exe -batchmode -quit -projectPath <pasta do projeto> -executeMethod Construir.WindowsPelaLinhaDeComando -logFile build.log

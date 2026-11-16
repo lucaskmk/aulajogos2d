@@ -18,6 +18,7 @@ public partial class Interface : MonoBehaviour
     static readonly Color32 Vermelho = new Color32(255, 102, 102, 255);
     static readonly Color32 Rosa = new Color32(255, 153, 255, 255);
     static readonly Color32 Lilas = new Color32(215, 170, 245, 255);
+    static readonly Color32 Ciano = new Color32(140, 240, 255, 255); // (o modo speedrun)
     static readonly Color32 CorDoRodape = new Color32(200, 190, 220, 255); // cinza-lilás: discreto
 
     GerenciadorDoJogo jogo;
@@ -100,6 +101,9 @@ public partial class Interface : MonoBehaviour
                 else DesenharPausa();
                 break;
             case EstadoDoJogo.Morreu: DesenharMorte(); break;
+            case EstadoDoJogo.Jogando:
+                if (PausaFalsa.Ativa) DesenharPausaFalsa();
+                break;
             case EstadoDoJogo.FaseConcluida: DesenharFaseConcluida(); break;
             case EstadoDoJogo.Vitoria: DesenharVitoria(); break;
             case EstadoDoJogo.Historia: DesenharHistoria(); break;
@@ -149,14 +153,18 @@ public partial class Interface : MonoBehaviour
         else
         {
             string nome = jogo.NaSecreta ? fase.nome
-                : ComNumero(ref textoDaFase, jogo.FaseAtual, f => $"{Idioma.T("Fase", "Level")} {f + 1}/{Fases.Todas.Length}: {Idioma.Traduzir(Fases.Dados(f).nome)}");
+                : ComNumero(ref textoDaFase, jogo.FaseAtual, f => $"{Fases.Numero(f)}: {Idioma.Traduzir(Fases.Dados(f).nome)}");
             Texto(nome, margem, 10f * escala, pixel, 0f, Branco, w * 0.3f);
-            areaDasMortes = Texto(mortes, margem, linha2, pixel, 0f, Branco);
+            // (a cilada 'V': o "Mortes" se soltou do canto e caiu na fase; aqui fica só o buraco dele)
+            areaDasMortes = HudQueCai.Caiu && jogo.Estado == EstadoDoJogo.Jogando
+                ? new Rect(margem, linha2, 1f, 30f * escala)
+                : Texto(mortes, margem, linha2, pixel, 0f, Branco);
         }
         DesenharItensNoHud(areaDasMortes);
         Texto(ComNumero(ref textoMoedas, jogo.Moedas, n => Idioma.T("Moedas: ", "Coins: ") + n), w - margem, 10f * escala, pixel, 1f, Amarelo);
-        if (Opcoes.MostrarTempo) // o cronômetro pode ser escondido em Opções
+        if (Opcoes.MostrarTempo || Opcoes.Speedrun) // o cronômetro pode ser escondido em Opções
             Texto(ComNumero(ref textoTempo, Mathf.FloorToInt(jogo.TempoTotal), t => FormatarTempo(t)), w - margem, linha2, pixel, 1f, Branco);
+        if (Opcoes.Speedrun) DesenharSpeedrun(w - margem, linha2 + 36f * escala);
     }
 
     // Os itens da Loja, ao lado das mortes: o escudo (com "x2" se tiver mais de um), o elixir (na fase, só se
@@ -211,7 +219,8 @@ public partial class Interface : MonoBehaviour
         else GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
         // o logo: letras douradas com a borda de madeira escura (o nome fica em Textos.NomeDoJogo)
         DesenharTextoEmPixel(FabricaDeSprites.TextoEmPixel(Idioma.Traduzir(Textos.NomeDoJogo), CorDoLogo, CorDaBordaDoLogo, CorDaBordaDoLogo, comAcentos: true), w / 2f, h * 0.07f, 130f * escala);
-        Texto("toda morte é só o começo da viagem (de novo, e de novo...)", w / 2f, h * 0.07f + 140f * escala, 2.5f, 0.5f, Branco, w * 0.9f);
+        if (Demo.Ativa) Texto("DEMO: as fases 1 a 4 (até a Capitã Âncora)", w / 2f, h * 0.07f + 140f * escala, 2.5f, 0.5f, Amarelo, w * 0.9f);
+        else Texto("toda morte é só o começo da viagem (de novo, e de novo...)", w / 2f, h * 0.07f + 140f * escala, 2.5f, 0.5f, Branco, w * 0.9f);
 
         // até 9 opções: Continuar, Carregar jogo, Novo jogo, Opções, Como jogar, Conquistas, Créditos, Idioma, Sair
         // (com muitas, elas ficam mais juntinhas e um pouco menores, para não encostar no recorde lá embaixo)
@@ -293,6 +302,7 @@ public partial class Interface : MonoBehaviour
             {
                 int slot = Progresso.SlotAtual + 1, fase = Progresso.FaseSalva;
                 if (fase == Fases.IndiceSecreto) return Idioma.T($"Continuar (slot {slot}, fase secreta)", $"Continue (slot {slot}, secret level)");
+                if (Fases.EhDoMar(fase)) return Idioma.T($"Continuar (slot {slot}, Mar de Baixo {fase - Fases.PrimeiroDoMar + 1})", $"Continue (slot {slot}, Deep Sea {fase - Fases.PrimeiroDoMar + 1})");
                 return Idioma.T($"Continuar (slot {slot}, fase {fase + 1})", $"Continue (slot {slot}, level {fase + 1})");
             }
             case GerenciadorDoJogo.OpcaoDoMenu.CarregarJogo: return "Carregar jogo";
@@ -448,17 +458,33 @@ public partial class Interface : MonoBehaviour
         if (!mapa.Andando) BotaoDaTripulacao(); // o coop, no canto de baixo à esquerda
         float larguraDoMeio = w - 2f * (RetanguloDoBotaoDaLoja().width + 40f * escala); // (sem passar por baixo do botão)
 
-        int fase = mapa.Selecionado;
+        int fase = mapa.FaseSelecionada;
         bool secreta = fase == Fases.IndiceSecreto;
-        string nome = secreta ? Fases.Secreta.nome : ComNumero(ref textoDoMapa, fase, f => $"{Idioma.T("Fase", "Level")} {f + 1}: {Idioma.Traduzir(Fases.Todas[f].nome)}");
+        string nome = secreta ? Fases.Secreta.nome : ComNumero(ref textoDoMapa, fase, f => $"{Fases.Numero(f)}: {Idioma.Traduzir(Fases.Dados(f).nome)}");
         Texto(nome, w / 2f, h - 125f * escala, 3.5f, 0.5f, Amarelo, larguraDoMeio);
         // já passou dessa fase alguma vez? Mostra o recorde e as medalhas dela; senão, a situação nesta partida
         PrepararRecordeDoMapa(fase);
         if (temRecordeGuardado && !mapa.Andando) DesenharRecordeNoMapa(h - 80f * escala);
         else
         {
-            string situacao = secreta ? "a fase secreta!" : fase < jogo.FaseMaisLonge ? "já passou (dá para jogar de novo)" : "ainda não passou nesta partida";
-            Texto(situacao, w / 2f, h - 78f * escala, 2f, 0.5f, secreta ? Rosa : fase < jogo.FaseMaisLonge ? Verde : Lilas, larguraDoMeio);
+            bool passou = Fases.EhDoMar(fase) ? fase - Fases.PrimeiroDoMar < Progresso.MarMaisLonge : fase < jogo.FaseMaisLonge;
+            string situacao = secreta ? "a fase secreta!" : passou ? "já passou (dá para jogar de novo)" : "ainda não passou nesta partida";
+            Texto(situacao, w / 2f, h - 78f * escala, 2f, 0.5f, secreta ? Rosa : passou ? Verde : Lilas, larguraDoMeio);
+        }
+        // as marcas do ponto: a fase bônus (seta para baixo), o mergulho e a volta do Mar
+        string extra = mapa.Andando ? null
+            : MapaDoMundo.MundoAtual == MapaDoMundo.QualMundo.MarDeBaixo ? (mapa.Selecionado == 0 ? "CIMA: voltar para as ilhas" : null)
+            : GerenciadorDoJogo.BonusDoPonto(mapa.Selecionado) >= 0 ? "BAIXO: fase bônus"
+            : Progresso.MarLiberado && mapa.Selecionado == Fases.Todas.Length - 1 ? "BAIXO: mergulhar no Mar de Baixo"
+            : null;
+        if (extra != null) Texto(Dica(extra), w / 2f, h - 160f * escala, 2.2f, 0.5f, Rosa, larguraDoMeio);
+        // o desafio da fase (só depois de zerar): cumprido em verde, por fazer em amarelo
+        Desafios.Desafio desafio = !mapa.Andando && Desafios.Liberados ? Desafios.DaFase(fase) : null;
+        if (desafio != null)
+        {
+            bool feito = Desafios.Feito(desafio);
+            Texto((feito ? Idioma.T("Desafio cumprido: ", "Challenge done: ") : Idioma.T("Desafio: ", "Challenge: ")) + Idioma.Traduzir(desafio.descricao),
+                w / 2f, h - (extra != null ? 195f : 160f) * escala, 2f, 0.5f, feito ? Verde : Amarelo, larguraDoMeio);
         }
         string comandos = mapa.Andando ? "..."
             : jogo.LojaLiberada ? "SETAS: andar     ENTER: jogar     L: loja     T: coop     ESC: título"
@@ -874,6 +900,25 @@ public partial class Interface : MonoBehaviour
         Rodape("SETAS ou MOUSE: escolher    ENTER: confirmar    ESC: continuar");
     }
 
+    // A cilada 'p' (ArmadilhasAoVivo.cs): igualzinha à pausa, mas o jogo continua rodando por trás.
+    // O véu é mais claro que o de verdade (dá para ver o perigo chegando) e nada aqui responde.
+    void DesenharPausaFalsa()
+    {
+        float w = Screen.width, h = Screen.height;
+        Color antes = GUI.color;
+        GUI.color = new Color(1f, 1f, 1f, 0.45f);
+        GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
+        GUI.color = antes;
+        Texto("PAUSA", w / 2f, h * 0.15f, 7f, 0.5f, Lilas);
+        float passo = 46f * escala, y = h * 0.34f;
+        for (int i = 0; i < NomesDaPausa.Length; i++)
+        {
+            Texto(NomesDaPausa[i], w / 2f, y, 3f, 0.5f, i == 0 ? Amarelo : Branco);
+            y += passo;
+        }
+        Rodape("SETAS ou MOUSE: escolher    ENTER: confirmar    ESC: continuar");
+    }
+
     // ------------------------------------------------------------------ submenus: Opções e Como Jogar
 
     // Os submenus abrem por cima do título OU da pausa (é a mesma tela nos dois).
@@ -909,7 +954,7 @@ public partial class Interface : MonoBehaviour
                 continue;
             }
             textosDosSlots[i, 0] = r.fase == Fases.IndiceSecreto ? Idioma.Traduzir(Fases.Secreta.nome)
-                : r.fase >= 0 && r.fase < Fases.Todas.Length ? $"{Idioma.T("Fase", "Level")} {r.fase + 1}: {Idioma.Traduzir(Fases.Todas[r.fase].nome)}" : "?";
+                : Fases.Existe(r.fase) ? $"{Fases.Numero(r.fase)}: {Idioma.Traduzir(Fases.Dados(r.fase).nome)}" : "?";
             if (r.dificil) textosDosSlots[i, 0] = Idioma.T("TEMPESTADE - ", "STORM - ") + textosDosSlots[i, 0];
             // (as mortes e as moedas aparecem com os desenhos: a caveirinha do mapa e a moeda)
             textosDosSlots[i, 1] = r.mortes.ToString();
@@ -1045,6 +1090,7 @@ public partial class Interface : MonoBehaviour
         "HD-2D: fundo desfocado, luzes e névoa. Simples: mais leve.",
         "Liga ou desliga a tela cheia.",
         "Mostra o tempo da partida no canto da tela.",
+        "Tempo da fase com centésimos, o fantasma do seu recorde e as parciais da partida.",
         "Troca as teclas de andar, pular, reiniciar, Loja e coop.",
         "Volta para o menu anterior. (as opções já ficam salvas)",
     };
@@ -1076,6 +1122,7 @@ public partial class Interface : MonoBehaviour
             case GerenciadorDoJogo.ItemDasOpcoes.Graficos: return Opcoes.GraficosHD2D ? "Gráficos: < HD-2D >" : "Gráficos: < Simples >";
             case GerenciadorDoJogo.ItemDasOpcoes.TelaCheia: return Opcoes.TelaCheia ? "Tela cheia: < Sim >" : "Tela cheia: < Não >";
             case GerenciadorDoJogo.ItemDasOpcoes.Cronometro: return Opcoes.MostrarTempo ? "Cronômetro: < Sim >" : "Cronômetro: < Não >";
+            case GerenciadorDoJogo.ItemDasOpcoes.Speedrun: return Opcoes.Speedrun ? "Speedrun: < Sim >" : "Speedrun: < Não >";
             case GerenciadorDoJogo.ItemDasOpcoes.Teclas: return Idioma.T("Teclas >", "Keys >");
             default: return "Voltar";
         }
@@ -1159,6 +1206,16 @@ public partial class Interface : MonoBehaviour
     void DesenharFaseConcluida()
     {
         float w = Screen.width, h = Screen.height;
+        if (jogo.MostrandoReplay)
+        {
+            // o replay das mortes (ReplayDasMortes.cs): só o título em cima e a dica embaixo, o resto é a fase
+            Texto("REPLAY DAS MORTES", w / 2f, 40f * escala, 4.2f, 0.5f, Vermelho, w * 0.9f);
+            Texto(Idioma.T($"{jogo.TentativasNoReplay} tentativas, {ReplayDasMortes.MortesNoReplay} mortes no replay",
+                    $"{jogo.TentativasNoReplay} attempts, {ReplayDasMortes.MortesNoReplay} deaths in the replay"),
+                w / 2f, 40f * escala + 70f * escala, 2.3f, 0.5f, Branco, w * 0.9f);
+            BotaoDeTexto("ENTER: pular", w / 2f, h - 62f * escala, 2.2f, 0.5f, GerenciadorDoJogo.BotaoProxima);
+            return;
+        }
         if (jogo.EhUltimaFase && jogo.Sereia != null && !jogo.MostrandoPainel)
         {
             // última fase: primeiro a Sereia comemora (como antes); o painel vem depois
@@ -1171,6 +1228,8 @@ public partial class Interface : MonoBehaviour
         Texto("FASE CONCLUÍDA!", w / 2f, y, 5f, 0.5f, Verde, w * 0.9f);
         string comentario = jogo.MortesNaFase == 0 ? "Sem morrer?! Impossível." : Idioma.T($"Só {jogo.MortesNaFase} morte(s) nessa fase.", $"Only {jogo.MortesNaFase} death(s) in this level.");
         Texto(comentario, w / 2f, y + 82f * escala, 2.5f, 0.5f, Branco, w * 0.9f);
+        if (jogo.DesafioCumprido != null)
+            Texto(Idioma.T("DESAFIO CUMPRIDO: ", "CHALLENGE DONE: ") + Idioma.Traduzir(jogo.DesafioCumprido), w / 2f, y - 34f * escala, 2.4f, 0.5f, Amarelo, w * 0.9f);
         DesenharResultado(y + 128f * escala, avisoDePrimeiraVez: false); // o painel já diz que é a primeira vez
         DesenharPainelDeTempos(y + 286f * escala);
         DesenharTitulosDaTripulacao(y + 286f * escala); // coop: quem salvou, quem morreu mais... (InterfaceCoop.cs)
@@ -1729,7 +1788,7 @@ public partial class Interface : MonoBehaviour
         if (alfa <= 0f) return;
         float w = Screen.width, h = Screen.height;
         bool secreta = fase == Fases.IndiceSecreto;
-        string numero = secreta ? Idioma.T("FASE SECRETA", "SECRET LEVEL") : $"{Idioma.T("FASE", "LEVEL")} {fase + 1}/{Fases.Todas.Length}";
+        string numero = Fases.Numero(fase).ToUpperInvariant();
         string nome = Idioma.Traduzir(Fases.Dados(fase).nome);
         Color antes = GUI.color;
         GUI.color = new Color(1f, 1f, 1f, alfa);
@@ -1995,6 +2054,33 @@ public partial class Interface : MonoBehaviour
         int dezena = n % 100;
         string fim = dezena >= 11 && dezena <= 13 ? "th" : (n % 10) switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" };
         return n + fim;
+    }
+
+    // Modo speedrun (Speedrun.cs): o tempo da fase com centésimos e, no fim de cada fase, a parcial
+    // contra a sua melhor partida (verde = na frente, vermelho = atrás).
+    string textoDaFaseSpeedrun, textoDaParcial;
+    int centesimosMostrados = -1;
+    float parcialMostrada = float.NaN;
+
+    void DesenharSpeedrun(float direita, float y)
+    {
+        if (jogo.Estado == EstadoDoJogo.Mapa) return;
+        int centesimos = Mathf.FloorToInt(jogo.TempoNaFase * 100f);
+        if (centesimos != centesimosMostrados)
+        {
+            centesimosMostrados = centesimos;
+            textoDaFaseSpeedrun = $"{centesimos / 6000:00}:{centesimos / 100 % 60:00}{Virgula}{centesimos % 100:00}";
+        }
+        Texto(textoDaFaseSpeedrun, direita, y, 2.2f, 1f, Ciano);
+        if (!Speedrun.TemDiferenca) return;
+        float d = Speedrun.UltimaDiferenca;
+        if (d != parcialMostrada)
+        {
+            parcialMostrada = d;
+            int c = Mathf.RoundToInt(Mathf.Abs(d) * 100f);
+            textoDaParcial = (d < 0f ? "-" : "+") + $"{c / 6000:0}:{c / 100 % 60:00}{Virgula}{c % 100:00}";
+        }
+        Texto(textoDaParcial, direita, y + 30f * escala, 2.2f, 1f, d < 0f ? Verde : Vermelho);
     }
 
     static string FormatarTempo(float segundos) => FormatarTempo(Mathf.FloorToInt(segundos));

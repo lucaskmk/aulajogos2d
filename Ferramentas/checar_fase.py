@@ -13,6 +13,9 @@ O arquivo tem as 15 linhas do mapa (pode ser um .json com {"mapa": [...]}).
 --mortal: caracteres extras que matam ao encostar
 --de: começa a busca também a partir destes caracteres (ex.: 's' = checkpoint) -> testa cada trecho
 
+ÁGUA ('~' e a maré '-'): o retângulo em volta das células encostadas é um tanque. Entrou nele, o Grumete nada
+para qualquer lugar dentro (o ar não é contado) e sai por qualquer ponto em que dá para ficar em pé até
+3 linhas acima da superfície ou 1 coluna para os lados. Um alvo dentro do tanque conta como alcançado.
 Simplificações: inimigos, serras, esmagadores, espinhos que caem e coisas que se mexem são ignorados
 (o teste só garante que o TERRENO deixa passar). 'C' (cai) e 'M' (foge) contam como chão, 'F' (falso)
 e 'I' (invisível) contam como vazio. Molas 'S' lançam com força 22. Portas não teletransportam.
@@ -25,8 +28,8 @@ VEL, ACEL, PULO, QUEDA, MOLA = 7.0, 80.0, 14.0, 20.0, 22.0
 DT = 0.02
 MW, MH = 0.36, 0.48  # meia largura / meia altura da caixa do jogador
 
-SOLIDO = set('#BC?KM')
-MORTAL = set('^hZom')
+SOLIDO = set('#BC?KM_xz+')   # (prancha '_', ostra 'x' e água-viva 'z' contam como chão: dá para pisar rapidinho)
+MORTAL = set('^hZom&')
 ALVOS = set('Gc*')  # o que termina a fase: a bandeira, o baú e o destino da bandeira fujona (a Marina, 'L', não termina)
 
 
@@ -60,6 +63,26 @@ def checar(mapa, solido_extra='', mortal_extra='', alvo_extra='', de_extra=''):
     H = len(linhas)
     W = max(len(l) for l in linhas)
     grade = [l.ljust(W) for l in linhas]
+    # chão que desliza 'd': o pedaço vai para a direita a largura dele inteira (o pior caso, já deslizado:
+    # buraco onde ele estava e chão no buraco logo depois)
+    for r in range(H):
+        linha = list(grade[r])
+        x = 0
+        while x < W:
+            if linha[x] == 'd':
+                fim = x
+                while fim < W and linha[fim] == 'd':
+                    fim += 1
+                n = fim - x
+                for k in range(x, fim):
+                    linha[k] = ' '
+                for k in range(fim, min(W, fim + n)):
+                    if linha[k] == ' ':
+                        linha[k] = '#'
+                x = fim + n
+            else:
+                x += 1
+        grade[r] = ''.join(linha)
     solidos = SOLIDO | set(solido_extra)
     mortais = MORTAL | set(mortal_extra)
     alvos = ALVOS | set(alvo_extra)
@@ -121,6 +144,30 @@ def checar(mapa, solido_extra='', mortal_extra='', alvo_extra='', de_extra=''):
 
     def no_chao(px, py):
         return colide(px, py - 0.03)
+
+    # os tanques de água: (xmin, xmax, ymin, ymax) em blocos do mundo
+    celulas_agua = set((x, r) for r in range(H) for x in range(W) if grade[r][x] in '~-=')
+    tanques = []
+    while celulas_agua:
+        pilha = [celulas_agua.pop()]
+        grupo = list(pilha)
+        while pilha:
+            x, r = pilha.pop()
+            for dx, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                v = (x + dx, r + dr)
+                if v in celulas_agua:
+                    celulas_agua.remove(v)
+                    pilha.append(v)
+                    grupo.append(v)
+        xs = [g[0] for g in grupo]
+        rs = [g[1] for g in grupo]
+        tanques.append((min(xs) - 0.5, max(xs) + 0.5, wy(max(rs)) - 0.5, wy(min(rs)) + 0.5))
+
+    def tanque_de(px, py):
+        for i, (x0, x1, y0, y1) in enumerate(tanques):
+            if x0 <= px <= x1 and y0 <= py <= y1:
+                return i
+        return -1
 
     def sobre_mola(px, py):
         r = linha_de(py)
@@ -190,6 +237,9 @@ def checar(mapa, solido_extra='', mortal_extra='', alvo_extra='', de_extra=''):
             trajeto += 1
             if py < -2:
                 return ('morreu', None)
+            k = tanque_de(px, py)
+            if k >= 0:
+                return ('agua', k)
             if toca(px, py, mortais):
                 return ('morreu', None)
             if toca(px, py, alvos, encolhe=0.0):
@@ -230,6 +280,36 @@ def checar(mapa, solido_extra='', mortal_extra='', alvo_extra='', de_extra=''):
         fila = deque([(px, py)])
         visto.add(chave(px, py))
         mais_longe = px
+        nadados = set()
+
+        def nadar(k):
+            # do tanque k: chega em qualquer alvo dentro dele e sai por qualquer lugar em pé perto da borda
+            nonlocal mais_longe
+            nadados.add(k)
+            x0, x1, y0, y1 = tanques[k]
+            mais_longe = max(mais_longe, x1)
+            for r in range(H):
+                for x in range(W):
+                    if grade[r][x] in alvos and x0 - 0.5 <= x <= x1 + 0.5 and y0 - 0.5 <= wy(r) <= y1 + 0.5:
+                        return True
+            for x in range(int(math.floor(x0)) - 1, int(math.ceil(x1)) + 2):
+                for r in range(H):
+                    y = wy(r)
+                    if not (y0 - 0.5 <= y <= y1 + 3.0):
+                        continue
+                    if colide(x, y) or not no_chao(x, y - 0.02 * 0):
+                        # tenta assentar no chão desta célula
+                        continue
+                    pos = (float(x), float(y))
+                    kk = chave(*pos)
+                    if kk not in visto:
+                        visto.add(kk)
+                        fila.append(pos)
+            return False
+
+        k0 = tanque_de(px, py)
+        if k0 >= 0 and nadar(k0):
+            return True, px
         while fila:
             px, py = fila.popleft()
             mais_longe = max(mais_longe, px)
@@ -238,6 +318,10 @@ def checar(mapa, solido_extra='', mortal_extra='', alvo_extra='', de_extra=''):
                     res, pos = simular(px, py, vx0, acao)
                     if res == 'alvo':
                         return True, pos[0]
+                    if res == 'agua':
+                        if pos not in nadados and nadar(pos):
+                            return True, tanques[pos][1]
+                        continue
                     if res == 'parou':
                         k = chave(*pos)
                         if k not in visto:

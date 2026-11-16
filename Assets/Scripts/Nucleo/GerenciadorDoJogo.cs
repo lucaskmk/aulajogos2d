@@ -40,12 +40,12 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     public int faseInicial = 0;
 
     [Header("Morte")]
-    public float tempoAposMorte = 1.3f;
-    [Tooltip("Duração da morte a partir da 3ª morte na mesma fase (cansa ver a animação inteira toda vez).")]
-    public float tempoAposMorteCurta = 0.7f;
+    [Tooltip("Quanto tempo leva para voltar depois de morrer (era 1,3 s; desde 16/11/2026 é 0,5 s sempre: só tira a espera).")]
+    public float tempoAposMorte = 0.5f;
+    public float tempoAposMorteCurta = 0.5f;
     public int mortesParaEncurtar = 3;
     [Tooltip("Depois desse tempo dá para pular a animação da morte com Espaço/Enter.")]
-    public float tempoParaPularMorte = 0.5f;
+    public float tempoParaPularMorte = 0.15f;
     [Tooltip("Quantos X vermelhos ficam no lugar das últimas mortes.")]
     public int marcasDeMorte = 5;
 
@@ -125,16 +125,26 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     public float TempoNaConclusao { get; private set; }
     bool mandouContinuar;
     // Na última fase a Sereia comemora primeiro; o painel de melhores tempos aparece depois.
-    float InicioDoPainel => EhUltimaFase && Sereia != null ? tempoComASereia : 0f;
+    float InicioDoPainel => EhUltimaFase && Sereia != null ? tempoComASereia : duracaoDoReplay;
+    // O replay das mortes (ReplayDasMortes.cs): toca antes do painel, se você morreu na fase. ENTER pula.
+    ReplayDasMortes replay;
+    float duracaoDoReplay;
+    public bool MostrandoReplay => Estado == EstadoDoJogo.FaseConcluida && replay != null && TempoNaConclusao < duracaoDoReplay;
+    public int TentativasNoReplay => GravadorDeTentativas.Tentativas;
     public bool MostrandoPainel => Estado == EstadoDoJogo.FaseConcluida && TempoNaConclusao >= InicioDoPainel;
     public bool PodeContinuar => MostrandoPainel && !mandouContinuar && TempoNaConclusao >= InicioDoPainel + tempoMinimoNoPainel;
     public ResultadoDaFase Resultado { get; private set; }
+    public string DesafioCumprido { get; private set; } // o desafio cumprido na fase que acabou (null = nenhum)
     public string Mensagem { get; private set; } = "";
     public string Aviso => timerAviso > 0f ? aviso : "";
     public Vector3 PosicaoInicial { get; private set; }
     public List<Transform> Bandeiras { get; private set; } = new List<Transform>();
     public bool EhUltimaFase => FaseAtual == Fases.Todas.Length - 1;
     public bool NaSecreta => FaseAtual == Fases.IndiceSecreto;
+    // As fases de fora da campanha: as bônus (das saídas secretas) e o Mar de Baixo (o mundo 2). Veja FasesExtras.cs.
+    public bool NaBonus => Fases.EhBonus(FaseAtual);
+    public bool NoMar => Fases.EhDoMar(FaseAtual);
+    public bool EhUltimaDoMar => FaseAtual == Fases.UltimaDoMar;
     // O modo difícil (o Grumete roubou o tesouro): tempestade em tudo e um tsunami em cada fase. É do slot (Progresso.ModoDificil).
     public bool ModoDificil { get; private set; }
     public static bool Tempestade => Instancia != null && Instancia.ModoDificil;
@@ -290,7 +300,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     bool DeveMostrarTutorialDaLoja => LojaLiberada && !Progresso.TutorialDaLojaVisto;
 
     // Tela de opções (a ordem aqui é a ordem na tela). "Voltar" também é uma opção, para quem usa só o teclado.
-    public enum ItemDasOpcoes { Musica, Efeitos, Graficos, TelaCheia, Cronometro, Teclas, Voltar }
+    public enum ItemDasOpcoes { Musica, Efeitos, Graficos, TelaCheia, Cronometro, Speedrun, Teclas, Voltar }
     public static readonly int TotalDasOpcoes = System.Enum.GetValues(typeof(ItemDasOpcoes)).Length;
     public int OpcaoDasOpcoes { get; private set; }
 
@@ -317,6 +327,10 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     public int FaseMaisLonge { get; private set; }
     // Mortes em cada fase nesta partida (as caveiras do mapa). A última posição é a da fase secreta.
     readonly int[] mortesPorFase = new int[Fases.Todas.Length + 1];
+    // As mortes nas fases bônus e do Mar (pelo índice da fase), para as caveiras do mapa.
+    readonly Dictionary<int, int> mortesExtras = new Dictionary<int, int>();
+    bool achouSaidaSecreta; // encostou na bandeira secreta 'O' (a fase acabou por ela)
+    int bonusNovo = -1;     // a fase bônus que acabou de ser liberada (o mapa mostra uma fala)
     static int Posicao(int fase) => fase == Fases.IndiceSecreto ? Fases.Todas.Length : fase;
     // Até que ponto do mapa dá para andar: o que você já alcançou NESTA partida.
     // (Novo Jogo começa com o mapa todo na névoa de novo; o F9 libera tudo só na partida atual.)
@@ -427,7 +441,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
                       || Estado == EstadoDoJogo.Morreu || Estado == EstadoDoJogo.FaseConcluida;
 
     // Onde o Grumete está: no mapa, o ponto escolhido; numa fase, a própria fase.
-    int FaseDoGrumete => Estado == EstadoDoJogo.Mapa && Mapa != null ? Mapa.Selecionado : FaseAtual;
+    int FaseDoGrumete => Estado == EstadoDoJogo.Mapa && Mapa != null ? Mapa.FaseSelecionada : FaseAtual;
 
     void PrepararCamera()
     {
@@ -470,6 +484,9 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         Sereia = null;
         Chefe = null;
         Mapa = null;
+        HudQueCai.Recolocar(); // (as ciladas "ao vivo" do HUD voltam ao normal a cada tentativa)
+        Desafios.ZerarTentativa(); // (os desafios contam só a tentativa em que você passa)
+        PausaFalsa.Recolocar();
 
         raizDaFase = new GameObject(indice == Fases.IndiceSecreto ? "Fase secreta" : "Fase " + (indice + 1)).transform;
         // a cor do céu vem da própria fase (Fases.cs); se ela não disser, usa a lista de cores daqui
@@ -491,6 +508,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         bool noite = dados.noite || dados.escura;
         Paralaxe.Criar(raizDaFase, info.largura, corDoFundo, noite); // céu, montanhas, castelo, floresta...
         MarcaDaMorte.Criar(raizDaFase, lugaresDasMortes, donosDasMortes, bandeirasDeMorto, bandeirasFincadas);
+        FantasmaDoRecorde.Criar(raizDaFase, indice); // (modo speedrun: o Grumete transparente do seu recorde)
 
         PosicaoInicial = info.inicio;
         Bandeiras = info.bandeiras;
@@ -548,13 +566,34 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         lider = null;
         Sereia = null;
         Bandeiras = new List<Transform>();
-        FaseAtual = no == Fases.IndiceSecreto && Progresso.SecretaLiberada ? no : Mathf.Clamp(no, 0, Fases.Todas.Length - 1);
+        // as bônus voltam para o ponto de onde saíram; o Mar tem o mapa dele
+        if (Fases.EhBonus(no)) no = Mathf.Max(0, Fases.OrigemDoBonus(no));
+        bool noMar = Fases.EhDoMar(no) && Progresso.MarLiberado;
+        int marMaisLonge = Mathf.Clamp(Progresso.MarMaisLonge, 0, Fases.MarDeBaixo.Length - 1);
+        if (noMar) FaseAtual = Mathf.Clamp(no, Fases.PrimeiroDoMar, Fases.PrimeiroDoMar + marMaisLonge);
+        else FaseAtual = no == Fases.IndiceSecreto && Progresso.SecretaLiberada ? no : Mathf.Clamp(no, 0, Fases.Todas.Length - 1);
         if (Camera.main != null) Camera.main.backgroundColor = ModoDificil ? Color.Lerp(MapaDoMundo.CorDoChao, CorDaTempestade, 0.7f) : MapaDoMundo.CorDoChao;
         if (ModoDificil) Luzes.Ambiente(0.85f, LuzDaTempestade);
         else Luzes.Ambiente(1f, Color.white);
 
-        Mapa = MapaDoMundo.Criar(raizDaFase, FaseAtual, FaseLiberada, FaseMaisLonge, mortesPorFase,
-            Progresso.SecretaLiberada, andarPara, caminhoNovo, mostrarSecreta);
+        if (noMar)
+        {
+            // o Mar de Baixo: os pontos são as fases 200, 201... (o mapa trabalha com 0, 1...)
+            var mortesNoMar = new int[Fases.MarDeBaixo.Length];
+            for (int i = 0; i < mortesNoMar.Length; i++) mortesExtras.TryGetValue(Fases.PrimeiroDoMar + i, out mortesNoMar[i]);
+            int marConcluidas = Progresso.MarMaisLonge; // (passou da fase k = chegou na k+1)
+            Mapa = MapaDoMundo.Criar(raizDaFase, MapaDoMundo.QualMundo.MarDeBaixo, FaseAtual - Fases.PrimeiroDoMar, marMaisLonge, marConcluidas,
+                mortesNoMar, false, andarPara >= 0 ? andarPara - Fases.PrimeiroDoMar : -1, caminhoNovo, false, null, 0);
+        }
+        else
+        {
+            // as fases bônus já achadas ganham o "?" no ponto de origem; o Kraken ganha a bolha do mergulho
+            var comBonus = new List<int>();
+            for (int b = 0; b < Fases.Bonus.Length; b++)
+                if (Progresso.BonusLiberado(b) && Fases.OrigemDoBonus(Fases.PrimeiroBonus + b) >= 0) comBonus.Add(Fases.OrigemDoBonus(Fases.PrimeiroBonus + b));
+            Mapa = MapaDoMundo.Criar(raizDaFase, MapaDoMundo.QualMundo.Ilhas, FaseAtual, FaseLiberada, FaseMaisLonge, mortesPorFase,
+                Progresso.SecretaLiberada, andarPara, caminhoNovo, mostrarSecreta, comBonus, Progresso.MarLiberado ? Fases.Todas.Length - 1 : -1);
+        }
         cameraSeguir.Configurar(Mapa.Grumete, MapaDoMundo.Largura, MapaDoMundo.Altura);
         if (ModoDificil)
         {
@@ -596,6 +635,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         savesPegos.Clear();
         LimparFalas();
         System.Array.Clear(mortesPorFase, 0, mortesPorFase.Length);
+        mortesExtras.Clear();
         ModoDificil = Progresso.TemJogoSalvo && Progresso.ModoDificil; // (o título mostra o mapa do "Continuar")
         MostrarMapa(Progresso.TemJogoSalvo ? Progresso.FaseSalva : faseInicial);
         Estado = EstadoDoJogo.Titulo; // o mapa aparece escurecido atrás do título
@@ -620,7 +660,8 @@ public partial class GerenciadorDoJogo : MonoBehaviour
 
     void JogarFase(int fase)
     {
-        if (fase != Fases.IndiceSecreto && fase > FaseMaisLonge) partidaValida = false; // pulou fases pelo mapa: não vale recorde
+        if (fase >= 0 && fase < Fases.Todas.Length && fase > FaseMaisLonge) partidaValida = false; // pulou fases pelo mapa: não vale recorde
+        achouSaidaSecreta = false;
         MortesNaFase = 0;
         TempoNaFase = 0f;
         pontoDeSave = null;
@@ -631,6 +672,8 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         EtapaDoChefe = 0;
         Tripulacao.ZerarPlacares();
         LimparFalas();
+        GravadorDeTentativas.ComecarFase();
+        Speedrun.ComecarFase(fase);
         CarregarFase(fase);
         Estado = EstadoDoJogo.Jogando;
         // tem elixir guardado? Entrar na fase gasta um, e ele vale a fase inteira (até depois de morrer)
@@ -713,6 +756,8 @@ public partial class GerenciadorDoJogo : MonoBehaviour
                 if (Controles.Pausar()) Pausar(true);
                 else if (Controles.Reiniciar()) ReiniciarDoSave(); // reiniciar conta como morte. Óbvio. (e não gasta o escudo)
                 else AtualizarTripulacao(); // coop: quem puxa a câmera e quem ficou para trás
+                GravadorDeTentativas.Gravar(jogadores, Time.deltaTime); // (para o replay das mortes no fim da fase)
+                Speedrun.Gravar(Lider, Time.deltaTime); // (o fantasma do recorde: Speedrun.cs)
                 break;
 
             case EstadoDoJogo.Pausado:
@@ -724,6 +769,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
                 TempoTotal += Time.deltaTime;
                 TempoNaFase += Time.deltaTime;
                 timerEstado -= Time.deltaTime;
+                Speedrun.Gravar(Lider, Time.deltaTime);
                 if (timerEstado > 0f && PodePularMorte && (Controles.Confirmar() || Controles.PuloApertou()))
                 {
                     timerEstado = 0f;
@@ -737,7 +783,12 @@ public partial class GerenciadorDoJogo : MonoBehaviour
                 // O painel de melhores tempos fica na tela até o jogador mandar continuar (ENTER/ESPAÇO ou clique).
                 // Até lá o timer fica parado logo antes de as sombras da transição começarem a cobrir a tela.
                 TempoNaConclusao += Time.deltaTime;
-                if (PodeContinuar && (Controles.Confirmar() || clique == BotaoProxima))
+                if (MostrandoReplay && TempoNaConclusao > 0.3f && (Controles.Confirmar() || Controles.PuloApertou() || clique == BotaoProxima))
+                {
+                    replay.Pular();
+                    TempoNaConclusao = duracaoDoReplay;
+                }
+                else if (PodeContinuar && (Controles.Confirmar() || clique == BotaoProxima))
                 {
                     mandouContinuar = true;
                     timerEstado = Mathf.Min(timerEstado, DuracaoTransicao);
@@ -768,21 +819,40 @@ public partial class GerenciadorDoJogo : MonoBehaviour
 
     void Renascer()
     {
+        GravadorDeTentativas.NovaTentativa();
         CarregarFase(FaseAtual);
         Estado = EstadoDoJogo.Jogando;
         timerRenascer = DuracaoRenascer; // é aqui que o áudio está no pico
         CameraSeguir.Tremer(0.15f, 0.25f);
+        // a morte agora dura só 0,5 s: a piada da morte continua um pouquinho no alto da tela, já jogando
+        if (Aviso == "" && !string.IsNullOrEmpty(Mensagem)) Avisar(Mensagem, 1.6f);
     }
 
     void ProximaFase()
     {
         timerEntrada = DuracaoTransicao; // as sombras saem da tela
         int concluida = FaseAtual;
-        if (concluida == Fases.IndiceSecreto)
+        if (Fases.EhExtra(concluida))
         {
+            // a secreta e as bônus: volta para o ponto de onde saiu
             MostrarMapa(concluida);
             MostrarFalas(Textos.FalasDepoisDaFase(concluida, MortesNaFase));
             SalvarProgresso();
+            return;
+        }
+        if (Fases.EhDoMar(concluida))
+        {
+            ProximaFaseNoMar(concluida);
+            return;
+        }
+        if (Demo.Ativa && concluida >= Demo.UltimaFase)
+        {
+            // A DEMO acaba aqui (Demo.cs): volta para o mapa e a Marina convida para o jogo completo
+            MostrarMapa(concluida);
+            MostrarFalas(Textos.FimDaDemo);
+            Progresso.Salvar(concluida, FaseMaisLonge, Mortes, moedas, TempoTotal, partidaValida);
+            SalvarItensDaLoja();
+            Progresso.SalvarMortesPorFase(mortesPorFase);
             return;
         }
         if (!EhUltimaFase)
@@ -792,9 +862,11 @@ public partial class GerenciadorDoJogo : MonoBehaviour
             bool caminhoNovo = proxima > FaseLiberada;
             FaseMaisLonge = Mathf.Max(FaseMaisLonge, proxima);
             MostrarMapa(concluida, proxima, caminhoNovo, secretaNova);
-            if (secretaNova || !DeveMostrarTutorialDaLoja) // (senão o Louro do tutorial chega logo que o Grumete parar)
+            if (bonusNovo >= 0) MostrarFalas(new[] { Textos.BonusLiberada(bonusNovo) });
+            else if (secretaNova || !DeveMostrarTutorialDaLoja) // (senão o Louro do tutorial chega logo que o Grumete parar)
                 MostrarFalas(secretaNova ? new[] { Textos.SecretaLiberada } : Textos.FalasDepoisDaFase(concluida, MortesNaFase));
             secretaNova = false;
+            bonusNovo = -1;
             Progresso.Salvar(proxima, FaseMaisLonge, Mortes, moedas, TempoTotal, partidaValida);
             SalvarItensDaLoja();
             Progresso.SalvarMortesPorFase(mortesPorFase);
@@ -803,12 +875,60 @@ public partial class GerenciadorDoJogo : MonoBehaviour
 
         // chegou no baú! Salva tudo AGORA: fechar o jogo no meio da cutscene não perde nada (o "Continuar" volta na escolha)
         FaseMaisLonge = Mathf.Max(FaseMaisLonge, concluida);
+        if (!Progresso.MarLiberado) Progresso.LiberarMar(); // (o mundo 2: a bolha aparece no ponto do Kraken)
         Progresso.Zerou(Fases.Todas.Length);
+        Speedrun.Zerou(TempoTotal, partidaValida);
         Conquistas.Desbloquear("zerou");
         if (partidaValida && !ModoDificil) Progresso.TentarSalvarRecorde(Mortes);
         SalvarProgresso();
         Progresso.SalvarEscolhaPendente(true);
         TocarEscolhaDoTesouro();
+    }
+
+    // Passou de uma fase do Mar de Baixo: volta para o mapa do Mar e anda até a próxima (ou, na última, o final do Mar).
+    void ProximaFaseNoMar(int concluida)
+    {
+        int ponto = concluida - Fases.PrimeiroDoMar;
+        if (concluida == Fases.UltimaDoMar)
+        {
+            Conquistas.Desbloquear("zerou_mar");
+            Progresso.SalvarMarMaisLonge(Fases.MarDeBaixo.Length - 1);
+            SalvarProgresso();
+            TocarHistoria(Historia.FinalDoMar, () =>
+            {
+                MostrarMapa(concluida);
+                MostrarFala(Textos.DepoisDoMar);
+                SalvarProgresso();
+            });
+            return;
+        }
+        int proxima = concluida + 1;
+        bool caminhoNovo = ponto + 1 > Progresso.MarMaisLonge;
+        if (caminhoNovo) Progresso.SalvarMarMaisLonge(ponto + 1);
+        MostrarMapa(concluida, proxima, caminhoNovo);
+        MostrarFalas(Textos.FalasDepoisDaFase(concluida, MortesNaFase));
+        SalvarProgresso();
+    }
+
+    // Mergulha do ponto do Kraken para o Mar de Baixo (ou sobe de volta para as ilhas).
+    void Mergulhar(bool descer)
+    {
+        Som(descer ? "mola" : "pulo", 0.6f);
+        Trocar(() =>
+        {
+            if (descer)
+            {
+                MostrarMapa(Fases.PrimeiroDoMar);
+                if (!Progresso.ViuFalaDoMar)
+                {
+                    Progresso.MarcarFalaDoMar();
+                    Conquistas.Desbloquear("mergulhou");
+                    MostrarFalas(Textos.ChegadaNoMar);
+                }
+            }
+            else MostrarMapa(Fases.Todas.Length - 1);
+            SalvarProgresso();
+        });
     }
 
     // ------------------------------------------------------------------ o final: devolver ou roubar
@@ -850,9 +970,11 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         partidaValida = true;
         faseDasMarcas = -1;
         System.Array.Clear(mortesPorFase, 0, mortesPorFase.Length);
+        mortesExtras.Clear();
         Progresso.Salvar(0, 0, 0, moedas, 0f, true);
         Progresso.SalvarMortesPorFase(mortesPorFase);
         SalvarItensDaLoja();
+        Speedrun.NovaPartida(); // (as parciais da tempestade são outras)
     }
 
     void EscolheuNaTempestade(int opcao)
@@ -982,6 +1104,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     void SalvarProgresso()
     {
         Progresso.Salvar(FaseDoGrumete, FaseMaisLonge, Mortes, moedas, TempoTotal, partidaValida);
+        Progresso.SalvarMortesExtras(mortesExtras); // (o Salvar de baixo grava o arquivo)
         Progresso.SalvarMortesPorFase(mortesPorFase);
         SalvarItensDaLoja();
     }
@@ -1298,6 +1421,9 @@ public partial class GerenciadorDoJogo : MonoBehaviour
             case ItemDasOpcoes.Cronometro:
                 Opcoes.MostrarTempo = !Opcoes.MostrarTempo;
                 break;
+            case ItemDasOpcoes.Speedrun:
+                Opcoes.Speedrun = !Opcoes.Speedrun;
+                break;
         }
         Som("moeda", 0.6f); // já toca no volume novo dos efeitos: serve de "teste"
     }
@@ -1443,7 +1569,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         if (Progresso.AlgumJogoSalvo) opcoesDoMenu.Add(OpcaoDoMenu.CarregarJogo);  // a tela dos slots
         opcoesDoMenu.Add(OpcaoDoMenu.NovoJogo);                                     // a tela dos slots (escolhe onde)
         // Já zerou alguma vez? O MODO TEMPESTADE (o difícil) aparece no menu: antes só dava para chegar nele roubando o tesouro.
-        if (Conquistas.Tem("zerou")) opcoesDoMenu.Add(OpcaoDoMenu.Tempestade);
+        if (Conquistas.Tem("zerou") && !Demo.Ativa) opcoesDoMenu.Add(OpcaoDoMenu.Tempestade);
         opcoesDoMenu.Add(OpcaoDoMenu.Opcoes);
         opcoesDoMenu.Add(OpcaoDoMenu.ComoJogar);
         opcoesDoMenu.Add(OpcaoDoMenu.Conquistas);
@@ -1541,6 +1667,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         Progresso.SlotAtual = slot;
         if (novo) Progresso.ApagarSlot(slot);
         ModoDificil = !novo && Progresso.ModoDificil;
+        if (novo) Speedrun.NovaPartida();
         SubmenuAberto = Submenu.Nenhum;
         Som("vitoria", 0.4f);
         int fase;
@@ -1548,6 +1675,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         {
             Progresso.Carregar(out fase, out int maisLonge, out int mortesSalvas, out moedas, out float tempoSalvo, out partidaValida);
             Progresso.CarregarMortesPorFase(mortesPorFase);
+            Progresso.CarregarMortesExtras(mortesExtras);
             FaseMaisLonge = maisLonge;
             Mortes = mortesSalvas;
             TempoTotal = tempoSalvo;
@@ -1644,6 +1772,13 @@ public partial class GerenciadorDoJogo : MonoBehaviour
             return;
         }
 
+        // venceu o Kraken: a Marina conta do Mar de Baixo (uma vez por slot) e a bolha aparece no ponto do Kraken
+        if (!Fala.HasValue && Progresso.MarLiberado && !Progresso.ViuAvisoDoMar && MapaDoMundo.MundoAtual == MapaDoMundo.QualMundo.Ilhas)
+        {
+            Progresso.MarcarAvisoDoMar();
+            MostrarFalas(Textos.MarAbriu);
+        }
+
         if (LojaLiberada && (Controles.AbrirLoja() || clique == BotaoLoja))
         {
             AbrirLoja();
@@ -1664,10 +1799,24 @@ public partial class GerenciadorDoJogo : MonoBehaviour
             FaseMaisLonge = Fases.Todas.Length - 1;
             partidaValida = false;
             Progresso.LiberarSecreta();
+            Progresso.LiberarMar(); // (e o Mar de Baixo inteiro, e as fases bônus)
+            Progresso.SalvarMarMaisLonge(Fases.MarDeBaixo.Length - 1);
+            for (int b = 0; b < Fases.Bonus.Length; b++) Progresso.LiberarBonus(b);
             SalvarProgresso();
             Som("vitoria", 0.6f);
-            MostrarMapa(Mapa.Selecionado);
+            MostrarMapa(Mapa.FaseSelecionada);
             MostrarFala(Textos.ModoDeTeste);
+            return;
+        }
+
+        if (Controles.TrocarDeMundo() && !Demo.Ativa)
+        {
+            // Modo de teste: vai direto para o Mar de Baixo (ou volta para as ilhas), com o Mar inteiro aberto.
+            partidaValida = false;
+            Progresso.LiberarMar();
+            Progresso.SalvarMarMaisLonge(Fases.MarDeBaixo.Length - 1);
+            Progresso.MarcarAvisoDoMar();
+            Mergulhar(MapaDoMundo.MundoAtual == MapaDoMundo.QualMundo.Ilhas);
             return;
         }
 
@@ -1679,7 +1828,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
             Progresso.SalvarModoDificil(ModoDificil);
             SalvarProgresso();
             Som("vitoria", 0.6f);
-            MostrarMapa(Mapa.Selecionado);
+            MostrarMapa(Mapa.FaseSelecionada);
             MostrarFala(ModoDificil ? Textos.TesteTempestadeLigada : Textos.TesteTempestadeDesligada);
             return;
         }
@@ -1697,20 +1846,42 @@ public partial class GerenciadorDoJogo : MonoBehaviour
 
         bool direita = Controles.DireitaApertou(), esquerda = Controles.EsquerdaApertou();
         bool cima = Controles.CimaApertou(), baixo = Controles.BaixoApertou();
+        bool noMar = MapaDoMundo.MundoAtual == MapaDoMundo.QualMundo.MarDeBaixo;
+        int bonusAqui = noMar || Demo.Ativa ? -1 : BonusDoPonto(Mapa.Selecionado);
         if (Mapa.Selecionado == Fases.IndiceSecreto)
         {
             if (direita || esquerda || cima) Mapa.VoltarDaSecreta();
         }
-        else if (baixo && Mapa.Selecionado == Fases.FaseDoSegredo && Progresso.SecretaLiberada) Mapa.IrParaSecreta();
+        else if (baixo && !noMar && Mapa.Selecionado == Fases.FaseDoSegredo && Progresso.SecretaLiberada) Mapa.IrParaSecreta();
+        // (na demo não tem Mar nem fases bônus: Demo.cs)
+        // a bolha do mergulho: no Kraken, desce para o Mar; no ponto 1 do Mar, sobe para as ilhas
+        else if (baixo && !noMar && Progresso.MarLiberado && Mapa.Selecionado == Fases.Todas.Length - 1) Mergulhar(true);
+        else if (cima && noMar && Mapa.Selecionado == 0) Mergulhar(false);
+        // o "?" lilás: a fase bônus da saída secreta deste ponto
+        else if (baixo && bonusAqui >= 0)
+        {
+            int bonus = bonusAqui;
+            Som("vitoria", 0.4f);
+            TrocarParaAFase(bonus, () => JogarFase(bonus));
+            return;
+        }
         else if (direita || cima) Mapa.Mover(1);
         else if (esquerda || baixo) Mapa.Mover(-1);
 
         if (!Mapa.Andando && Controles.Confirmar())
         {
-            int fase = Mapa.Selecionado;
+            int fase = Mapa.FaseSelecionada;
             Som("vitoria", 0.4f);
             TrocarParaAFase(fase, () => JogarFase(fase));
         }
+    }
+
+    // A fase bônus já achada que sai deste ponto das ilhas (-1 = nenhuma).
+    public static int BonusDoPonto(int ponto)
+    {
+        for (int b = 0; b < Fases.Bonus.Length; b++)
+            if (Fases.OrigemDoBonus(Fases.PrimeiroBonus + b) == ponto && Progresso.BonusLiberado(b)) return Fases.PrimeiroBonus + b;
+        return -1;
     }
 
     // ------------------------------------------------------------------ loja
@@ -2097,6 +2268,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     {
         if (Estado != EstadoDoJogo.Jogando || escudos[jogador] <= 0) return false;
         escudos[jogador]--;
+        Desafios.Escudos++;
         SalvarItensDaLoja(); // gastou, gastou: sair do jogo agora não devolve o escudo
         Avisar("O ESCUDO TE SALVOU!", 2f);
         Som("pancada", 0.7f);
@@ -2111,7 +2283,8 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         if (Estado != EstadoDoJogo.Jogando) return;
         Mortes++;
         MortesNaFase++;
-        mortesPorFase[Posicao(FaseAtual)]++;
+        if (FaseAtual == Fases.IndiceSecreto || (FaseAtual >= 0 && FaseAtual < Fases.Todas.Length)) mortesPorFase[Posicao(FaseAtual)]++;
+        else mortesExtras[FaseAtual] = (mortesExtras.TryGetValue(FaseAtual, out int antes) ? antes : 0) + 1;
         if (!reiniciando) // (R é da tripulação inteira: não entra na conta de ninguém)
         {
             quem.Marujo.mortes++;
@@ -2169,6 +2342,14 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         }
     }
 
+    // A bandeira secreta 'O' (saída secreta): passa de fase E libera a fase bônus desta fase.
+    public void SaidaSecreta()
+    {
+        if (Estado != EstadoDoJogo.Jogando) return;
+        achouSaidaSecreta = true;
+        FaseConcluida();
+    }
+
     public void FaseConcluida()
     {
         if (Estado != EstadoDoJogo.Jogando) return;
@@ -2185,6 +2366,26 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         secretaNova = FaseAtual == Fases.FaseDoSegredo && !Progresso.SecretaLiberada
                       && moedasParaOSegredo > 0 && moedasNaFase >= moedasParaOSegredo;
         if (secretaNova) Progresso.LiberarSecreta();
+        // saída secreta: a fase bônus desta fase aparece no mapa
+        bonusNovo = -1;
+        int saida = DadosDaFase.saidaSecreta;
+        if (achouSaidaSecreta && saida >= 0 && saida < Fases.Bonus.Length)
+        {
+            Conquistas.Desbloquear("saida_secreta");
+            if (!Progresso.BonusLiberado(saida))
+            {
+                Progresso.LiberarBonus(saida);
+                bonusNovo = saida;
+            }
+            if (Progresso.QuantasBonusLiberadas == Fases.Bonus.Length) Conquistas.Desbloquear("todas_saidas");
+        }
+        achouSaidaSecreta = false;
+        if (NaBonus) Conquistas.Desbloquear("bonus");
+
+        // o desafio da fase (depois de zerar): cumpriu nesta tentativa? (antes das moedas irem para o total)
+        Desafios.Desafio cumprido = Desafios.Conferir(FaseAtual, TempoNaFase, moedasNaFase, MortesNaFase);
+        DesafioCumprido = cumprido?.titulo; // (o painel do fim da fase mostra)
+        if (cumprido != null) Som("conquista");
 
         RegistrarRecordes();
 
@@ -2193,6 +2394,10 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         GanharFichas(); // (o Louro dá fichas para os jogos de habilidade da Loja)
         DarTitulosDaTripulacao();
         foreach (Jogador grumete in jogadores) grumete.Congelar();
+        // o replay das mortes: todas as tentativas correndo juntas (na última fase, a Sereia comemora no lugar)
+        GravadorDeTentativas.Concluir();
+        replay = EhUltimaFase && Sereia != null ? null : ReplayDasMortes.Criar(raizDaFase);
+        duracaoDoReplay = replay != null ? replay.Duracao : 0f;
         Som("vitoria");
         if (EhUltimaFase && Sereia != null && !ModoDificil) Sereia.Comemorar(); // (quem roubou não ganha coraçõezinhos)
     }
@@ -2212,6 +2417,10 @@ public partial class GerenciadorDoJogo : MonoBehaviour
             totalDeMoedas = Medalhas.TotalDeMoedas(FaseAtual),
             novidades = Progresso.RegistrarFase(FaseAtual, TempoNaFase, MortesNaFase, moedasNaFase),
         };
+        // modo speedrun: o fantasma (se foi recorde), as parciais da partida e os placares (Speedrun.cs)
+        Speedrun.SalvarSeForRecorde(FaseAtual, (resultado.novidades & Progresso.Novidade.Tempo) != 0);
+        Speedrun.Parcial(FaseAtual, TempoTotal, partidaValida && FaseAtual == FaseMaisLonge);
+        Placares.FaseConcluida(FaseAtual, TempoNaFase, MortesNaFase, Tripulacao.Coop);
         resultado.medalhas = Medalhas.DaFase(FaseAtual);
         resultado.medalhasNovas = resultado.medalhas & ~antes;
         resultado.ranking = Progresso.MelhoresTempos(FaseAtual);
@@ -2233,6 +2442,12 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         if (quem != null) quem.Marujo.moedas++;
         moedasNaFase++;
         moedasPegas.Add(ChaveDaMoeda(lugar));
+    }
+
+    // O baú que morde (ArmadilhasNovas.cs) solta moedas que vão direto para o bolso (não são moedas da fase).
+    public void GanharMoedasDoBau(int quantas)
+    {
+        moedas += quantas;
     }
 
     // Essa moeda já foi pega e está guardada no checkpoint em que você renasceu? (aí ela não aparece de novo)

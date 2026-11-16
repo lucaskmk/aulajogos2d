@@ -30,9 +30,9 @@ using UnityEngine;
 public class BaleiaBranca : Chefe
 {
     const int EtapasDaLuta = 3;
-    const int GolpesDaEtapa = 2;
+    static int GolpesDaEtapa => GolpesNoCoop(2); // coop com 3 ou 4: um golpe a mais por etapa (Chefe.cs)
 
-    public int vidaMaxima = EtapasDaLuta * GolpesDaEtapa;
+    int vidaMaxima => EtapasDaLuta * GolpesDaEtapa;
     public float larguraDaArena = 24f;
     public float tamanho = 1f; // escala do desenho (96 x 40 pixels = 6 x 2,5 blocos)
 
@@ -285,7 +285,7 @@ public class BaleiaBranca : Chefe
             while (Vida > vidaNoFimDaEtapa)
             {
                 int golpe = vidaMaxima - etapa * GolpesPorEtapa - Vida; // 0 = 1º golpe da etapa, 1 = 2º
-                yield return RodarRodada(Rodada(etapa * GolpesPorEtapa + golpe));
+                yield return RodarRodada(Rodada(RodadaDoGolpe(etapa, golpe)));
             }
             if (Vida <= 0) break;
 

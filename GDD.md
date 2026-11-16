@@ -20,7 +20,9 @@ a onda traz o Grumete de volta, ele lembra onde errou e passa, de ilha em ilha, 
 - **Gênero:** plataforma 2D "troll" / *masocore* leve, com lutas de chefe no estilo *Helltaker*.
 - **Público:** fãs de jogos de "raiva" (*Level Devil*, *Cat Mario*, *I Wanna Be the Guy*) e de aventuras de pirata, de 12 anos para cima. Também quem só quer rir das próprias mortes.
 - **Plataforma:** navegador (WebGL no itch.io), com teclado ou controle. Também roda no editor e em build de PC.
-- **Duração:** 13 fases (com 4 chefes) + 1 secreta, de 45 a 90 minutos na primeira vez (estimativa: depende muito das mortes).
+- **Duração:** 13 fases (com 4 chefes) + 1 secreta + 3 bônus (saídas secretas) + o **Mar de Baixo** (7 fases, 2 chefes).
+  A campanha das ilhas leva de 45 a 90 minutos; com o Mar, as bônus, os desafios e o modo tempestade, passa bem das 2 horas
+  (estimativa: depende muito das mortes).
 - **Engine:** Unity 6 (URP 2D), C#. Toda a arte e todo o áudio são procedurais.
 
 ## Referências
@@ -196,8 +198,24 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
   - recordes e medalhas separados; o save não "muda de lugar"; as falas do mapa são outras.
 - Vencer o Kraken no modo difícil dá a **última escolha**: devolver (o **final verdadeiro**, que acaba com a tempestade) ou ficar com o ouro (o **final do rei**: o mar nunca mais acalma).
 
+### Conteúdo novo para a Steam (16/11/2026)
+- **Renascer em 0,5 s:** a morte não muda (é a mesma Volta da Maré), só a espera. A mensagem da morte fica 1,6 s no alto da tela, já jogando.
+- **Replay das mortes:** no fim da fase, todas as tentativas correm juntas e morrem nos mesmos lugares. É a piada do jogo em um clipe só.
+- **Ciladas "ao vivo"** (o jogo mente na cara): o chão que desliza (`d`), o "Mortes" do HUD que cai em você (`V`) e a pausa falsa (`p`).
+  Mesma regra das armadilhas: pegam uma vez, e na segunda tentativa existe resposta (pular antes da ponta, correr enquanto o HUD treme,
+  não soltar o controle).
+- **Saídas secretas** (`O`) e **fases bônus**; **desafios** depois de zerar (cada um TIRA alguma coisa: moedas, escudo, duplo salto...).
+- **Mecânicas novas das ilhas:** canhão (`)`), prancha (`_`), baú que morde (`!`), clone espelhado (`|`) e a maré (`-`).
+- **Coop:** carregar e arremessar o amigo; a alavanca, o portão e o baú da tripulação; chefes com 3 pisões por etapa com 3 ou 4 jogadores.
+- **Mundo 2, o Mar de Baixo:** o verbo novo é **nadar** (braçada no lugar do pulo, queda lenta) com o **ar** contando (8 s). As ciladas
+  seguem o pilar "convenção que vira armadilha": a bolha de ar falsa, a "moeda" que é a isca do peixe-lanterna, a água-viva igualzinha
+  que queima, a ostra que é chão por meio segundo. Chefes no molde Helltaker: o **Tubarão-Martelo** (a cabeça prende no chão depois da
+  última martelada) e a **Mãe do Mar** (afunda cansada no fim de cada rodada).
+- **Speedrun e placares:** o tempo com centésimos, o fantasma do recorde e as parciais (opcional, nas Opções).
+- **Nada disso facilita:** sem modo fácil e sem ajuda automática (decisão do projeto). Quem quer folga continua comprando na Loja.
+
 ### Conquistas
-- São 31, salvas para sempre. Alguns exemplos:
+- São 41, salvas para sempre (11 vieram com o conteúdo novo: as saídas secretas, o Mar de Baixo e os desafios). Alguns exemplos:
   - A maré te trouxe, Grumete imortal (100 mortes), Confiou na bandeira, Ganância, Olhou para o céu, Suspeito de hack (passar de fase sem morrer);
   - Pescador de caranguejos, Controle de pragas, Buuu!, Mudaram meu save!, Explorador, Passageiro da Expressa, Caldo do Tsunami;
   - do Kraken: Assaltado (ter moedas roubadas), Calamar à doré (vencer) e Bolso fechado (vencer sem ela roubar nenhuma moeda);
@@ -349,8 +367,8 @@ As ilhas são ligadas por pontes de madeira que atravessam os estreitos, e há n
     o verde paga 14x. A casa leva uma pequena vantagem, como numa roleta de verdade: é um jeito de arriscar, não de enriquecer.
   - **jogos de habilidade** (a linha "Jogos de habilidade" na Loja, ao lado da roleta): sem sorte e sem aposta. Cada rodada gasta uma
     **ficha** (não moedas); a partida começa com 3 e o Louro dá 2 a cada fase concluída (até 9). O prêmio é em moedas:
-    - **Pontaria:** o ponteiro vai e volta pela barra; parar no verde paga 10, no amarelo 4, fora nada. Cada acerto no verde seguido deixa o ponteiro 15% mais rápido;
-    - **Reflexo:** espere o "JÁ!" (de 1,2 a 3,2 s) e aperte: até 0,30 s paga 10, até 0,45 s paga 4. Apertou antes, queimou a largada.
+    - **Pontaria:** o ponteiro vai e volta pela barra; parar no verde paga 10, no amarelo 4, fora nada. O ponteiro atravessa a barra 2,4 vezes por segundo, com a velocidade balançando (não dá para decorar o ritmo), o verde tem 2,4% da barra, e cada acerto no verde seguido deixa ele 30% mais rápido;
+    - **Reflexo:** espere o "JÁ!" (de 1,2 a 3,2 s) e aperte: até 0,19 s paga 10, até 0,24 s paga 4 (quase no limite humano, de propósito). Apertou antes, queimou a largada.
 - As mortes são a "moeda" que importa: aparecem no HUD, nas caveiras do mapa, no recorde, na medalha do coração e no título final.
 - O tempo vira desafio na volta: depois de decorar as armadilhas, a medalha do relógio puxa o jogador para refazer a fase rápido.
 

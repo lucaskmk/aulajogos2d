@@ -43,6 +43,14 @@ public static class Historia
         new Quadro("abertura_7", "E assim começa uma nova jornada: atravessar o mar, derrotar o Kraken e recuperar o tesouro."),
     };
 
+    // O fim do Mar de Baixo (o mundo 2): depois de vencer a Mãe do Mar.
+    public static readonly Quadro[] FinalDoMar =
+    {
+        new Quadro("mar_1", "A Mãe do Mar afundou no escuro, e as correntes do fundo voltaram a cantar."),
+        new Quadro("mar_2", "Marina: \"O meu reino está livre. E você, Grumete... continua sem saber nadar.\""),
+        new Quadro("mar_3", "Louro: \"E o tesouro dela? Ninguém vai pegar? Não? Tá bom. Currupaco.\""),
+    };
+
     // O último quadro de cada ESCOLHA mostra as opções (na ordem de OpcoesDaEscolha: a 0 é sempre devolver).
     public static readonly Quadro[] Escolha =
     {

@@ -49,6 +49,18 @@ public static class Conquistas
         new Conquista("roubou", "Ganância em pessoa", "Roubar o tesouro do Deus da Riqueza."),
         new Conquista("arrependido", "Antes tarde", "Fugir com o tesouro pelo mar inteiro e devolver no fim."),
         new Conquista("rei_do_mar", "Rei da tempestade", "Fugir com o tesouro pelo mar inteiro e ficar com ele."),
+        // as saídas secretas e o Mar de Baixo (o mundo 2)
+        new Conquista("saida_secreta", "Atalho do pirata", "Achar uma bandeira secreta."),
+        new Conquista("todas_saidas", "Cartógrafo", "Achar todas as bandeiras secretas."),
+        new Conquista("bonus", "Hora extra", "Terminar uma fase bônus."),
+        new Conquista("mergulhou", "Sem saber nadar", "Mergulhar no Mar de Baixo."),
+        new Conquista("afogou", "Glub glub", "Ficar sem ar debaixo d'água."),
+        new Conquista("bolha_falsa", "Nem toda bolha", "Pegar uma bolha de ar que não era de ar."),
+        new Conquista("martelo_vencido", "Martelada", "Derrotar o Tubarão-Martelo, o ferreiro do fundo."),
+        new Conquista("mae_vencida", "Maré mansa", "Derrotar a Mãe do Mar."),
+        new Conquista("zerou_mar", "Rei do Mar de Baixo", "Terminar o Mar de Baixo."),
+        new Conquista("desafiante", "Desafiante", "Cumprir 4 desafios (aparecem no mapa depois de zerar)."),
+        new Conquista("todos_desafios", "Sem desculpas", "Cumprir todos os desafios."),
     };
 
     const string Prefixo = "cilada_conquista_";
