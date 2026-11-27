@@ -199,7 +199,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     // ------------------------------------------------------------------ menus
 
     // Menu do título. "Continuar" só aparece se tiver jogo salvo; "Sair" some no navegador (WebGL).
-    public enum OpcaoDoMenu { Continuar, CarregarJogo, NovoJogo, Opcoes, ComoJogar, Conquistas, Creditos, TrocarIdioma, Sair, Tempestade }
+    public enum OpcaoDoMenu { Continuar, CarregarJogo, NovoJogo, Opcoes, ComoJogar, Conquistas, Creditos, TrocarIdioma, Sair, Tempestade, Online }
     public readonly List<OpcaoDoMenu> opcoesDoMenu = new List<OpcaoDoMenu>();
     public int OpcaoSelecionada { get; private set; }
 
@@ -209,7 +209,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
     public int OpcaoDaPausa { get; private set; }
 
     // Submenus que abrem por cima do título ou da pausa.
-    public enum Submenu { Nenhum, Opcoes, ComoJogar, Slots, Teclas }
+    public enum Submenu { Nenhum, Opcoes, ComoJogar, Slots, Teclas, Online }
     public Submenu SubmenuAberto { get; private set; }
 
     // A tela dos SLOTS (do título): "Carregar jogo" (só os slots com partida) ou "Novo jogo" (qualquer slot;
@@ -704,6 +704,9 @@ public partial class GerenciadorDoJogo : MonoBehaviour
 
     void Update()
     {
+        // convidado numa sala online: a tela é a do anfitrião, e o jogo daqui fica parado embaixo (GerenciadorOnline.cs)
+        if (ParadoComoConvidado()) return;
+        AtualizarPresenca(); // (o que os amigos da Steam veem)
         Controles.NotarAparelho(); // teclado ou controle? (as dicas de tecla da tela acompanham)
         timerRenascer -= Time.deltaTime;
         timerEntrada -= Time.unscaledDeltaTime; // tempo real: a transição funciona até com o jogo pausado
@@ -1245,6 +1248,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         if (SubmenuAberto == Submenu.Opcoes) AtualizarOpcoes(clique, lado);
         else if (SubmenuAberto == Submenu.Teclas) AtualizarTeclas(clique);
         else if (SubmenuAberto == Submenu.Slots) AtualizarSlots(clique);
+        else if (SubmenuAberto == Submenu.Online) AtualizarOnline(clique);
         else AtualizarComoJogar(clique);
     }
 
@@ -1570,6 +1574,7 @@ public partial class GerenciadorDoJogo : MonoBehaviour
         opcoesDoMenu.Add(OpcaoDoMenu.NovoJogo);                                     // a tela dos slots (escolhe onde)
         // Já zerou alguma vez? O MODO TEMPESTADE (o difícil) aparece no menu: antes só dava para chegar nele roubando o tesouro.
         if (Conquistas.Tem("zerou") && !Demo.Ativa) opcoesDoMenu.Add(OpcaoDoMenu.Tempestade);
+        if (Online.Disponivel) opcoesDoMenu.Add(OpcaoDoMenu.Online); // a Tripulação Online (Online/*.cs)
         opcoesDoMenu.Add(OpcaoDoMenu.Opcoes);
         opcoesDoMenu.Add(OpcaoDoMenu.ComoJogar);
         opcoesDoMenu.Add(OpcaoDoMenu.Conquistas);
@@ -1629,6 +1634,9 @@ public partial class GerenciadorDoJogo : MonoBehaviour
                 return;
             case OpcaoDoMenu.Opcoes:
                 AbrirSubmenu(Submenu.Opcoes);
+                return;
+            case OpcaoDoMenu.Online:
+                AbrirOnline();
                 return;
             case OpcaoDoMenu.ComoJogar:
                 AbrirSubmenu(Submenu.ComoJogar);

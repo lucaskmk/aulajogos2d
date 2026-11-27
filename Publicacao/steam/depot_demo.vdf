@@ -1,0 +1,14 @@
+"DepotBuild"
+{
+	// TROCAR: o depot da demo (o mesmo de app_build_demo.vdf)
+	"DepotID" "481"
+	"FileMapping"
+	{
+		"LocalPath" "*"
+		"DepotPath" "."
+		"Recursive" "1"
+	}
+	"FileExclusion" "*.pdb"
+	"FileExclusion" "CiladaAVista_BurstDebugInformation_DoNotShip"
+	"FileExclusion" "steam_appid.txt"
+}

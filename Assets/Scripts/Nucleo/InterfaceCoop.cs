@@ -47,8 +47,11 @@ public partial class Interface
         GUI.DrawTexture(new Rect(0, 0, w, h), fundoEscuro);
 
         Texto(Idioma.T("TRIPULAÇÃO", "CREW"), w / 2f, h * 0.04f, 5f, 0.5f, Lilas, w * 0.9f);
-        Texto(Idioma.T("Coop local: até 4 jogadores na mesma tela. Cada um aperta PULAR no seu controle para entrar.",
-                       "Local co-op: up to 4 players on one screen. Each player presses JUMP on their own device to join."),
+        Texto(Anfitriao.Aberto
+                ? Idioma.T("Até 4 jogadores, aqui e online. Cada um aperta PULAR no seu controle (os amigos online também) para entrar.",
+                           "Up to 4 players, here and online. Each player presses JUMP on their own device (online friends too) to join.")
+                : Idioma.T("Coop local: até 4 jogadores na mesma tela. Cada um aperta PULAR no seu controle para entrar.",
+                           "Local co-op: up to 4 players on one screen. Each player presses JUMP on their own device to join."),
             w / 2f, h * 0.04f + 78f * escala, 2f, 0.5f, Branco, w * 0.92f);
 
         float folga = 16f * escala;

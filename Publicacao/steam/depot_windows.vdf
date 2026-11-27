@@ -1,0 +1,15 @@
+"DepotBuild"
+{
+	// TROCAR: o mesmo número do depot em app_build.vdf
+	"DepotID" "481"
+	"FileMapping"
+	{
+		"LocalPath" "*"
+		"DepotPath" "."
+		"Recursive" "1"
+	}
+	// o que NÃO vai para os jogadores
+	"FileExclusion" "*.pdb"
+	"FileExclusion" "CiladaAVista_BurstDebugInformation_DoNotShip"
+	"FileExclusion" "steam_appid.txt"
+}

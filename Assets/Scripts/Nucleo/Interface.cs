@@ -310,6 +310,8 @@ public partial class Interface : MonoBehaviour
             case GerenciadorDoJogo.OpcaoDoMenu.Conquistas:
                 return Idioma.T("Conquistas", "Achievements") + $" ({Conquistas.Quantidade}/{Conquistas.Todas.Length})";
             case GerenciadorDoJogo.OpcaoDoMenu.Opcoes: return "Opções";
+            case GerenciadorDoJogo.OpcaoDoMenu.Online:
+                return Anfitriao.Aberto ? Idioma.T("Jogar online (sala aberta)", "Play online (room open)") : Idioma.T("Jogar online", "Play online");
             case GerenciadorDoJogo.OpcaoDoMenu.ComoJogar: return "Como jogar";
             case GerenciadorDoJogo.OpcaoDoMenu.Creditos: return "Créditos";
             case GerenciadorDoJogo.OpcaoDoMenu.TrocarIdioma: // escrito nas duas línguas: quem não lê português acha fácil
@@ -930,6 +932,7 @@ public partial class Interface : MonoBehaviour
         if (jogo.SubmenuAberto == GerenciadorDoJogo.Submenu.Opcoes) DesenharOpcoes();
         else if (jogo.SubmenuAberto == GerenciadorDoJogo.Submenu.Teclas) DesenharTeclas();
         else if (jogo.SubmenuAberto == GerenciadorDoJogo.Submenu.Slots) DesenharSlots();
+        else if (jogo.SubmenuAberto == GerenciadorDoJogo.Submenu.Online) DesenharOnline();
         else DesenharComoJogar();
     }
 

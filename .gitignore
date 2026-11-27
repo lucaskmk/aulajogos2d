@@ -42,3 +42,6 @@ Thumbs.db
 !Ferramentas/**/*.csproj
 Ferramentas/**/bin/
 Ferramentas/**/obj/
+
+# Steam: o número do app para testar no editor (cada um cria o seu)
+steam_appid.txt

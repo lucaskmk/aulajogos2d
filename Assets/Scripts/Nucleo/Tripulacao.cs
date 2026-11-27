@@ -51,7 +51,7 @@ public static class Tripulacao
 
         bool Wasd => esquema == Esquema.Todos || esquema == Esquema.TecladoWASD || (esquema == Esquema.TecladoSetas && tecladoInteiro);
         bool Setas => esquema == Esquema.Todos || esquema == Esquema.TecladoSetas || (esquema == Esquema.TecladoWASD && tecladoInteiro);
-        Gamepad Controle => esquema == Esquema.Todos ? Gamepad.current
+        Gamepad Controle => esquema == Esquema.Todos ? Controles.Local
             : esquema == Esquema.Controle && controle != null && controle.added ? controle : null;
 
         public bool NoTeclado => esquema == Esquema.TecladoWASD || esquema == Esquema.TecladoSetas;
@@ -139,6 +139,8 @@ public static class Tripulacao
                 case Esquema.TecladoWASD: return tecladoInteiro ? Idioma.T("TECLADO", "KEYBOARD") : Idioma.T("TECLADO (WASD)", "KEYBOARD (WASD)");
                 case Esquema.TecladoSetas: return tecladoInteiro ? Idioma.T("TECLADO", "KEYBOARD") : Idioma.T("TECLADO (SETAS)", "KEYBOARD (ARROWS)");
                 case Esquema.Controle:
+                    string doConvidado = Online.NomeDoRemoto(controle); // um amigo pela internet (Tripulação Online)
+                    if (doConvidado != null) return "ONLINE: " + doConvidado;
                     int numero = 0;
                     for (int i = 0; i < Gamepad.all.Count; i++)
                         if (Gamepad.all[i] == controle) numero = i + 1;

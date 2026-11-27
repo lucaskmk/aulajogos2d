@@ -1,0 +1,15 @@
+"AppBuild"
+{
+	// TROCAR: o AppID do jogo (o mesmo de Steam.AppId em Assets/Scripts/Plataforma/Steam.cs)
+	"AppID" "480"
+	"Desc" "Cilada a Vista! - build de Windows"
+	"ContentRoot" "..\..\Builds\Windows\"
+	"BuildOutput" "..\..\Builds\SteamPipe\"
+	// vazio = só sobe; depois é só marcar como padrão no Steamworks (Builds). "default" já põe no ar (cuidado).
+	"SetLive" ""
+	"Depots"
+	{
+		// TROCAR: o depot de Windows (normalmente o AppID + 1)
+		"481" "depot_windows.vdf"
+	}
+}

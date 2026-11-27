@@ -104,6 +104,22 @@ Se só um jogador usa o teclado, ele fica com o teclado inteiro. As regras:
 - No fim da fase aparecem os **títulos da tripulação**: Salva-vidas (mais balões estourados), Mão-leve (mais moedas),
   Âncora (mais mortes) e Traíra (mais empurrões).
 
+### Coop online (Tripulação Online, até 4)
+- No título: **Jogar online**. Quem abre a sala (o **anfitrião**) escolhe **Criar uma sala** e manda o **código da sala**
+  (7 letras, por exemplo `K7Q2-M9X`) para os amigos. Eles escolhem **Entrar na sala de um amigo** e digitam o código
+  (ou o IP). Na mesma rede de casa, a sala aparece sozinha na lista.
+- Funciona como o Remote Play: o jogo roda no computador do anfitrião (e o progresso fica no save dele); os convidados
+  veem a tela dele e ouvem o som pela rede, e os botões deles viram **controles a mais** no computador do anfitrião.
+  Para entrar na tripulação é igual ao coop local: o anfitrião abre a **Tripulação** (T no mapa) e o convidado aperta PULAR.
+- O convidado joga com o teclado (as teclas de Opções > Teclas, mais as setas) ou com o controle. **ESC** sai da sala.
+  Os menus, a pausa e o Grumete do anfitrião só obedecem a quem está no computador dele.
+- A porta (TCP 27960) é aberta sozinha no roteador pelo **UPnP**. Se o roteador não deixar, ou se o provedor usar
+  **CGNAT** (a tela avisa), dá para jogar pela internet com uma VPN de jogos (Radmin VPN, ZeroTier, Tailscale: use o IP
+  da VPN no lugar do código) ou, na Steam, pelo **Remote Play Together** (botão **Convidar amigos da Steam**).
+- Na tela da sala dá para escolher a qualidade da imagem (Leve para internet fraca, Alta para a rede de casa).
+- Para testar dois jogos no mesmo computador: `CiladaAVista.exe -cilada-sala` em um e `CiladaAVista.exe -cilada-entrar 127.0.0.1` no outro.
+- Não existe no navegador (o WebGL não tem conexão TCP).
+
 ### Trocar as teclas
 Em **Opções > Teclas** dá para trocar as teclas de andar, pular (duas), entrar na porta, reiniciar, Loja, coop, empurrar e balão.
 Escolha a ação, aperte ENTER e depois a tecla nova (ESC cancela). Uma tecla que já está em uso troca de lugar com a outra ação.
@@ -441,6 +457,17 @@ Ferramentas/     scripts de apoio (checador de fases, gerador das músicas em WA
 - `Assets/Editor/TesteDoCoop.cs`: o teste automático do coop (menu **Cilada (teste) > Testar coop**): cria controles de mentira e confere
   o balão, a câmera, o pulo na cabeça, o empurrão e a volta para o save numa fase reta.
 
+### Online/ e Plataforma/ (o coop pela internet e a Steam)
+- `Online/Protocolo.cs`: a ideia geral (o anfitrião transmite a tela; os convidados mandam botões), as mensagens e a `Conexao`
+  (TCP com uma linha de leitura e uma de escrita; o vídeo só guarda o quadro mais novo).
+- `Online/Anfitriao.cs`: a sala, os controles virtuais (um `Gamepad` do Input System por convidado), a cópia da tela em JPEG e o som (`OuvidoDaRede`).
+- `Online/Convidado.cs`: a conexão com a sala (`SalaRemota`), a imagem na tela, o som (`SomRecebido`) e os botões daqui.
+- `Online/Enderecos.cs`: o código da sala, a lista da rede de casa (broadcast UDP) e o UPnP (abrir a porta no roteador).
+- `Online/GerenciadorOnline.cs` e `Online/InterfaceOnline.cs`: a tela **Jogar online** (as outras metades do `GerenciadorDoJogo` e da `Interface`).
+- `Online/Online.cs`: o que o resto do jogo precisa saber (`Online.EhRemoto`, `Controles.Local` usa).
+- `Plataforma/Steam.cs`: conquistas, placares, presença e o convite do Remote Play Together (Steamworks.NET). Sem a Steam, não faz nada.
+- `Assets/Editor/TesteDoOnline.cs`: o teste automático (menu **Cilada (teste) > Testar online**): abre uma sala de verdade em 127.0.0.1.
+
 ### Armadilhas/
 - `Perigo.cs`: a base ("encostou, morreu").
 - Armadilhas clássicas: `ChaoQueCai`, `EspinhoEscondido`, `EspinhoQueCai`, `Espinho`, `BlocoInvisivel`, `BlocoSurpresa`, `BlocoQueFoge`, `Mola`, `Serra`, `Esmagador`, `Cano`, `NuvemAssassina` e `MoedaAssassina`.
@@ -512,6 +539,7 @@ Todo o áudio é **composição original gerada por código**: a música das fas
 - Pacotes da Unity usados pelo código:
   - **Universal Render Pipeline** `com.unity.render-pipelines.universal` 17.6.0 (renderizador 2D, luzes 2D e pós-processamento);
   - **Input System** `com.unity.inputsystem` 1.20.0.
+- **Steamworks.NET** `com.rlabrecque.steamworks.net` 2025.165.0 (MIT, de Riley Labrecque): a ponte com a Steam (`Plataforma/Steam.cs`).
 - Outros pacotes que vieram com o template (em `Packages/manifest.json`), mas que o jogo não usa diretamente:
   - 2D Sprite, Tilemap, Tilemap Extras, Animation, SpriteShape, Aseprite Importer, PSD Importer e 2D Tooling;
   - uGUI, Timeline, Visual Scripting, Test Framework, Collab Proxy e a integração com IDEs (Rider e Visual Studio);

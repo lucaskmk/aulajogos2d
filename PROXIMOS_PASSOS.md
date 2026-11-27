@@ -43,6 +43,18 @@ O README explica o jogo e o código; o GDD explica o design. Aqui fica só o est
 - **Modo traíra (versus):** no fim da fase, quem pegou mais moedas ganha a coroa e os outros perdem 1 moeda por empurrão levado.
 - **Chefes no coop:** um ataque a mais por rodada para cada jogador extra, e o pisão só vale se dois pularem em sequência.
 - **Online:** a Steam tem o **Remote Play Together** (um compra, os amigos entram pela internet no coop local, sem código de rede).
+  FEITO em 27/11/2026 também fora da Steam: a Tripulação Online (veja "Online e venda").
+
+## Online e venda (27/11/2026)
+O plano inteiro (lojas, preço, Steam, itch, divulgação, o que depende de conta e dinheiro) está em **PUBLICAR_E_VENDER.md**.
+- **Tripulação Online** (`Assets/Scripts/Online/`, menu **Jogar online**): o anfitrião transmite a tela e o som; os convidados mandam
+  os botões e viram controles virtuais no coop local. Código da sala, lista da rede de casa, UPnP, aviso de CGNAT.
+  A decisão de 10/11 (só Remote Play Together) continua valendo na Steam; isto é para fora dela (itch) e para quem não usa a Steam.
+- **Steam** (`Plataforma/Steam.cs` + Steamworks.NET): conquistas, placares, presença, convite do Remote Play Together.
+  Falta o AppID (está 480, o app de teste da Valve) e cadastrar conquistas/placares no Steamworks.
+- **Publicação:** `Publicacao/` (SteamPipe, butler do itch e os textos da página).
+- **Falta testar com gente de verdade:** o online entre duas casas (internet de verdade, UPnP, CGNAT), o atraso para os convidados nos
+  chefes e se a qualidade "Normal" cabe na internet de quem abre a sala (uns 4 a 8 Mbit/s de subida por convidado).
 
 ## Leva do tema pirata (pronta, falta testar na Unity)
 O tema de Re:Zero saiu inteiro (por causa dos direitos autorais). O jogo agora é **CILADA À VISTA!**, uma aventura de pirata:

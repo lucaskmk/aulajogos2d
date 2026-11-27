@@ -17,7 +17,7 @@ public static class Controles
             if (teclado.rightArrowKey.isPressed || teclado.dKey.isPressed) x += 1f;
         }
 
-        var controle = Gamepad.current;
+        var controle = Local;
         if (controle != null && x == 0f)
         {
             float analogico = controle.leftStick.x.ReadValue();
@@ -32,7 +32,7 @@ public static class Controles
     public static bool PuloApertou()
     {
         var teclado = Keyboard.current;
-        var controle = Gamepad.current;
+        var controle = Local;
         return (teclado != null && (teclado.spaceKey.wasPressedThisFrame || teclado.upArrowKey.wasPressedThisFrame || teclado.wKey.wasPressedThisFrame))
             || (controle != null && controle.buttonSouth.wasPressedThisFrame);
     }
@@ -40,7 +40,7 @@ public static class Controles
     public static bool PuloSegurando()
     {
         var teclado = Keyboard.current;
-        var controle = Gamepad.current;
+        var controle = Local;
         return (teclado != null && (teclado.spaceKey.isPressed || teclado.upArrowKey.isPressed || teclado.wKey.isPressed))
             || (controle != null && controle.buttonSouth.isPressed);
     }
@@ -48,7 +48,7 @@ public static class Controles
     public static bool Confirmar()
     {
         var teclado = Keyboard.current;
-        var controle = Gamepad.current;
+        var controle = Local;
         return (teclado != null && (teclado.enterKey.wasPressedThisFrame || teclado.numpadEnterKey.wasPressedThisFrame || teclado.spaceKey.wasPressedThisFrame))
             || (controle != null && (controle.startButton.wasPressedThisFrame || controle.buttonSouth.wasPressedThisFrame));
     }
@@ -56,7 +56,7 @@ public static class Controles
     public static bool Reiniciar()
     {
         var teclado = Keyboard.current;
-        var controle = Gamepad.current;
+        var controle = Local;
         return (teclado != null && Teclas.Apertou(Teclas.Acao.Reiniciar))
             || (controle != null && controle.buttonNorth.wasPressedThisFrame);
     }
@@ -65,7 +65,7 @@ public static class Controles
     public static bool Pausar()
     {
         var teclado = Keyboard.current;
-        var controle = Gamepad.current;
+        var controle = Local;
         return (teclado != null && teclado.escapeKey.wasPressedThisFrame)
             || (controle != null && (controle.selectButton.wasPressedThisFrame || controle.startButton.wasPressedThisFrame));
     }
@@ -74,7 +74,7 @@ public static class Controles
     public static bool Voltar()
     {
         var teclado = Keyboard.current;
-        var controle = Gamepad.current;
+        var controle = Local;
         return (teclado != null && (teclado.escapeKey.wasPressedThisFrame || teclado.backspaceKey.wasPressedThisFrame))
             || (controle != null && (controle.buttonEast.wasPressedThisFrame || controle.selectButton.wasPressedThisFrame));
     }
@@ -92,6 +92,23 @@ public static class Controles
     public static bool EsquerdaApertou() => Apertou(t => t.leftArrowKey, t => t.aKey, c => c.dpad.left);
     public static bool DireitaApertou() => Apertou(t => t.rightArrowKey, t => t.dKey, c => c.dpad.right);
 
+    // O controle "daqui" (o último usado), deixando de fora os controles virtuais dos convidados online
+    // (Anfitriao.cs): eles jogam com o Grumete deles, mas não mexem nos menus, na pausa nem no Grumete do anfitrião.
+    public static Gamepad Local
+    {
+        get
+        {
+            Gamepad atual = Gamepad.current;
+            if (atual != null && !Online.EhRemoto(atual)) ultimoLocal = atual;
+            if (ultimoLocal != null && !ultimoLocal.added) ultimoLocal = null;
+            if (ultimoLocal == null && atual != null && Online.EhRemoto(atual))
+                foreach (Gamepad g in Gamepad.all)
+                    if (!Online.EhRemoto(g)) { ultimoLocal = g; break; }
+            return ultimoLocal;
+        }
+    }
+    static Gamepad ultimoLocal;
+
     // Os atalhos de teste (F7, F8, F9 e o painel F10) só existem no editor e no build de teste ("Development Build"):
     // no jogo publicado eles seriam trapaça (liberam todas as fases e pulam para o final).
     public static bool AtalhosDeTeste => Application.isEditor || Debug.isDebugBuild;
@@ -102,7 +119,11 @@ public static class Controles
 
     // Necessário porque o projeto está com "Enter Play Mode Options" (sem recarregar o domínio).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    static void Limpar() => UsandoControle = false;
+    static void Limpar()
+    {
+        UsandoControle = false;
+        ultimoLocal = null;
+    }
 
     // Chamado uma vez por quadro (GerenciadorDoJogo.Update).
     public static void NotarAparelho()
@@ -117,7 +138,7 @@ public static class Controles
         }
         foreach (Gamepad controle in Gamepad.all)
         {
-            if (!controle.wasUpdatedThisFrame) continue;
+            if (!controle.wasUpdatedThisFrame || Online.EhRemoto(controle)) continue;
             if (controle.buttonSouth.isPressed || controle.buttonEast.isPressed || controle.buttonWest.isPressed || controle.buttonNorth.isPressed
                 || controle.startButton.isPressed || controle.selectButton.isPressed || controle.leftShoulder.isPressed || controle.rightShoulder.isPressed
                 || controle.dpad.ReadValue().sqrMagnitude > 0.1f || controle.leftStick.ReadValue().sqrMagnitude > 0.25f)
@@ -160,7 +181,7 @@ public static class Controles
     public static bool Apagar()
     {
         var teclado = Keyboard.current;
-        var controle = Gamepad.current;
+        var controle = Local;
         return (teclado != null && teclado.deleteKey.wasPressedThisFrame)
             || (controle != null && controle.buttonNorth.wasPressedThisFrame);
     }
@@ -169,7 +190,7 @@ public static class Controles
     public static bool AbrirLoja()
     {
         var teclado = Keyboard.current;
-        var controle = Gamepad.current;
+        var controle = Local;
         return (teclado != null && Teclas.Apertou(Teclas.Acao.Loja))
             || (controle != null && controle.buttonWest.wasPressedThisFrame);
     }
@@ -178,7 +199,7 @@ public static class Controles
     public static bool TrocarComprador()
     {
         var teclado = Keyboard.current;
-        var controle = Gamepad.current;
+        var controle = Local;
         return (teclado != null && teclado.tabKey.wasPressedThisFrame)
             || (controle != null && (controle.rightShoulder.wasPressedThisFrame || controle.leftShoulder.wasPressedThisFrame));
     }
@@ -187,7 +208,7 @@ public static class Controles
     public static bool AbrirTripulacao()
     {
         var teclado = Keyboard.current;
-        var controle = Gamepad.current;
+        var controle = Local;
         return (teclado != null && Teclas.Apertou(Teclas.Acao.Coop))
             || (controle != null && controle.buttonNorth.wasPressedThisFrame);
     }
@@ -206,7 +227,7 @@ public static class Controles
     static bool Apertou(System.Func<Keyboard, KeyControl> seta, System.Func<Keyboard, KeyControl> letra, System.Func<Gamepad, ButtonControl> direcional)
     {
         var teclado = Keyboard.current;
-        var controle = Gamepad.current;
+        var controle = Local;
         return (teclado != null && (seta(teclado).wasPressedThisFrame || letra(teclado).wasPressedThisFrame))
             || (controle != null && direcional(controle).wasPressedThisFrame);
     }

@@ -1,0 +1,14 @@
+"AppBuild"
+{
+	// TROCAR: o AppID da DEMO (o mesmo de Steam.AppIdDaDemo em Assets/Scripts/Plataforma/Steam.cs)
+	"AppID" "480"
+	"Desc" "Cilada a Vista! - DEMO (fases 1 a 4)"
+	"ContentRoot" "..\..\Builds\Demo\"
+	"BuildOutput" "..\..\Builds\SteamPipe\"
+	"SetLive" ""
+	"Depots"
+	{
+		// TROCAR: o depot da demo (normalmente o AppID da demo + 1)
+		"481" "depot_demo.vdf"
+	}
+}
